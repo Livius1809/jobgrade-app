@@ -173,6 +173,7 @@ model Job {
   responsibilities String?   @db.Text
   requirements     String?   @db.Text
   status           JobStatus @default(DRAFT)
+  isActive         Boolean   @default(true)
   aiAnalyzed       Boolean   @default(false)
   aiAnalysis       Json?
   createdBy        String    @default("")

@@ -51,7 +51,7 @@ export default async function SimulationsPage() {
           Simulează compensația pentru 3 niveluri de performanță (inferior, target, superior)
         </p>
       </div>
-      <SimulationsManager packages={packages} simulations={simulations} />
+      <SimulationsManager packages={packages as any} simulations={simulations as any} />
     </div>
   )
 }

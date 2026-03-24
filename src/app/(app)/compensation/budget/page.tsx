@@ -48,7 +48,7 @@ export default async function BudgetPage() {
     if (!deptMap[dept]) {
       deptMap[dept] = { name: dept, packages: [], totalMonthly: 0 }
     }
-    const components = pkg.components as PackageComponent[]
+    const components = pkg.components as unknown as PackageComponent[]
     const total = calcTotal(pkg.baseSalary, components)
     deptMap[dept].packages.push(pkg)
     deptMap[dept].totalMonthly += total
@@ -138,7 +138,7 @@ export default async function BudgetPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {dept.packages.map((pkg) => {
-                    const components = pkg.components as PackageComponent[]
+                    const components = pkg.components as unknown as PackageComponent[]
                     const variable = components.reduce((sum, c) => {
                       if (c.type === "percentage") return sum + (pkg.baseSalary * c.value) / 100
                       return sum + c.value

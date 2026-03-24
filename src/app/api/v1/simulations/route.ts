@@ -8,7 +8,7 @@ const schema = z.object({
   packageId: z.string(),
   name: z.string().min(1),
   // kpiAchievements: { [kpiId]: achievedPercentage (0-200) }
-  kpiAchievements: z.record(z.number().min(0).max(200)),
+  kpiAchievements: z.record(z.string(), z.number().min(0).max(200)),
 })
 
 interface PackageComponent {
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const performanceFactor = weightedAchievement / 100 // e.g., 1.0 = 100%
 
     // Calculate variable components
-    const components = pkg.components as PackageComponent[]
+    const components = pkg.components as unknown as PackageComponent[]
     let variableTotal = 0
     const componentBreakdown = components.map((c) => {
       let calculatedValue = 0

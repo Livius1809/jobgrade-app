@@ -44,7 +44,7 @@ export default async function PackagesPage() {
           Definește salariu de bază și componente variabile pentru fiecare post
         </p>
       </div>
-      <PackagesManager packages={packages} jobs={jobs} />
+      <PackagesManager packages={packages as any} jobs={jobs} />
     </div>
   )
 }

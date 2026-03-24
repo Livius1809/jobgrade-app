@@ -313,7 +313,7 @@ export async function POST(
 
     const filename = `${evalSession.name.replace(/[^a-zA-Z0-9]/g, "_")}_raport.pdf`
 
-    return new NextResponse(buffer, {
+    return new NextResponse(buffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
