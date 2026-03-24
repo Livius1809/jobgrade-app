@@ -1,0 +1,740 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../src/generated/prisma"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// TENANCY & AUTH
+// ─────────────────────────────────────────
+
+model Tenant {
+  id               String       @id @default(cuid())
+  name             String
+  slug             String       @unique
+  plan             Plan         @default(STARTER)
+  locale           String       @default("ro")
+  status           TenantStatus @default(ACTIVE)
+  stripeCustomerId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  users            User[]
+  company          CompanyProfile?
+  departments      Department[]
+  jobs             Job[]
+  sessions         EvaluationSession[]
+  compensationPkgs CompensationPackage[]
+  kpiDefinitions   KpiDefinition[]
+  simulations      SimulationScenario[]
+  aiGenerations    AiGeneration[]
+  reports          Report[]
+  credits          CreditBalance?
+  creditTxns       CreditTransaction[]
+  salaryGrades     SalaryGrade[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String?
+  firstName    String
+  lastName     String
+  jobTitle     String?
+  role         UserRole   @default(REPRESENTATIVE)
+  locale       String     @default("ro")
+  lastLogin    DateTime?
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
+
+  accounts                 Account[]
+  authSessions             AuthSession[]
+  sessionParticipants      SessionParticipant[]
+  jobAssignments           JobAssignment[]
+  votes                    Vote[]
+  facilitatorDecisions     FacilitatorDecision[]
+  clarificationQuestions   ClarificationQuestion[]
+  clarificationAnswers     ClarificationAnswer[]
+  overrides                ScoreOverride[]
+  notifications            Notification[]
+  representedJobs          Job[]                  @relation("JobRepresentative")
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────
+// COMPANY PROFILE
+// ─────────────────────────────────────────
+
+model CompanyProfile {
+  id          String    @id @default(cuid())
+  tenantId    String    @unique
+  mission     String?   @db.Text
+  vision      String?   @db.Text
+  values      String[]
+  description String?   @db.Text
+  industry    String?
+  size        String?
+  website     String?
+  cui         String?
+  regCom      String?
+  address     String?
+  county      String?
+  logoUrl     String?
+  extractedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("company_profiles")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users  User[]
+  jobs   Job[]
+
+  @@unique([tenantId, name])
+  @@map("departments")
+}
+
+// ─────────────────────────────────────────
+// FIȘE DE POST
+// ─────────────────────────────────────────
+
+model Job {
+  id               String    @id @default(cuid())
+  tenantId         String
+  departmentId     String?
+  representativeId String?
+  title            String
+  code             String?
+  purpose          String?   @db.Text
+  description      String?   @db.Text
+  responsibilities String?   @db.Text
+  requirements     String?   @db.Text
+  status           JobStatus @default(DRAFT)
+  aiAnalyzed       Boolean   @default(false)
+  aiAnalysis       Json?
+  createdBy        String    @default("")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department     Department? @relation(fields: [departmentId], references: [id])
+  representative User?       @relation("JobRepresentative", fields: [representativeId], references: [id])
+
+  sessionJobs          SessionJob[]
+  compensationPackages CompensationPackage[]
+  kpiDefinitions       KpiDefinition[]
+  simulations          SimulationScenario[]
+  jobResults           JobResult[]
+
+  @@map("jobs")
+}
+
+// ─────────────────────────────────────────
+// CRITERII (GLOBALE — definite de platformă)
+// ─────────────────────────────────────────
+
+model Criterion {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String? @db.Text
+  category    String?
+  order       Int
+  isActive    Boolean @default(true)
+
+  subfactors           Subfactor[]
+  evaluations          Evaluation[]
+  consensusStatuses    ConsensusStatus[]
+  votes                Vote[]
+  facilitatorDecisions FacilitatorDecision[]
+  overrides            ScoreOverride[]
+
+  @@map("criteria")
+}
+
+model Subfactor {
+  id          String @id @default(cuid())
+  criterionId String
+  code        String
+  description String @db.Text
+  points      Int
+  order       Int
+
+  criterion            Criterion             @relation(fields: [criterionId], references: [id])
+  evaluations          Evaluation[]
+  votes                Vote[]
+  facilitatorDecisions FacilitatorDecision[]
+  overrides            ScoreOverride[]
+  consensuses          ConsensusStatus[]
+
+  @@unique([criterionId, code])
+  @@map("subfactors")
+}
+
+// ─────────────────────────────────────────
+// SESIUNI DE EVALUARE
+// ─────────────────────────────────────────
+
+model EvaluationSession {
+  id                 String        @id @default(cuid())
+  tenantId           String
+  name               String
+  status             SessionStatus @default(DRAFT)
+  currentRound       Int           @default(1)
+  consensusThreshold Float         @default(0.75)
+  deadline           DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdById        String        @default("")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  sessionJobs          SessionJob[]
+  participants         SessionParticipant[]
+  evaluations          Evaluation[]
+  consensusStatuses    ConsensusStatus[]
+  votes                Vote[]
+  facilitatorDecisions FacilitatorDecision[]
+  clarifications       ClarificationQuestion[]
+  jobResults           JobResult[]
+  salaryGrades         SalaryGrade[]
+  overrides            ScoreOverride[]
+
+  @@map("evaluation_sessions")
+}
+
+model SessionJob {
+  id        String   @id @default(cuid())
+  sessionId String
+  jobId     String
+  createdAt DateTime @default(now())
+
+  session     EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  job         Job               @relation(fields: [jobId], references: [id])
+  assignments JobAssignment[]
+
+  @@unique([sessionId, jobId])
+  @@map("session_jobs")
+}
+
+model SessionParticipant {
+  id          String    @id @default(cuid())
+  sessionId   String
+  userId      String
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  session EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [userId], references: [id])
+
+  @@unique([sessionId, userId])
+  @@map("session_participants")
+}
+
+model JobAssignment {
+  id           String    @id @default(cuid())
+  sessionJobId String
+  userId       String
+  submittedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  sessionJob  SessionJob  @relation(fields: [sessionJobId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+  evaluations Evaluation[]
+
+  @@unique([sessionJobId, userId])
+  @@map("job_assignments")
+}
+
+// ─────────────────────────────────────────
+// EVALUARE / SCORARE
+// ─────────────────────────────────────────
+
+model Evaluation {
+  id            String   @id @default(cuid())
+  sessionId     String
+  assignmentId  String
+  criterionId   String
+  subfactorId   String
+  justification String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  session    EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  assignment JobAssignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  criterion  Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor  Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@unique([assignmentId, criterionId])
+  @@map("evaluations")
+}
+
+// ─────────────────────────────────────────
+// CLARIFICĂRI
+// ─────────────────────────────────────────
+
+model ClarificationQuestion {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  question    String   @db.Text
+  askedBy     String
+  createdAt   DateTime @default(now())
+
+  session EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  asker   User              @relation(fields: [askedBy], references: [id])
+  answer  ClarificationAnswer?
+
+  @@map("clarification_questions")
+}
+
+model ClarificationAnswer {
+  id         String   @id @default(cuid())
+  questionId String   @unique
+  answer     String   @db.Text
+  answeredBy String
+  createdAt  DateTime @default(now())
+
+  question ClarificationQuestion @relation(fields: [questionId], references: [id])
+  answerer User                  @relation(fields: [answeredBy], references: [id])
+
+  @@map("clarification_answers")
+}
+
+// ─────────────────────────────────────────
+// CONSENS
+// ─────────────────────────────────────────
+
+model ConsensusStatus {
+  id               String         @id @default(cuid())
+  sessionId        String
+  jobId            String
+  criterionId      String
+  status           ConsensusState @default(PENDING)
+  round1Cv         Float?
+  round2Cv         Float?
+  finalSubfactorId String?
+  updatedAt        DateTime       @updatedAt
+
+  session        EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  criterion      Criterion         @relation(fields: [criterionId], references: [id])
+  finalSubfactor Subfactor?        @relation(fields: [finalSubfactorId], references: [id])
+
+  @@unique([sessionId, jobId, criterionId])
+  @@map("consensus_statuses")
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  userId      String
+  subfactorId String
+  createdAt   DateTime @default(now())
+
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id])
+  criterion Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@unique([sessionId, jobId, criterionId, userId])
+  @@map("votes")
+}
+
+model FacilitatorDecision {
+  id            String   @id @default(cuid())
+  sessionId     String
+  jobId         String
+  criterionId   String
+  facilitatorId String
+  subfactorId   String
+  rationale     String   @db.Text
+  createdAt     DateTime @default(now())
+
+  session     EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  facilitator User              @relation(fields: [facilitatorId], references: [id])
+  criterion   Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor   Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@unique([sessionId, jobId, criterionId])
+  @@map("facilitator_decisions")
+}
+
+// ─────────────────────────────────────────
+// REZULTATE & CLASIFICARE
+// ─────────────────────────────────────────
+
+model JobResult {
+  id              String   @id @default(cuid())
+  sessionId       String
+  jobId           String
+  totalScore      Int
+  normalizedScore Float
+  rank            Int
+  salaryGradeId   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  session     EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  job         Job               @relation(fields: [jobId], references: [id])
+  salaryGrade SalaryGrade?      @relation(fields: [salaryGradeId], references: [id])
+
+  @@unique([sessionId, jobId])
+  @@map("job_results")
+}
+
+model SalaryGrade {
+  id        String   @id @default(cuid())
+  tenantId  String
+  sessionId String
+  name      String
+  scoreMin  Int
+  scoreMax  Int
+  salaryMin Float?
+  salaryMax Float?
+  currency  String   @default("RON")
+  order     Int
+  createdAt DateTime @default(now())
+
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session    EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  jobResults JobResult[]
+
+  @@map("salary_grades")
+}
+
+model ScoreOverride {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  ownerId     String
+  subfactorId String
+  rationale   String   @db.Text
+  createdAt   DateTime @default(now())
+
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  owner     User              @relation(fields: [ownerId], references: [id])
+  criterion Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@map("score_overrides")
+}
+
+// ─────────────────────────────────────────
+// COMPENSAȚII & SIMULĂRI
+// ─────────────────────────────────────────
+
+model CompensationPackage {
+  id         String   @id @default(cuid())
+  tenantId   String
+  jobId      String
+  baseSalary Float
+  currency   String   @default("RON")
+  components Json
+  benefits   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job         Job                  @relation(fields: [jobId], references: [id])
+  simulations SimulationScenario[]
+
+  @@map("compensation_packages")
+}
+
+model KpiDefinition {
+  id              String       @id @default(cuid())
+  tenantId        String
+  jobId           String
+  name            String
+  weight          Float
+  targetValue     Float
+  measurementUnit String
+  frequency       KpiFrequency @default(MONTHLY)
+  createdAt       DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job    Job    @relation(fields: [jobId], references: [id])
+
+  @@map("kpi_definitions")
+}
+
+model SimulationScenario {
+  id               String   @id @default(cuid())
+  tenantId         String
+  jobId            String
+  packageId        String
+  name             String
+  kpiAchievements  Json
+  calculatedResult Json
+  createdBy        String
+  createdAt        DateTime @default(now())
+
+  tenant  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job     Job                 @relation(fields: [jobId], references: [id])
+  package CompensationPackage @relation(fields: [packageId], references: [id])
+
+  @@map("simulation_scenarios")
+}
+
+// ─────────────────────────────────────────
+// AI GENERĂRI
+// ─────────────────────────────────────────
+
+model AiGeneration {
+  id         String          @id @default(cuid())
+  tenantId   String
+  type       AiGenerationType
+  sourceId   String?
+  sourceType String?
+  prompt     String          @db.Text
+  output     String          @db.Text
+  model      String
+  tokensUsed Int
+  credits    Int
+  createdAt  DateTime        @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("ai_generations")
+}
+
+// ─────────────────────────────────────────
+// RAPOARTE
+// ─────────────────────────────────────────
+
+model Report {
+  id          String       @id @default(cuid())
+  tenantId    String
+  sessionId   String?
+  type        ReportType
+  format      ReportFormat
+  sections    String[]
+  locale      String       @default("ro")
+  filePath    String?
+  generatedBy String
+  createdAt   DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+// ─────────────────────────────────────────
+// CREDITE & BILLING
+// ─────────────────────────────────────────
+
+model CreditBalance {
+  id        String   @id @default(cuid())
+  tenantId  String   @unique
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("credit_balances")
+}
+
+model CreditTransaction {
+  id          String        @id @default(cuid())
+  tenantId    String
+  type        CreditTxnType
+  amount      Int
+  description String
+  sourceId    String?
+  createdAt   DateTime      @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("credit_transactions")
+}
+
+// ─────────────────────────────────────────
+// NOTIFICĂRI
+// ─────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Plan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  OWNER
+  FACILITATOR
+  REPRESENTATIVE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SessionStatus {
+  DRAFT
+  IN_PROGRESS
+  RECALIBRATION
+  VOTING
+  FACILITATION
+  COMPLETED
+}
+
+enum ConsensusState {
+  PENDING
+  CONSENSUS
+  RECALIBRATING
+  VOTING
+  FACILITATED
+  RESOLVED
+}
+
+enum KpiFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+enum AiGenerationType {
+  JOB_AD
+  SOCIAL_MEDIA
+  KPI_SHEET
+  SESSION_ANALYSIS
+  JOB_ANALYSIS
+  COMPANY_EXTRACT
+}
+
+enum ReportType {
+  HIERARCHY
+  SALARY_GRADES
+  KPI
+  BUDGET
+  FULL
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+}
+
+enum CreditTxnType {
+  PURCHASE
+  SUBSCRIPTION_MONTHLY
+  USAGE
+  REFUND
+}
+
+enum NotificationType {
+  SESSION_LAUNCHED
+  EVALUATOR_COMPLETED
+  ALL_COMPLETED
+  CONSENSUS_REACHED
+  RECALIBRATION_STARTED
+  VOTE_STARTED
+  FACILITATOR_NEEDED
+  CLARIFICATION_RECEIVED
+  CLARIFICATION_ANSWERED
+  REPORT_GENERATED
+  CREDITS_LOW
+  INVOICE_ISSUED
+}

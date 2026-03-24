@@ -1,0 +1,33 @@
+import Stripe from "stripe"
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-02-24.acacia",
+})
+
+export const CREDIT_PACKAGES = [
+  {
+    id: "credits_50",
+    credits: 50,
+    price: 29,
+    currency: "RON",
+    label: "Starter",
+    priceId: process.env.STRIPE_PRICE_50_CREDITS!,
+  },
+  {
+    id: "credits_150",
+    credits: 150,
+    price: 79,
+    currency: "RON",
+    label: "Business",
+    priceId: process.env.STRIPE_PRICE_150_CREDITS!,
+    popular: true,
+  },
+  {
+    id: "credits_500",
+    credits: 500,
+    price: 229,
+    currency: "RON",
+    label: "Enterprise",
+    priceId: process.env.STRIPE_PRICE_500_CREDITS!,
+  },
+] as const
