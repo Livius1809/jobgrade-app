@@ -1,8 +1,19 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
     "module": "CommonJS",
     "moduleResolution": "node",
-    "noEmit": false
-  }
+    "resolveJsonModule": true,
+    "outDir": ".ts-seed-out",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["prisma/seed.ts", "prisma/seed-kb.ts", "test-kb.ts", "test-kb-promote.ts", "test-tablename.ts"]
 }

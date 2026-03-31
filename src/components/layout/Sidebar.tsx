@@ -73,6 +73,23 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    href: "/pay-gap",
+    label: "Pay Gap",
+    icon: "⚖️",
+    roles: [UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN, UserRole.OWNER],
+    children: [
+      { href: "/pay-gap", label: "Dashboard Art. 9" },
+      { href: "/pay-gap/employees", label: "Angajați & Salarii" },
+      { href: "/pay-gap/assessments", label: "Evaluări comune Art. 10" },
+    ],
+  },
+  {
+    href: "/employee-portal",
+    label: "Portal Angajați",
+    icon: "🏛️",
+    roles: [UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.FACILITATOR],
+  },
+  {
     href: "/reports",
     label: "Rapoarte",
     icon: "📄",

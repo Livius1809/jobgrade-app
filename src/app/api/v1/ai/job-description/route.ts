@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
+import { buildKBContext } from "@/lib/kb/inject"
 
 const schema = z.object({
   title: z.string().min(3),
@@ -18,7 +19,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = schema.parse(body)
 
-    const prompt = `Ești expert în HR din România. Generează o fișă de post în română pentru poziția: "${data.title}"${data.department ? ` din departamentul ${data.department}` : ""}.
+    const kbContext = await buildKBContext({
+      agentRole: "HR_COUNSELOR",
+      context: `fișă de post responsabilități cerințe ${data.title}${data.department ? ` ${data.department}` : ""}`,
+      limit: 3,
+      kbType: "METHODOLOGY",
+    })
+
+    const systemPrompt = [
+      "Ești expert în HR din România, specializat în redactarea fișelor de post și evaluarea posturilor.",
+      kbContext,
+    ].filter(Boolean).join("\n\n")
+
+    const prompt = `Generează o fișă de post în română pentru poziția: "${data.title}"${data.department ? ` din departamentul ${data.department}` : ""}.
 
 Returnează **EXCLUSIV** un JSON valid cu structura:
 {
@@ -32,6 +45,7 @@ Nu adăuga text în afara JSON-ului.`
     const response = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 800,
+      system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
     })
 

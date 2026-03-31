@@ -7,14 +7,44 @@ interface ExportButtonsProps {
   sessionName: string
 }
 
+type ExportFormat = "pdf" | "excel" | "json" | "xml"
+
+const FORMAT_CONFIG: Record<
+  ExportFormat,
+  { label: string; loadingLabel: string; ext: string; color: string }
+> = {
+  pdf: {
+    label: "PDF (5 cr.)",
+    loadingLabel: "Se generează...",
+    ext: "_raport.pdf",
+    color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
+  },
+  excel: {
+    label: "Excel (5 cr.)",
+    loadingLabel: "Se generează...",
+    ext: "_rezultate.xlsx",
+    color: "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
+  },
+  json: {
+    label: "JSON EU (5 cr.)",
+    loadingLabel: "Se exportă...",
+    ext: "_EU2023970.json",
+    color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
+  },
+  xml: {
+    label: "XML EU (5 cr.)",
+    loadingLabel: "Se exportă...",
+    ext: "_EU2023970.xml",
+    color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100",
+  },
+}
+
 export default function ExportButtons({ sessionId, sessionName }: ExportButtonsProps) {
-  const [loadingPdf, setLoadingPdf] = useState(false)
-  const [loadingExcel, setLoadingExcel] = useState(false)
+  const [loading, setLoading] = useState<ExportFormat | null>(null)
   const [error, setError] = useState("")
 
-  async function handleExport(format: "pdf" | "excel") {
-    const setLoading = format === "pdf" ? setLoadingPdf : setLoadingExcel
-    setLoading(true)
+  async function handleExport(format: ExportFormat) {
+    setLoading(format)
     setError("")
 
     try {
@@ -25,7 +55,6 @@ export default function ExportButtons({ sessionId, sessionName }: ExportButtonsP
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
         setError(json.message || "Eroare la export.")
-        setLoading(false)
         return
       }
 
@@ -33,10 +62,7 @@ export default function ExportButtons({ sessionId, sessionName }: ExportButtonsP
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download =
-        format === "pdf"
-          ? `${sessionName.replace(/[^a-zA-Z0-9]/g, "_")}_raport.pdf`
-          : `${sessionName.replace(/[^a-zA-Z0-9]/g, "_")}_rezultate.xlsx`
+      a.download = `${sessionName.replace(/[^a-zA-Z0-9]/g, "_")}${FORMAT_CONFIG[format].ext}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -44,27 +70,26 @@ export default function ExportButtons({ sessionId, sessionName }: ExportButtonsP
     } catch {
       setError("Eroare de rețea.")
     } finally {
-      setLoading(false)
+      setLoading(null)
     }
   }
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex gap-2">
-        <button
-          onClick={() => handleExport("pdf")}
-          disabled={loadingPdf}
-          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-        >
-          {loadingPdf ? "Se generează..." : "Export PDF (5 cr.)"}
-        </button>
-        <button
-          onClick={() => handleExport("excel")}
-          disabled={loadingExcel}
-          className="px-3 py-1.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
-        >
-          {loadingExcel ? "Se generează..." : "Export Excel (5 cr.)"}
-        </button>
+      <div className="flex flex-wrap gap-2">
+        {(["pdf", "excel", "json", "xml"] as ExportFormat[]).map((fmt) => {
+          const cfg = FORMAT_CONFIG[fmt]
+          return (
+            <button
+              key={fmt}
+              onClick={() => handleExport(fmt)}
+              disabled={loading !== null}
+              className={`px-3 py-1.5 text-xs border rounded-lg transition-colors disabled:opacity-50 ${cfg.color}`}
+            >
+              {loading === fmt ? cfg.loadingLabel : cfg.label}
+            </button>
+          )
+        })}
       </div>
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { deductCredits, hasCredits, CREDIT_COSTS } from "@/lib/credits"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
+import { buildKBContext } from "@/lib/kb/inject"
 
 const CREDIT_COST = CREDIT_COSTS.SESSION_ANALYSIS
 
@@ -130,10 +131,28 @@ export async function POST(req: NextRequest) {
       )
       .map((cs) => cs.criterion.name)
 
-    // Build prompt
-    const prompt = `Ești expert senior în evaluarea și ierarhizarea posturilor (job grading) din România, cu experiență în metodologia Hay Group / Willis Towers Watson.
+    // KB context: căutăm experiență relevantă pentru tipul sesiunii curente
+    const kbQueryContext = [
+      "sesiune evaluare job grading consens ierarhizare",
+      difficultCriteria.length > 0 ? `criterii dificile: ${difficultCriteria.slice(0, 3).join(" ")}` : "",
+      evalSession.facilitatorDecisions.length > 0 ? "facilitare decizie conflict evaluatori" : "",
+      evalSession.votes.length > 0 ? "vot evaluatori divergenta scoruri" : "",
+    ].filter(Boolean).join(" ")
 
-Analizează rezultatele sesiunii de evaluare de mai jos și furnizează o analiză detaliată în limba română.
+    const kbContext = await buildKBContext({
+      agentRole: "HR_COUNSELOR",
+      context: kbQueryContext,
+      limit: 5,
+    })
+
+    // System prompt: identitatea agentului + experiență KB (dacă există)
+    const systemPrompt = [
+      "Ești expert senior în evaluarea și ierarhizarea posturilor (job grading) din România, cu experiență în metodologia Hay Group / Willis Towers Watson.",
+      kbContext,
+    ].filter(Boolean).join("\n\n")
+
+    // User prompt: doar datele specifice sesiunii + instrucțiuni
+    const prompt = `Analizează rezultatele sesiunii de evaluare de mai jos și furnizează o analiză detaliată în limba română.
 
 ## DATE SESIUNE
 
@@ -205,6 +224,7 @@ Fii specific, folosește datele furnizate, și oferă perspective practice pentr
     const response = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 2000,
+      system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
     })
 

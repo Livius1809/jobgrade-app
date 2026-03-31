@@ -27,9 +27,9 @@ export async function sendInviteEmail({
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
   <div style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
-    <div style="background:#1D4ED8;padding:28px 32px;">
+    <div style="background:#4F46E5;padding:28px 32px;">
       <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">JobGrade</h1>
-      <p style="margin:6px 0 0;color:#BFDBFE;font-size:13px;">Platforma de evaluare și ierarhizare posturi</p>
+      <p style="margin:6px 0 0;color:#C7D2FE;font-size:13px;">Platforma de evaluare și ierarhizare posturi</p>
     </div>
     <div style="padding:32px;">
       <h2 style="margin:0 0 12px;font-size:18px;color:#111827;">Bun venit, ${firstName}!</h2>
@@ -42,13 +42,13 @@ export async function sendInviteEmail({
         Link-ul expiră în <strong>7 zile</strong>.
       </p>
       <a href="${activateUrl}"
-         style="display:inline-block;background:#1D4ED8;color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#E85D43;color:#ffffff;text-decoration:none;
                 padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
         Activează contul
       </a>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0;line-height:1.5;">
         Dacă nu poți apăsa butonul, copiază link-ul:<br>
-        <a href="${activateUrl}" style="color:#3B82F6;word-break:break-all;">${activateUrl}</a>
+        <a href="${activateUrl}" style="color:#4F46E5;word-break:break-all;">${activateUrl}</a>
       </p>
     </div>
     <div style="padding:16px 32px;background:#F9FAFB;border-top:1px solid #E5E7EB;">
@@ -98,7 +98,7 @@ export async function sendSessionInviteEmail({
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
   <div style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
-    <div style="background:#1D4ED8;padding:28px 32px;">
+    <div style="background:#4F46E5;padding:28px 32px;">
       <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">JobGrade</h1>
     </div>
     <div style="padding:32px;">
@@ -115,7 +115,7 @@ export async function sendSessionInviteEmail({
           : ""
       }
       <a href="${sessionUrl}"
-         style="display:inline-block;background:#1D4ED8;color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#E85D43;color:#ffffff;text-decoration:none;
                 padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
         Mergi la sesiune →
       </a>
@@ -153,7 +153,7 @@ export async function sendPasswordResetEmail({
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
   <div style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
-    <div style="background:#1D4ED8;padding:28px 32px;">
+    <div style="background:#4F46E5;padding:28px 32px;">
       <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">JobGrade</h1>
     </div>
     <div style="padding:32px;">
@@ -163,7 +163,7 @@ export async function sendPasswordResetEmail({
         Link-ul expiră în <strong>1 oră</strong>.
       </p>
       <a href="${resetUrl}"
-         style="display:inline-block;background:#DC2626;color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#E85D43;color:#ffffff;text-decoration:none;
                 padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
         Resetează parola
       </a>

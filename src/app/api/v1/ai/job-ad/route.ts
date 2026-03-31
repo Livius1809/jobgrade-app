@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { deductCredits, hasCredits } from "@/lib/credits"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { AiGenerationType } from "@/generated/prisma"
+import { buildKBContext } from "@/lib/kb/inject"
 
 const CREDIT_COST = 4
 
@@ -64,7 +65,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const prompt = `Ești un expert în HR și recrutare din România. Generează un anunț de angajare profesional în limba română.
+    const kbContext = await buildKBContext({
+      agentRole: "HR_COUNSELOR",
+      context: `anunț angajare recrutare ${job.title} ${data.tone} ${data.platform}`,
+      limit: 3,
+    })
+
+    const systemPrompt = [
+      "Ești expert în HR și recrutare din România, specializat în redactarea anunțurilor de angajare atractive și eficiente.",
+      kbContext,
+    ].filter(Boolean).join("\n\n")
+
+    const prompt = `Generează un anunț de angajare profesional în limba română.
 
 **Fișa de post:**
 - Titlu: ${job.title}
@@ -82,6 +94,7 @@ Generează un anunț complet, atractiv și profesional. Include: titlu captivant
     const response = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 1500,
+      system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
     })
 

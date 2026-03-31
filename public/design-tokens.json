@@ -1,0 +1,165 @@
+{
+  "_meta": {
+    "project": "JobGrade",
+    "version": "1.0.0",
+    "date": "2026-03-25",
+    "description": "Design tokens oficiale JobGrade — sursa unica de adevar pentru identitatea vizuala"
+  },
+
+  "color": {
+    "brand": {
+      "coral":       { "value": "#E85D43", "comment": "Coral — culoarea primara, energie, actiune" },
+      "coral-light": { "value": "#F08A76", "comment": "Coral deschis — hover, accent subtil" },
+      "coral-dark":  { "value": "#C4432B", "comment": "Coral inchis — pressed, contrast ridicat" },
+      "indigo":      { "value": "#4F46E5", "comment": "Indigo — culoarea secundara, incredere, profesionalism" },
+      "indigo-light":{ "value": "#7C75ED", "comment": "Indigo deschis — hover, accent subtil" },
+      "indigo-dark": { "value": "#3730B8", "comment": "Indigo inchis — pressed, contrast ridicat" }
+    },
+    "neutral": {
+      "white":       { "value": "#FFFFFF" },
+      "gray-50":     { "value": "#F9FAFB", "comment": "Fundal pagina" },
+      "gray-100":    { "value": "#F3F4F6", "comment": "Fundal card, input" },
+      "gray-200":    { "value": "#E5E7EB", "comment": "Border subtil" },
+      "gray-300":    { "value": "#D1D5DB", "comment": "Border, divider" },
+      "gray-400":    { "value": "#9CA3AF", "comment": "Placeholder text" },
+      "gray-500":    { "value": "#6B7280", "comment": "Text secundar" },
+      "gray-700":    { "value": "#374151", "comment": "Text principal" },
+      "gray-900":    { "value": "#111827", "comment": "Titluri, text dark" },
+      "black":       { "value": "#000000" }
+    },
+    "semantic": {
+      "success":     { "value": "#10B981", "comment": "Verde — confirmare, grade inalt" },
+      "warning":     { "value": "#F59E0B", "comment": "Galben — atentie, grade mediu" },
+      "error":       { "value": "#EF4444", "comment": "Rosu — eroare, grade scazut" },
+      "info":        { "value": "#3B82F6", "comment": "Albastru — informatie neutra" }
+    },
+    "gradient": {
+      "brand-horizontal": {
+        "value": "linear-gradient(90deg, #E85D43 0%, #4F46E5 100%)",
+        "comment": "Gradient orizontal Coral → Indigo (logo, hero)"
+      },
+      "brand-diagonal": {
+        "value": "linear-gradient(135deg, #E85D43 0%, #4F46E5 100%)",
+        "comment": "Gradient diagonal — carduri, butoane speciale"
+      },
+      "brand-vertical": {
+        "value": "linear-gradient(180deg, #E85D43 0%, #4F46E5 100%)",
+        "comment": "Gradient vertical — favicon, simbol"
+      }
+    },
+    "background": {
+      "page":        { "value": "#F9FAFB" },
+      "card":        { "value": "#FFFFFF" },
+      "dark":        { "value": "#111827" },
+      "dark-card":   { "value": "#1F2937" }
+    },
+    "text": {
+      "primary":     { "value": "#111827" },
+      "secondary":   { "value": "#6B7280" },
+      "disabled":    { "value": "#9CA3AF" },
+      "inverse":     { "value": "#FFFFFF" },
+      "brand":       { "value": "#4F46E5" },
+      "link":        { "value": "#4F46E5" },
+      "link-hover":  { "value": "#E85D43" }
+    }
+  },
+
+  "typography": {
+    "font-family": {
+      "sans":  { "value": "'Inter', 'Helvetica Neue', Arial, sans-serif", "comment": "Font principal UI" },
+      "serif": { "value": "'Georgia', serif", "comment": "Utilizare rara — citate, testimoniale" },
+      "mono":  { "value": "'JetBrains Mono', 'Courier New', monospace", "comment": "Cod, date tehnice" }
+    },
+    "font-size": {
+      "xs":   { "value": "12px", "comment": "Label mic, badge" },
+      "sm":   { "value": "14px", "comment": "Text secundar, caption" },
+      "base": { "value": "16px", "comment": "Text body standard" },
+      "lg":   { "value": "18px", "comment": "Text body mare, lead paragraph" },
+      "xl":   { "value": "20px", "comment": "Subtitlu mic" },
+      "2xl":  { "value": "24px", "comment": "Titlu sectiune" },
+      "3xl":  { "value": "30px", "comment": "Titlu pagina" },
+      "4xl":  { "value": "36px", "comment": "Titlu hero" },
+      "5xl":  { "value": "48px", "comment": "Display mare" },
+      "6xl":  { "value": "60px", "comment": "Display hero maxim" }
+    },
+    "font-weight": {
+      "regular":   { "value": "400" },
+      "medium":    { "value": "500" },
+      "semibold":  { "value": "600" },
+      "bold":      { "value": "700" },
+      "extrabold": { "value": "800" }
+    },
+    "line-height": {
+      "tight":   { "value": "1.25", "comment": "Titluri" },
+      "snug":    { "value": "1.375" },
+      "normal":  { "value": "1.5",  "comment": "Body text" },
+      "relaxed": { "value": "1.625" },
+      "loose":   { "value": "2.0" }
+    },
+    "letter-spacing": {
+      "tight":  { "value": "-0.025em" },
+      "normal": { "value": "0em" },
+      "wide":   { "value": "0.025em" },
+      "wider":  { "value": "0.05em",  "comment": "Label uppercase" },
+      "widest": { "value": "0.1em" }
+    }
+  },
+
+  "spacing": {
+    "0":   { "value": "0px" },
+    "1":   { "value": "4px" },
+    "2":   { "value": "8px" },
+    "3":   { "value": "12px" },
+    "4":   { "value": "16px" },
+    "5":   { "value": "20px" },
+    "6":   { "value": "24px" },
+    "8":   { "value": "32px" },
+    "10":  { "value": "40px" },
+    "12":  { "value": "48px" },
+    "16":  { "value": "64px" },
+    "20":  { "value": "80px" },
+    "24":  { "value": "96px" },
+    "32":  { "value": "128px" }
+  },
+
+  "border-radius": {
+    "none":   { "value": "0px" },
+    "sm":     { "value": "4px" },
+    "md":     { "value": "8px",  "comment": "Card, input standard" },
+    "lg":     { "value": "12px", "comment": "Card mare, modal" },
+    "xl":     { "value": "16px" },
+    "2xl":    { "value": "24px", "comment": "Card hero, featured" },
+    "full":   { "value": "9999px", "comment": "Badge, pill, avatar" }
+  },
+
+  "shadow": {
+    "sm":  { "value": "0 1px 2px 0 rgba(0,0,0,0.05)" },
+    "md":  { "value": "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)", "comment": "Card standard" },
+    "lg":  { "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)", "comment": "Card hover, dropdown" },
+    "xl":  { "value": "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)", "comment": "Modal, overlay" },
+    "brand": { "value": "0 4px 14px 0 rgba(79,70,229,0.25)", "comment": "Buton primar, element brand" }
+  },
+
+  "breakpoint": {
+    "sm":  { "value": "640px",  "comment": "Mobile landscape" },
+    "md":  { "value": "768px",  "comment": "Tablet" },
+    "lg":  { "value": "1024px", "comment": "Desktop mic" },
+    "xl":  { "value": "1280px", "comment": "Desktop standard" },
+    "2xl": { "value": "1536px", "comment": "Desktop mare" }
+  },
+
+  "transition": {
+    "fast":   { "value": "150ms ease-in-out" },
+    "normal": { "value": "250ms ease-in-out", "comment": "Standard pentru hover, focus" },
+    "slow":   { "value": "400ms ease-in-out", "comment": "Modal open/close, page transition" }
+  },
+
+  "z-index": {
+    "base":     { "value": "0" },
+    "dropdown": { "value": "100" },
+    "sticky":   { "value": "200" },
+    "overlay":  { "value": "300" },
+    "modal":    { "value": "400" },
+    "toast":    { "value": "500" }
+  }
+}

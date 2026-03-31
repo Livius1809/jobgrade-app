@@ -1,0 +1,8 @@
+# JobGrade — Block all crawlers until public launch
+# Remove this file or update when ready for SEO indexing
+
+User-agent: *
+Disallow: /
+
+# Sitemap (activate at public launch)
+# Sitemap: https://jobgrade.ro/sitemap.xml
