@@ -14,6 +14,7 @@
 
 import Anthropic from "@anthropic-ai/sdk"
 import { getDailyMoralReflection } from "./moral-core"
+import { buildAgentPrompt } from "./agent-prompt-builder"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -98,8 +99,9 @@ export async function reflectAgent(
       max_tokens: 1500,
       messages: [{
         role: "user",
-        content: `Ești ${agent.displayName} (${agent.description}) în platforma JobGrade.
-${agent.objectives?.length ? `Obiectivele tale: ${agent.objectives.join("; ")}` : ""}
+        content: `${buildAgentPrompt(agentRole, agent.description, {
+          additionalContext: agent.objectives?.length ? `Obiectivele tale: ${agent.objectives.join("; ")}` : "",
+        })}
 
 ${getDailyMoralReflection(agentRole, ["SOA", "CSSA", "CSA", "HR_COUNSELOR", "BCA"].includes(agentRole))}
 

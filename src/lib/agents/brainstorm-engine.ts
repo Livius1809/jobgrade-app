@@ -13,6 +13,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import type { PrismaClient } from "@/generated/prisma"
 import { generateWildCards, formatWildCardsForPrompt } from "./wild-cards"
 import { getCoreInjection } from "./moral-core"
+import { buildAgentPrompt } from "./agent-prompt-builder"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -160,15 +161,13 @@ ${prevIdeas.map((i: any) => `- "${i.title}" (${i.compositeScore}) — ${i.scorin
         max_tokens: 2048,
         messages: [{
           role: "user",
-          content: `Ești ${agent.displayName} (${agent.description}) în platforma JobGrade.
-
-SESIUNE DE BRAINSTORMING
+          content: `${buildAgentPrompt(role, agent.description, {
+            additionalContext: `SESIUNE DE BRAINSTORMING
 Topic: ${session.topic}
 Context: ${session.context || "Nu e specificat context adițional."}
 Participanți: ${session.participantRoles.join(", ")}
-${kbContext}${prevLearnings}${wildCardsPrompt}
-
-${getCoreInjection(["SOA", "CSSA", "CSA", "HR_COUNSELOR", "BCA"].includes(role) ? "client-facing" : "product")}
+${kbContext}${prevLearnings}${wildCardsPrompt}`,
+          })}
 
 Din perspectiva rolului tău și a experienței acumulate, generează 3-5 idei concrete și acționabile legate de topic.
 Fiecare idee trebuie să fie specifică, nu generală. Construiește pe ce ai învățat.

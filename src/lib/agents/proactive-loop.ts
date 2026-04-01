@@ -16,6 +16,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { type ManagerConfig } from "./manager-configs"
 import { runFullAnalysis, formatAnalysisForPrompt, type OrgAnalysisReport } from "./org-analysis"
+import { buildAgentPrompt } from "./agent-prompt-builder"
 import {
   createEscalation,
   resolveEscalation,
@@ -238,10 +239,16 @@ Generează propuneri DOAR pentru gap-uri sau redundanțe cu severity HIGH.`
     }
   }
 
-  const systemPrompt = buildEvaluationPrompt(config).replace(
+  // Build layered prompt: L1 (CÂMP) + L2 (Support) + L3 (Legal) + evaluation instructions
+  const evaluationInstructions = buildEvaluationPrompt(config).replace(
     "{{escalations}}",
     escalationReport
   ) + orgAnalysisSection
+
+  const systemPrompt = buildAgentPrompt(config.agentRole, config.description, {
+    additionalContext: evaluationInstructions,
+    includeSystemPrompt: true,
+  })
 
   const response = await client.messages.create({
     model: MODEL,

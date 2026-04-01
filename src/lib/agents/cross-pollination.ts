@@ -11,6 +11,7 @@
 
 import Anthropic from "@anthropic-ai/sdk"
 import type { PrismaClient } from "@/generated/prisma"
+import { buildAgentPrompt } from "./agent-prompt-builder"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -116,9 +117,10 @@ async function pollinatePair(
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 1500,
+      system: buildAgentPrompt(a.agentRole, a.description),
       messages: [{
         role: "user",
-        content: `Simulează o "cafea virtuală" între doi agenți AI din departamente diferite în platforma JobGrade.
+        content: `Simulează o "cafea virtuală" între tine și un coleg din alt departament.
 
 AGENT A: ${a.displayName} (${a.description})
 Top cunoștințe A:

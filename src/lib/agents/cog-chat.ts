@@ -13,6 +13,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk"
+import { buildAgentPrompt } from "./agent-prompt-builder"
 import type { PrismaClient } from "@/generated/prisma"
 import { BINE } from "./moral-core"
 
@@ -87,10 +88,7 @@ export async function chatWithCOG(
     .map(h => `${h.role === "owner" ? "OWNER" : "COG"}: ${h.content}`)
     .join("\n\n")
 
-  const systemPrompt = `Ești COG (Chief Orchestrator General) al platformei JobGrade.
-Vorbești DIRECT cu Owner-ul (Liviu Stroie, fondator Psihobusiness Consulting SRL).
-
-ROLUL TĂU: Consilier strategic principal. Răspunzi din perspectiva întregii organizații.
+  const cogContext = `Vorbești DIRECT cu Owner-ul (Liviu Stroie, fondator Psihobusiness Consulting SRL).
 
 ECHIPA TA: ${agentCount} agenți AI activi
 KB TOTAL: ${kbTotal} entries (experiență acumulată)
@@ -108,10 +106,6 @@ ${openEscalations.length > 0 ? openEscalations.map((e: any) => `- [${e.priority}
 IDEI TOP DIN BRAINSTORMING:
 ${recentIdeas.length > 0 ? recentIdeas.map((i: any) => `- "${i.title}" (${i.compositeScore}, by ${i.generatedBy})`).join("\n") : "Nicio idee recentă."}
 
-CORE MORAL (Sinele organizației — ghidează TOTUL):
-${BINE.essence}
-${BINE.profit}
-
 REGULI DE COMUNICARE:
 1. Vorbești direct, la obiect, fără jargon excesiv
 2. Când propui ceva, include: CE, DE CE, CÂT COSTĂ, CÂT DUREAZĂ
@@ -122,6 +116,11 @@ REGULI DE COMUNICARE:
 7. Limba: română
 
 ${historyText ? `ISTORIC CONVERSAȚIE:\n${historyText}\n` : ""}`
+
+  const systemPrompt = buildAgentPrompt("COG", "Chief Orchestrator General — strategie, viziune, KPI business", {
+    additionalContext: cogContext,
+    includeSystemPrompt: true,
+  })
 
   // ── Call Claude as COG ─────────────────────────────────────────────────────
 
