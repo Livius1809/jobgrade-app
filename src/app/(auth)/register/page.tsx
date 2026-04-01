@@ -85,7 +85,7 @@ export default function RegisterPage() {
         >
           Login
         </Link>
-        <span className="px-4 py-2 border-b-2 border-blue-600 text-blue-600 font-medium text-sm">
+        <span className="px-4 py-2 border-b-2 border-coral text-coral font-medium text-sm">
           Cont nou
         </span>
       </div>
@@ -105,7 +105,7 @@ export default function RegisterPage() {
             {...register("companyName")}
             type="text"
             placeholder="Exemplu SRL"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
           />
           {errors.companyName && (
             <p className="mt-1 text-xs text-red-600">{errors.companyName.message}</p>
@@ -121,7 +121,7 @@ export default function RegisterPage() {
               {...register("firstName")}
               type="text"
               placeholder="Ana"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
             />
             {errors.firstName && (
               <p className="mt-1 text-xs text-red-600">{errors.firstName.message}</p>
@@ -135,7 +135,7 @@ export default function RegisterPage() {
               {...register("lastName")}
               type="text"
               placeholder="Popescu"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
             />
             {errors.lastName && (
               <p className="mt-1 text-xs text-red-600">{errors.lastName.message}</p>
@@ -151,7 +151,7 @@ export default function RegisterPage() {
             {...register("email")}
             type="email"
             placeholder="ana@companie.ro"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
           />
           {errors.email && (
             <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
@@ -166,7 +166,7 @@ export default function RegisterPage() {
             {...register("password")}
             type="password"
             placeholder="Minim 8 caractere"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
           />
           {errors.password && (
             <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
@@ -181,7 +181,7 @@ export default function RegisterPage() {
             {...register("confirmPassword")}
             type="password"
             placeholder="••••••••"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
           />
           {errors.confirmPassword && (
             <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>
@@ -193,7 +193,7 @@ export default function RegisterPage() {
             <input {...register("terms")} type="checkbox" className="mt-0.5 rounded" />
             <span className="text-sm text-gray-600">
               Sunt de acord cu{" "}
-              <Link href="/termeni" className="text-blue-600 hover:underline">
+              <Link href="/termeni" className="text-coral hover:underline">
                 Termenii și Condițiile
               </Link>
             </span>
@@ -206,7 +206,7 @@ export default function RegisterPage() {
             <input {...register("gdpr")} type="checkbox" className="mt-0.5 rounded" />
             <span className="text-sm text-gray-600">
               Accept{" "}
-              <Link href="/gdpr" className="text-blue-600 hover:underline">
+              <Link href="/gdpr" className="text-coral hover:underline">
                 Politica GDPR
               </Link>
             </span>
@@ -219,7 +219,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-coral text-white py-2.5 rounded-lg font-medium hover:bg-coral-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Se procesează..." : "Creează cont"}
         </button>
@@ -227,7 +227,7 @@ export default function RegisterPage() {
 
       <p className="mt-4 text-center text-sm text-gray-500">
         Ai deja cont?{" "}
-        <Link href="/login" className="text-blue-600 hover:underline font-medium">
+        <Link href="/login" className="text-coral hover:underline font-medium">
           Loghează-te
         </Link>
       </p>

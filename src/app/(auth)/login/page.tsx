@@ -55,7 +55,7 @@ function LoginForm() {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
-        <span className="px-4 py-2 border-b-2 border-blue-600 text-blue-600 font-medium text-sm">
+        <span className="px-4 py-2 border-b-2 border-coral text-coral font-medium text-sm">
           Login
         </span>
         <Link
@@ -81,7 +81,7 @@ function LoginForm() {
             {...register("email")}
             type="email"
             placeholder="ana@companie.ro"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent text-sm"
           />
           {errors.email && (
             <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
@@ -96,7 +96,7 @@ function LoginForm() {
             {...register("password")}
             type="password"
             placeholder="••••••••"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent text-sm"
           />
           {errors.password && (
             <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
@@ -110,7 +110,7 @@ function LoginForm() {
           </label>
           <Link
             href="/forgot-password"
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-coral hover:underline"
           >
             Ai uitat parola?
           </Link>
@@ -119,7 +119,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-coral text-white py-2.5 rounded-lg font-medium hover:bg-coral-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Se procesează..." : "Intră în cont"}
         </button>
