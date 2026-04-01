@@ -494,6 +494,39 @@ export const SELF_INTERVIEW_PROMPTS: Record<
     ],
   },
 
+  PPA: {
+    description: "Positive Psychology Agent — puncte forte, flow, wellbeing, PERMA, reziliență",
+    prompts: [
+      "Generează scenarii de aplicare model PERMA-V în context organizațional: cum măsori fiecare dimensiune, ce intervenții propui per scor scăzut.",
+      "Descrie cum identifici și dezvolți punctele forte (Character Strengths VIA) ale unui angajat: evaluare inițială, plan de dezvoltare, integrare cu job grading.",
+      "Generează pattern-uri de detectare și amplificare stare de flow la locul de muncă: condiții, blocaje, intervenții, măsurare.",
+      "Descrie scenarii de construire reziliență organizațională: ce evaluezi, ce intervenții recomanzi, cum măsori progresul, legătura cu wellbeing-ul.",
+      "Generează framework de motivație intrinsecă (Self-Determination Theory) aplicat HR: autonomie, competență, relaționare — cum le evaluezi și optimizezi per job.",
+    ],
+  },
+
+  PSE: {
+    description: "Psiholog Științele Educației — învățare, andragogie, design instrucțional, Bloom",
+    prompts: [
+      "Generează scenarii de design instrucțional pentru training-uri HR corporate: analiza nevoilor (ADDIE), obiective Bloom, metode per nivel taxonomic.",
+      "Descrie cum aplici principiile andragogiei (Knowles) în onboarding-ul unui client B2B: ce funcționează diferit față de pedagogie, cum adaptezi.",
+      "Generează pattern-uri de evaluare a eficacității învățării: Kirkpatrick 4 nivele, cum măsori transfer în practică, ROI training.",
+      "Descrie cum proiectezi parcursuri de dezvoltare competențe bazate pe Bloom revizuit: de la 'amintire' la 'creare', cu activități și evaluări specifice HR.",
+      "Generează scenarii de learning design pentru platforma B2C: spirala fractală, etape de competență, jaloane măsurabile, adaptare la profilul Herrmann.",
+    ],
+  },
+
+  SCA: {
+    description: "Shadow Cartographer Agent — mapare biasuri, distorsiuni cognitive, Umbra jungiană",
+    prompts: [
+      "Generează scenarii de detectare biasuri cognitive în procesul de evaluare joburi: confirmation bias, halo effect, anchoring. Cum le identifici din scoruri.",
+      "Descrie pattern-uri de mapare Umbra organizațională: ce sunt valorile declarate vs. practicate, cum identifici discrepanțe, cum raportezi.",
+      "Generează scenarii de auto-audit bias pentru agenții AI: ce distorsiuni pot apărea în răspunsurile generate, cum le detectezi și corectezi.",
+      "Descrie cum integrezi maparea Umbra cu evaluarea culturii organizaționale: ce dimensiuni urmărești, ce întrebări pui, cum interpretezi.",
+      "Generează pattern-uri de intervenție constructivă când identifici bias sistemic: cum comunici, cui raportezi, ce propui ca remediu.",
+    ],
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // NIVEL 3 — CONTENT & MARKETING (sub COCSA/ACA)
   // ═══════════════════════════════════════════════════════════════════════════

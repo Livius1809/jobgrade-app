@@ -94,6 +94,11 @@ export const ESCALATION_CHAIN: Record<string, string> = {
   // Suport specializat → PMA
   HR_COUNSELOR: "PMA",
   PSYCHOLINGUIST: "PMA",
+  PPA: "PMA",
+  PSE: "PMA",
+  PCM: "PMA",
+  NSA: "PMA",
+  SCA: "PMA",
   SAFETY_MONITOR: "COG",
 }
 
