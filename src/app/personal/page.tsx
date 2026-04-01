@@ -96,10 +96,8 @@ export default function PersonalPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
               </svg>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo/15 to-indigo/5 flex items-center justify-center mx-auto mb-5">
-              <svg className="w-7 h-7 text-indigo/50" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-              </svg>
+            <div className="w-20 h-20 mx-auto mb-5">
+              <Image src="/b2c-profile.svg" alt="Profil" width={80} height={80} className="opacity-60" />
             </div>
             <h3 className="text-lg font-semibold text-foreground/60 mb-2">
               Profilul tău profesional
@@ -116,10 +114,8 @@ export default function PersonalPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
               </svg>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo/15 to-indigo/5 flex items-center justify-center mx-auto mb-5">
-              <svg className="w-7 h-7 text-indigo/50" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
-              </svg>
+            <div className="w-20 h-20 mx-auto mb-5">
+              <Image src="/b2c-career.svg" alt="Traiectorie" width={80} height={80} className="opacity-60" />
             </div>
             <h3 className="text-lg font-semibold text-foreground/60 mb-2">
               Traiectoria de carieră
@@ -136,10 +132,8 @@ export default function PersonalPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
               </svg>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo/15 to-indigo/5 flex items-center justify-center mx-auto mb-5">
-              <svg className="w-7 h-7 text-indigo/50" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-              </svg>
+            <div className="w-20 h-20 mx-auto mb-5">
+              <Image src="/b2c-growth.svg" alt="Dezvoltare" width={80} height={80} className="opacity-60" />
             </div>
             <h3 className="text-lg font-semibold text-foreground/60 mb-2">
               Dezvoltare personală
