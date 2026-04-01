@@ -40,89 +40,20 @@ export default function HomePage() {
       >
         <div className="flex flex-col items-center text-center py-16" style={{ maxWidth: "56rem", margin: "0 auto" }}>
 
-          {/* Ilustrația Constelație — deasupra textului, centrată */}
+          {/* Ilustrația Hero — Constelația rolurilor (Firefly) */}
           <div
             className="mb-10 w-full flex justify-center"
             style={{ animation: "fadeInUp 0.6s ease-out both" }}
           >
-            <svg
-              viewBox="0 0 600 500"
-              className="w-full max-w-[360px] h-auto"
-              aria-hidden="true"
-            >
-              <defs>
-                <linearGradient id="coralToIndigo" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--coral)" />
-                  <stop offset="100%" stopColor="var(--indigo)" />
-                </linearGradient>
-                <linearGradient id="indigoToCoral" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--indigo)" />
-                  <stop offset="100%" stopColor="var(--coral)" />
-                </linearGradient>
-                <linearGradient id="coralFade" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--coral)" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="var(--coral)" stopOpacity="0.15" />
-                </linearGradient>
-                <linearGradient id="indigoFade" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--indigo)" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="var(--indigo)" stopOpacity="0.15" />
-                </linearGradient>
-              </defs>
-
-              {/* Connection lines (curved) */}
-              <path d="M 180 140 Q 250 100 320 160" stroke="url(#coralToIndigo)" strokeWidth="1.5" fill="none" opacity="0.3" />
-              <path d="M 320 160 Q 400 200 420 300" stroke="url(#coralToIndigo)" strokeWidth="1.5" fill="none" opacity="0.25" />
-              <path d="M 180 140 Q 150 220 200 310" stroke="url(#indigoToCoral)" strokeWidth="1.5" fill="none" opacity="0.3" />
-              <path d="M 200 310 Q 280 350 380 320" stroke="url(#coralToIndigo)" strokeWidth="1.2" fill="none" opacity="0.2" />
-              <path d="M 320 160 Q 280 240 200 310" stroke="url(#indigoToCoral)" strokeWidth="1" fill="none" opacity="0.2" />
-              <path d="M 420 300 Q 440 370 380 420" stroke="url(#coralToIndigo)" strokeWidth="1.2" fill="none" opacity="0.2" />
-              <path d="M 120 260 Q 160 290 200 310" stroke="url(#indigoToCoral)" strokeWidth="1" fill="none" opacity="0.2" />
-              <path d="M 480 180 Q 450 230 420 300" stroke="url(#coralToIndigo)" strokeWidth="1" fill="none" opacity="0.15" />
-              <path d="M 260 400 Q 320 430 380 420" stroke="url(#indigoToCoral)" strokeWidth="1" fill="none" opacity="0.2" />
-              <path d="M 200 310 Q 230 370 260 400" stroke="url(#coralToIndigo)" strokeWidth="1" fill="none" opacity="0.2" />
-
-              {/* Constellation nodes — varying sizes, breathing animation */}
-              {/* Node 1 — large, coral */}
-              <circle cx="180" cy="140" r="22" fill="url(#coralFade)" className="node-breathe" style={{ "--duration": "5s", "--delay": "0s" } as React.CSSProperties} />
-              <circle cx="180" cy="140" r="14" fill="var(--coral)" opacity="0.4" />
-
-              {/* Node 2 — large, indigo */}
-              <circle cx="320" cy="160" r="24" fill="url(#indigoFade)" className="node-breathe" style={{ "--duration": "6s", "--delay": "0.8s" } as React.CSSProperties} />
-              <circle cx="320" cy="160" r="16" fill="var(--indigo)" opacity="0.35" />
-
-              {/* Node 3 — medium, coral-indigo */}
-              <circle cx="200" cy="310" r="20" fill="url(#coralToIndigo)" opacity="0.3" className="node-breathe" style={{ "--duration": "5.5s", "--delay": "1.2s" } as React.CSSProperties} />
-              <circle cx="200" cy="310" r="12" fill="var(--coral)" opacity="0.3" />
-
-              {/* Node 4 — large, indigo */}
-              <circle cx="420" cy="300" r="18" fill="url(#indigoFade)" className="node-breathe" style={{ "--duration": "4.5s", "--delay": "0.4s" } as React.CSSProperties} />
-              <circle cx="420" cy="300" r="10" fill="var(--indigo)" opacity="0.4" />
-
-              {/* Node 5 — small */}
-              <circle cx="120" cy="260" r="10" fill="var(--coral)" opacity="0.25" className="node-breathe" style={{ "--duration": "5s", "--delay": "2s" } as React.CSSProperties} />
-
-              {/* Node 6 — medium */}
-              <circle cx="480" cy="180" r="12" fill="var(--indigo)" opacity="0.2" className="node-breathe" style={{ "--duration": "6.5s", "--delay": "1.5s" } as React.CSSProperties} />
-
-              {/* Node 7 — small */}
-              <circle cx="380" cy="420" r="14" fill="url(#coralFade)" className="node-breathe" style={{ "--duration": "5.2s", "--delay": "0.6s" } as React.CSSProperties} />
-              <circle cx="380" cy="420" r="8" fill="var(--coral)" opacity="0.3" />
-
-              {/* Node 8 — small accent */}
-              <circle cx="260" cy="400" r="9" fill="var(--indigo)" opacity="0.2" className="node-breathe" style={{ "--duration": "4.8s", "--delay": "1.8s" } as React.CSSProperties} />
-
-              {/* Node 9 — tiny */}
-              <circle cx="380" cy="320" r="8" fill="var(--coral)" opacity="0.15" className="node-breathe" style={{ "--duration": "5.8s", "--delay": "2.2s" } as React.CSSProperties} />
-
-              {/* Node 10 — medium */}
-              <circle cx="280" cy="240" r="16" fill="url(#indigoToCoral)" opacity="0.15" className="node-breathe" style={{ "--duration": "5.4s", "--delay": "1s" } as React.CSSProperties} />
-
-              {/* Node 11 — tiny accent */}
-              <circle cx="520" cy="250" r="6" fill="var(--coral)" opacity="0.15" className="node-breathe" style={{ "--duration": "4s", "--delay": "2.5s" } as React.CSSProperties} />
-
-              {/* Node 12 — tiny */}
-              <circle cx="150" cy="380" r="7" fill="var(--indigo)" opacity="0.12" className="node-breathe" style={{ "--duration": "5.6s", "--delay": "0.3s" } as React.CSSProperties} />
-            </svg>
+            <Image
+              src="/hero-constellation.svg"
+              alt="Constelația rolurilor — ilustrație JobGrade"
+              width={420}
+              height={420}
+              className="w-full h-auto"
+              style={{ maxWidth: "420px" }}
+              priority
+            />
           </div>
 
           {/* Text centrat sub ilustrație */}
