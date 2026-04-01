@@ -308,6 +308,7 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
   const l3 = buildL3Section(role, context)
 
   // Cultural calibration (L2 extension — all agents that interact with RO market)
+  // Static section for agents without DB access; for agents with DB, use buildAgentPromptWithKB
   const culturalSection = ["internal"].includes(context) && !["COG", "COA", "COCSA", "PMA"].includes(role)
     ? "" // Pure internal technical agents skip cultural section
     : getCulturalCalibrationSection()
@@ -340,7 +341,7 @@ export async function buildAgentPromptWithKB(
   prisma: any,
   options: AgentPromptOptions = {}
 ): Promise<string> {
-  // Fetch top KB entries for context
+  // Fetch top KB entries for context (agent's own knowledge)
   const kbEntries = await prisma.kBEntry.findMany({
     where: { agentRole: role, status: "PERMANENT" },
     orderBy: { confidence: "desc" },
@@ -352,7 +353,23 @@ export async function buildAgentPromptWithKB(
     ? `CUNOAȘTEREA TA (din KB — folosește-o):\n${kbEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
     : ""
 
-  const combined = [options.additionalContext, kbSection].filter(Boolean).join("\n\n")
+  // Fetch cultural calibration entries from KB (Daniel David, per agent)
+  const culturalEntries = await prisma.kBEntry.findMany({
+    where: {
+      agentRole: role,
+      status: "PERMANENT",
+      tags: { has: "daniel-david" },
+    },
+    orderBy: { confidence: "desc" },
+    take: 5,
+    select: { content: true },
+  }).catch(() => [])
+
+  const culturalKB = culturalEntries.length > 0
+    ? `\nCALIBRARE CULTURALĂ RO (din KB — cunoaștere proprie, aplică în toate interacțiunile):\n${culturalEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
+    : ""
+
+  const combined = [options.additionalContext, kbSection, culturalKB].filter(Boolean).join("\n\n")
 
   return buildAgentPrompt(role, description, {
     ...options,
