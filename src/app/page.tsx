@@ -9,7 +9,7 @@ export default function HomePage() {
            ZONA 1 — HEADER NAVIGARE (sticky, glassmorphism on scroll)
          ═══════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 header-glass">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo + Wordmark */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <Image
@@ -194,7 +194,7 @@ export default function HomePage() {
            ZONA 4 — CELE DOUĂ DRUMURI (B2B + B2C)
          ═══════════════════════════════════════════════════════════ */}
       <section id="companii" className="py-20 lg:py-28 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
 
           {/* ── Card B2B ─────────────────────────────────────────── */}
           <div className="card-hover bg-white rounded-2xl border border-indigo/[0.08] p-8 flex flex-col">
@@ -329,7 +329,7 @@ export default function HomePage() {
            ZONA 6 — FOOTER
          ═══════════════════════════════════════════════════════════ */}
       <footer id="contact" className="bg-indigo-dark text-white">
-        <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="max-w-4xl mx-auto px-6 py-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
 
             {/* Col 1 — Logo + Tagline */}
