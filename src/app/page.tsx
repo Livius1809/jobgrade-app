@@ -26,7 +26,7 @@ export default function HomePage() {
           <nav className="hidden md:flex items-center gap-8">
             <a href="#despre" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Despre</a>
             <a href="#companii" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru companii</a>
-            <a href="#pentru-tine" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru tine</a>
+            <Link href="/personal" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru tine</Link>
           </nav>
         </div>
       </header>
