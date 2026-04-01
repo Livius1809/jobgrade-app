@@ -28,7 +28,7 @@ export default async function PortalLayout({
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm font-medium text-coral">
+            <Link href="/portal" className="text-sm font-medium text-coral">
               Portal
             </Link>
             <Link href="/" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">
