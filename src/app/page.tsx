@@ -27,15 +27,7 @@ export default function HomePage() {
             <a href="#despre" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Despre</a>
             <a href="#companii" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru companii</a>
             <a href="#pentru-tine" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru tine</a>
-            <a href="#contact" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Contact</a>
           </nav>
-
-          <a
-            href="mailto:contact@jobgrade.ro"
-            className="hidden sm:inline-flex text-sm text-text-secondary hover:text-coral transition-colors duration-200"
-          >
-            contact@jobgrade.ro
-          </a>
         </div>
       </header>
 
