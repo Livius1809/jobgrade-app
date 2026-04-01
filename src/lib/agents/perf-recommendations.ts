@@ -46,18 +46,18 @@ export async function generateRecommendations(
     }
   }
 
-  const metricsMap = new Map(latestMetrics.map((m: any) => [m.agentRole, m]))
+  const metricsMap = new Map<string, any>(latestMetrics.map((m: any) => [m.agentRole, m]))
 
   // Get agent definitions for context
   const agents = await p.agentDefinition.findMany({ where: { isActive: true } })
-  const agentMap = new Map(agents.map((a: any) => [a.agentRole, a]))
+  const agentMap = new Map<string, any>(agents.map((a: any) => [a.agentRole, a]))
 
   // Get relationships for manager analysis
   const relationships = await p.agentRelationship.findMany({
     where: { isActive: true, relationType: "REPORTS_TO" },
   })
   const parentToChildren = new Map<string, string[]>()
-  for (const r of relationships) {
+  for (const r of relationships as any[]) {
     const children = parentToChildren.get(r.parentRole) || []
     children.push(r.childRole)
     parentToChildren.set(r.parentRole, children)

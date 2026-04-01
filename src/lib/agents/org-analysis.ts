@@ -270,7 +270,7 @@ export async function analyzeCoverage(prisma: PrismaClient): Promise<CoverageRep
     where: { status: "PERMANENT" },
     _count: true,
   })
-  const kbMap = new Map(kbCounts.map((k: any) => [k.agentRole, k._count]))
+  const kbMap = new Map<string, number>(kbCounts.map((k: any) => [k.agentRole, k._count]))
 
   const agentsWithoutKB = agentRoles.filter((r: string) => !kbMap.has(r) || kbMap.get(r) === 0)
 
@@ -298,7 +298,7 @@ export async function analyzeCoverage(prisma: PrismaClient): Promise<CoverageRep
   const relationships = await (prisma as any).agentRelationship.findMany({
     where: { isActive: true, relationType: "REPORTS_TO" },
   })
-  const childToParent = new Map(relationships.map((r: any) => [r.childRole, r.parentRole]))
+  const childToParent = new Map<string, string>(relationships.map((r: any) => [r.childRole, r.parentRole]))
 
   let maxDepth = 0
   for (const role of agentRoles) {

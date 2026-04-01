@@ -61,7 +61,7 @@ async function findCommonSuperior(
     select: { childRole: true, parentRole: true },
   })
 
-  const parentMap = new Map(rels.map((r: any) => [r.childRole, r.parentRole]))
+  const parentMap = new Map<string, string>(rels.map((r: any) => [r.childRole, r.parentRole]))
 
   // Walk up from A
   const ancestorsA = new Set<string>()

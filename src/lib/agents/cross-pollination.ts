@@ -46,7 +46,7 @@ async function selectPairs(
     select: { childRole: true, parentRole: true },
   })
 
-  const parentMap = new Map(relationships.map((r: any) => [r.childRole, r.parentRole]))
+  const parentMap = new Map<string, string>(relationships.map((r: any) => [r.childRole, r.parentRole]))
 
   // Group by parent (department)
   const departments = new Map<string, any[]>()

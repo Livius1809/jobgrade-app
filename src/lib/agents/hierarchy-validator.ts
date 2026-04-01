@@ -38,7 +38,7 @@ export async function validateHierarchy(prisma: PrismaClient): Promise<Hierarchy
     where: { isActive: true },
     select: { agentRole: true },
   })
-  const agentRoles = new Set(agents.map((a: any) => a.agentRole))
+  const agentRoles = new Set<string>(agents.map((a: any) => a.agentRole))
 
   const relationships = await (prisma as any).agentRelationship.findMany({
     where: { isActive: true, relationType: "REPORTS_TO" },

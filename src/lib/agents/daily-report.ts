@@ -69,6 +69,7 @@ export interface DailyReport {
     created: number
     cogReviewed: number
     ownerPending: number
+    deferred: number
     approved: number
     executed: number
     rejected: number
