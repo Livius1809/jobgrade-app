@@ -47,7 +47,7 @@ export default function HomePage() {
         className="relative flex items-center justify-center min-h-[90vh] px-6 overflow-hidden"
         style={{ background: "linear-gradient(180deg, var(--hero-bg-top) 0%, var(--hero-bg-bottom) 100%)" }}
       >
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center py-16">
+        <div className="w-[90%] max-w-4xl mx-auto flex flex-col items-center text-center py-16">
 
           {/* Ilustrația Constelație — deasupra textului, centrată */}
           <div
@@ -194,7 +194,7 @@ export default function HomePage() {
            ZONA 4 — CELE DOUĂ DRUMURI (B2B + B2C)
          ═══════════════════════════════════════════════════════════ */}
       <section id="companii" className="py-20 lg:py-28 px-6">
-        <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="w-[90%] max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
 
           {/* ── Card B2B ─────────────────────────────────────────── */}
           <div className="card-hover bg-white rounded-2xl border border-indigo/[0.08] p-8 flex flex-col">
@@ -288,7 +288,7 @@ export default function HomePage() {
         className="py-20 lg:py-28 px-6"
         style={{ background: "var(--warm-bg)" }}
       >
-        <div className="max-w-[720px] mx-auto">
+        <div className="w-[90%] max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-indigo-dark mb-16 text-center scroll-fade-in">
             Întrebări pe care le auzim des
           </h2>
