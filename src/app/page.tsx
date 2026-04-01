@@ -120,22 +120,16 @@ export default function HomePage() {
 
           {/* ── Card B2B ─────────────────────────────────────────── */}
           <div className="card-hover bg-white rounded-2xl border border-indigo/[0.08] p-8 flex flex-col">
-            {/* Ilustrație — Geometric hierarchy blocks */}
+            {/* Ilustrație B2B — Firefly generated */}
             <div className="w-full h-[200px] flex items-center justify-center mb-6 rounded-xl bg-gradient-to-br from-indigo/[0.03] to-indigo/[0.07]">
-              <svg viewBox="0 0 400 180" className="w-full max-w-[320px] h-auto" aria-hidden="true">
-                {/* Ascending blocks — hierarchy/structure */}
-                <rect x="40" y="130" width="70" height="36" rx="6" fill="var(--indigo)" opacity="0.15" />
-                <rect x="130" y="100" width="70" height="66" rx="6" fill="var(--indigo)" opacity="0.25" />
-                <rect x="220" y="70" width="70" height="96" rx="6" fill="var(--indigo)" opacity="0.4" />
-                <rect x="310" y="36" width="70" height="130" rx="6" fill="var(--indigo)" opacity="0.55" />
-                {/* Connecting line across tops */}
-                <path d="M 75 130 Q 165 80 255 70 Q 335 40 345 36" stroke="var(--coral)" strokeWidth="2" fill="none" opacity="0.5" strokeDasharray="4 4" />
-                {/* Accent dots on top of blocks */}
-                <circle cx="75" cy="130" r="4" fill="var(--coral)" opacity="0.7" />
-                <circle cx="165" cy="100" r="4" fill="var(--coral)" opacity="0.7" />
-                <circle cx="255" cy="70" r="5" fill="var(--coral)" opacity="0.8" />
-                <circle cx="345" cy="36" r="5" fill="var(--coral)" opacity="0.9" />
-              </svg>
+              <Image
+                src="/card-b2b-structure.svg"
+                alt="Structura care crește"
+                width={320}
+                height={180}
+                className="w-full h-auto"
+                style={{ maxWidth: "320px" }}
+              />
             </div>
 
             {/* Text */}
