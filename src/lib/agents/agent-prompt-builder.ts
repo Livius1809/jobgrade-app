@@ -332,8 +332,99 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
   return sections.join("\n\n")
 }
 
+// ── L2 → L4 Knowledge Flow: which L2 consultants serve which L4 agents ──
+
+const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }> = {
+  // Client-facing — beneficiază de comunicare, echitate, bias, evaluare
+  HR_COUNSELOR: {
+    consultants: ["PSYCHOLINGUIST", "PPMO", "SCA", "PPA", "SOC", "STA", "PSE"],
+    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david"],
+  },
+  SOA: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu"],
+  },
+  CSSA: {
+    consultants: ["PSYCHOLINGUIST", "PPA", "SOC"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu"],
+  },
+  CSA: {
+    consultants: ["PSYCHOLINGUIST", "PPA"],
+    tags: ["daniel-david", "slama-cazacu"],
+  },
+  BCA: {
+    consultants: ["STA", "SCA", "PPMO"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+
+  // Marketing — beneficiază de comunicare, psihologie, cultural
+  CMA: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
+    tags: ["daniel-david", "slama-cazacu"],
+  },
+  CWA: {
+    consultants: ["PSYCHOLINGUIST", "SOC"],
+    tags: ["daniel-david", "slama-cazacu"],
+  },
+  MKA: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "SCA"],
+    tags: ["daniel-david", "slama-cazacu"],
+  },
+  ACA: {
+    consultants: ["STA", "SCA", "SOC"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+
+  // Strategic — beneficiază de tot (selectiv)
+  COG: {
+    consultants: ["PPMO", "SCA", "STA"],
+    tags: ["armstrong-taylor", "pitariu", "daniel-david"],
+  },
+  COA: {
+    consultants: ["STA", "SCA"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+  COCSA: {
+    consultants: ["PSYCHOLINGUIST", "PPMO", "SOC"],
+    tags: ["armstrong-taylor", "daniel-david"],
+  },
+
+  // Product — beneficiază de evaluare, metodologie, competențe
+  PMA: {
+    consultants: ["STA", "PPMO", "PSE", "SCA"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+  DOA: {
+    consultants: ["STA", "PPMO"],
+    tags: ["pitariu", "armstrong-taylor"],
+  },
+  DOAS: {
+    consultants: ["STA", "PPMO", "SCA"],
+    tags: ["pitariu", "armstrong-taylor"],
+  },
+
+  // Engineering — beneficiază selectiv
+  EMA: {
+    consultants: ["PPMO", "PSE"],
+    tags: ["armstrong-taylor"],
+  },
+
+  // Legal/Compliance
+  CJA: {
+    consultants: ["SCA", "STA"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+  DPA: {
+    consultants: ["SCA"],
+    tags: ["armstrong-taylor"],
+  },
+}
+
 /**
- * Shorthand: build prompt with KB context injected.
+ * Build prompt with KB context injected — includes L2 knowledge flow.
+ *
+ * Every L4 agent automatically receives relevant knowledge from L2
+ * consultants who serve them, based on domain mapping.
  */
 export async function buildAgentPromptWithKB(
   role: string,
@@ -341,7 +432,7 @@ export async function buildAgentPromptWithKB(
   prisma: any,
   options: AgentPromptOptions = {}
 ): Promise<string> {
-  // Fetch top KB entries for context (agent's own knowledge)
+  // 1. Agent's OWN KB entries
   const kbEntries = await prisma.kBEntry.findMany({
     where: { agentRole: role, status: "PERMANENT" },
     orderBy: { confidence: "desc" },
@@ -353,7 +444,7 @@ export async function buildAgentPromptWithKB(
     ? `CUNOAȘTEREA TA (din KB — folosește-o):\n${kbEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
     : ""
 
-  // Fetch cultural calibration entries from KB (Daniel David, per agent)
+  // 2. Cultural calibration from agent's own KB (if L2 consultant)
   const culturalEntries = await prisma.kBEntry.findMany({
     where: {
       agentRole: role,
@@ -366,10 +457,31 @@ export async function buildAgentPromptWithKB(
   }).catch(() => [])
 
   const culturalKB = culturalEntries.length > 0
-    ? `\nCALIBRARE CULTURALĂ RO (din KB — cunoaștere proprie, aplică în toate interacțiunile):\n${culturalEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
+    ? `\nCALIBRARE CULTURALĂ RO (din KB propriu):\n${culturalEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
     : ""
 
-  const combined = [options.additionalContext, kbSection, culturalKB].filter(Boolean).join("\n\n")
+  // 3. L2 → L4 Knowledge Flow: pull relevant knowledge FROM L2 consultants
+  let l2Knowledge = ""
+  const l2Map = L2_KNOWLEDGE_MAP[role]
+  if (l2Map && !SUPPORT_RESOURCE_AGENTS.includes(role)) {
+    // Agent is L4 — pull from L2 consultants
+    const l2Entries = await prisma.kBEntry.findMany({
+      where: {
+        agentRole: { in: l2Map.consultants },
+        status: "PERMANENT",
+        tags: { hasSome: l2Map.tags },
+      },
+      orderBy: { confidence: "desc" },
+      take: 8,
+      select: { content: true, agentRole: true },
+    }).catch(() => [])
+
+    if (l2Entries.length > 0) {
+      l2Knowledge = `\nCUNOAȘTERE DIN L2 — RESURSE SUPORT (aplicabilă domeniului tău):\n${l2Entries.map((e: any, i: number) => `${i + 1}. [${e.agentRole}] ${e.content}`).join("\n")}`
+    }
+  }
+
+  const combined = [options.additionalContext, kbSection, culturalKB, l2Knowledge].filter(Boolean).join("\n\n")
 
   return buildAgentPrompt(role, description, {
     ...options,
