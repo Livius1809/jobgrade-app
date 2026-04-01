@@ -30,13 +30,12 @@ export default function HomePage() {
             <a href="#contact" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Contact</a>
           </nav>
 
-          {/* Buton Intră în cont */}
-          <Link
-            href="/login"
-            className="hidden sm:inline-flex text-sm font-medium text-indigo border border-indigo/20 rounded-lg px-5 py-2 hover:bg-indigo/5 hover:border-indigo/40 transition-all duration-200"
+          <a
+            href="mailto:contact@jobgrade.ro"
+            className="hidden sm:inline-flex text-sm text-text-secondary hover:text-coral transition-colors duration-200"
           >
-            Intră în cont
-          </Link>
+            contact@jobgrade.ro
+          </a>
         </div>
       </header>
 
