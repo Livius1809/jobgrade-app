@@ -9,7 +9,7 @@ export default function HomePage() {
            ZONA 1 — HEADER NAVIGARE (sticky, glassmorphism on scroll)
          ═══════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 header-glass">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="px-6 h-16 flex items-center justify-between" style={{ maxWidth: "56rem", margin: "0 auto" }}>
           {/* Logo + Wordmark */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <Image
@@ -149,7 +149,7 @@ export default function HomePage() {
             </h1>
 
             {/* Paragraf filozofic */}
-            <p className="text-lg md:text-xl font-normal leading-relaxed text-text-warm max-w-xl mx-auto mb-8">
+            <p className="text-lg md:text-xl font-normal leading-relaxed text-text-warm mb-8" style={{ maxWidth: "36rem", margin: "0 auto" }}>
               Un instrument de evaluare a posturilor, construit pentru realitățile de aici. Ajută companiile să construiască grile salariale coerente — nu din obligație, ci din convingerea că echitatea ține oamenii aproape.
             </p>
 
@@ -185,7 +185,7 @@ export default function HomePage() {
         className="py-20 px-6"
         style={{ background: "var(--warm-bg)" }}
       >
-        <p className="text-2xl font-normal text-indigo-dark text-center max-w-3xl mx-auto leading-relaxed scroll-fade-in">
+        <p className="text-2xl font-normal text-indigo-dark text-center leading-relaxed scroll-fade-in" style={{ maxWidth: "48rem", margin: "0 auto" }}>
           Cele mai multe companii plătesc pe simț. Noi propunem o alternativă.
         </p>
       </section>
@@ -329,7 +329,7 @@ export default function HomePage() {
            ZONA 6 — FOOTER
          ═══════════════════════════════════════════════════════════ */}
       <footer id="contact" className="bg-indigo-dark text-white">
-        <div className="max-w-4xl mx-auto px-6 py-16">
+        <div className="px-6 py-16" style={{ maxWidth: "56rem", margin: "0 auto" }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
 
             {/* Col 1 — Logo + Tagline */}
