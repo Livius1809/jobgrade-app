@@ -338,37 +338,37 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Client-facing — beneficiază de comunicare, echitate, bias, evaluare
   HR_COUNSELOR: {
     consultants: ["PSYCHOLINGUIST", "PPMO", "SCA", "PPA", "SOC", "STA", "PSE"],
-    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david"],
+    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica"],
   },
   SOA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil"],
   },
   CSSA: {
     consultants: ["PSYCHOLINGUIST", "PPA", "SOC"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica"],
   },
   CSA: {
     consultants: ["PSYCHOLINGUIST", "PPA"],
-    tags: ["daniel-david", "slama-cazacu"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
   },
   BCA: {
     consultants: ["STA", "SCA", "PPMO"],
     tags: ["armstrong-taylor", "pitariu"],
   },
 
-  // Marketing — beneficiază de comunicare, psihologie, cultural
+  // Marketing — beneficiază de comunicare, psihologie, cultural, eleganță
   CMA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
-    tags: ["daniel-david", "slama-cazacu"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
   },
   CWA: {
     consultants: ["PSYCHOLINGUIST", "SOC"],
-    tags: ["daniel-david", "slama-cazacu"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
   },
   MKA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "SCA"],
-    tags: ["daniel-david", "slama-cazacu"],
+    tags: ["daniel-david", "slama-cazacu", "stil"],
   },
   ACA: {
     consultants: ["STA", "SCA", "SOC"],
