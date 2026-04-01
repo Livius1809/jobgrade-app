@@ -44,67 +44,19 @@ export default function HomePage() {
            ZONA 2 — HERO / PRIMA RESPIRAȚIE (90vh)
          ═══════════════════════════════════════════════════════════ */}
       <section
-        className="relative flex items-center min-h-[90vh] px-6 overflow-hidden"
+        className="relative flex items-center justify-center min-h-[90vh] px-6 overflow-hidden"
         style={{ background: "linear-gradient(180deg, var(--hero-bg-top) 0%, var(--hero-bg-bottom) 100%)" }}
       >
-        <div className="max-w-7xl mx-auto w-full flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-8 py-16 lg:py-0">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center py-16">
 
-          {/* LEFT — Text (55%) */}
+          {/* Ilustrația Constelație — deasupra textului, centrată */}
           <div
-            className="lg:w-[55%] flex flex-col items-start"
+            className="mb-10 w-full flex justify-center"
             style={{ animation: "fadeInUp 0.6s ease-out both" }}
-          >
-            {/* Pre-heading */}
-            <p className="text-base font-normal text-coral mb-4 tracking-wide">
-              Evaluăm posturi. Construim echitate.
-            </p>
-
-            {/* Heading principal */}
-            <h1
-              className="text-4xl md:text-5xl lg:text-[56px] font-semibold leading-[1.1] tracking-[-0.02em] text-indigo-dark mb-6"
-            >
-              Fiecare post merită o evaluare corectă.
-            </h1>
-
-            {/* Paragraf filozofic */}
-            <p className="text-lg md:text-xl font-normal leading-relaxed text-text-warm max-w-[520px] mb-8">
-              JobGrade este un instrument de evaluare a posturilor, construit pentru realitățile de aici. Ajută companiile să construiască grile salariale coerente — nu din obligație, ci din convingerea că echitatea ține oamenii aproape.
-            </p>
-
-            {/* Butoane */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-3">
-              {/* Primar — Începe evaluarea */}
-              <Link
-                href="/register"
-                className="btn-coral inline-flex items-center justify-center bg-coral text-white font-semibold text-base px-8 py-4 rounded-[10px] focus:outline-2 focus:outline-indigo focus:outline-offset-2 w-full sm:w-auto"
-              >
-                Începe evaluarea
-              </Link>
-
-              {/* Secundar — Descoperă-ți profilul (disabled) */}
-              <span className="btn-indigo-outline relative inline-flex items-center justify-center border-2 border-indigo text-indigo font-semibold text-base px-8 py-4 rounded-[10px] opacity-60 cursor-not-allowed w-full sm:w-auto">
-                Descoperă-ți profilul
-                {/* Badge "În curând" */}
-                <span className="absolute -top-2.5 -right-2 bg-white border border-coral/30 text-coral text-[10px] font-semibold uppercase tracking-[1px] px-2 py-0.5 rounded">
-                  În curând
-                </span>
-              </span>
-            </div>
-
-            {/* Micro-text */}
-            <p className="text-[13px] text-text-micro leading-snug">
-              Fără card. Fără obligații.
-            </p>
-          </div>
-
-          {/* RIGHT — Ilustrație Constelație (45%) */}
-          <div
-            className="lg:w-[45%] flex items-center justify-center"
-            style={{ animation: "fadeInRight 0.9s ease-out 0.3s both" }}
           >
             <svg
               viewBox="0 0 600 500"
-              className="w-full max-w-[500px] lg:max-w-none h-auto"
+              className="w-full max-w-[360px] h-auto"
               aria-hidden="true"
             >
               <defs>
@@ -180,6 +132,48 @@ export default function HomePage() {
               {/* Node 12 — tiny */}
               <circle cx="150" cy="380" r="7" fill="var(--indigo)" opacity="0.12" className="node-breathe" style={{ "--duration": "5.6s", "--delay": "0.3s" } as React.CSSProperties} />
             </svg>
+          </div>
+
+          {/* Text centrat sub ilustrație */}
+          <div style={{ animation: "fadeInUp 0.8s ease-out 0.3s both" }}>
+            {/* Pre-heading */}
+            <p className="text-base font-normal text-coral mb-4 tracking-wide">
+              Evaluăm posturi. Construim echitate.
+            </p>
+
+            {/* Heading principal */}
+            <h1 className="text-3xl md:text-4xl lg:text-[48px] font-semibold leading-[1.1] tracking-[-0.02em] text-indigo-dark mb-6">
+              Fiecare post merită
+              <br />
+              o evaluare corectă.
+            </h1>
+
+            {/* Paragraf filozofic */}
+            <p className="text-lg md:text-xl font-normal leading-relaxed text-text-warm max-w-xl mx-auto mb-8">
+              Un instrument de evaluare a posturilor, construit pentru realitățile de aici. Ajută companiile să construiască grile salariale coerente — nu din obligație, ci din convingerea că echitatea ține oamenii aproape.
+            </p>
+
+            {/* Butoane centrate */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-3">
+              <Link
+                href="/register"
+                className="btn-coral inline-flex items-center justify-center bg-coral text-white font-semibold text-base px-8 py-4 rounded-[10px] focus:outline-2 focus:outline-indigo focus:outline-offset-2 w-full sm:w-auto"
+              >
+                Începe evaluarea
+              </Link>
+
+              <span className="btn-indigo-outline relative inline-flex items-center justify-center border-2 border-indigo text-indigo font-semibold text-base px-8 py-4 rounded-[10px] opacity-60 cursor-not-allowed w-full sm:w-auto">
+                Descoperă-ți profilul
+                <span className="absolute -top-2.5 -right-2 bg-white border border-coral/30 text-coral text-[10px] font-semibold uppercase tracking-[1px] px-2 py-0.5 rounded">
+                  În curând
+                </span>
+              </span>
+            </div>
+
+            {/* Micro-text */}
+            <p className="text-[13px] text-text-micro leading-snug">
+              Fără card. Fără obligații.
+            </p>
           </div>
         </div>
       </section>
