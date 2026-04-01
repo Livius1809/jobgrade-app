@@ -149,35 +149,15 @@ export default function HomePage() {
 
           {/* ── Card B2C ─────────────────────────────────────────── */}
           <div id="pentru-tine" className="card-hover bg-white rounded-2xl border border-indigo/[0.08] p-8 flex flex-col">
-            {/* Ilustrație — Spiral with branches */}
+            {/* Ilustrație B2C — Spirala logo */}
             <div className="w-full h-[200px] flex items-center justify-center mb-6 rounded-xl bg-gradient-to-br from-coral/[0.03] to-coral/[0.07]">
-              <svg viewBox="0 0 400 180" className="w-full max-w-[320px] h-auto" aria-hidden="true">
-                {/* Spiral path */}
-                <path
-                  d="M 200 140 C 200 140 240 140 250 120 C 260 100 230 85 210 90 C 190 95 185 115 200 120 C 215 125 230 110 225 95 C 220 80 200 75 190 85 C 180 95 190 110 200 110"
-                  stroke="var(--coral)"
-                  strokeWidth="2.5"
-                  fill="none"
-                  opacity="0.6"
-                />
-                {/* Branches growing from spiral */}
-                <path d="M 250 120 Q 290 100 310 80" stroke="var(--coral)" strokeWidth="1.5" fill="none" opacity="0.3" />
-                <circle cx="310" cy="80" r="5" fill="var(--coral)" opacity="0.4" />
-                <path d="M 225 95 Q 260 70 280 50" stroke="var(--indigo)" strokeWidth="1.5" fill="none" opacity="0.3" />
-                <circle cx="280" cy="50" r="4" fill="var(--indigo)" opacity="0.35" />
-                <path d="M 210 90 Q 170 65 140 55" stroke="var(--coral)" strokeWidth="1.5" fill="none" opacity="0.25" />
-                <circle cx="140" cy="55" r="5" fill="var(--coral)" opacity="0.3" />
-                <path d="M 190 85 Q 155 80 130 90" stroke="var(--indigo)" strokeWidth="1.2" fill="none" opacity="0.2" />
-                <circle cx="130" cy="90" r="3.5" fill="var(--indigo)" opacity="0.3" />
-                <path d="M 200 140 Q 180 155 150 150" stroke="var(--coral)" strokeWidth="1.2" fill="none" opacity="0.2" />
-                <circle cx="150" cy="150" r="4" fill="var(--coral)" opacity="0.25" />
-                {/* Accent dots along spiral */}
-                <circle cx="200" cy="110" r="3" fill="var(--coral)" opacity="0.5" />
-                <circle cx="200" cy="140" r="4" fill="var(--coral)" opacity="0.5" />
-                {/* Additional small branches */}
-                <path d="M 240 140 Q 270 145 290 135" stroke="var(--coral)" strokeWidth="1" fill="none" opacity="0.2" />
-                <circle cx="290" cy="135" r="3" fill="var(--indigo)" opacity="0.25" />
-              </svg>
+              <Image
+                src="/favicon.svg"
+                alt="Spirala descoperirii"
+                width={140}
+                height={140}
+                className="opacity-80"
+              />
             </div>
 
             {/* Text */}
