@@ -3,7 +3,7 @@ import Link from "next/link"
 
 export default function PersonalPage() {
   return (
-    <div className="min-h-screen flex flex-col text-foreground">
+    <div className="min-h-screen text-foreground">
 
       {/* ── Background ──────────────────────────────────────────── */}
       <div className="fixed inset-0 -z-10">
@@ -15,7 +15,7 @@ export default function PersonalPage() {
       {/* ═══════════════════════════════════════════════════════════
            HEADER
          ═══════════════════════════════════════════════════════════ */}
-      <header className="relative z-50 flex items-center justify-between px-6 py-5">
+      <header className="relative z-50 flex items-center justify-between px-6 py-5" style={{ maxWidth: "56rem", margin: "0 auto" }}>
         <Link href="/" className="flex items-center gap-2.5 group">
           <Image
             src="/logo.svg"
@@ -62,7 +62,7 @@ export default function PersonalPage() {
         </h1>
 
         {/* Subheading */}
-        <p className="max-w-xl text-center text-base md:text-lg text-text-secondary leading-relaxed mb-6 animate-[fadeIn_2s_ease-out]">
+        <p className="text-center text-base md:text-lg text-text-secondary leading-relaxed mb-6 animate-[fadeIn_2s_ease-out]">
           Construim un spațiu dedicat dezvoltării tale profesionale — unde să-ți
           descoperi punctele forte, să-ți înțelegi profilul și să crești autentic.
         </p>
@@ -87,7 +87,7 @@ export default function PersonalPage() {
           Trei direcții. Un singur scop: să crești pe drumul tău.
         </p>
 
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6" style={{ maxWidth: "56rem", margin: "0 auto" }}>
 
           {/* Card 1 — Profil */}
           <div className="relative group rounded-2xl border border-indigo/15 bg-gradient-to-br from-indigo/5 to-indigo/2 p-8 text-center opacity-50 transition-all duration-500 hover:opacity-70">
@@ -150,7 +150,7 @@ export default function PersonalPage() {
            EMAIL SIGNUP — Lista de așteptare
          ═══════════════════════════════════════════════════════════ */}
       <section className="px-6 py-16 md:py-20">
-        <div className="max-w-md mx-auto text-center">
+        <div className="text-center" style={{ maxWidth: "28rem", margin: "0 auto" }}>
           <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-3">
             Vrei să fii printre primii care explorează?
           </h2>
@@ -188,7 +188,7 @@ export default function PersonalPage() {
            CLOSING
          ═══════════════════════════════════════════════════════════ */}
       <section className="px-6 py-12 text-center">
-        <div className="w-8 h-0.5 rounded-full bg-gradient-to-r from-indigo to-coral mx-auto mb-6" />
+        <div className="w-8 h-0.5 rounded-full bg-gradient-to-r from-indigo to-coral mb-6" style={{ margin: "0 auto 1.5rem auto" }} />
         <p className="text-base text-text-secondary italic mb-6">
           Construim cu grijă, nu cu grabă.
         </p>
@@ -202,7 +202,7 @@ export default function PersonalPage() {
 
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="mt-auto bg-surface/50 backdrop-blur-sm border-t border-border/30 py-3 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2" style={{ maxWidth: "56rem", margin: "0 auto" }}>
           <span className="text-xs text-text-secondary/60">
             Un produs <span className="font-medium text-foreground/50">Psihobusiness Consulting SRL</span>
             {" · "}GDPR{" · "}AI Act UE{" · "}Directiva 2023/970
