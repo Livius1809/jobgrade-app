@@ -3,171 +3,409 @@ import Link from "next/link"
 
 export default function HomePage() {
   return (
-    <div className="h-screen flex flex-col text-foreground overflow-hidden">
-
-      {/* ── Background ──────────────────────────────────────────── */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-coral/5 via-background to-indigo/3" />
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-coral/8 blur-[120px]" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo/8 blur-[120px]" />
-      </div>
+    <div className="min-h-screen flex flex-col">
 
       {/* ═══════════════════════════════════════════════════════════
-           JUMĂTATEA SUPERIOARĂ — Filosofie + Spirală
+           ZONA 1 — HEADER NAVIGARE (sticky, glassmorphism on scroll)
          ═══════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-6">
-
-        {/* Logo + Nume — colț stânga sus, absolut */}
-        <div className="absolute top-6 left-6 z-50">
+      <header className="sticky top-0 z-50 header-glass">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo + Wordmark */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <Image
               src="/logo.svg"
               alt="JobGrade"
-              width={32}
-              height={32}
+              width={36}
+              height={36}
               className="transition-transform duration-500 group-hover:rotate-45"
             />
-            <span className="text-lg font-semibold text-foreground">JobGrade</span>
+            <span className="text-lg font-semibold text-indigo-dark">JobGrade</span>
+          </Link>
+
+          {/* Navigare centrală — hidden on mobile */}
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#despre" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Despre</a>
+            <a href="#companii" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru companii</a>
+            <a href="#pentru-tine" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Pentru tine</a>
+            <a href="#contact" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Contact</a>
+          </nav>
+
+          {/* Buton Intră în cont */}
+          <Link
+            href="/login"
+            className="hidden sm:inline-flex text-sm font-medium text-indigo border border-indigo/20 rounded-lg px-5 py-2 hover:bg-indigo/5 hover:border-indigo/40 transition-all duration-200"
+          >
+            Intră în cont
           </Link>
         </div>
-
-        {/* Contact — colț dreapta sus, absolut */}
-        <div className="absolute top-7 right-6 z-50">
-          <a
-            href="mailto:contact@jobgrade.ro"
-            className="text-sm text-text-secondary hover:text-coral transition-colors duration-300"
-          >
-            contact@jobgrade.ro
-          </a>
-        </div>
-
-        {/* Spirala centrală cu glow */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-coral/12 to-indigo/12 blur-2xl animate-pulse" />
-          </div>
-          <Image
-            src="/favicon.svg"
-            alt="Spirala JobGrade"
-            width={64}
-            height={64}
-            className="relative z-10 drop-shadow-lg"
-          />
-        </div>
-
-        {/* Sloganul */}
-        <p className="text-base md:text-lg italic text-text-secondary mb-6 tracking-wide text-center animate-[fadeIn_1.5s_ease-out]">
-          Începe cu CINE alegi să fii... Evoluăm împreună!
-        </p>
-
-        {/* Headline */}
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight text-center mb-5 text-foreground animate-[fadeIn_2s_ease-out]">
-          Un loc de întâlnire pentru cei care aleg
-          <span className="bg-gradient-to-r from-coral via-coral-dark to-indigo bg-clip-text text-transparent">
-            {" "}să crească
-          </span>
-        </h1>
-
-        {/* Linia gradient */}
-        <div className="w-20 h-0.5 rounded-full bg-gradient-to-r from-coral to-indigo mb-6 animate-[fadeIn_2.5s_ease-out]" />
-
-        {/* Filosofia — condensată */}
-        <p className="max-w-xl text-center text-base text-text-secondary leading-relaxed animate-[fadeIn_3s_ease-out]">
-          Fie că vrei să te <span className="text-foreground font-medium">cunoști mai bine</span>,
-          să găsești un loc unde ești <span className="text-foreground font-medium">apreciat corect</span>,
-          sau să construiești o echipă <span className="text-foreground font-medium">echitabilă</span> —
-          drumul începe aici.
-        </p>
-      </div>
+      </header>
 
       {/* ═══════════════════════════════════════════════════════════
-           JUMĂTATEA INFERIOARĂ — Cele două cadrane
+           ZONA 2 — HERO / PRIMA RESPIRAȚIE (90vh)
          ═══════════════════════════════════════════════════════════ */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0">
+      <section
+        className="relative flex items-center min-h-[90vh] px-6 overflow-hidden"
+        style={{ background: "linear-gradient(180deg, var(--hero-bg-top) 0%, var(--hero-bg-bottom) 100%)" }}
+      >
+        <div className="max-w-7xl mx-auto w-full flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-8 py-16 lg:py-0">
 
-        {/* ── CADRAN STÂNG — B2B (Companie) ────────────────────── */}
-        <div className="relative group bg-gradient-to-br from-coral/5 to-coral/10 border-t border-r border-border/50 flex flex-col items-center justify-center px-8 py-10 text-center transition-all duration-500 hover:from-coral/8 hover:to-coral/15">
+          {/* LEFT — Text (55%) */}
+          <div
+            className="lg:w-[55%] flex flex-col items-start"
+            style={{ animation: "fadeInUp 0.6s ease-out both" }}
+          >
+            {/* Pre-heading */}
+            <p className="text-base font-normal text-coral mb-4 tracking-wide">
+              Evaluăm posturi. Construim echitate.
+            </p>
 
-          {/* Ilustrație — iconografie mare */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-coral/20 to-coral/8 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-sm">
-            <svg className="w-8 h-8 text-coral" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-            </svg>
+            {/* Heading principal */}
+            <h1
+              className="text-4xl md:text-5xl lg:text-[56px] font-semibold leading-[1.1] tracking-[-0.02em] text-indigo-dark mb-6"
+            >
+              Fiecare post merită o evaluare corectă.
+            </h1>
+
+            {/* Paragraf filozofic */}
+            <p className="text-lg md:text-xl font-normal leading-relaxed text-text-warm max-w-[520px] mb-8">
+              JobGrade este un instrument de evaluare a posturilor, construit pentru realitățile de aici. Ajută companiile să construiască grile salariale coerente — nu din obligație, ci din convingerea că echitatea ține oamenii aproape.
+            </p>
+
+            {/* Butoane */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-3">
+              {/* Primar — Începe evaluarea */}
+              <Link
+                href="/register"
+                className="btn-coral inline-flex items-center justify-center bg-coral text-white font-semibold text-base px-8 py-4 rounded-[10px] focus:outline-2 focus:outline-indigo focus:outline-offset-2 w-full sm:w-auto"
+              >
+                Începe evaluarea
+              </Link>
+
+              {/* Secundar — Descoperă-ți profilul (disabled) */}
+              <span className="btn-indigo-outline relative inline-flex items-center justify-center border-2 border-indigo text-indigo font-semibold text-base px-8 py-4 rounded-[10px] opacity-60 cursor-not-allowed w-full sm:w-auto">
+                Descoperă-ți profilul
+                {/* Badge "În curând" */}
+                <span className="absolute -top-2.5 -right-2 bg-white border border-coral/30 text-coral text-[10px] font-semibold uppercase tracking-[1px] px-2 py-0.5 rounded">
+                  În curând
+                </span>
+              </span>
+            </div>
+
+            {/* Micro-text */}
+            <p className="text-[13px] text-text-micro leading-snug">
+              Fără card. Fără obligații.
+            </p>
           </div>
 
-          {/* Text descriptiv */}
-          <p className="text-base text-text-secondary leading-relaxed mb-6 max-w-xs">
-            Dacă ești o <span className="text-foreground font-semibold">companie</span> care
-            vrea să evalueze posturile echitabil, să construiască o structură salarială
-            transparentă și să crească împreună cu echipa —
-          </p>
+          {/* RIGHT — Ilustrație Constelație (45%) */}
+          <div
+            className="lg:w-[45%] flex items-center justify-center"
+            style={{ animation: "fadeInRight 0.9s ease-out 0.3s both" }}
+          >
+            <svg
+              viewBox="0 0 600 500"
+              className="w-full max-w-[500px] lg:max-w-none h-auto"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="coralToIndigo" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--coral)" />
+                  <stop offset="100%" stopColor="var(--indigo)" />
+                </linearGradient>
+                <linearGradient id="indigoToCoral" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--indigo)" />
+                  <stop offset="100%" stopColor="var(--coral)" />
+                </linearGradient>
+                <linearGradient id="coralFade" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--coral)" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="var(--coral)" stopOpacity="0.15" />
+                </linearGradient>
+                <linearGradient id="indigoFade" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--indigo)" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="var(--indigo)" stopOpacity="0.15" />
+                </linearGradient>
+              </defs>
 
-          {/* Butoane */}
-          <div className="flex items-center gap-4">
+              {/* Connection lines (curved) */}
+              <path d="M 180 140 Q 250 100 320 160" stroke="url(#coralToIndigo)" strokeWidth="1.5" fill="none" opacity="0.3" />
+              <path d="M 320 160 Q 400 200 420 300" stroke="url(#coralToIndigo)" strokeWidth="1.5" fill="none" opacity="0.25" />
+              <path d="M 180 140 Q 150 220 200 310" stroke="url(#indigoToCoral)" strokeWidth="1.5" fill="none" opacity="0.3" />
+              <path d="M 200 310 Q 280 350 380 320" stroke="url(#coralToIndigo)" strokeWidth="1.2" fill="none" opacity="0.2" />
+              <path d="M 320 160 Q 280 240 200 310" stroke="url(#indigoToCoral)" strokeWidth="1" fill="none" opacity="0.2" />
+              <path d="M 420 300 Q 440 370 380 420" stroke="url(#coralToIndigo)" strokeWidth="1.2" fill="none" opacity="0.2" />
+              <path d="M 120 260 Q 160 290 200 310" stroke="url(#indigoToCoral)" strokeWidth="1" fill="none" opacity="0.2" />
+              <path d="M 480 180 Q 450 230 420 300" stroke="url(#coralToIndigo)" strokeWidth="1" fill="none" opacity="0.15" />
+              <path d="M 260 400 Q 320 430 380 420" stroke="url(#indigoToCoral)" strokeWidth="1" fill="none" opacity="0.2" />
+              <path d="M 200 310 Q 230 370 260 400" stroke="url(#coralToIndigo)" strokeWidth="1" fill="none" opacity="0.2" />
+
+              {/* Constellation nodes — varying sizes, breathing animation */}
+              {/* Node 1 — large, coral */}
+              <circle cx="180" cy="140" r="22" fill="url(#coralFade)" className="node-breathe" style={{ "--duration": "5s", "--delay": "0s" } as React.CSSProperties} />
+              <circle cx="180" cy="140" r="14" fill="var(--coral)" opacity="0.4" />
+
+              {/* Node 2 — large, indigo */}
+              <circle cx="320" cy="160" r="24" fill="url(#indigoFade)" className="node-breathe" style={{ "--duration": "6s", "--delay": "0.8s" } as React.CSSProperties} />
+              <circle cx="320" cy="160" r="16" fill="var(--indigo)" opacity="0.35" />
+
+              {/* Node 3 — medium, coral-indigo */}
+              <circle cx="200" cy="310" r="20" fill="url(#coralToIndigo)" opacity="0.3" className="node-breathe" style={{ "--duration": "5.5s", "--delay": "1.2s" } as React.CSSProperties} />
+              <circle cx="200" cy="310" r="12" fill="var(--coral)" opacity="0.3" />
+
+              {/* Node 4 — large, indigo */}
+              <circle cx="420" cy="300" r="18" fill="url(#indigoFade)" className="node-breathe" style={{ "--duration": "4.5s", "--delay": "0.4s" } as React.CSSProperties} />
+              <circle cx="420" cy="300" r="10" fill="var(--indigo)" opacity="0.4" />
+
+              {/* Node 5 — small */}
+              <circle cx="120" cy="260" r="10" fill="var(--coral)" opacity="0.25" className="node-breathe" style={{ "--duration": "5s", "--delay": "2s" } as React.CSSProperties} />
+
+              {/* Node 6 — medium */}
+              <circle cx="480" cy="180" r="12" fill="var(--indigo)" opacity="0.2" className="node-breathe" style={{ "--duration": "6.5s", "--delay": "1.5s" } as React.CSSProperties} />
+
+              {/* Node 7 — small */}
+              <circle cx="380" cy="420" r="14" fill="url(#coralFade)" className="node-breathe" style={{ "--duration": "5.2s", "--delay": "0.6s" } as React.CSSProperties} />
+              <circle cx="380" cy="420" r="8" fill="var(--coral)" opacity="0.3" />
+
+              {/* Node 8 — small accent */}
+              <circle cx="260" cy="400" r="9" fill="var(--indigo)" opacity="0.2" className="node-breathe" style={{ "--duration": "4.8s", "--delay": "1.8s" } as React.CSSProperties} />
+
+              {/* Node 9 — tiny */}
+              <circle cx="380" cy="320" r="8" fill="var(--coral)" opacity="0.15" className="node-breathe" style={{ "--duration": "5.8s", "--delay": "2.2s" } as React.CSSProperties} />
+
+              {/* Node 10 — medium */}
+              <circle cx="280" cy="240" r="16" fill="url(#indigoToCoral)" opacity="0.15" className="node-breathe" style={{ "--duration": "5.4s", "--delay": "1s" } as React.CSSProperties} />
+
+              {/* Node 11 — tiny accent */}
+              <circle cx="520" cy="250" r="6" fill="var(--coral)" opacity="0.15" className="node-breathe" style={{ "--duration": "4s", "--delay": "2.5s" } as React.CSSProperties} />
+
+              {/* Node 12 — tiny */}
+              <circle cx="150" cy="380" r="7" fill="var(--indigo)" opacity="0.12" className="node-breathe" style={{ "--duration": "5.6s", "--delay": "0.3s" } as React.CSSProperties} />
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+           ZONA 3 — PUNTE DE CURIOZITATE
+         ═══════════════════════════════════════════════════════════ */}
+      <section
+        className="py-20 px-6"
+        style={{ background: "var(--warm-bg)" }}
+      >
+        <p className="text-2xl font-normal text-indigo-dark text-center max-w-3xl mx-auto leading-relaxed scroll-fade-in">
+          Cele mai multe companii plătesc pe simț. Noi propunem o alternativă.
+        </p>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+           ZONA 4 — CELE DOUĂ DRUMURI (B2B + B2C)
+         ═══════════════════════════════════════════════════════════ */}
+      <section id="companii" className="py-20 lg:py-28 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+
+          {/* ── Card B2B ─────────────────────────────────────────── */}
+          <div className="card-hover bg-white rounded-2xl border border-indigo/[0.08] p-8 flex flex-col">
+            {/* Ilustrație — Geometric hierarchy blocks */}
+            <div className="w-full h-[200px] flex items-center justify-center mb-6 rounded-xl bg-gradient-to-br from-indigo/[0.03] to-indigo/[0.07]">
+              <svg viewBox="0 0 400 180" className="w-full max-w-[320px] h-auto" aria-hidden="true">
+                {/* Ascending blocks — hierarchy/structure */}
+                <rect x="40" y="130" width="70" height="36" rx="6" fill="var(--indigo)" opacity="0.15" />
+                <rect x="130" y="100" width="70" height="66" rx="6" fill="var(--indigo)" opacity="0.25" />
+                <rect x="220" y="70" width="70" height="96" rx="6" fill="var(--indigo)" opacity="0.4" />
+                <rect x="310" y="36" width="70" height="130" rx="6" fill="var(--indigo)" opacity="0.55" />
+                {/* Connecting line across tops */}
+                <path d="M 75 130 Q 165 80 255 70 Q 335 40 345 36" stroke="var(--coral)" strokeWidth="2" fill="none" opacity="0.5" strokeDasharray="4 4" />
+                {/* Accent dots on top of blocks */}
+                <circle cx="75" cy="130" r="4" fill="var(--coral)" opacity="0.7" />
+                <circle cx="165" cy="100" r="4" fill="var(--coral)" opacity="0.7" />
+                <circle cx="255" cy="70" r="5" fill="var(--coral)" opacity="0.8" />
+                <circle cx="345" cy="36" r="5" fill="var(--coral)" opacity="0.9" />
+              </svg>
+            </div>
+
+            {/* Text */}
+            <h3 className="text-2xl md:text-[28px] font-semibold text-indigo-dark mb-4">Pentru companii</h3>
+            <p className="text-base leading-relaxed text-text-warm mb-8 flex-1">
+              Evaluezi posturile sistematic. Construiești o grilă salarială coerentă. Demonstrezi conformitatea cu Directiva UE 2023/970. Totul într-un singur loc, cu suport AI la fiecare pas.
+            </p>
+
+            {/* CTA */}
             <Link
               href="/login"
-              className="bg-coral text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-coral-dark transition-colors duration-300 shadow-sm hover:shadow-md"
+              className="btn-indigo-solid block w-full text-center bg-indigo text-white font-semibold text-base py-3.5 rounded-[10px] focus:outline-2 focus:outline-coral focus:outline-offset-2"
             >
-              Intră în cont
-            </Link>
-            <Link
-              href="/register"
-              className="text-sm font-medium text-coral hover:text-coral-dark transition-colors duration-300"
-            >
-              Cont nou →
+              Intră în platformă
             </Link>
           </div>
-        </div>
 
-        {/* ── CADRAN DREPT — B2C (Individ) ─────────────────────── */}
-        <div className="relative bg-gradient-to-br from-indigo/5 to-indigo/10 border-t border-border/50 flex flex-col items-center justify-center px-8 py-10 text-center">
+          {/* ── Card B2C ─────────────────────────────────────────── */}
+          <div id="pentru-tine" className="card-hover bg-white rounded-2xl border border-indigo/[0.08] p-8 flex flex-col">
+            {/* Ilustrație — Spiral with branches */}
+            <div className="w-full h-[200px] flex items-center justify-center mb-6 rounded-xl bg-gradient-to-br from-coral/[0.03] to-coral/[0.07]">
+              <svg viewBox="0 0 400 180" className="w-full max-w-[320px] h-auto" aria-hidden="true">
+                {/* Spiral path */}
+                <path
+                  d="M 200 140 C 200 140 240 140 250 120 C 260 100 230 85 210 90 C 190 95 185 115 200 120 C 215 125 230 110 225 95 C 220 80 200 75 190 85 C 180 95 190 110 200 110"
+                  stroke="var(--coral)"
+                  strokeWidth="2.5"
+                  fill="none"
+                  opacity="0.6"
+                />
+                {/* Branches growing from spiral */}
+                <path d="M 250 120 Q 290 100 310 80" stroke="var(--coral)" strokeWidth="1.5" fill="none" opacity="0.3" />
+                <circle cx="310" cy="80" r="5" fill="var(--coral)" opacity="0.4" />
+                <path d="M 225 95 Q 260 70 280 50" stroke="var(--indigo)" strokeWidth="1.5" fill="none" opacity="0.3" />
+                <circle cx="280" cy="50" r="4" fill="var(--indigo)" opacity="0.35" />
+                <path d="M 210 90 Q 170 65 140 55" stroke="var(--coral)" strokeWidth="1.5" fill="none" opacity="0.25" />
+                <circle cx="140" cy="55" r="5" fill="var(--coral)" opacity="0.3" />
+                <path d="M 190 85 Q 155 80 130 90" stroke="var(--indigo)" strokeWidth="1.2" fill="none" opacity="0.2" />
+                <circle cx="130" cy="90" r="3.5" fill="var(--indigo)" opacity="0.3" />
+                <path d="M 200 140 Q 180 155 150 150" stroke="var(--coral)" strokeWidth="1.2" fill="none" opacity="0.2" />
+                <circle cx="150" cy="150" r="4" fill="var(--coral)" opacity="0.25" />
+                {/* Accent dots along spiral */}
+                <circle cx="200" cy="110" r="3" fill="var(--coral)" opacity="0.5" />
+                <circle cx="200" cy="140" r="4" fill="var(--coral)" opacity="0.5" />
+                {/* Additional small branches */}
+                <path d="M 240 140 Q 270 145 290 135" stroke="var(--coral)" strokeWidth="1" fill="none" opacity="0.2" />
+                <circle cx="290" cy="135" r="3" fill="var(--indigo)" opacity="0.25" />
+              </svg>
+            </div>
 
-          {/* Badge „În curând" */}
-          <div className="absolute top-5 right-5 flex items-center gap-1.5 bg-indigo/85 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
-            În curând
-          </div>
+            {/* Text */}
+            <h3 className="text-2xl md:text-[28px] font-semibold text-indigo-dark mb-4">Pentru tine</h3>
+            <p className="text-base leading-relaxed text-text-warm mb-8 flex-1">
+              Explorează-ți punctele forte. Descoperă ce rol ți se potrivește. Construiește-ți un profil profesional pe care să-l înțelegi cu adevărat — nu doar un CV, ci o hartă a ta.
+            </p>
 
-          {/* Ilustrație */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo/15 to-indigo/5 flex items-center justify-center mb-6 shadow-sm opacity-70">
-            <svg className="w-8 h-8 text-indigo/60" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-            </svg>
-          </div>
-
-          {/* Text descriptiv */}
-          <p className="text-base text-text-secondary/70 leading-relaxed mb-6 max-w-xs">
-            Dacă ești o <span className="text-foreground/50 font-semibold">persoană</span> aflată
-            în căutarea drumului profesional potrivit, care vrea să-și descopere
-            punctele forte și să crească autentic —
-          </p>
-
-          {/* Butoane — inactive */}
-          <div className="flex items-center gap-4 opacity-40 pointer-events-none">
-            <span className="bg-indigo text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-sm">
-              Intră în cont
+            {/* CTA — disabled */}
+            <span className="btn-indigo-outline relative block w-full text-center border-2 border-indigo text-indigo font-semibold text-base py-3.5 rounded-[10px] opacity-60 cursor-not-allowed">
+              Explorează (în curând)
+              <span className="absolute -top-2.5 right-4 bg-white border border-coral/30 text-coral text-[10px] font-semibold uppercase tracking-[1px] px-2 py-0.5 rounded">
+                În curând
+              </span>
             </span>
-            <span className="text-sm font-medium text-indigo">
-              Cont nou →
-            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+           ZONA 5 — SOCIAL PROOF (format conversațional)
+         ═══════════════════════════════════════════════════════════ */}
+      <section
+        className="py-20 lg:py-28 px-6"
+        style={{ background: "var(--warm-bg)" }}
+      >
+        <div className="max-w-[720px] mx-auto">
+          <h2 className="text-3xl md:text-4xl font-semibold text-indigo-dark mb-16 text-center scroll-fade-in">
+            Întrebări pe care le auzim des
+          </h2>
+
+          {/* Q&A 1 */}
+          <div className="mb-12 scroll-fade-in">
+            <p className="text-lg font-medium text-indigo-dark mb-3 leading-relaxed">
+              „De ce aș avea nevoie de asta? Am funcționat bine și fără."
+            </p>
+            <p className="text-base leading-relaxed text-text-warm pl-4 border-l-2 border-coral/30">
+              Poate că da. Dar vine un moment în care un coleg bun pleacă, și nu înțelegi de ce. De multe ori, răspunsul e în grila salarială.
+            </p>
           </div>
 
-          <p className="mt-4 text-xs text-indigo/40 italic">
-            Lucrăm la asta — revenim în curând
-          </p>
-        </div>
-      </div>
+          {/* Q&A 2 */}
+          <div className="mb-12 scroll-fade-in">
+            <p className="text-lg font-medium text-indigo-dark mb-3 leading-relaxed">
+              „E complicat? N-am echipă de HR structurată."
+            </p>
+            <p className="text-base leading-relaxed text-text-warm pl-4 border-l-2 border-coral/30">
+              Instrumentul e construit tocmai pentru companiile care nu au departament de HR dedicat. Interfața te ghidează pas cu pas.
+            </p>
+          </div>
 
-      {/* ── Footer — linie subțire ──────────────────────────────── */}
-      <footer className="bg-surface/50 backdrop-blur-sm border-t border-border/30 py-3 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="text-xs text-text-secondary/60">
-            Un produs <span className="font-medium text-foreground/50">Psihobusiness Consulting SRL</span>
-            {" · "}GDPR{" · "}AI Act UE{" · "}Directiva 2023/970
-          </span>
-          <p className="text-xs italic text-text-secondary/40">
-            Începe cu CINE alegi să fii...
-          </p>
+          {/* Q&A 3 */}
+          <div className="mb-12 scroll-fade-in">
+            <p className="text-lg font-medium text-indigo-dark mb-3 leading-relaxed">
+              „Asta e doar pentru Directiva UE?"
+            </p>
+            <p className="text-base leading-relaxed text-text-warm pl-4 border-l-2 border-coral/30">
+              Directiva e un context. Dar evaluarea posturilor e utilă indiferent de legislație — ajută la retenție, la decizii corecte, la claritate internă.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+           ZONA 6 — FOOTER
+         ═══════════════════════════════════════════════════════════ */}
+      <footer id="contact" className="bg-indigo-dark text-white">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+
+            {/* Col 1 — Logo + Tagline */}
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Image
+                  src="/logo.svg"
+                  alt="JobGrade"
+                  width={28}
+                  height={28}
+                  className="brightness-0 invert"
+                />
+                <span className="text-lg font-semibold">JobGrade</span>
+              </div>
+              <p className="text-sm text-white/60 leading-relaxed mb-4">
+                Evaluăm posturi. Construim echitate.
+              </p>
+              <p className="text-xs text-white/40">
+                &copy; 2026 Psihobusiness Consulting SRL
+              </p>
+            </div>
+
+            {/* Col 2 — Platformă */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4 text-white/80">Platformă</h4>
+              <ul className="space-y-2.5">
+                <li><a href="#despre" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Despre</a></li>
+                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Prețuri</a></li>
+                <li><a href="#contact" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Contact</a></li>
+                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">FAQ</a></li>
+              </ul>
+            </div>
+
+            {/* Col 3 — Legal */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4 text-white/80">Legal</h4>
+              <ul className="space-y-2.5">
+                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Termeni și condiții</a></li>
+                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Confidențialitate</a></li>
+                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Cookies</a></li>
+                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">GDPR</a></li>
+              </ul>
+            </div>
+
+            {/* Col 4 — Contact */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4 text-white/80">Contact</h4>
+              <ul className="space-y-2.5">
+                <li>
+                  <a href="mailto:contact@jobgrade.ro" className="text-sm text-white/50 hover:text-white transition-colors duration-200">
+                    contact@jobgrade.ro
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Linie separatoare + compliance */}
+          <div className="mt-12 pt-6 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-white/30">
+                CIF: RO15790994
+              </p>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-white/30 border border-white/10 px-2.5 py-1 rounded">GDPR</span>
+                <span className="text-xs text-white/30 border border-white/10 px-2.5 py-1 rounded">AI Act UE</span>
+                <span className="text-xs text-white/30 border border-white/10 px-2.5 py-1 rounded">Directiva 2023/970</span>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
 

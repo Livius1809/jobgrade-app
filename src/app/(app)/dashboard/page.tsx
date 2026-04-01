@@ -6,6 +6,26 @@ import Link from "next/link"
 export const metadata = { title: "Portal B2B — JobGrade" }
 
 /* ------------------------------------------------------------------ */
+/*  Motivational wisdom lines (equity/evaluation themed)               */
+/* ------------------------------------------------------------------ */
+
+const WISDOM_LINES = [
+  "Echitatea nu e un beneficiu. E fundația.",
+  "Fiecare post evaluat e un pas spre claritate.",
+  "Grila salarială nu e un tabel. E o conversație cu echipa ta.",
+  "O evaluare corectă valorează mai mult decât o mie de presupuneri.",
+  "Transparența salarială începe cu curajul de a măsura.",
+]
+
+function getWisdomOfTheDay(): string {
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+      (1000 * 60 * 60 * 24)
+  )
+  return WISDOM_LINES[dayOfYear % WISDOM_LINES.length]
+}
+
+/* ------------------------------------------------------------------ */
 /*  Service definitions                                                */
 /* ------------------------------------------------------------------ */
 
@@ -16,9 +36,10 @@ interface ServiceDef {
   title: string
   description: string
   href: string
-  icon: string          // heroicon path (24x24 outline)
+  icon: string
   status: ServiceStatus
   accent: "coral" | "indigo"
+  tooltip?: string
 }
 
 interface ServiceCategory {
@@ -88,6 +109,7 @@ const SERVICE_CATALOG: ServiceCategory[] = [
         icon: "M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z",
         status: "locked",
         accent: "coral",
+        tooltip: "Simulează scenarii bugetare cu diferite grade salariale și vizualizează impactul financiar.",
       },
       {
         id: "budget",
@@ -97,6 +119,7 @@ const SERVICE_CATALOG: ServiceCategory[] = [
         icon: "M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
         status: "locked",
         accent: "coral",
+        tooltip: "Planifică bugetul salarial pe departamente și vizualizează distribuția costurilor.",
       },
     ],
   },
@@ -111,6 +134,7 @@ const SERVICE_CATALOG: ServiceCategory[] = [
         icon: "M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z",
         status: "locked",
         accent: "indigo",
+        tooltip: "Analizează diferențele salariale pe gen conform Directivei UE 2023/970 și generează rapoarte de conformitate.",
       },
       {
         id: "employee-portal",
@@ -120,6 +144,7 @@ const SERVICE_CATALOG: ServiceCategory[] = [
         icon: "M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z",
         status: "locked",
         accent: "indigo",
+        tooltip: "Portal dedicat angajaților pentru cereri de transparență salarială conform Art. 7 din Directiva UE.",
       },
     ],
   },
@@ -248,29 +273,55 @@ export default async function DashboardPage() {
   const session = await auth()
   const data = await getPortalData(session!.user.tenantId)
   const firstName = session!.user.name?.split(" ")[0] ?? "utilizator"
+  const wisdom = getWisdomOfTheDay()
 
   function isActive(svc: ServiceDef): boolean {
     if (svc.status === "always") return true
     if (svc.status === "credits") return data.credits > 0
-    return false // locked
+    return false
   }
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
-      {/* ---- Header ---- */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">
-          Bine ai revenit, {firstName}!
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          {data.companyName} &middot;{" "}
-          <span className={data.credits < 20 ? "text-coral font-semibold" : ""}>
-            {data.credits} credite disponibile
-          </span>
+      {/* ================================================================ */}
+      {/*  GREETING ZONE                                                    */}
+      {/* ================================================================ */}
+      <div className="mb-10">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              Bine ai revenit, {firstName}.
+            </h1>
+            <div className="mt-1.5 flex items-center gap-3">
+              <span className="text-sm text-text-secondary">
+                {data.companyName}
+              </span>
+              <span
+                className={`
+                  inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-semibold
+                  ${data.credits < 20
+                    ? "bg-coral/10 text-coral"
+                    : "bg-indigo/10 text-indigo"
+                  }
+                `}
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125v-3.75" />
+                </svg>
+                {data.credits} credite
+              </span>
+            </div>
+          </div>
+        </div>
+        {/* Wisdom line */}
+        <p className="mt-3 text-sm text-text-secondary/70 italic max-w-xl">
+          &ldquo;{wisdom}&rdquo;
         </p>
       </div>
 
-      {/* ---- Main two-column layout ---- */}
+      {/* ================================================================ */}
+      {/*  MAIN LAYOUT: Service Grid (~70%) + AI Chat Panel (~30%)         */}
+      {/* ================================================================ */}
       <div className="flex gap-8 items-start">
         {/* ============ LEFT: Services grid ============ */}
         <div className="flex-1 min-w-0 space-y-10">
@@ -278,7 +329,7 @@ export default async function DashboardPage() {
             <section key={cat.label}>
               {/* Category header */}
               <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80">
                   {cat.label}
                 </h2>
                 <div className="flex-1 h-px bg-border" />
@@ -299,8 +350,9 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        {/* ============ RIGHT: AI Chat panel ============ */}
-        <aside className="hidden lg:flex w-[340px] shrink-0 sticky top-24 flex-col rounded-2xl border border-border bg-surface shadow-sm overflow-hidden"
+        {/* ============ RIGHT: AI Chat panel (sticky sidebar) ============ */}
+        <aside
+          className="hidden lg:flex w-[340px] shrink-0 sticky top-24 flex-col rounded-2xl border border-border bg-surface shadow-sm overflow-hidden"
           style={{ height: "calc(100vh - 8rem)" }}
         >
           {/* Chat header */}
@@ -312,14 +364,14 @@ export default async function DashboardPage() {
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Asistentul tău</h3>
-              <p className="text-[11px] text-text-secondary">Echipa JobGrade</p>
+              <h3 className="text-sm font-semibold text-foreground">Echipa ta JobGrade</h3>
+              <p className="text-[11px] text-text-secondary">Întreabă orice despre evaluarea posturilor</p>
             </div>
           </div>
 
           {/* Chat messages area */}
           <div className="flex-1 overflow-y-auto px-5 py-5">
-            {/* Welcome message */}
+            {/* Welcome message bubble */}
             <div className="flex gap-3">
               <div className="shrink-0 w-7 h-7 rounded-full bg-indigo/10 flex items-center justify-center mt-0.5">
                 <svg className="w-3.5 h-3.5 text-indigo" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -327,14 +379,15 @@ export default async function DashboardPage() {
                 </svg>
               </div>
               <div className="bg-indigo/5 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-foreground leading-relaxed">
-                Bună! Sunt aici să te ajut cu orice întrebare despre evaluarea posturilor, structura salarială sau utilizarea platformei. Cu ce pot începe?
+                Bună! Sunt aici să te ajut cu orice întrebare. Cu ce pot începe?
               </div>
             </div>
 
-            {/* Placeholder note */}
-            <p className="mt-6 text-center text-[11px] text-text-secondary/60 italic">
-              Chat-ul va fi conectat în curând.
-            </p>
+            {/* Connection note */}
+            <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-text-secondary/50">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/80 animate-pulse" />
+              Conectare în curs &mdash; disponibil în curând
+            </div>
           </div>
 
           {/* Chat input */}
@@ -343,7 +396,7 @@ export default async function DashboardPage() {
               <input
                 type="text"
                 disabled
-                placeholder="Scrie un mesaj..."
+                placeholder="Scrie întrebarea ta..."
                 className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-text-secondary/50 disabled:opacity-60 focus:outline-none"
               />
               <button
@@ -360,11 +413,49 @@ export default async function DashboardPage() {
         </aside>
       </div>
 
-      {/* ---- Footer slogan ---- */}
-      <div className="mt-12 pb-6 text-center">
-        <p className="text-xs text-text-secondary/50">
-          JobGrade &mdash; Fiecare post la locul potrivit.
-        </p>
+      {/* ================================================================ */}
+      {/*  MOBILE: Floating AI chat button (visible only on small screens) */}
+      {/* ================================================================ */}
+      <div className="fixed bottom-6 right-6 lg:hidden z-40">
+        <button
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-indigo text-white shadow-lg shadow-indigo/30 hover:scale-105 active:scale-95 transition-transform"
+          aria-label="Deschide chat"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* ================================================================ */}
+      {/*  BOTTOM BAR                                                      */}
+      {/* ================================================================ */}
+      <div className="mt-14 pb-6 border-t border-border/50 pt-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-secondary/60">
+          {/* Credits pill */}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-background border border-border px-3 py-1 text-text-secondary/70">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125v-3.75" />
+            </svg>
+            {data.credits} credite rămase
+          </span>
+
+          {/* Help link */}
+          <span>
+            Ai nevoie de ajutor?{" "}
+            <a
+              href="mailto:contact@jobgrade.ro"
+              className="text-indigo hover:underline"
+            >
+              contact@jobgrade.ro
+            </a>
+          </span>
+
+          {/* Slogan */}
+          <span className="text-text-secondary/40">
+            JobGrade &mdash; Fiecare post la locul potrivit.
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -383,7 +474,7 @@ function ActiveTile({ svc }: { svc: ServiceDef }) {
       href={svc.href}
       className="group flex items-start gap-4 rounded-xl border border-border bg-surface p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
     >
-      <div className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-xl ${accentBg}`}>
+      <div className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-full ${accentBg}`}>
         <svg className={`w-5 h-5 ${accentText}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d={svc.icon} />
         </svg>
@@ -392,11 +483,11 @@ function ActiveTile({ svc }: { svc: ServiceDef }) {
         <h3 className="text-sm font-semibold text-foreground group-hover:text-coral transition-colors">
           {svc.title}
         </h3>
-        <p className="mt-0.5 text-xs text-text-secondary leading-relaxed line-clamp-2">
+        <p className="mt-0.5 text-xs text-text-secondary leading-relaxed line-clamp-1">
           {svc.description}
         </p>
       </div>
-      <svg className="shrink-0 w-4 h-4 text-text-secondary/40 mt-0.5 group-hover:text-coral group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+      <svg className="shrink-0 w-4 h-4 text-text-secondary/30 mt-0.5 group-hover:text-coral group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
       </svg>
     </Link>
@@ -405,27 +496,30 @@ function ActiveTile({ svc }: { svc: ServiceDef }) {
 
 function LockedTile({ svc }: { svc: ServiceDef }) {
   return (
-    <div className="relative flex items-start gap-4 rounded-xl border border-dashed border-border bg-surface/50 p-5 opacity-60">
+    <div
+      className="group relative flex items-start gap-4 rounded-xl border border-dashed border-border bg-surface/50 p-5 opacity-65 cursor-default"
+      title={svc.tooltip}
+    >
       {/* Lock overlay icon */}
       <div className="absolute top-3 right-3">
-        <svg className="w-3.5 h-3.5 text-text-secondary/50" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <svg className="w-3.5 h-3.5 text-text-secondary/40" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
         </svg>
       </div>
 
-      <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-border/40">
-        <svg className="w-5 h-5 text-text-secondary/50" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-border/30">
+        <svg className="w-5 h-5 text-text-secondary/40" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d={svc.icon} />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold text-foreground/70">
+        <h3 className="text-sm font-semibold text-foreground/60">
           {svc.title}
         </h3>
-        <p className="mt-0.5 text-xs text-text-secondary/60 leading-relaxed line-clamp-2">
+        <p className="mt-0.5 text-xs text-text-secondary/50 leading-relaxed line-clamp-1">
           {svc.description}
         </p>
-        <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-medium text-coral">
+        <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-coral/80">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
           </svg>

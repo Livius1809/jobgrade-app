@@ -40,6 +40,7 @@ const PUBLIC_PATHS = [
   "/api/v1/auth/register",
   "/api/v1/auth/activate",
   "/portal/",
+  "/personal",
   "/_next",
   "/favicon",
   "/robots.txt",

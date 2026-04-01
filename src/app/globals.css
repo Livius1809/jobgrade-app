@@ -5,13 +5,19 @@
   --foreground: #2D2A26;
   --coral: #E85D43;
   --coral-light: #F08A76;
-  --coral-dark: #C4432B;
+  --coral-dark: #D4482E;
+  --coral-active: #C0401F;
   --indigo: #4F46E5;
   --indigo-light: #7C75ED;
-  --indigo-dark: #3730B8;
+  --indigo-dark: #1E1B4B;
   --text-secondary: #6B6560;
+  --text-warm: #4A4458;
+  --text-micro: #8A8494;
   --border: #E8E5E0;
   --surface: #FFFFFF;
+  --hero-bg-top: #FEFDFB;
+  --hero-bg-bottom: #F8F7FF;
+  --warm-bg: #FBF9F7;
 }
 
 @theme inline {
@@ -20,12 +26,18 @@
   --color-coral: var(--coral);
   --color-coral-light: var(--coral-light);
   --color-coral-dark: var(--coral-dark);
+  --color-coral-active: var(--coral-active);
   --color-indigo: var(--indigo);
   --color-indigo-light: var(--indigo-light);
   --color-indigo-dark: var(--indigo-dark);
   --color-text-secondary: var(--text-secondary);
+  --color-text-warm: var(--text-warm);
+  --color-text-micro: var(--text-micro);
   --color-border: var(--border);
   --color-surface: var(--surface);
+  --color-hero-bg-top: var(--hero-bg-top);
+  --color-hero-bg-bottom: var(--hero-bg-bottom);
+  --color-warm-bg: var(--warm-bg);
 }
 
 body {
@@ -35,7 +47,106 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Animations ────────────────────────────────────────────── */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+@keyframes breatheSlow {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
+@keyframes scrollFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll-triggered animation using animation-timeline: view() */
+.scroll-fade-in {
+  opacity: 0;
+  animation: scrollFadeIn 0.6s ease forwards;
+  animation-timeline: view();
+  animation-range: entry 0% entry 40%;
+}
+
+/* Fallback for browsers without animation-timeline */
+@supports not (animation-timeline: view()) {
+  .scroll-fade-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Header glassmorphism ─────────────────────────────────── */
+.header-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.06);
+}
+
+/* ── Card hover transition ────────────────────────────────── */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.1);
+  border-color: rgba(79, 70, 229, 0.2);
+}
+
+/* ── Button transitions ──────────────────────────────────── */
+.btn-coral {
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-coral:hover {
+  background-color: var(--coral-dark);
+  box-shadow: 0 4px 12px rgba(232, 93, 67, 0.3);
+  transform: scale(1.02);
+}
+.btn-coral:active {
+  background-color: var(--coral-active);
+  transform: scale(0.98);
+}
+
+.btn-indigo-solid {
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-indigo-solid:hover {
+  background-color: var(--indigo-dark);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transform: scale(1.02);
+}
+
+.btn-indigo-outline {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-indigo-outline:hover:not(:disabled) {
+  background-color: var(--indigo);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* ── Breathing animation for constellation nodes ─────────── */
+.node-breathe {
+  animation: breathe var(--duration, 5s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
 }
