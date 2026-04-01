@@ -1,0 +1,97 @@
+/**
+ * logo-animation.css — Animație stroke-drawing pentru logo-ul spirală JobGrade
+ *
+ * Cum se folosește:
+ * 1. Deschide favicon.svg (spirala) în editor text
+ * 2. Calculează lungimea totală a path-ului (sau folosește valoarea estimată mai jos)
+ * 3. Adaugă clasa .logo-animate pe SVG-ul din pagină
+ * 4. Importă acest CSS în globals.css sau în componenta relevantă
+ *
+ * Spirala originală (favicon.svg) are ~65 segmente polyline.
+ * Lungimea totală estimată: ~2800 unități SVG.
+ */
+
+/* ── Animație de desenare (stroke-dasharray) ─────────────── */
+
+.logo-animate polyline,
+.logo-animate path {
+  stroke-dasharray: 2800;
+  stroke-dashoffset: 2800;
+  animation: drawSpiral 2.5s ease-in-out forwards;
+}
+
+@keyframes drawSpiral {
+  0% {
+    stroke-dashoffset: 2800;
+    opacity: 0.3;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* Punctul central (cercul indigo) apare la finalul desenării */
+.logo-animate circle {
+  opacity: 0;
+  animation: fadeInDot 0.4s ease-out 2.3s forwards;
+}
+
+@keyframes fadeInDot {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Varianta hover (logo din header) ────────────────────── */
+
+.logo-hover:hover polyline,
+.logo-hover:hover path {
+  animation: drawSpiral 1.5s ease-in-out forwards;
+}
+
+/* ── Varianta loop (pentru loading screens) ───────────────── */
+
+.logo-loop polyline,
+.logo-loop path {
+  stroke-dasharray: 2800;
+  animation: loopSpiral 3s ease-in-out infinite;
+}
+
+@keyframes loopSpiral {
+  0% {
+    stroke-dashoffset: 2800;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -2800;
+  }
+}
+
+/* ── Varianta subtilă (pentru pagina principală) ──────────── */
+
+.logo-breathe polyline,
+.logo-breathe path {
+  animation: breatheStroke 4s ease-in-out infinite;
+}
+
+@keyframes breatheStroke {
+  0%, 100% {
+    stroke-width: inherit;
+    opacity: 0.8;
+  }
+  50% {
+    stroke-width: calc(inherit * 1.1);
+    opacity: 1;
+  }
+}
