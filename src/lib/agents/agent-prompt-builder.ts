@@ -13,6 +13,7 @@
 import { BINE, CAMP, UMBRA, EXTERNAL_COMMUNICATION, AGENT_CONSCIOUSNESS, getCoreInjection } from "./moral-core"
 import { getFieldPromptSection, SUPPORT_RESOURCE_AGENTS } from "./field-transcendent"
 import { ESCALATION_CHAIN } from "./escalation-chain"
+import { getCulturalCalibrationSection } from "./cultural-calibration-ro"
 import { readFileSync } from "fs"
 import { join } from "path"
 
@@ -306,6 +307,11 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
   const l2 = buildL2Section(role, context)
   const l3 = buildL3Section(role, context)
 
+  // Cultural calibration (L2 extension — all agents that interact with RO market)
+  const culturalSection = ["internal"].includes(context) && !["COG", "COA", "COCSA", "PMA"].includes(role)
+    ? "" // Pure internal technical agents skip cultural section
+    : getCulturalCalibrationSection()
+
   // 6. Additional context
   const additional = options.additionalContext
     ? `\n═══ CONTEXT ADIȚIONAL ═══\n${options.additionalContext}`
@@ -317,6 +323,7 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
     systemPrompt,
     l1,
     l2,
+    culturalSection,
     l3,
     additional,
   ].filter(Boolean)
