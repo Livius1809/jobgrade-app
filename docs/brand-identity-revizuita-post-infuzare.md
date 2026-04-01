@@ -8,32 +8,32 @@ Echipa: CMA + CWA + ACA + MKA
 
 ## 1. BRAND ESSENCE (1 propozitie)
 
-**JobGrade exista pentru ca fiecare post sa fie evaluat corect, iar fiecare om sa fie platit echitabil — nu din obligatie, ci din convingere.**
+**JobGrade există pentru ca fiecare post să fie evaluat corect, iar fiecare om să fie plătit echitabil — nu din obligație, ci din convingere.**
 
 ---
 
 ## 2. BRAND PROMISE (1 paragraf)
 
-Iti oferim un instrument construit in Romania, pentru Romania, care transforma evaluarea posturilor dintr-un exercitiu birocratic intr-un proces de adevar organizational. Nu promitem ca e usor — promitem ca e corect. Platforma noastra combina inteligenta artificiala cu expertiza umana intr-un proces colaborativ in care echipa ta decide, nu algoritmul. Iar conformitatea cu Directiva UE vine ca efect natural al lucrurilor facute cum trebuie. Te insotim pe tot parcursul — nu iti vindem o licenta si disparim.
+Îți oferim un instrument construit aici, pentru realitățile de aici, care transformă evaluarea posturilor dintr-un exercițiu birocratic într-un proces de adevăr organizațional. Nu promitem că e ușor — promitem că e corect. Platforma noastră combină inteligența artificială cu expertiza umană într-un proces colaborativ în care echipa ta decide, nu algoritmul. Iar conformitatea cu Directiva UE vine ca efect natural al lucrurilor făcute cum trebuie. Te însoțim pe tot parcursul — nu îți vindem o licență și dispărem.
 
 ---
 
 ## 3. BRAND PERSONALITY (5 trasaturi)
 
-### 1. DREPT (nu "transparent")
-Nu doar aratam procesul — ne asiguram ca procesul este corect. Transparenta e un instrument; dreptatea e o valoare. JobGrade nu afiseaza date ca sa para deschis — le afiseaza pentru ca fiecare om merita sa inteleaga de ce este platit asa cum este platit.
+### 1. ECHITABIL (nu "transparent")
+Nu doar arătăm procesul — ne asigurăm că procesul este corect. Transparența e un instrument; echitatea e o valoare. JobGrade nu afișează date ca să pară deschis — le afișează pentru că fiecare om merită să înțeleagă de ce este plătit așa cum este plătit.
 
 ### 2. PRAGMATIC (nu "inovator")
-Inovatia e un cuvant uzat. Noi suntem pragmatici: functioneaza? rezolva problema reala? se integreaza in realitatea ta? Daca raspunsul e da, am facut treaba buna. Tehnologia (AI) e un mijloc, nu un scop in sine.
+Inovația e un cuvânt uzat. Noi suntem pragmatici: funcționează? Rezolvă problema reală? Se integrează în realitatea ta? Dacă răspunsul e da, am făcut treabă bună. Tehnologia (AI) e un mijloc, nu un scop în sine.
 
-### 3. INSOTITOR (nu "accesibil")
-Nu vindem si plecam. Construim impreuna. Procesul de evaluare este un drum care se face in echipa — a ta si a noastra. "Accesibil" inseamna "poti ajunge la noi". "Insotitor" inseamna "suntem langa tine pe tot drumul".
+### 3. PARTENER DE DRUM (nu "accesibil")
+Nu vindem și plecăm. Construim împreună. Procesul de evaluare este un drum care se face în echipă — a ta și a noastră. „Accesibil" înseamnă „poți ajunge la noi". „Partener de drum" înseamnă „suntem lângă tine pe tot parcursul".
 
-### 4. CURAJOS (nu "confident")
-Spunem adevaruri incomode cand e necesar. Daca structura ta salariala are probleme, nu le ascundem sub o prezentare frumoasa. BINELE inseamna uneori sa arati ce doare — dar intotdeauna cu respect si cu o solutie in mana.
+### 4. TEMERAR (nu "confident")
+Spunem adevăruri incomode când e necesar. Dacă structura ta salarială are probleme, nu le ascundem sub o prezentare frumoasă. BINELE înseamnă uneori să arăți ce doare — dar întotdeauna cu respect și cu o soluție în mână.
 
-### 5. ROMAN (nu "local")
-Nu suntem un produs tradus. Suntem construiti din intelegerea realitatii romanesti: legislatia muncii din Romania, cultura organizationala de aici, scepticismul sanatos al profesionistului roman care a mai fost dezamagit de promisiuni importate. Stim unde suntem pentru ca de aici suntem.
+### 5. DE-AI NOȘTRI (nu "local")
+Nu suntem un produs tradus. Suntem construiți din înțelegerea realității de aici: legislația muncii, cultura organizațională, scepticismul sănătos al profesionistului care a mai fost dezamăgit de promisiuni importate. Știm unde suntem pentru că de aici suntem. Nu „platformă românească" ca etichetă — ci „platformă care înțelege România" ca fapt demonstrabil.
 
 ---
 
@@ -196,7 +196,7 @@ Clientul DEDUCE singur ca servim un scop mai inalt — din modul in care lucram 
 ### Ce se schimba:
 - Brand purpose: de la "transformam evaluarea din arta in stiinta" la "fiecare post evaluat corect, fiecare om platit echitabil"
 - Brand promise: de la "evaluari in 24h cu conformitate garantata" la "te insotim intr-un proces corect"
-- Personality: de la (Inovator, Precis, Accesibil, Transparent, Colaborativ) la (Drept, Pragmatic, Insotitor, Curajos, Roman)
+- Personality: de la (Inovator, Precis, Accesibil, Transparent, Colaborativ) la (Echitabil, Pragmatic, Partener de drum, Temerar, De-ai noștri)
 - Tone: de la "autoritar pe ROI" la "expert care respecta"
 - Culorile Blue (#2563EB) + Purple (#7C3AED) se recalibreaza la Coral (#E85D43) + Indigo (#4F46E5) — aliniind identitatea vizuala cu logo-ul existent
 - Tagline: de la "Prima platforma romaneasca de evaluare posturi cu AI" la "Evaluam posturi. Construim echitate."
