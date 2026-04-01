@@ -46,6 +46,7 @@ const PUBLIC_PATHS = [
 ]
 
 function isPublicPath(pathname: string): boolean {
+  if (pathname === "/") return true // Homepage is public
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p))
 }
 
