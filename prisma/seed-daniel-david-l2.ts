@@ -29,7 +29,7 @@ interface KBEntry {
   confidence: number
 }
 
-const SOURCE = "EXPERT_CURATED" as const
+const SOURCE = "EXPERT_HUMAN" as const
 const KB_TYPE = "PERMANENT" as const
 const STATUS = "PERMANENT" as const
 
