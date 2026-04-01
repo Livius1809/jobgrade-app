@@ -108,7 +108,9 @@ export async function generateIdeas(
     where: { agentRole: { in: session.participantRoles } },
     select: { agentRole: true, displayName: true, description: true },
   })
-  const agentMap = new Map(agents.map((a: any) => [a.agentRole, a]))
+  const agentMap = new Map<string, { agentRole: string; displayName: string; description: string }>(
+    agents.map((a: any) => [a.agentRole, a])
+  )
 
   // Generate wild cards for disruptive thinking
   let wildCardsPrompt = ""
@@ -665,7 +667,7 @@ export async function distillBrainstormToKB(
       acc[i.category || "general"] = (acc[i.category || "general"] || 0) + 1
       return acc
     }, {})
-    const dominantCategory = Object.entries(topCategories).sort((a, b) => b[1] - a[1])[0]
+    const dominantCategory = Object.entries(topCategories).sort((a, b) => (b[1] as number) - (a[1] as number))[0]
 
     try {
       await p.kBEntry.create({

@@ -178,7 +178,7 @@ async function testEvaluationSession() {
   })
   if (!existingParticipant) {
     await prisma.sessionParticipant.create({
-      data: { sessionId: testSessionId, userId: testUserId, role: "EVALUATOR" }
+      data: { sessionId: testSessionId, userId: testUserId }
     })
   }
   ok("SessionParticipant ensured")
