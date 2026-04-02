@@ -1307,7 +1307,7 @@ model PayrollEntry {
   mealVouchers          Float     @default(0) // tichete masă/vacanță RON/lună
 
   // Date angajat (anonimizate — fără nume/CNP)
-  gender                Gender    // F / M
+  gender                Gender    // MALE / FEMALE
   workSchedule          WorkSchedule // 2h, 4h, 6h, 8h
   contractType          ContractType // CIM determinat/nedeterminat/convenție
   tenureOrg             Float     @default(0) // vechime organizație (ani)
@@ -1356,11 +1356,6 @@ model CriteriaMapping {
   description       String
 
   @@unique([legalCriterion, jobgradeFactor])
-}
-
-enum Gender {
-  F
-  M
 }
 
 enum WorkSchedule {

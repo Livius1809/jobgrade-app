@@ -57,8 +57,10 @@ const REQUIRED_FIELDS = [
 // ── Normalization maps ──────────────────────────────────────────────────────
 
 const GENDER_MAP: Record<string, string> = {
-  F: "F",
-  M: "M",
+  F: "FEMALE",
+  M: "MALE",
+  FEMALE: "FEMALE",
+  MALE: "MALE",
 }
 
 const WORK_SCHEDULE_MAP: Record<string, string> = {
