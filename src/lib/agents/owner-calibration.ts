@@ -217,6 +217,92 @@ function calibrateL3(input: string): CalibrationFlag[] {
     }
   }
 
+  // 4. Codul Comercial / Drept Comercial
+  const commercialPatterns = [
+    { pattern: /contract.*rezili|rezili.*contract|denunț.*unilateral/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Cod Comercial: rezilierea/denunțarea unilaterală a contractului necesită clauză expresă sau motiv temeinic. Verifică termenii contractuali." },
+    { pattern: /clauza de.*confiden|NDA|non.?disclos/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Comercial: clauzele de confidențialitate trebuie să fie proporționale, delimitate temporal și material. Verifică valabilitatea." },
+    { pattern: /garanți|fidejus|gaj|ipotec/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Comercial: constituirea de garanții necesită formă autentică și înregistrare. Consultă CJA." },
+    { pattern: /societate.*nou|înfiin[tț].*firm|SRL.*nou|SA.*nou/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Comercial + Legea 31/1990: constituirea unei societăți necesită act constitutiv, capital social, înregistrare ONRC. Consultă CJA." },
+    { pattern: /fuziune|divizare|absorb[tț]|cesiune.*păr[tț]i/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Cod Comercial: operațiunile de fuziune/divizare/cesiune necesită hotărâre AGA, evaluare patrimoniu, înregistrare. Procedură complexă — consultă CJA." },
+    { pattern: /concuren[tț].*neloial|clien[tț]i.*fură|copiaz.*produs/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Legea 11/1991 concurența neloială: deturnare clientelă, denigrare, confuzie. Documentează și consultă CJA pentru acțiune." },
+    { pattern: /factur|TVA|impozit|taxă|fiscal|ANAF/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Fiscal + Cod Procedură Fiscală: obligații declarative, termen de plată, penalități. Verifică conformitatea cu COAFin." },
+    { pattern: /licen[tț].*software|drepturi.*autor|proprietate.*intelectual|copyright|trademark|marcă/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Legea 8/1996 dreptul de autor + Legea 84/1998 mărci: verifică titularitatea, licențele, termenele de protecție. Consultă CJA." },
+  ]
+
+  for (const cp of commercialPatterns) {
+    if (cp.pattern.test(lower)) {
+      flags.push({
+        layer: "L3",
+        severity: cp.severity,
+        message: `Drept comercial: ${cp.message}`,
+        suggestion: "Consultă CJA pentru conformitate.",
+      })
+    }
+  }
+
+  // 5. Codul Civil
+  const civilPatterns = [
+    { pattern: /daune|despăgub|prejudiciu|pagub/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Civil Art. 1349+: răspunderea civilă delictuală. Daune-interese = prejudiciu efectiv + beneficiu nerealizat. Dovedirea prejudiciului e în sarcina celui care îl invocă." },
+    { pattern: /contract.*prestări|mandat|antecontract|promisiune/i, severity: "INFO" as CalibrationSeverity, message: "Cod Civil: verifică natura juridică a contractului (prestări servicii, mandat, antrepriză). Fiecare tip are reguli diferite de încetare și răspundere." },
+    { pattern: /bună.?credin[tț]|rea.?credin[tț]|abuz.*drept/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Civil Art. 14-15: obligația de bună-credință în exercitarea drepturilor. Abuzul de drept = exercitare cu scopul de a vătăma pe altul." },
+    { pattern: /procur[aă]|mandat.*special|reprezentare|împuternic/i, severity: "INFO" as CalibrationSeverity, message: "Cod Civil Art. 2009+: mandatul/procura necesită formă specifică în funcție de actul juridic vizat. Mandate speciale pentru acte de dispoziție." },
+    { pattern: /prescripți|termen.*decădere|expirare.*drept/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Cod Civil Art. 2500+: termenul general de prescripție = 3 ani. Verifică dacă dreptul/acțiunea nu e prescris(ă)." },
+    { pattern: /clauză.*penal|penalități.*contract/i, severity: "INFO" as CalibrationSeverity, message: "Cod Civil Art. 1538+: clauza penală poate fi redusă de instanță dacă e vădit excesivă. Proporționalitate necesară." },
+    { pattern: /forță.*major|caz.*fortuit|imposibilitate.*executare/i, severity: "INFO" as CalibrationSeverity, message: "Cod Civil Art. 1351+: forța majoră exonerează de răspundere doar dacă e exterioară, imprevizibilă și irezistibilă. Notificarea e obligatorie." },
+  ]
+
+  for (const cvp of civilPatterns) {
+    if (cvp.pattern.test(lower)) {
+      flags.push({
+        layer: "L3",
+        severity: cvp.severity,
+        message: `Drept civil: ${cvp.message}`,
+        suggestion: "Consultă CJA pentru analiză juridică.",
+      })
+    }
+  }
+
+  // 6. Codul Penal
+  const penalPatterns = [
+    { pattern: /fals|falsific|document.*fals|ștampil.*fals/i, severity: "CRITIC" as CalibrationSeverity, message: "Cod Penal Art. 320-322: falsul în înscrisuri (sub semnătură privată sau oficiale) = infracțiune. Pedeapsa: închisoare 6 luni - 5 ani." },
+    { pattern: /evaziune|ascunde.*venituri|nu.*declar.*fiscal/i, severity: "CRITIC" as CalibrationSeverity, message: "Legea 241/2005 evaziune fiscală: ascunderea veniturilor, deduceri fictive, documente false = infracțiune. Pedeapsa: 2-8 ani închisoare." },
+    { pattern: /mit[aă]|corup[tț]|șpag[aă]|trafic.*influen[tț]/i, severity: "CRITIC" as CalibrationSeverity, message: "Cod Penal Art. 289-292: darea/luarea de mită, traficul de influență = infracțiuni grave. Zero toleranță." },
+    { pattern: /amenin[tț]|[sș]antaj|con[sș]trâng|intimidare/i, severity: "CRITIC" as CalibrationSeverity, message: "Cod Penal Art. 206-207: amenințarea și șantajul = infracțiuni. Orice formă de constrângere (inclusiv în relații de muncă) e ilegală." },
+    { pattern: /delapidare|deturnare.*fonduri|însușire.*bani/i, severity: "CRITIC" as CalibrationSeverity, message: "Cod Penal Art. 295: delapidarea = însușirea bunurilor încredințate în exercitarea funcției. Pedeapsa: 2-7 ani închisoare." },
+    { pattern: /înșel[aă]ciune|fraud[aă]|escrocherie|induce.*eroare/i, severity: "CRITIC" as CalibrationSeverity, message: "Cod Penal Art. 244: înșelăciunea = inducerea în eroare pentru obținerea unui folos. Pedeapsa: 1-5 ani închisoare." },
+    { pattern: /spălare.*bani|proveniență.*ilicit/i, severity: "CRITIC" as CalibrationSeverity, message: "Legea 656/2002: spălarea banilor = infracțiune gravă. Obligații de raportare către ONPCSB pentru tranzacții suspecte." },
+    { pattern: /hărțuire|hărțui.*sexual|abuz.*sexual|persecutare/i, severity: "CRITIC" as CalibrationSeverity, message: "Cod Penal Art. 208 + Legea 202/2002: hărțuirea (inclusiv la locul de muncă) și hărțuirea sexuală = infracțiuni. Obligație de denunț și protecție victimă." },
+    { pattern: /muncă.*la negru|fără.*contract|nelegal.*angaj/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Codul Muncii + Cod Penal: munca fără contract = contravenție/infracțiune. Amendă 20.000 lei/persoană + posibil dosar penal pentru forme grave." },
+  ]
+
+  for (const pp of penalPatterns) {
+    if (pp.pattern.test(lower)) {
+      flags.push({
+        layer: "L3",
+        severity: pp.severity,
+        message: `Drept penal: ${pp.message}`,
+        suggestion: "STOP. Consultă IMEDIAT CJA. Nu executa nicio acțiune până la clarificare juridică.",
+      })
+    }
+  }
+
+  // 7. Directiva UE 2023/970 (Transparență salarială) — specific business-ului
+  const directivePatterns = [
+    { pattern: /ascunde.*salar|nu.*public.*gril|secret.*plat/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Directiva UE 2023/970 Art. 6: angajatorul are obligația transparenței salariale. Ascunderea grilelor poate constitui non-conformitate." },
+    { pattern: /diferit.*salar.*acela[sș]i.*post|plăt.*diferit.*acela[sș]i/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Directiva UE 2023/970 Art. 4: muncă egală = plată egală. Diferențele trebuie justificate prin criterii obiective documentate." },
+  ]
+
+  for (const dp of directivePatterns) {
+    if (dp.pattern.test(lower)) {
+      flags.push({
+        layer: "L3",
+        severity: dp.severity,
+        message: `Directiva UE: ${dp.message}`,
+        suggestion: "Verifică conformitatea cu CJA.",
+      })
+    }
+  }
+
   return flags
 }
 

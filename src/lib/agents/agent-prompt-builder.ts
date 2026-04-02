@@ -194,42 +194,60 @@ RESPONSABILITATE:
 
 function getLegalDomainsForContext(context: AgentContext): string[] {
   const base = [
-    "GDPR — protecția datelor personale (orice prelucrare de date)",
-    "AI Act — transparență și supraveghere umană (orice decizie automată)",
+    "GDPR (Reg. 2016/679) — protecția datelor personale (orice prelucrare de date)",
+    "AI Act (Reg. 2024/1689) — transparență și supraveghere umană (orice decizie automată)",
+    "Codul Civil RO — obligații, contracte, răspundere civilă, bună-credință",
+    "Codul Penal RO — interziceri absolute: fals, fraudă, corupție, hărțuire",
   ]
 
   switch (context) {
     case "client-facing":
       return [...base,
         "Directiva EU 2023/970 — transparență salarială, nediscriminare",
-        "Codul Muncii RO — relații de muncă, drepturi angajați",
+        "Codul Muncii RO — relații de muncă, drepturi angajați, concediere",
         "Protecția consumatorilor — comunicare corectă, fără inducere în eroare",
+        "Legea 202/2002 — egalitate de șanse, interzicere hărțuire",
       ]
     case "strategic":
       return [...base,
         "Directiva EU 2023/970 — conformitate raportare, timeline-uri",
-        "Drept comercial — contracte, NDA, DPA, obligații societare",
-        "AI Act — clasificare risc, documentare sistem, audit",
+        "Drept comercial — contracte, NDA, DPA, fuziuni, cesiuni, concurență neloială",
+        "Cod Fiscal + Cod Procedură Fiscală — obligații declarative, TVA, impozite",
+        "Legea 31/1990 — societăți comerciale, AGA, administrare",
+        "Legea 656/2002 — prevenire spălare bani, obligații raportare",
       ]
     case "marketing":
       return [...base,
         "Protecția consumatorilor — publicitate corectă, neînșelătoare",
         "GDPR Art. 6-7 — consimțământ marketing, drept opoziție",
         "ePrivacy — cookies, comunicări electronice nesolicitate",
+        "Legea 8/1996 — dreptul de autor (conținut generat, imagini, texte)",
       ]
     case "legal":
       return [...base,
-        "Toate domeniile — ești sursa de interpretare juridică",
+        "Codul Comercial — toate operațiunile comerciale",
+        "Codul Muncii — relații de muncă, complete",
+        "Cod Fiscal + Procedură Fiscală — obligații fiscale",
+        "Legea 31/1990 — societăți comerciale",
+        "Legea 85/2014 — insolvență",
+        "Legea 11/1991 — concurență neloială",
+        "Legea 21/1996 — concurență (antitrust)",
+        "Legea 241/2005 — evaziune fiscală",
+        "Legea 656/2002 — spălare bani",
+        "Legea 84/1998 — mărci și indicații geografice",
+        "Legea 8/1996 — dreptul de autor",
       ]
     case "support-resource":
       return [...base,
         "Etica profesională — confidențialitate, nediscriminare",
         "GDPR — date sensibile (psihologice, comportamentale)",
+        "Legea 213/2004 — psihologia ca profesie (dacă aplicabil)",
       ]
     default:
       return [...base,
-        "Proprietate intelectuală — cod, conținut, documentație",
-        "Contracte — SLA, obligații, termen, penalități",
+        "Proprietate intelectuală — Legea 8/1996 (drept autor), Legea 84/1998 (mărci)",
+        "Contracte — Cod Civil (prestări servicii, mandat, antrepriză), SLA, obligații",
+        "Cod Fiscal — facturare, TVA, obligații declarative",
       ]
   }
 }
