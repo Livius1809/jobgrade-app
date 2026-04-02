@@ -45,3 +45,4 @@ next-env.d.ts
 .vercel
 docs/input_owner/*.pdf
 docs/metodologie-job-evaluation.txt
+backups/
