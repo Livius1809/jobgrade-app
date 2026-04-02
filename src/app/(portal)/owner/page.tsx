@@ -159,6 +159,27 @@ export default async function OwnerDashboard() {
           </div>
         </Link>
 
+        {/* ── Biblioteca echipei ──────────────────────────── */}
+        <Link
+          href="/owner/docs"
+          className="block rounded-xl border border-border bg-surface p-5 hover:border-indigo/20 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-coral/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-coral" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Biblioteca echipei</h3>
+              <p className="text-xs text-text-secondary mt-0.5">Documente partajate — agenții le accesează automat din KB</p>
+            </div>
+            <svg className="w-5 h-5 text-text-secondary/30 ml-auto group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            </svg>
+          </div>
+        </Link>
+
         {/* ── Rapoarte disponibile ─────────────────────── */}
         <div>
           <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
