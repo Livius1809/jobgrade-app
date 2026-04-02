@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { calibrateOwnerInput } from "@/lib/agents/owner-calibration"
 import { executeAction, type ExecutionAction, type ActionExecutors } from "@/lib/agents/execution-framework"
 import { publishContentExecutor, sendEmailExecutor, generateMarketingContent, sendMarketingEmail } from "@/lib/agents/marketing-executor"
 import { initiateOutreach, processScheduledEmails } from "@/lib/agents/sales-executor"
@@ -49,6 +50,22 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
+
+    // Calibrare Owner input pe toate instrucțiunile de execuție
+    const calibrationText = JSON.stringify(body).substring(0, 500)
+    const ownerCalibration = calibrateOwnerInput(calibrationText)
+
+    // Dacă e CRITIC — nu executa, returnează flag-urile
+    if (ownerCalibration.flags.some(f => f.severity === "CRITIC")) {
+      return NextResponse.json({
+        error: "Acțiunea a fost oprită — discrepanță critică detectată",
+        ownerCalibration: {
+          flags: ownerCalibration.flags,
+          isAligned: false,
+          hawkinsEstimate: ownerCalibration.hawkinsEstimate,
+        },
+      }, { status: 422 })
+    }
 
     switch (body.action) {
       case "content": {
