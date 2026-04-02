@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { calibrateOwnerInput } from "@/lib/agents/owner-calibration"
+import { logOwnerCalibration } from "@/lib/agents/owner-calibration-log"
 import { executeAction, type ExecutionAction, type ActionExecutors } from "@/lib/agents/execution-framework"
 import { publishContentExecutor, sendEmailExecutor, generateMarketingContent, sendMarketingEmail } from "@/lib/agents/marketing-executor"
 import { initiateOutreach, processScheduledEmails } from "@/lib/agents/sales-executor"
@@ -54,6 +55,9 @@ export async function POST(req: NextRequest) {
     // Calibrare Owner input pe toate instrucțiunile de execuție
     const calibrationText = JSON.stringify(body).substring(0, 500)
     const ownerCalibration = calibrateOwnerInput(calibrationText)
+
+    // Loghează și propagă
+    logOwnerCalibration(ownerCalibration, "execute", prisma as any).catch(() => {})
 
     // Dacă e CRITIC — nu executa, returnează flag-urile
     if (ownerCalibration.flags.some(f => f.severity === "CRITIC")) {

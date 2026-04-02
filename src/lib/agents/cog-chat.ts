@@ -15,6 +15,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { buildAgentPrompt } from "./agent-prompt-builder"
 import { calibrateOwnerInput, getCalibrationPromptSection } from "./owner-calibration"
+import { logOwnerCalibration } from "./owner-calibration-log"
 import type { PrismaClient } from "@/generated/prisma"
 import { BINE } from "./moral-core"
 
@@ -127,6 +128,9 @@ ${historyText ? `ISTORIC CONVERSAȚIE:\n${historyText}\n` : ""}`
 
   const ownerCalibration = calibrateOwnerInput(ownerMessage)
   const calibrationSection = getCalibrationPromptSection(ownerCalibration)
+
+  // Loghează și propagă calibrarea
+  logOwnerCalibration(ownerCalibration, "cog-chat", prisma).catch(() => {})
 
   // Injectează calibrarea în system prompt dacă sunt discrepanțe
   const enrichedSystemPrompt = calibrationSection

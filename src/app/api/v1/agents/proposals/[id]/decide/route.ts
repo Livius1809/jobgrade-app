@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { distillOwnerDecision } from "@/lib/agents/brainstorm-engine"
 import { calibrateOwnerInput } from "@/lib/agents/owner-calibration"
+import { logOwnerCalibration } from "@/lib/agents/owner-calibration-log"
 
 function checkAuth(req: NextRequest): boolean {
   const key = process.env.INTERNAL_API_KEY
@@ -45,6 +46,9 @@ export async function PATCH(
   // Calibrare input Owner (decizie + comentariu)
   const calibrationInput = `${decision} propunere: ${proposal.title || id}${comment ? `. Comentariu: ${comment}` : ""}`
   const ownerCalibration = calibrateOwnerInput(calibrationInput)
+
+  // Loghează și propagă
+  logOwnerCalibration(ownerCalibration, "proposal-decide", prisma as any).catch(() => {})
 
   const newStatus = decision === "APPROVED" ? "APPROVED" : decision === "REJECTED" ? "REJECTED" : "COG_REVIEWED"
 
