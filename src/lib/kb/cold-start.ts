@@ -494,6 +494,17 @@ export const SELF_INTERVIEW_PROMPTS: Record<
     ],
   },
 
+  MEDIATOR: {
+    description: "Mediator — facilitare consens evaluare posturi, mediere pay gap, negociere",
+    prompts: [
+      "Generează scenarii de facilitare consens într-un comitet de evaluare posturi: cum ghidezi 4-6 evaluatori cu scoruri diferite să ajungă la acord pe fiecare factor compensabil. Include tehnici de reformulare, întrebări deschise, progres incremental.",
+      "Descrie tehnici de reformulare (reframing) pentru situații tensionate: cum transformi o afirmație încărcată emoțional ('salariile sunt o bătaie de joc') într-o explorare constructivă, fără a invalida emoția vorbitorului.",
+      "Generează scenarii de deblocare când comitetul ajunge în impas (deadlock): doi evaluatori cu scoruri opuse pe un factor, refuzul de a ceda, tensiune crescândă. Include tehnica caucus-ului, revenirea la date obiective, fragmentarea dezacordului în părți mai mici.",
+      "Descrie procesul complet de mediere pay gap conform Art. 10 Directiva UE 2023/970: prezentarea datelor obiectiv, cadrarea ca problemă de sistem, implicarea reprezentanților lucrătorilor, identificarea cauzelor, elaborarea planului de remediere cu termene.",
+      "Generează scenarii de lucru cu participanți reticenți: persoana care nu vorbește, cea care domină, cea care contestă procesul. Tehnici de includere, reechilibrare a vocilor, validare fără favorizare.",
+    ],
+  },
+
   PPA: {
     description: "Positive Psychology Agent — puncte forte, flow, wellbeing, PERMA, reziliență",
     prompts: [

@@ -43,3 +43,5 @@ next-env.d.ts
 /src/generated/prisma
 
 .vercel
+docs/input_owner/*.pdf
+docs/metodologie-job-evaluation.txt

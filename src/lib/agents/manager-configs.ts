@@ -139,7 +139,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Management produs — backlog, user stories, research, documentare, " +
       "suport, echipa de specialiști (psiholog, statistician, sociolog)",
     level: "tactical",
-    subordinates: ["RDA", "DOA", "DOAS", "CSA", "PPMO", "STA", "SOC", "PPA", "PSE", "PSYCHOLINGUIST", "PCM", "NSA", "SCA"],
+    subordinates: ["RDA", "DOA", "DOAS", "CSA", "PPMO", "STA", "SOC", "PPA", "PSE", "PSYCHOLINGUIST", "PCM", "NSA", "SCA", "MEDIATOR"],
     reportsTo: "COA",
     objectives: [
       "Backlog prioritizat și actualizat — 0 stories fără acceptance criteria",
