@@ -8,19 +8,27 @@ export const metadata = { title: "Sesiuni de evaluare" }
 
 const STATUS_LABELS: Record<SessionStatus, string> = {
   DRAFT: "Ciornă",
+  BENCHMARK_SELECTION: "Selectare benchmark",
+  PRE_SCORING: "Pre-scorare individuală",
   IN_PROGRESS: "În curs",
   RECALIBRATION: "Recalibrare",
   VOTING: "Vot",
   FACILITATION: "Facilitator",
+  SLOTTING: "Clasificare posturi",
+  OWNER_VALIDATION: "Validare Owner",
   COMPLETED: "Finalizată",
 }
 
 const STATUS_STYLES: Record<SessionStatus, string> = {
   DRAFT: "bg-gray-100 text-gray-600",
+  BENCHMARK_SELECTION: "bg-blue-100 text-blue-700",
+  PRE_SCORING: "bg-indigo-100 text-indigo-700",
   IN_PROGRESS: "bg-yellow-100 text-yellow-700",
   RECALIBRATION: "bg-orange-100 text-orange-700",
   VOTING: "bg-purple-100 text-purple-700",
   FACILITATION: "bg-red-100 text-red-700",
+  SLOTTING: "bg-cyan-100 text-cyan-700",
+  OWNER_VALIDATION: "bg-amber-100 text-amber-700",
   COMPLETED: "bg-green-100 text-green-700",
 }
 
