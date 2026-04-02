@@ -1,0 +1,432 @@
+,,
+
+Sheet1
+
+Friday May 29/98 Evaluations
+
+Results of the 30 Benchmark Job Evaluation Session
+
+Position Mgr. Systems Ops Senior Facilities Mgr Microwave Engineer
+
+Know E E E
+
+Commun Pro Sol Dmaking
+
+D
+
+E
+
+D
+
+D
+
+E
+
+D
+
+B
+
+E
+
+E
+
+Bus Imp WC
+
+C
+
+B
+
+C
+
+B
+
+C
+
+C
+
+TOTAL LEVEL
+2050 3 1970 3 1925 3
+
+Dealer Area Mgr
+
+D
+
+D
+
+E
+
+D
+
+C
+
+B 1890 4
+
+Customer Service Mgr
+
+D
+
+D
+
+E
+
+D
+
+C
+
+B 1890 4
+
+Chief Accountant
+
+E
+
+C
+
+E
+
+D
+
+C
+
+B 1885 4
+
+HR Development Mgr
+
+E
+
+D
+
+D
+
+D
+
+B
+
+B 1750 4
+
+Area Sales Mgr
+
+D
+
+D
+
+D
+
+C
+
+C
+
+B 1730 4
+
+OMC Engineer
+
+E
+
+B
+
+D
+
+D
+
+C
+
+B 1720 4
+
+BTS Engineer
+
+D
+
+B
+
+D
+
+D
+
+C
+
+C 1685 4
+
+LAN/WAN Admin
+
+E
+
+B
+
+D
+
+C
+
+C
+
+B 1640 4
+
+Fleet Mgr
+
+D
+
+C
+
+D
+
+D
+
+B
+
+B 1585 5
+
+Product Mgr
+
+E
+
+C
+
+D
+
+C
+
+B
+
+B 1585 5
+
+Direct Sales Exec
+
+D
+
+D
+
+C
+
+B
+
+C
+
+B 15X> 5
+
+Promotion Mgr
+
+D
+
+C
+
+D
+
+C
+
+B
+
+B 1505 5
+
+Warehouse/Log Mgr
+
+D
+
+C
+
+D
+
+C
+
+B
+
+B 1505 5
+
+Training Specialist
+
+D
+
+C
+
+D
+
+C
+
+B
+
+A 1460 5
+
+Data Base Admin
+
+E
+
+B
+
+D
+
+C
+
+B
+
+A 1455 5
+
+RF Technician
+
+D
+
+B
+
+C
+
+C
+
+B
+
+C 1385 5
+
+Programmer/ Analyst
+
+E
+
+B
+
+C
+
+B
+
+B
+
+B 1340 5
+
+Payroll Accountant
+
+D
+
+B
+
+C
+
+C
+
+B
+
+A 1295 6
+
+Financial Analyst
+
+D
+
+B
+
+B
+
+B
+
+B
+
+A 1135 6
+
+Help Desk IT Staff
+
+D
+
+B
+
+B
+
+B
+
+A
+
+B 1120 6
+
+Customer Service Rep
+
+B
+
+C
+
+B
+
+B
+
+B
+
+B 1105 6
+
+Executive Assistant
+
+C
+
+B
+
+C
+
+B
+
+A
+
+A 995 7
+
+Marketing Assist Log
+
+B
+
+B
+
+B
+
+C
+
+A
+
+B 960
+
+7
+
+AP Junior Accountant
+
+D
+
+A
+
+B
+
+B
+
+A
+
+A 910 7
+
+Warehouse Clerk
+
+A
+
+A
+
+A
+
+A
+
+B
+
+B 695 8
+
+Purch/lnventory Clerk
+
+A
+
+B
+
+A
+
+A
+
+A
+
+A 595 8
+
+Cashier
+
+B
+
+A
+
+A
+
+A
+
+A
+
+A 590 8
+
+Page 1
+
+

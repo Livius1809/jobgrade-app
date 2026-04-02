@@ -1,0 +1,141 @@
+L-e~e! ; ;
+No. Job Title 1 Safety, Security and Fire Manager 2 CS Manager 3 Collection and Fraud Manager 4 Credit and Connections Manager 5 AR Manager 6 Customs Operations Manager 7 Chief Accountant 8 HR Development Manager 9 HR Operations Manager
+10 End User Technology Manager 11 Manager Systems Operations 12 Manager Customer Care & Billing System Development 13 Manager of Market Planning 14 Manager Service Development 15 Senior Facilities Manager 16 Corporate Account Manager 17 Government Account Manager 18 Area Sales Manager @Dealer Area Manager 20 Manager Corporate Stores 21 OMC Manager 22 BTS Manager 23 Transmission Microwave Manager 24 RF Manager 25 Network Optimization Specialist 26 27 28 29 30
+
+Department Administration Customer Operations Customer Operations Customer Operations Customer Operations Finance - Treasury Finance - Accounting HR HR IT IT IS Marketing - Business Development Marketing - Service Developmet Real Estate & Facilities Mngmt Sales Direct Sales Direct Sales Direct Sales Indirect Sales Support O&M O&M Fixed Network RF RF
+
+Benchmark
+Benchmark Benchmark Benchmark
+Benchmark Benchmark Benchmark
+
+l
+
+Level 3
+No. Job Title 1 Admin - Operations Manager 2 Car Fleet Manager 3 Training Manager 4 CS Team Leader 5 Loyalty Team Leader 6 Acc. Payable & Payroll Manager 7 SUN Accountant Project Manager 8 AP & Payroll Manager 9 PABX/ACD Senior Analyst
+10 VAXNMS System Administrator 11 SQL Database Admin 12 Ingres Database Adm in 13 Database Administrator 14 LAN/WAN Supervisor 15 UNIX System Administrator 16 Manager Information Services 17 Manager Implementation Support 18 Manager CltenUServer Application Development 19 Team Leader Customer Care & Billing System Development 20 Team Leader Customer Care - Call Capture 21 Team Leader Call Rating 22 Team Leader Invoicing 23 Team Leader CABS Support 24 Acquisition Manager 25 Channel Marketing Manager 26 Retention Manager 27 PR Manager 28 Event Marketing Manager 29 Pricing Manager 30 Manager of Market Information
+
+Department Administration Administration Customer Operations Customer Operations Customer Operations Finance - Treasury Finance - Treasury Finance - Treasury IT IT IT IT IT IT IT
+IS IS IS IS IS IS IS IS
+Marketing - Acquisition & Retention Marketing - Acquisition & Retention Marketing - Acquisition & Retention Marketing - PR Marketing - Event Marketing - Business Developmet Marketing - Business Developmet
+
+Benchmark
+??
++ + + +
+
+31 Product Manager 32 Media Manager 33 Media Planner
+@ ealer Development Manager
+35 Sales Support Call Center Manager 36 Sales Training & Communication Manager
+37 Commissions & Incentives/Events Merchandising Manager
+38 Corporate Store Manager 39 Manager Implementation 40 Switching Implementation Engineer 41 Transmission Implementation Engineer 42 Team Leader Switching 43 Team Leader Enhanced Services 44 Implementation Coordination Engineer 45 Site Acquisition Manager 46 Project/ Program Manager 47 Manager SA Implementation 48 Manager SA Construction 49 OMC Engineer 50 BTS Engineer 51 NMC Engineer 52 MSC/BSC ·Engineer 53 MSC/BSC Specialist 54 Project Manager 55 Microwave Engineer 56 Team Leader Traffic & Network Data 57 Traffic Switching Engineer 58 Team Leader Microwave Regional Planning 59 Engineer Special Transmission Project 60 RF Technician Team Leader 61 RF Engineer 62 Traffic Engineer 63 Network Planning Engineer 64 Optimization Data Analyst
+
+Marketing - Service Development Marketing - Advertising Marketing - Advertising Sales Indirect Sales Support Sales Support
+Sales Support
+Sales Support Technology Development Technology Development Technology Development Technology Development Technology Development Technology Development Site Acquisition Site Acquisition SA Implementation Site Acquisition & Construction
+O&M O&M O&M O&M O&M
+Fixed Network Fixed Network Fixed Network Fixed Network Fixed Network Fixed Network
+RF RF RF RF RF
+
+Benchmark
+Benchmark Benchmark Benchmark
+
+65 Project Manager Team Leader 66 Optimization Engineer 67 RF Senior Engineer 68 Design & Deployment Engineer 69 Design & Deployment Coordinator 70 71 72 Real Estate & Construction Manager 73 74 75 76
+
+RF RF RF RF RF
+Real Estate & Facilities Mngmt
+
+Level 4
+No. Job Title 1 Property Manager 2 Office Manager 3 Civil Protection Specialist 4 Safety Specialist 5 Security Specialist 6 Fire Specialist 7 Office Manager 8 CS Representative 9 Collection Officer
+10 AR Tearn Leader 11 Training Specialist 12 Intranet Database Admin 13 Loyalty Specialist 14 Special Services CS Rep 15 Business Analyst 16 Fraud Analyst 17 Collection Analyst 18 Fraud Officer 19 Budget Manager 20 HR Specialist 21 HR Consultant 22 Recruitment Specialist 23 Training Specialist 24 LAN/WAN Administrator 25 3rd Party Software Administrator 26 Help Desk Supervisor 27 PABX/ACD Analyst 28 Messaging Expert I Open View Engineer 29 Billing Distribution Supervisor 30 Senior System Operator
+
+Department Administration Administration Administration Administration Administration Administration Administration Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Finance - Accounting HR HR HR HR IT IT IT IT IT IT IT
+
+????? Benchmark
+Benchmark Benchmark ???
+
+31 CABS Administrator 32 Senior Programmer Analyst 33 Manager PMO 34 Programmer Analyst 35 Database Administrator 36 System Tester 37 Quality Assurance Analyst 38 System Analyst 39 Team Leader Non-Billing Projects 40 Team Leader Billing Projects 41 Project Manager 42 SUN Business Systems Analyst 43 Promotion Project Manager 44 Alternate Channel Project Manager 45 Channel Indirect Sales Project Manager 46 Channel Direct Sales Project Manager 47 Customer Loyalty Project Manager 48 Competitive Analyst 49 Research Program Analyst 50 Feasibility Analyst 51 Market Business Planning Analyst 52 Business Market Analyst 53 Consumer Market Analyst 54 Expansion Analyst 55 New Product Analyst 56 Segmentatin Analyst 57 Project X Manager 58 Project Manager 59 Production Manager 60 Creative Manager 61 Special Projects Manager 62 SIM Card Manager 63 Warehouse & Logistics Manager 64 Direct Sales I Sales Account Executive
+
+IT
+IS IS IS IS IS IS IS IS IS IS IS
+Marketing -Acquisition & Retention Marketing - Acquisition & Retention Marketing - Acquisition & Retention Marketing - Acquisition & Retention Marketing - Acquisition & Retention Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Business Development Marketing - Project X Marketing - Advertising Marketing - Advertising Marketing - Advertising Marketing - Advertising PAD PAD Sales - Direct
+
+Benchmark Benchmark + Benchmark
+Benchmark Benchmark
+
+65 Retail Account Manager 66 Dealer Channel Manager 67 Alternative Channel Manager 68 Trainer 69 Sales Support Call Center Team Leader 70 Sales Rep Stores 71 Senior Sales Rep Stores 72 RF Technician 73 Senior RF Technician 74 Coordination Support Engineer 75 Network Data Tracking Jr. Engineer 76 Equipment Tracking Engineer 77 GIS Specialist 78 Technician Transmission Implementation 79 Engineer Regulatory & Frequency Coordinator 80 Budget Manager 81 SUN System Supervisor 82 AP Team Leader 83 Facility Manager 84 Facility Manager Mechanical / Electrical 85 Site Acquisition Engineer 86 Tower Project Coordinator 87 Civil Engineer 88 Construction Manager 89 Electrical Engineer 90 Power and Permit Coordinator 91 Implementation Engineer 92 Standards Engineer 93 Project Manager 94 Standards Engineer 95 Translations Engineer 96 Roaming Coordinator 97 Specialist New Projects 98 GSM Data Services Engineer
+
+Sales - Indirect Sales - Indirect Sales - Indirect Sales Support Sales Support Sales Support Sales Support RF RF RF Fixed Network Fixed Network Fixed Network Fixed Network Fixed Network Finance - Accounting Finance - Accounting Finance - Treasury Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt Site Acquisition SA Construction SA Construction SA Construction SA Construction SA Construction SA Implementation SA Implementation SA Implementation Technology Development Technology Development Technology Development Technology Development Technology Development
+
+Benchmark
+
+99 Specialist Billing Solutions 100 Specialist Fiber Transmission Project 101 Budget & Inventory Manager 102 Database Administrator 103 104 105 106 107
+
+Technology Development Technology Development Budget & Inventory Budget & Inventory
+
+Levels
+No. Job Title 1 Fleet Coordinator 2 Maid Supervisor 3 Retail Account Executive 4 After Sales Service Executive/ Service Account Exec. 5 Project Manager 6 Sales Support Call Center Rep 7 Financial Analyst 8 FA Specialist 9 Inventory Specialist
+1O Roaming and Interconnect Specialist 11 Reporting Assistant 12 Budget Specialist 13 SUN Business Accountant 14 GAAP Reporting Specialist 15 Executive Assistant 16 Collections Specialist 17 AR Specialist 18 Payroll Specialist 19 Customs Specialist 20 Payroll Accountant 21 Reporting Assistant 22 Payroll Analyst 23 AP Senior Accountant 24 Translator/ Interpretor 25 Office & Budget Manager 26 Construction Manager 27 Mechanical & Engineering Manager 28 Inventory Controller 29 Warehouse Supervisor 30 Terminal Acquisition Manager
+
+Department Administration Administration Sales - Indirect Sales - Direct Sales Support Sales Support Finance Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance Finance - Treasury Finance - Treasury Finance - Treasury Finance - Treasury Finance - Treasury Finance - Treasury Finance - Treasury Finance - Treasury Legal Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt
+PAD PAD PAD
+
++ Benchmark
+Benchmark Benchmark
+
+31 Terminal Repair Specialist 32 Terminal Specialist 33 Production Manager 34 Office Manager 35 Budget Manager 36 Executive Assistant 37 Project Manager 38 Event Marketing Coordinator 39 PR Coordinator 40 Translator/ Copywriter 41 DTP Creative 42 DTP Artist 43 Project Coordinator I Leader 44 Direct Marketing Project Coordinator 45 Terminal Pricing Specialist 46 Compensation & Benefits Specialist 47 Expat Specialist 48 Help Desk IT Staff 49 Help Desk Disptacher 50 Executive Assistant 51 Purchasing & Budget Control 52 PBXfACD Technician 53 Printer Operator 54 System Operator 55 Service Level Supervisor 56 CABS Help Desk 57 PMO Analyst 58 Planning & Control Coordinator 59 AR Officer 60 Credit & Connections Specialist 61 AR Analyst 62 AR Rep 63 Credit & Connections Officer 64 Office Manager
+
+PAD PAD PAD
+Marketing Marketing Marketing Marketing - Project X Marketing - Event Marketing - PR Marketing - Advertising Marketing - Advertising Marketing - Advertising Marketing - Advertising Marketing - Acquisition & Retention Marketing - Business Development HR HR
+IT IT IT IT IT IT IT IT IT
+IS Budget & Inventory Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations Customer Operations
+
+Benchmark +
+
+Level6
+No. Job Title 1 Property Coordinator 2 Office & Logistics Coordinator 3 Budget Coordinator 4 Purchasing & Inventory Coordinator 5 Executive Assistant 6 Assistant Translator 7 Technician 8 Expats Payments 9 Executive Assistant
+10 Sales Coordinator 11 National Sales Coordinator 12 Sales Communication Coordinator/ Sales Administrator 13 Commissions/ Incentive Sales Coordinator 14 Budget Coordinator 15 SUN Assistant 16 FA Assistant 17 Inventory Assistant 18 Revenue Assistant 19 Roaming Assistant 20 Cashier 21 Accounting Clerk - Petty Cash 22 Tax Specialist 23 Budget Assistant 24 FA Accountant 25 Tax Assistant 26 Customs Coordinator 27 AP Junior Accountant 28 Legal Coordinator 29 Office Administrator 30 Construction Assistant
+
+Department Administration Administration Administration Administration Administration Administration Administration Administration Sales - Direct, lndir, Supp Sales - Indirect Sales - Indirect Sales Support Sales Support Sales Support Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Accounting Finance - Treasury Finance - Treasury Legal Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt
+
+Benchmark
+
+31 Executive Assistant 32 Mechanical Assistant 33 Mechanical Assistant General 34 Technician 35 Order Fulfillment/ Order Desk Clerk 36 Order Fulfillment Supervisor 37 SIM Card Rep 38 Executive Assistant 39 Budget Coordinator 40 Project X Coordinator 41 Executive Assistant 42 Production Coordinator 43 Media Coordinator 44 Marketing Assistant (Logistics) 45 Database Marketing Specialist 46 Operations Coordinator CBC/ DBC 47 Executive Assistant 48 Employment Specialist 49 HRD Coordinator 50 Executive Assistant 51 Generator Maintenance Mechanic 52 Executive Assistant 53 Executive Assistant 54 Lease Coordinator 55 Senior Department Coordinator 56 Cost Administrator 57 Manager Billing 58 Executive Assistant 59 Payments and Budgets Coordinator 60 Planning & Control Specialist 61 Planning & Control Analyst 62 Inventory Coordinator 63 Executive Assistant 64 Payment Officer
+
+Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt
+PAD PAD PAD PAD
+Marketing Marketing - Project X Marketing - subdepts Marketing - Advertising Marketing - Advertising Marketing - Event Marketing - Acquisition & Retention HR HR HR HR O&M O&M RF Fixed Network Site Acquisition SA Construction SA Construction Technology Development Technology Development Budget & Inventory Budget & Inventory Budget & Inventory Budget & Inventory Customer Operations Customer Operations
+
+Benchmark
+
+--"····Ca
+C
+
+E
+
+""~
+"'
+
+""''
+
+"" '
+
+.,
+"'
+
+"'"'
+
+0
+"
+
+Level?
+No. Job Title 1 Maintenance & Repair Assistant 2 Receptionist 3 Maid 4 Purchasing & Inventory Clerk 5 Purchasing & Inventory Assistant 6 Mail & Logistics Support Assistant 7 Warehouse Clerk 8 Administration Clerk 9 Driver
+10 Training & Communication Assistant 11 Warehouse Administrator 12 Cashier Stores 13 Tax Accounting Clerk 14 Finance Clerk 15 Multi Cash Clerk 16 Data Entry Clerk 17 Office Assistant 18 Help Desk 19 Warehouse Clerk 20 Marketing Coordinator Executive 21 Technical Support 22 Media Assistant 23 Project Assistant 24 Production Assistant 25 Labour Book Specialist 26 Administrative Assistant 27 Assistant 28 Fixed Network Assistant 29 Admin Assistant
+
+Department Administration Administration Administration Administration Administration Administration Administration Administration Administration Sales Support Sales Support Sales Support Finance - Accounting Finance - Accounting Finance - Treasury Finance - Treasury Real Estate & Facilities Mngmt Real Estate & Facilities Mngmt PAD Marketing Marketing - Event Marketing - Advertising Marketing - Advertising Marketing - Advertising HR Site Acquisition Implementation O&M Fixed Network Site Acquisition
+
+Benchmark Benchmark Benchmark
+
+30 Executive Assistant 31 Admin Assistant 32 Executive Assistant 33 Admin Assistant 34 Roaming Coordinator Assistant 35 Admin Assistant 36 Payments & Budget Specialist 37 Inventory Clerk 38 Warehouse Man 39 Back Office Rep 40 Switchboard Operator 41 Administration and Purchasing Assistant 42 Library Administrator 43 PMO Support 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63
+
+Site Acquisition SA Construction SA Construction SA Implementation Technology Development Budget & Inventory Budget & Inventory Budget & Inventory Budget & Inventory Customer Operations IT IT IS IS
+
+
