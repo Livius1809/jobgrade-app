@@ -1394,4 +1394,74 @@ enum LegalCriterion {
   RESPONSABILITATI         // Decision Making + Business Impact
   CONDITII_MUNCA           // Working Conditions
 }
+// ─────────────────────────────────────────
+// SALARY BENCHMARK — Date piață salarială
+// ─────────────────────────────────────────
+
+model SalaryBenchmark {
+  id              String          @id @default(cuid())
+  source          BenchmarkSource
+  sourceDetail    String?                           // "INS 2025 Q4", "Glassdoor Jan 2026"
+  year            Int                               // anul datelor
+  quarter         Int?                              // Q1-Q4 (opțional)
+  country         String          @default("RO")    // ISO 3166-1 alpha-2
+
+  // Identificare ocupație
+  jobFamily       String                            // "IT", "Financiar", "Vanzari", "HR", etc.
+  jobTitle        String?                           // titlu specific (opțional)
+  corCode         String?                           // Cod COR (Clasificarea Ocupatiilor din Romania)
+  iscoCode        String?                           // Cod ISCO-08 (international)
+  seniorityLevel  SeniorityLevel                    // ENTRY, MID, SENIOR, LEAD, EXECUTIVE
+
+  // Grade mapping — legătura cu sistemul intern JobGrade
+  gradeMin        Int?                              // gradul minim echivalent (1-8)
+  gradeMax        Int?                              // gradul maxim echivalent (1-8)
+
+  // Date salariale (brut lunar RON)
+  salaryP10       Float?                            // percentila 10
+  salaryP25       Float                             // percentila 25 (Q1)
+  salaryMedian    Float                             // mediana (P50)
+  salaryP75       Float                             // percentila 75 (Q3)
+  salaryP90       Float?                            // percentila 90
+  salaryMean      Float?                            // media aritmetică
+  sampleSize      Int?                              // dimensiune eșantion
+
+  // Metadata
+  region          String?                           // "București", "Transilvania", "National"
+  industry        String?                           // "IT&C", "Banking", "Manufacturing"
+  currency        String          @default("RON")
+  notes           String?         @db.Text
+
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([jobFamily, seniorityLevel, year])
+  @@index([country, year, quarter])
+  @@index([gradeMin, gradeMax])
+  @@index([corCode])
+  @@map("salary_benchmarks")
+}
+
+enum BenchmarkSource {
+  INS_TEMPO           // Institutul Național de Statistică — baza TEMPO online
+  EUROSTAT            // Eurostat Structure of Earnings Survey
+  GLASSDOOR           // Glassdoor salary data (public)
+  UNDELUCRAM          // Undelucram.ro salary reports
+  BESTJOBS            // BestJobs salary index
+  HAYS                // Hays Salary Guide Romania
+  PWCRO               // PwC PayWell Romania
+  KPMGRO              // KPMG Salary Survey
+  MERCER              // Mercer Total Remuneration Survey
+  CUSTOM              // Date proprii / import manual
+}
+
+enum SeniorityLevel {
+  ENTRY               // 0-2 ani experiență
+  MID                 // 2-5 ani
+  SENIOR              // 5-10 ani
+  LEAD                // 10+ ani, conducere echipă
+  EXECUTIVE           // C-level, director
+}
+
 // Force Vercel rebuild Thu, Apr  2, 2026  5:41:11 PM
