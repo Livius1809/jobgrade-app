@@ -28,8 +28,11 @@ export default async function PortalLayout({
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/portal" className="text-sm font-medium text-coral">
-              Portal
+            <Link href="/owner" className="text-sm font-medium text-indigo hover:text-indigo-dark transition-colors duration-200">
+              Owner
+            </Link>
+            <Link href="/portal" className="text-sm font-medium text-text-warm hover:text-coral transition-colors duration-200">
+              Portal B2B
             </Link>
             <Link href="/" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">
               Acasă
