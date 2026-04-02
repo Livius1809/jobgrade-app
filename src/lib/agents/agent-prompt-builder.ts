@@ -154,12 +154,25 @@ function buildL3Section(role: string, context: AgentContext): string {
 ═══ LAYER 3 — CADRUL LEGAL (tu ești sursa — CJA) ═══
 
 Ești gardianul conformității legale. Domeniile tale:
-  • GDPR (Reg. 2016/679) + ANSPDCP
-  • Directiva EU 2023/970 (transparență salarială)
-  • Codul Muncii RO + legislație conexă
-  • AI Act (Reg. 2024/1689) — clasificare RISC RIDICAT
-  • Drept comercial, fiscal, civil RO
-  • Securitate cibernetică (NIS2)
+  • GDPR (Reg. 2016/679) + ANSPDCP — protecția datelor personale
+  • AI Act (Reg. 2024/1689) — clasificare RISC RIDICAT (Anexa III punct 4), deadline 2 aug 2026
+  • Directiva UE răspundere AI — responsabilitate producător/operator
+  • Directiva EU 2023/970 — transparență salarială, egalitate remunerare
+  • Directiva NIS2 (2022/2555) — securitate cibernetică, raportare incidente
+  • Regulamentul ePrivacy (în curs) — cookies, comunicări electronice
+  • Codul Muncii RO — relații de muncă, concediere, discriminare
+  • Codul Civil RO — obligații, contracte, răspundere civilă
+  • Codul Penal RO — fals, fraudă, corupție, hărțuire, evaziune
+  • Codul Comercial / Legea 31/1990 — societăți, fuziuni, cesiuni
+  • Cod Fiscal + Procedură Fiscală — TVA, impozite, obligații declarative
+  • Legea 11/1991 — concurență neloială
+  • Legea 21/1996 — concurență (antitrust)
+  • Legea 241/2005 — evaziune fiscală
+  • Legea 656/2002 — spălare bani
+  • Legea 8/1996 — dreptul de autor
+  • Legea 84/1998 — mărci și indicații geografice
+  • Legea 202/2002 — egalitate de șanse femei-bărbați
+  • OUG 155/2024 — cadrul național AI România
 
 PRINCIPIU L1↔L3: CÂMPUL cere MAI MULT decât legea.
 Legea e PRAGUL MINIM. Tu asiguri conformitatea legală.

@@ -200,19 +200,35 @@ function calibrateL3(input: string): CalibrationFlag[] {
     }
   }
 
-  // 3. AI Act
+  // 3. Legislație AI — UE + România
   const aiPatterns = [
-    { pattern: /decizie.*automat|ai.*decide|algoritmul.*hotărăște/i, message: "AI Act: deciziile automate cu impact pe persoane necesită supraveghere umană (Art. 14). Confirmă că omul decide, AI-ul asistă." },
-    { pattern: /fără.*superviz|fără.*verificare.*umană|lasă.*ai/i, message: "AI Act: eliminarea supravegherii umane pe decizii HR = non-conformitate. Sistem clasificat High-Risk (Anexa III punct 4)." },
+    // AI Act (Reg. 2024/1689)
+    { pattern: /decizie.*automat|ai.*decide|algoritmul.*hotărăște/i, severity: "ATENȚIE" as CalibrationSeverity, message: "AI Act Art. 14: deciziile automate cu impact pe persoane necesită supraveghere umană. Omul decide, AI-ul asistă." },
+    { pattern: /fără.*superviz|fără.*verificare.*umană|lasă.*ai/i, severity: "IMPORTANT" as CalibrationSeverity, message: "AI Act Art. 14+26: eliminarea supravegherii umane pe decizii HR = non-conformitate. Sistem clasificat High-Risk (Anexa III punct 4)." },
+    { pattern: /antren.*model|train.*ai|date.*antrenament|fine.?tun/i, severity: "ATENȚIE" as CalibrationSeverity, message: "AI Act Art. 10: datele de antrenament trebuie să fie relevante, reprezentative, fără bias. Documentare obligatorie a seturilor de date." },
+    { pattern: /transparenț.*ai|explicabil|interpretabil|black.?box/i, severity: "INFO" as CalibrationSeverity, message: "AI Act Art. 13: sistemele high-risk trebuie să fie suficient de transparente pentru utilizatori. Deciziile AI trebuie explicabile." },
+    { pattern: /risc.*ai|clasificare.*risc|evaluare.*impact.*ai/i, severity: "INFO" as CalibrationSeverity, message: "AI Act Art. 6+9: obligație evaluare conformitate + management risc pentru sisteme high-risk. JobGrade = Anexa III punct 4 (ocupare, HR)." },
+    { pattern: /audit.*ai|conformitate.*ai|certificare.*ai/i, severity: "ATENȚIE" as CalibrationSeverity, message: "AI Act Art. 43: sistemele high-risk necesită evaluare conformitate. Deadline: 2 august 2026 pentru sisteme existente." },
+    // GDPR specific AI
+    { pattern: /profilare|profiling|scor.*automat|scoring.*persoan/i, severity: "IMPORTANT" as CalibrationSeverity, message: "GDPR Art. 22: dreptul de a nu face obiectul unei decizii bazate exclusiv pe prelucrare automată (inclusiv profilare) cu efecte juridice." },
+    { pattern: /date.*biometric|recunoaștere.*facial|voice.*print/i, severity: "CRITIC" as CalibrationSeverity, message: "AI Act Art. 5 + GDPR Art. 9: identificarea biometrică la distanță în timp real = INTERZISĂ (cu excepții limitate). Date biometrice = categorie specială GDPR." },
+    // NIS2 (securitate cibernetică)
+    { pattern: /securitate.*ciber|cyber.*security|incident.*securit|breach|atac.*informatic/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Directiva NIS2 (2022/2555): obligații de securitate cibernetică, raportare incidente în 24h, management risc. Verifică dacă platforma intră sub incidență." },
+    // Regulament e-Privacy (în curs de adoptare)
+    { pattern: /cookie|tracking.*online|pixel.*urmărire/i, severity: "INFO" as CalibrationSeverity, message: "Regulamentul ePrivacy (în curs UE) + GDPR: consimțământ explicit pentru cookies non-esențiale. Banner cookie obligatoriu." },
+    // România — OUG 155/2024 (cadrul național AI)
+    { pattern: /autoritate.*ai.*român|anspdcp.*ai|cadru.*național.*ai/i, severity: "INFO" as CalibrationSeverity, message: "România: cadrul național AI în dezvoltare. ANSPDCP + autoritate desemnată AI Act. Monitorizează evoluția legislativă." },
+    // Liability Directive (Directiva privind răspunderea AI)
+    { pattern: /răspundere.*ai|liability.*ai|pagub.*cauzat.*ai|defect.*ai/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Directiva UE privind răspunderea AI (în curs): producătorul/operatorul AI răspunde pentru daunele cauzate. Asigurare profesională recomandată." },
   ]
 
   for (const ap of aiPatterns) {
     if (ap.pattern.test(lower)) {
       flags.push({
         layer: "L3",
-        severity: "ATENȚIE",
-        message: `AI Act: ${ap.message}`,
-        suggestion: "Menține supravegherea umană pe toate deciziile cu impact pe persoane.",
+        severity: ap.severity,
+        message: `Legislație AI: ${ap.message}`,
+        suggestion: "Consultă CJA pentru conformitate AI Act + GDPR.",
       })
     }
   }
