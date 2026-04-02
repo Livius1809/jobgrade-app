@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { calibrateOwnerInput } from "@/lib/agents/owner-calibration"
+import { logOwnerCalibration } from "@/lib/agents/owner-calibration-log"
 
 export const maxDuration = 60
 
@@ -24,6 +26,22 @@ export async function POST(req: NextRequest) {
 
     if (!title?.trim() || !content?.trim()) {
       return NextResponse.json({ error: "Titlu și conținut obligatorii" }, { status: 400 })
+    }
+
+    // Calibrare L1+L2+L3 pe titlu + conținut
+    const calibrationText = `${title.trim()}: ${content.trim().substring(0, 1000)}`
+    const calibration = calibrateOwnerInput(calibrationText)
+    logOwnerCalibration(calibration, "direct", prisma as any).catch(() => {})
+
+    // STOP pe CRITIC — documentul nu se publică
+    if (calibration.flags.some(f => f.severity === "CRITIC")) {
+      return NextResponse.json({
+        error: "Documentul conține conținut cu discrepanță critică și nu poate fi publicat",
+        ownerCalibration: {
+          flags: calibration.flags,
+          isAligned: false,
+        },
+      }, { status: 422 })
     }
 
     const p = prisma as any
@@ -72,6 +90,12 @@ export async function POST(req: NextRequest) {
       success: true,
       title,
       chunks: chunks.length,
+      ...(calibration.flags.length > 0 && {
+        ownerCalibration: {
+          flags: calibration.flags,
+          isAligned: calibration.isAligned,
+        },
+      }),
       agents: agents.length,
       totalEntries: totalCreated,
     })

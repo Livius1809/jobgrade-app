@@ -56,7 +56,11 @@ export default function DocsPage() {
 
       const data = await res.json()
       if (data.success) {
-        setMessage(`✅ „${data.title}" — ${data.totalEntries} entries create pe ${data.agents} agenți`)
+        let msg = `✅ "${data.title}" — ${data.totalEntries} entries create pe ${data.agents} agenți`
+        if (data.ownerCalibration?.flags?.length > 0) {
+          msg += `\n\n⚠ Calibrare L1-L3: ${data.ownerCalibration.flags.map((f: any) => `[${f.layer}] ${f.message}`).join(" | ")}`
+        }
+        setMessage(msg)
         setTitle("")
         setContent("")
         setTags("")
@@ -64,7 +68,11 @@ export default function DocsPage() {
         setShowForm(false)
         loadDocs()
       } else {
-        setMessage(`❌ ${data.error}`)
+        let errorMsg = `❌ ${data.error}`
+        if (data.ownerCalibration?.flags?.length > 0) {
+          errorMsg += `\n\n${data.ownerCalibration.flags.map((f: any) => `[${f.layer}/${f.severity}] ${f.message}`).join("\n")}`
+        }
+        setMessage(errorMsg)
       }
     } catch (e: any) {
       setMessage(`❌ ${e.message}`)
