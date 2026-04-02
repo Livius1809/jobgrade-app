@@ -813,10 +813,14 @@ enum JobStatus {
 
 enum SessionStatus {
   DRAFT
-  IN_PROGRESS
+  BENCHMARK_SELECTION   // AI sugerează, admin ajustează (Sprint 6)
+  PRE_SCORING           // Evaluatori scorează individual, asincron (Sprint 5)
+  IN_PROGRESS           // Sesiune grup: comparare, consens, mediere
   RECALIBRATION
   VOTING
   FACILITATION
+  SLOTTING              // Non-benchmarks se clasifică rapid (Sprint 6)
+  OWNER_VALIDATION      // Owner revizuiește, ajustează din MVV (Sprint 7)
   COMPLETED
 }
 
