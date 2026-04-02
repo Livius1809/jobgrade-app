@@ -405,8 +405,8 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
     tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica"],
   },
   BCA: {
-    consultants: ["STA", "SCA", "PPMO"],
-    tags: ["armstrong-taylor", "pitariu"],
+    consultants: ["STA", "SCA", "PPMO", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
   },
 
   // Marketing — beneficiază de comunicare, psihologie, cultural, eleganță
@@ -420,55 +420,55 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   },
   MKA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "SCA"],
-    tags: ["daniel-david", "slama-cazacu", "stil"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
   },
   ACA: {
-    consultants: ["STA", "SCA", "SOC"],
-    tags: ["armstrong-taylor", "pitariu"],
+    consultants: ["STA", "SCA", "SOC", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
   },
 
   // Strategic — beneficiază de tot (selectiv)
   COG: {
-    consultants: ["PPMO", "SCA", "STA"],
-    tags: ["armstrong-taylor", "pitariu", "daniel-david"],
+    consultants: ["PPMO", "SCA", "STA", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "daniel-david", "stil", "lingvistica"],
   },
   COA: {
-    consultants: ["STA", "SCA"],
-    tags: ["armstrong-taylor", "pitariu"],
+    consultants: ["STA", "SCA", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
   },
   COCSA: {
     consultants: ["PSYCHOLINGUIST", "PPMO", "SOC"],
-    tags: ["armstrong-taylor", "daniel-david"],
+    tags: ["armstrong-taylor", "daniel-david", "stil", "lingvistica"],
   },
 
   // Product — beneficiază de evaluare, metodologie, competențe
   PMA: {
-    consultants: ["STA", "PPMO", "PSE", "SCA"],
-    tags: ["armstrong-taylor", "pitariu"],
+    consultants: ["STA", "PPMO", "PSE", "SCA", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
   },
   DOA: {
-    consultants: ["STA", "PPMO"],
-    tags: ["pitariu", "armstrong-taylor"],
+    consultants: ["STA", "PPMO", "PSYCHOLINGUIST"],
+    tags: ["pitariu", "armstrong-taylor", "stil", "lingvistica"],
   },
   DOAS: {
-    consultants: ["STA", "PPMO", "SCA"],
-    tags: ["pitariu", "armstrong-taylor"],
+    consultants: ["STA", "PPMO", "SCA", "PSYCHOLINGUIST"],
+    tags: ["pitariu", "armstrong-taylor", "stil", "lingvistica"],
   },
 
   // Engineering — beneficiază selectiv
   EMA: {
-    consultants: ["PPMO", "PSE"],
-    tags: ["armstrong-taylor"],
+    consultants: ["PPMO", "PSE", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "stil", "lingvistica"],
   },
 
   // Legal/Compliance
   CJA: {
-    consultants: ["SCA", "STA"],
-    tags: ["armstrong-taylor", "pitariu"],
+    consultants: ["SCA", "STA", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
   },
   DPA: {
-    consultants: ["SCA"],
-    tags: ["armstrong-taylor"],
+    consultants: ["SCA", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "stil", "lingvistica"],
   },
 }
 
