@@ -41,6 +41,8 @@ model Tenant {
   jointAssessments      JointPayAssessment[]
   employeeRequests      EmployeeRequest[]
   clientMemories        ClientMemory[]
+  payrollEntries        PayrollEntry[]
+  payrollImportBatches  PayrollImportBatch[]
 
   @@map("tenants")
 }
@@ -1274,4 +1276,122 @@ enum ClientMemoryCategory {
   OPPORTUNITY       // upsell, cross-sell, expansiune
   HISTORY           // ce s-a discutat, ce s-a promis, ce s-a livrat
   STYLE             // formal/informal, detaliat/sumar, RO/EN
+}
+
+// ─────────────────────────────────────────
+// PAYROLL IMPORT — Stat de plată (21 câmpuri)
+// ─────────────────────────────────────────
+
+model PayrollEntry {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  importBatchId         String    // grup de import (un upload = un batch)
+
+  // Identificare post
+  jobCode               String    // cod post intern companie
+  jobTitle              String    // denumire post
+  department            String    // departament
+  hierarchyLevel        String    // N, N-1, N-2, N-3, N-4, N-5+
+  jobFamily             String    // familie posturi (Financiar, IT, Vânzări)
+
+  // Grad/Clasă — dual: calculat + evaluat
+  gradeCalculated       Int?      // grad auto-calculat din clustering
+  gradeEvaluated        Int?      // grad din evaluare 6 criterii (după JE)
+
+  // Remunerație completă
+  baseSalary            Float     // salariu bază brut RON/lună
+  fixedAllowances       Float     @default(0) // sporuri fixe RON/lună
+  annualBonuses         Float     @default(0) // bonusuri/prime RON/an
+  annualCommissions     Float     @default(0) // comisioane RON/an
+  benefitsInKind        Float     @default(0) // beneficii natură RON echiv/lună
+  mealVouchers          Float     @default(0) // tichete masă/vacanță RON/lună
+
+  // Date angajat (anonimizate — fără nume/CNP)
+  gender                Gender    // F / M
+  workSchedule          WorkSchedule // 2h, 4h, 6h, 8h
+  contractType          ContractType // CIM determinat/nedeterminat/convenție
+  tenureOrg             Float     @default(0) // vechime organizație (ani)
+  tenureRole            Float     @default(0) // vechime post (ani)
+  workLocation          WorkLocation // sediu/remote/hibrid
+  city                  String    // localitate
+  education             Education // studii
+  certifications        String?   // certificări/atestări profesionale
+
+  // Calculat automat
+  totalMonthlyGross     Float?    // salariu total lunar brut (normalizat la 8h)
+  salaryQuartile        Int?      // cuartila 1-4
+
+  // Metadata
+  createdAt             DateTime  @default(now())
+  importedAt            DateTime  @default(now())
+
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, importBatchId])
+  @@index([tenantId, jobFamily])
+  @@index([tenantId, gender])
+  @@index([tenantId, hierarchyLevel])
+}
+
+model PayrollImportBatch {
+  id          String   @id @default(cuid())
+  tenantId    String
+  fileName    String
+  totalRows   Int
+  validRows   Int
+  invalidRows Int      @default(0)
+  status      String   @default("COMPLETED") // COMPLETED, PARTIAL, FAILED
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// Mapare 6 criterii JobGrade → 4 criterii Lege
+model CriteriaMapping {
+  id                String @id @default(cuid())
+  legalCriterion    LegalCriterion
+  jobgradeFactor    String // Knowledge, Communications, etc.
+  description       String
+
+  @@unique([legalCriterion, jobgradeFactor])
+}
+
+enum Gender {
+  F
+  M
+}
+
+enum WorkSchedule {
+  H2   // 2 ore/zi
+  H4   // 4 ore/zi
+  H6   // 6 ore/zi
+  H8   // 8 ore/zi (norma întreagă)
+}
+
+enum ContractType {
+  CIM_NEDETERMINAT  // contract pe durată nedeterminată
+  CIM_DETERMINAT    // contract pe durată determinată
+  CONVENTIE         // convenție civilă
+}
+
+enum WorkLocation {
+  SEDIU
+  REMOTE
+  HIBRID
+}
+
+enum Education {
+  MEDII         // studii medii / liceu
+  SUPERIOARE    // licență
+  MASTER        // master
+  DOCTORAT      // doctorat
+}
+
+enum LegalCriterion {
+  CUNOSTINTE_DEPRINDERI    // Knowledge + Communications
+  EFORT_INTELECTUAL_FIZIC  // Problem Solving
+  RESPONSABILITATI         // Decision Making + Business Impact
+  CONDITII_MUNCA           // Working Conditions
 }
