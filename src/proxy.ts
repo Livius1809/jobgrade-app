@@ -98,7 +98,19 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 5. Auth check — redirect to login if no session
+  // 5. Hidden routes — return 404 for unauthenticated users (don't reveal existence)
+  const HIDDEN_ROUTES = ["/owner"]
+  if (HIDDEN_ROUTES.some((r) => pathname.startsWith(r))) {
+    const sessionToken =
+      request.cookies.get("authjs.session-token")?.value ||
+      request.cookies.get("__Secure-authjs.session-token")?.value
+    if (!sessionToken) {
+      // Return 404 — don't redirect to login, don't reveal the route exists
+      return new NextResponse("Not Found", { status: 404 })
+    }
+  }
+
+  // 6. Auth check — redirect to login if no session
   const sessionToken =
     request.cookies.get("authjs.session-token")?.value ||
     request.cookies.get("__Secure-authjs.session-token")?.value
