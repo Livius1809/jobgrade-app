@@ -213,7 +213,7 @@ export default function ConsensusView({
                     </span>
                     {item.mode && hasVotes && (
                       <span className="ml-2 text-sm text-gray-500">
-                        Mod: {item.mode.subfactor.code} ({item.mode.subfactor.points} pct)
+                        Mod: {item.mode.subfactor.code}
                       </span>
                     )}
                   </div>
@@ -258,9 +258,6 @@ export default function ConsensusView({
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm text-gray-900">
                                   {d.subfactor.code}
-                                </span>
-                                <span className="text-xs text-blue-600">
-                                  {d.subfactor.points} pct
                                 </span>
                                 <span className="text-xs text-gray-500 max-w-xs truncate">
                                   {d.subfactor.description.substring(0, 60)}...
@@ -362,7 +359,7 @@ export default function ConsensusView({
                 <option value="">— Selectează —</option>
                 {decideModal.subfactors.map((sf) => (
                   <option key={sf.id} value={sf.id}>
-                    {sf.code} — {sf.points} pct · {sf.description.substring(0, 50)}
+                    {sf.code} — {sf.description.substring(0, 60)}
                   </option>
                 ))}
               </select>

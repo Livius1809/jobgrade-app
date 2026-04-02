@@ -197,11 +197,8 @@ export default function EvaluationForm({
               </div>
               {selectedSf && (
                 <div className="text-right shrink-0 ml-4">
-                  <div className="text-lg font-bold text-blue-600">
-                    {selectedSf.points} pct
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Nivel {selectedSf.code}
+                  <div className="text-lg font-bold text-indigo-dark">
+                    {selectedSf.code}
                   </div>
                 </div>
               )}
@@ -239,9 +236,6 @@ export default function EvaluationForm({
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm text-gray-900">
                         {sf.code}
-                      </span>
-                      <span className="text-xs text-blue-600 font-medium">
-                        {sf.points} pct
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mt-0.5">
