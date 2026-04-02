@@ -91,6 +91,8 @@ export const ESCALATION_CHAIN: Record<string, string> = {
   CJA: "COG",
   CIA: "COG",
   CCIA: "COG",
+  // Client-facing specializat
+  MEDIATOR: "PMA",
   // Suport specializat → PMA
   HR_COUNSELOR: "PMA",
   PSYCHOLINGUIST: "PMA",

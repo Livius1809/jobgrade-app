@@ -28,7 +28,7 @@ const CONTEXT_MAP: Record<string, AgentContext> = {
   CJA: "legal", CIA: "legal", CCIA: "legal",
   // Client-facing
   SOA: "client-facing", CSSA: "client-facing", CSA: "client-facing",
-  HR_COUNSELOR: "client-facing", BCA: "client-facing",
+  HR_COUNSELOR: "client-facing", BCA: "client-facing", MEDIATOR: "client-facing",
   // Marketing
   MKA: "marketing", ACA: "marketing", CMA: "marketing", CWA: "marketing",
   CDIA: "marketing",
