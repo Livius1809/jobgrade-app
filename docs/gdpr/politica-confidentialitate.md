@@ -12,8 +12,8 @@ Platforma **JobGrade** este operată de:
 
 **Psihobusiness Consulting SRL**  
 CUI: RO15790994  
-Sediu social: [ADRESĂ DE COMPLETAT]  
-Email: [EMAIL DE COMPLETAT]  
+Sediu social: Str. Viitorului nr. 20, Roșu, Ilfov, cod poștal 077042  
+Email: contact@jobgrade.ro  
 Website: [https://jobgrade.ro](https://jobgrade.ro)
 
 JobGrade este o platformă SaaS dedicată companiilor din România, care oferă servicii de evaluare și ierarhizare a posturilor, analiză salarială și conformitate cu legislația europeană privind transparența salarială (Directiva EU 2023/970).
@@ -115,16 +115,19 @@ Când baza legală este **interesul legitim**, am evaluat că drepturile și lib
 
 | Categorie date | Termen de retenție |
 |---------------|-------------------|
-| Cont utilizator | Pe durata contractului B2B + 30 de zile de la ștergerea contului |
+| Cont utilizator B2B | Pe durata contractului + 3 ani (prescripție comercială) |
 | Tokeni OAuth | Pe durata sesiunii active; revocabili oricând |
-| Profil companie | Pe durata contractului B2B + 30 de zile |
-| Fișe de post și evaluări | Pe durata contractului + 5 ani (legislația muncii) |
-| Date salariale (PayrollEntry) | Pe durata contractului + conform legislație fiscală |
-| Rapoarte pay gap | Conform obligație legală (minim 5 ani) |
-| Conversații AI | Pe durata contractului + 90 de zile |
+| Profil companie | Pe durata contractului + 3 ani |
+| Fișe de post și evaluări | Pe durata contractului + 5 ani (legislația muncii + transparență salarială) |
+| Date salariale import (per client) | 24 luni sau terminare contract (ce vine primul) |
+| Date salariale agregate anonime | Fără limită — statistici anonime (min. 5 angajați/celulă) |
+| Rapoarte pay gap | Durata contractului + 5 ani (obligație legală) |
+| Conversații AI (text brut) | 6 luni; cunoașterea relevantă se distilează anonim |
 | Cookies de sesiune | Până la expirare (24 ore) sau la deconectare |
 | Date financiare | 10 ani (legislație fiscală) |
 | Cereri Art. 7 | Minim 3 ani de la răspuns |
+| Loguri tehnice | 12 luni |
+| **Cont B2C (planificat)** | Pseudonim default; email obligatoriu; date psihologice: durata abonament + 6 luni |
 
 La încetarea contractului B2B, clientul poate solicita **exportul complet** al datelor (în format CSV sau JSON) sau **ștergerea completă**. Ștergerea se efectuează în termen de 30 de zile și se confirmă în scris.
 
@@ -200,7 +203,7 @@ Dacă ați consimțit la autentificarea OAuth (Google/LinkedIn), puteți revoca 
 
 Puteți trimite o cerere:
 
-- **Email:** [EMAIL DPO — DE COMPLETAT de Owner]
+- **Email:** dpo@jobgrade.ro
 - **Prin platformă:** din setările contului (pentru rectificare și portabilitate)
 
 Răspundem în termen de **30 de zile** de la primirea cererii. Dacă cererea este complexă, termenul poate fi prelungit cu încă 60 de zile, cu notificarea dumneavoastră.
@@ -264,13 +267,13 @@ Platforma JobGrade este destinată exclusiv **mediului profesional B2B**. Nu col
 
 ## 12. Responsabilul cu protecția datelor (DPO)
 
-**[DE COMPLETAT de Owner]**
+**Persoană de contact GDPR:**
 
-Nume: [NUME DPO]  
-Email: [EMAIL DPO]  
-Telefon: [TELEFON DPO]
+Nume: Liviu Stroie  
+Email: dpo@jobgrade.ro  
+Funcție: Administrator, Psihobusiness Consulting SRL
 
-Puteți contacta DPO-ul nostru pentru orice întrebări legate de protecția datelor dumneavoastră personale.
+Puteți contacta persoana responsabilă cu protecția datelor pentru orice întrebări legate de datele dumneavoastră personale.
 
 ---
 
@@ -306,7 +309,7 @@ Vă recomandăm să verificați periodic această pagină.
 Pentru orice întrebare legată de această politică sau de datele dumneavoastră personale:
 
 **Psihobusiness Consulting SRL**  
-Email: [EMAIL DE COMPLETAT]  
+Email: contact@jobgrade.ro  
 Website: [https://jobgrade.ro](https://jobgrade.ro)
 
 ---

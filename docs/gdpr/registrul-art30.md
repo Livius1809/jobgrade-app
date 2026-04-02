@@ -10,7 +10,7 @@
 **Versiune document:** 1.0  
 **Data întocmirii:** 01.04.2026  
 **Ultima actualizare:** 01.04.2026  
-**Responsabil document:** DPO [DE COMPLETAT de Owner]
+**Responsabil document:** Liviu Stroie (persoană de contact GDPR)
 
 ---
 
@@ -40,15 +40,37 @@
 
 ## Note importante
 
-### * Termene de retenție — necesită decizie Owner
+### Termene de retenție — APROBATE de Owner (02.04.2026)
 
-Toate termenele marcate cu **\*** sunt propuse de DPO și necesită validare explicită de către Owner (Liviu). Se recomandă:
+| Nr registru | Categorie | Termen retenție aprobat | Baza |
+|---|---|---|---|
+| 1 | Cont utilizator B2B | Durata contractului + 3 ani | Prescripție comercială Art. 2517 Cod Civil |
+| 2 | Autentificare OAuth | Durata sesiunii + revocare la cerere | Tehnic |
+| 3 | Profil companie | Durata contractului + 3 ani | Prescripție comercială |
+| 4 | Fișe de post | Durata contractului + 5 ani | Codul Muncii + Legea transparență salarială |
+| 5 | Evaluări posturi | Durata contractului + 5 ani | Codul Muncii + Legea transparență salarială |
+| 6 | Stat de plată (brut per client) | 24 luni sau terminare contract (ce vine primul) | Interes legitim — comparație YoY |
+| 6* | Stat de plată (agregate anonime, min 5/celulă) | Fără limită — nu sunt date personale | Recital 26 GDPR |
+| 7 | Rapoarte pay gap | Durata contractului + 5 ani | Directiva EU 2023/970 |
+| 8 | Chat AI / Generări AI | 6 luni (conversații raw); cunoașterea distilată în ClientMemory pe durata contractului | Minimizare + interes legitim |
+| 9 | Knowledge Base | KB permanent: durata platformei; KB client-specific: durata contract + 30 zile | Operațional |
+| 10 | Cookies/sesiuni | Până la expirare (24h) | Tehnic |
+| 11 | Email-uri tranzacționale | 30 zile la Resend; nu stocăm | Operațional |
+| 12 | Notificări push | Tranzitorii, max 12h | Operațional |
+| 13 | Facturare | 10 ani | Art. 25 Cod Fiscal |
+| 14 | Memorii client | Durata contractului + 30 zile | Interes legitim |
+| 15 | Cereri angajați Art. 7 | 3 ani de la răspuns | Legislația muncii |
+| 16 | Loguri management | 12 luni | Securitate + audit |
+| 17 | Brainstorming | 12 luni | Operațional intern |
 
-- **Contractual standard:** Datele se șterg la 30 de zile de la încetarea contractului B2B, cu excepția celor cu obligație legală de păstrare.
-- **Obligație legală fiscală:** 10 ani (conform Legii contabilității nr. 82/1991).
-- **Obligație legală muncă:** 5 ani (conform Codului Muncii și legislație conexă).
-- **Directiva EU 2023/970:** Termen de stabilit la transpunerea în legislația națională.
-- **Date operaționale interne:** 1 an, cu revizie anuală.
+**B2C (planificat):**
+
+| Categorie | Termen | Nota |
+|---|---|---|
+| Cont B2C | Email obligatoriu, pseudonim default | Privacy by design Art. 25 GDPR |
+| Profil psihologic B2C | Durata abonament + 6 luni | Legat de pseudonim, nu de identitate reală |
+| Facturare B2C | 10 ani (strat separat de profil) | Obligație fiscală; nelinkuit de profilul psihologic |
+| Notificare ștergere B2C | 30/60/90 zile înainte | Export gratuit oricând (PDF) |
 
 ### Transfer internațional — Anthropic API (prioritate ridicată)
 
@@ -58,7 +80,7 @@ Toate termenele marcate cu **\*** sunt propuse de DPO și necesită validare exp
 2. **DPA (Data Processing Agreement)** cu Anthropic — în vigoare prin ToS API
 3. **Anthropic nu reține datele** trimise prin API pentru antrenarea modelelor (conform Terms of Service API, secțiunea privind datele clienților)
 4. **Minimizare:** prompt-urile nu conțin nume, CNP sau date direct identificabile ale angajaților
-5. **Evaluare impact transfer (TIA):** necesară conform Schrems II — [DE REALIZAT]*
+5. **Evaluare impact transfer (TIA):** realizată — vezi `docs/gdpr/tia-anthropic.md`
 
 ### Măsuri tehnice transversale
 
@@ -81,6 +103,7 @@ Acest registru se revizuiește:
 
 ---
 
-**Întocmit de:** DPO (funcție asumată temporar de Owner)  
+**Întocmit de:** Liviu Stroie (persoană de contact GDPR)  
 **Data:** 01.04.2026  
+**Termene retenție aprobate:** 02.04.2026  
 **Semnătura:** ___________________________

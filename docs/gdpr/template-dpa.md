@@ -22,9 +22,9 @@
 
 **Denumire:** Psihobusiness Consulting SRL  
 **CUI:** RO15790994  
-**Sediu:** [ADRESĂ DE COMPLETAT]  
-**Reprezentant legal:** [NUME DE COMPLETAT]  
-**Email contact DPO/privacy:** [EMAIL DE COMPLETAT]
+**Sediu:** Str. Viitorului nr. 20, Roșu, Ilfov, cod poștal 077042  
+**Reprezentant legal:** Liviu Stroie  
+**Email contact DPO/privacy:** dpo@jobgrade.ro
 
 denumite împreună „Părțile" și individual „Partea".
 
@@ -283,7 +283,7 @@ Prezentul Acord reglementează obligațiile Părților privind protecția datelo
 | | OPERATOR | ÎMPUTERNICIT |
 |---|---------|-------------|
 | **Denumire** | [DENUMIRE CLIENT] | Psihobusiness Consulting SRL |
-| **Reprezentant** | [NUME] | [NUME DE COMPLETAT] |
+| **Reprezentant** | [NUME] | Liviu Stroie |
 | **Funcția** | [FUNCȚIE] | Administrator |
 | **Data** | ___/___/______ | ___/___/______ |
 | **Semnătura** | ___________________ | ___________________ |
