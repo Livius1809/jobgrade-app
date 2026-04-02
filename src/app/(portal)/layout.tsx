@@ -11,6 +11,8 @@ export default async function PortalLayout({
   const session = await auth()
   if (!session) redirect("/login")
 
+  const isOwner = session.user.role === "SUPER_ADMIN" || session.user.role === "OWNER"
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Header — consistent cu homepage ──────────────────── */}
@@ -28,9 +30,11 @@ export default async function PortalLayout({
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/owner" className="text-sm font-medium text-indigo hover:text-indigo-dark transition-colors duration-200">
-              Owner
-            </Link>
+            {isOwner && (
+              <Link href="/owner" className="text-sm font-medium text-indigo hover:text-indigo-dark transition-colors duration-200">
+                Owner
+              </Link>
+            )}
             <Link href="/portal" className="text-sm font-medium text-text-warm hover:text-coral transition-colors duration-200">
               Portal B2B
             </Link>

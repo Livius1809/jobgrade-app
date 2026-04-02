@@ -70,6 +70,12 @@ export default async function OwnerDashboard() {
   const session = await auth()
   if (!session) redirect("/login")
 
+  // Acces restricționat — doar OWNER și SUPER_ADMIN
+  const role = session.user.role
+  if (role !== "SUPER_ADMIN" && role !== "OWNER") {
+    redirect("/portal")
+  }
+
   const data = await getOwnerData()
   const firstName = session.user.name?.split(" ")[0] ?? "Owner"
 
