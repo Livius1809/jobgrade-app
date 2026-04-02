@@ -1394,3 +1394,4 @@ enum LegalCriterion {
   RESPONSABILITATI         // Decision Making + Business Impact
   CONDITII_MUNCA           // Working Conditions
 }
+// Force Vercel rebuild Thu, Apr  2, 2026  5:41:11 PM
