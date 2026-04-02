@@ -390,19 +390,19 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Client-facing — beneficiază de comunicare, echitate, bias, evaluare
   HR_COUNSELOR: {
     consultants: ["PSYCHOLINGUIST", "PPMO", "SCA", "PPA", "SOC", "STA", "PSE"],
-    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica"],
+    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica", "apa", "rudica"],
   },
   SOA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "apa", "rudica"],
   },
   CSSA: {
     consultants: ["PSYCHOLINGUIST", "PPA", "SOC"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica"],
   },
   CSA: {
     consultants: ["PSYCHOLINGUIST", "PPA"],
-    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica"],
   },
   BCA: {
     consultants: ["STA", "SCA", "PPMO"],
