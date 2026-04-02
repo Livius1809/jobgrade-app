@@ -36,9 +36,12 @@ export default function DocsPage() {
   }
 
   async function submitDoc() {
-    if (!title.trim() || !content.trim()) return
+    if (!title.trim() || !content.trim()) {
+      setMessage("❌ Titlu și conținut sunt obligatorii")
+      return
+    }
     setSubmitting(true)
-    setMessage("")
+    setMessage("Se procesează...")
 
     try {
       const body: any = { title: title.trim(), content: content.trim() }
@@ -70,7 +73,7 @@ export default function DocsPage() {
   }
 
   async function deleteDoc(docTitle: string) {
-    if (!confirm(`Ștergi „${docTitle}" din biblioteca echipei?`)) return
+    if (!confirm(`Ștergi "${docTitle}" din biblioteca echipei?`)) return
 
     try {
       const res = await fetch("/api/v1/docs", {

@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export const maxDuration = 60
+
 /**
  * POST /api/v1/docs — Adaugă document în biblioteca partajată
  * Body: { title: string, content: string, tags?: string[], targetAgents?: string[] }
