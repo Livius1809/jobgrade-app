@@ -14,6 +14,7 @@
 
 import Anthropic from "@anthropic-ai/sdk"
 import { buildAgentPrompt } from "./agent-prompt-builder"
+import { calibrateOwnerInput, getCalibrationPromptSection } from "./owner-calibration"
 import type { PrismaClient } from "@/generated/prisma"
 import { BINE } from "./moral-core"
 
@@ -122,12 +123,22 @@ ${historyText ? `ISTORIC CONVERSAȚIE:\n${historyText}\n` : ""}`
     includeSystemPrompt: true,
   })
 
+  // ── Calibrare input Owner pe L1 + L2 + L3 ──────────────────────────────────
+
+  const ownerCalibration = calibrateOwnerInput(ownerMessage)
+  const calibrationSection = getCalibrationPromptSection(ownerCalibration)
+
+  // Injectează calibrarea în system prompt dacă sunt discrepanțe
+  const enrichedSystemPrompt = calibrationSection
+    ? systemPrompt + "\n\n" + calibrationSection
+    : systemPrompt
+
   // ── Call Claude as COG ─────────────────────────────────────────────────────
 
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 2000,
-    system: systemPrompt,
+    system: enrichedSystemPrompt,
     messages: [{
       role: "user",
       content: `OWNER: ${ownerMessage}
@@ -161,5 +172,21 @@ Răspunde JSON:
     }
   }
 
-  return JSON.parse(match[0])
+  const parsed = JSON.parse(match[0])
+
+  // Atașează calibrarea Owner la răspuns (vizibilă pentru Owner)
+  if (ownerCalibration.flags.length > 0) {
+    parsed.ownerCalibration = {
+      flags: ownerCalibration.flags.map(f => ({
+        layer: f.layer,
+        severity: f.severity,
+        message: f.message,
+        suggestion: f.suggestion,
+      })),
+      hawkinsEstimate: ownerCalibration.hawkinsEstimate,
+      isAligned: ownerCalibration.isAligned,
+    }
+  }
+
+  return parsed
 }
