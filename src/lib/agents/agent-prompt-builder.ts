@@ -174,6 +174,16 @@ Ești gardianul conformității legale. Domeniile tale:
   • Legea 202/2002 — egalitate de șanse femei-bărbați
   • OUG 155/2024 — cadrul național AI România
 
+  CODURI DEONTOLOGICE ȘI ETICE:
+  • Codul deontologic CPR — Colegiul Psihologilor din România
+  • Principii etice APA — competență, integritate, responsabilitate
+  • ITC Guidelines — standarde testare psihometrică internaționale
+  • Codul etic CECCAR — contabilitate, audit, expertiză contabilă
+  • Codul de practică în publicitate RAC — corectitudine, decență
+  • Deontologie HR — confidențialitate, imparțialitate, nediscriminare
+  • Coduri etice IT (ACM/IEEE) — responsabilitate, transparență, privacy
+  • Secret profesional — psihologie, drept, medicină: absolut
+
 PRINCIPIU L1↔L3: CÂMPUL cere MAI MULT decât legea.
 Legea e PRAGUL MINIM. Tu asiguri conformitatea legală.
 CÂMPUL verifică dacă legalitatea servește BINELE.
@@ -220,6 +230,8 @@ function getLegalDomainsForContext(context: AgentContext): string[] {
         "Codul Muncii RO — relații de muncă, drepturi angajați, concediere",
         "Protecția consumatorilor — comunicare corectă, fără inducere în eroare",
         "Legea 202/2002 — egalitate de șanse, interzicere hărțuire",
+        "Deontologie HR — confidențialitate, imparțialitate, competență profesională",
+        "Secret profesional — datele clientului nu se divulgă între clienți sau terți",
       ]
     case "strategic":
       return [...base,
@@ -228,6 +240,8 @@ function getLegalDomainsForContext(context: AgentContext): string[] {
         "Cod Fiscal + Cod Procedură Fiscală — obligații declarative, TVA, impozite",
         "Legea 31/1990 — societăți comerciale, AGA, administrare",
         "Legea 656/2002 — prevenire spălare bani, obligații raportare",
+        "Cod etic CECCAR — contabilitate, audit, expertiză (dacă operațiuni financiare)",
+        "Deontologie management — bună guvernanță, conflict de interese, transparență decizională",
       ]
     case "marketing":
       return [...base,
@@ -235,6 +249,8 @@ function getLegalDomainsForContext(context: AgentContext): string[] {
         "GDPR Art. 6-7 — consimțământ marketing, drept opoziție",
         "ePrivacy — cookies, comunicări electronice nesolicitate",
         "Legea 8/1996 — dreptul de autor (conținut generat, imagini, texte)",
+        "Codul de practică în publicitate RAC — corectitudine, decență, onestitate",
+        "Deontologie comunicare — nu induce în eroare, nu exploatează emoții vulnerabile",
       ]
     case "legal":
       return [...base,
@@ -252,9 +268,14 @@ function getLegalDomainsForContext(context: AgentContext): string[] {
       ]
     case "support-resource":
       return [...base,
-        "Etica profesională — confidențialitate, nediscriminare",
-        "GDPR — date sensibile (psihologice, comportamentale)",
-        "Legea 213/2004 — psihologia ca profesie (dacă aplicabil)",
+        "GDPR — date sensibile (psihologice, comportamentale, biometrice)",
+        "Legea 213/2004 — exercitarea profesiei de psiholog",
+        "Codul deontologic CPR (Colegiul Psihologilor din România)",
+        "ITC Guidelines — standarde internaționale testare psihometrică",
+        "Principii etice APA — competență, integritate, responsabilitate, respect demnitate",
+        "Secret profesional — absolut, nu se divulgă fără consimțământ",
+        "Consimțământ informat — obligatoriu pentru orice evaluare/testare",
+        "Limitele competenței — operezi strict în domeniul atestării tale",
       ]
     default:
       return [...base,

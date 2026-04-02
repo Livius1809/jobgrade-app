@@ -302,7 +302,28 @@ function calibrateL3(input: string): CalibrationFlag[] {
     }
   }
 
-  // 7. Directiva UE 2023/970 (Transparență salarială) — specific business-ului
+  // 7. Deontologie și coduri etice profesionale
+  const deontologyPatterns = [
+    { pattern: /diagnostic.*psihologic|evaluare.*psihologică|test.*psihometric|chestionar.*personalitate/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Deontologie psihologie (Lg 213/2004 + Cod deontologic CPR): evaluarea psihologică se face doar de psiholog atestat. Instrumentele psihometrice necesită licență și calificare specifică." },
+    { pattern: /terapi|psihoterapi|consiliere.*psihologic|intervenție.*clinică/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Deontologie: platforma NU face psihoterapie sau consiliere psihologică clinică. Aceste activități necesită psiholog clinician/psihoterapeut atestat CPR. Putem recomanda specialiști umani." },
+    { pattern: /secret.*profesional|confidențialitate.*client|date.*pacient/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Deontologie: secretul profesional e absolut în psihologie, medicină, drept. Datele clientului nu se divulgă fără consimțământ explicit, nici între departamente." },
+    { pattern: /conflict.*interes|dublu.*rol|parte.*imparțial/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Deontologie: conflictul de interese trebuie declarat și gestionat. Evaluatorul nu poate fi și parte interesată. Separare clară a rolurilor." },
+    { pattern: /consimțământ.*informat|acord.*participare|drept.*refuz/i, severity: "INFO" as CalibrationSeverity, message: "Deontologie: participarea la evaluări/teste necesită consimțământ informat. Dreptul de refuz trebuie respectat fără consecințe negative." },
+    { pattern: /competență.*profesional|depășire.*competențe|nu.*calificat/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Deontologie: fiecare profesionist operează strict în limitele competențelor atestate. Depășirea competențelor = abatere deontologică." },
+  ]
+
+  for (const dp of deontologyPatterns) {
+    if (dp.pattern.test(lower)) {
+      flags.push({
+        layer: "L3",
+        severity: dp.severity,
+        message: `Deontologie: ${dp.message}`,
+        suggestion: "Verifică cu resursa suport relevantă (PPMO, PSYCHOLINGUIST, PPA, PSE) conformitatea deontologică.",
+      })
+    }
+  }
+
+  // 8. Directiva UE 2023/970 (Transparență salarială) — specific business-ului
   const directivePatterns = [
     { pattern: /ascunde.*salar|nu.*public.*gril|secret.*plat/i, severity: "IMPORTANT" as CalibrationSeverity, message: "Directiva UE 2023/970 Art. 6: angajatorul are obligația transparenței salariale. Ascunderea grilelor poate constitui non-conformitate." },
     { pattern: /diferit.*salar.*acela[sș]i.*post|plăt.*diferit.*acela[sș]i/i, severity: "ATENȚIE" as CalibrationSeverity, message: "Directiva UE 2023/970 Art. 4: muncă egală = plată egală. Diferențele trebuie justificate prin criterii obiective documentate." },
