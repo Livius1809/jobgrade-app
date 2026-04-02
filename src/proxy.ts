@@ -55,7 +55,8 @@ function isPublicPath(pathname: string): boolean {
 
 function isInternalAPI(pathname: string): boolean {
   return pathname.startsWith("/api/v1/agents/") ||
-    pathname.startsWith("/api/v1/kb/")
+    pathname.startsWith("/api/v1/kb/") ||
+    pathname.startsWith("/api/v1/admin/")
 }
 
 // ── Proxy (Next.js 16 format) ────────────────────────────────────────────────
