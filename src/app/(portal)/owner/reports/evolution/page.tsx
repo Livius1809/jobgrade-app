@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 
 export const metadata = { title: "Evoluție Owner — Owner Dashboard" }
+export const maxDuration = 60
 
 export default async function OwnerEvolutionPage() {
   const session = await auth()
@@ -13,7 +14,7 @@ export default async function OwnerEvolutionPage() {
   let report: any = null
   try {
     const key = process.env.INTERNAL_API_KEY
-    const base = `http://localhost:${process.env.PORT ?? 3001}`
+    const base = `http://localhost:${process.env.PORT ?? 3000}`
     const res = await fetch(`${base}/api/v1/agents/cog-chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-internal-key": key ?? "" },

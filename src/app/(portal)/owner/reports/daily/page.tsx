@@ -7,7 +7,7 @@ export const metadata = { title: "Raport zilnic — Owner Dashboard" }
 async function fetchCOGReport() {
   try {
     const key = process.env.INTERNAL_API_KEY
-    const base = `http://localhost:${process.env.PORT ?? 3001}`
+    const base = `http://localhost:${process.env.PORT ?? 3000}`
     const res = await fetch(`${base}/api/v1/agents/cog-chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-internal-key": key ?? "" },
