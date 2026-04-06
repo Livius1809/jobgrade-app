@@ -64,6 +64,12 @@ export interface EscalationPath {
   chain: string[] // [parent, grandparent, ...]
 }
 
+export interface DecisionOption {
+  label: string
+  description: string
+  risk: "LOW" | "MEDIUM" | "HIGH"
+}
+
 export interface DecisionItem {
   situationId: string
   title: string
@@ -71,6 +77,7 @@ export interface DecisionItem {
   classification: string
   cause: string
   actionRequired: string
+  options: DecisionOption[]
   affectedRoles: string[]
   affectedFluxes: CausalityFlux[]
   impactedObjectives: CausalityObjective[]
@@ -341,6 +348,73 @@ function computeRhythm(inputs: CockpitInputs): LayerStatus {
   }
 }
 
+// ── Decision options generator ───────────────────────────────────────────────
+
+function generateDecisionOptions(
+  sit: Situation,
+  roles: string[],
+  fluxCount: number,
+  objectiveCount: number,
+): DecisionOption[] {
+  const options: DecisionOption[] = []
+  const signal = (sit as any).id ?? ""
+
+  // Role cluster (multiple roles same signal)
+  if (roles.length >= 3) {
+    options.push({
+      label: "Investighează cauza comună",
+      description: `${roles.length} roluri raportează același semnal — probabil o dependență sistemică, nu probleme individuale. Deleghez investigația la COG.`,
+      risk: "LOW",
+    })
+    options.push({
+      label: "Redistribuie temporar",
+      description: `Redistribuie sarcinile rolurilor afectate (${roles.join(", ")}) la peers activi. Auto-revert în 24h.`,
+      risk: "MEDIUM",
+    })
+  }
+
+  // Single role idle/broken
+  if (roles.length === 1) {
+    options.push({
+      label: `Reactivează ${roles[0]}`,
+      description: `Forțează un ciclu de activare pe ${roles[0]}. Dacă problema persistă, escaladarea automată intervine.`,
+      risk: "LOW",
+    })
+    options.push({
+      label: `Pauză ${roles[0]}`,
+      description: `Setează ${roles[0]} pe PAUSED_KNOWN_GAP. Sarcinile se redistribuie automat la peers.`,
+      risk: "LOW",
+    })
+  }
+
+  // If objectives are impacted
+  if (objectiveCount > 3) {
+    options.push({
+      label: "Escaladare manuală la COG",
+      description: `${objectiveCount} obiective afectate — impactul e prea mare pentru auto-remediere. COG coordonează un plan de recuperare.`,
+      risk: "LOW",
+    })
+  }
+
+  // If fluxes with critical steps
+  if (fluxCount > 0) {
+    options.push({
+      label: "Acceptă risc (monitorizare)",
+      description: `Situația afectează ${fluxCount} fluxuri dar nu blochează operațional. Monitorizez și intervin doar dacă se agravează.`,
+      risk: "LOW",
+    })
+  }
+
+  // Always offer dismiss
+  options.push({
+    label: "Închide — fals pozitiv",
+    description: "Marchează situația ca fals pozitiv. Evenimentele se rezolvă, regula de detecție se ajustează.",
+    risk: "LOW",
+  })
+
+  return options
+}
+
 // ── Causality chain builder ──────────────────────────────────────────────────
 
 function buildCausalityChains(
@@ -425,6 +499,9 @@ function buildCausalityChains(
       chain: buildEscalationChain(role),
     }))
 
+    // Generate decision options based on situation type
+    const options = generateDecisionOptions(sit, roles, fluxMap.size, impactedObjectives.length)
+
     return {
       situationId: sit.id,
       title: sit.title,
@@ -432,6 +509,7 @@ function buildCausalityChains(
       classification: sit.classification,
       cause: sit.cause,
       actionRequired: sit.actionRequired,
+      options,
       affectedRoles: [...roles],
       affectedFluxes: Array.from(fluxMap.entries()).map(([fluxId, data]) => ({
         fluxId, totalSteps: data.totalSteps, criticalSteps: data.criticalSteps,

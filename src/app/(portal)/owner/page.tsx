@@ -3,7 +3,8 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import CogChat from "@/components/chat/CogChat"
 import LayerCardInteractive from "./LayerCardInteractive"
-import type { OwnerCockpitResult, LayerStatus, DecisionItem } from "@/lib/owner/cockpit-aggregator"
+import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
+import DecisionButtons from "./DecisionButtons"
 
 export const metadata = { title: "Owner Dashboard — JobGrade" }
 
@@ -316,10 +317,19 @@ function DecisionCard({ decision }: { decision: DecisionItem }) {
       </div>
 
       {/* Action required */}
-      <div className="text-xs text-foreground/80 bg-surface/50 border border-border rounded-lg px-3 py-2">
-        <span className="font-semibold text-text-secondary mr-1">Acțiune:</span>
+      <div className="text-xs text-foreground/80 bg-surface/50 border border-border rounded-lg px-3 py-2 mb-3">
+        <span className="font-semibold text-text-secondary mr-1">Context:</span>
         {d.actionRequired}
       </div>
+
+      {/* Decision options — interactive */}
+      {d.options && d.options.length > 0 && (
+        <DecisionButtons
+          situationId={d.situationId}
+          options={d.options}
+          affectedRoles={d.affectedRoles}
+        />
+      )}
 
       {/* Escalation paths — per rol */}
       {d.escalationPaths && d.escalationPaths.some((p: { chain: string[] }) => p.chain.length > 0) && (

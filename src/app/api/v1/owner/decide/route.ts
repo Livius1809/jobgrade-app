@@ -1,0 +1,125 @@
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { redistributeSubordinates } from "@/lib/disfunctions/reorg-engine"
+
+/**
+ * POST /api/v1/owner/decide
+ *
+ * Owner ia o decizie pe o situație din cockpit.
+ * Body: { situationId, optionLabel, affectedRoles }
+ *
+ * Acțiuni posibile:
+ * - "Investighează cauza comună" → delegă task la COG
+ * - "Redistribuie temporar" → apelează reorg-engine
+ * - "Reactivează X" → update activityMode
+ * - "Pauză X" → update activityMode PAUSED_KNOWN_GAP
+ * - "Escaladare manuală la COG" → crează escalation
+ * - "Acceptă risc" → marchează situația monitorizată
+ * - "Închide — fals pozitiv" → resolve events
+ */
+export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
+  }
+  const role = (session.user as any).role
+  if (role !== "SUPER_ADMIN" && role !== "OWNER") {
+    return NextResponse.json({ error: "Acces restricționat" }, { status: 403 })
+  }
+
+  try {
+    const { situationId, optionLabel, affectedRoles } = await req.json()
+
+    if (!situationId || !optionLabel) {
+      return NextResponse.json({ error: "situationId + optionLabel required" }, { status: 400 })
+    }
+
+    const p = prisma as any
+    const actions: string[] = []
+
+    // Route decision to appropriate action
+    if (optionLabel.startsWith("Investighează")) {
+      // Delegate to COG via agent task
+      await p.agentTask.create({
+        data: {
+          assignedTo: "COG",
+          assignedBy: "OWNER",
+          taskType: "INVESTIGATE",
+          description: `Owner decision: investighează cauza comună pentru situația "${situationId}". Roluri afectate: ${(affectedRoles || []).join(", ")}`,
+          priority: "HIGH",
+          status: "ASSIGNED",
+        },
+      })
+      actions.push("Task delegat la COG")
+    }
+
+    if (optionLabel.startsWith("Redistribuie")) {
+      for (const role of (affectedRoles || [])) {
+        const result = await redistributeSubordinates(role)
+        actions.push(`${role}: ${result.reason}`)
+      }
+    }
+
+    if (optionLabel.startsWith("Reactivează")) {
+      const targetRole = optionLabel.replace("Reactivează ", "")
+      await p.agentDefinition.updateMany({
+        where: { agentRole: targetRole },
+        data: { activityMode: "PROACTIVE_CYCLIC" },
+      })
+      actions.push(`${targetRole} reactivat → PROACTIVE_CYCLIC`)
+    }
+
+    if (optionLabel.startsWith("Pauză")) {
+      const targetRole = optionLabel.replace("Pauză ", "")
+      await p.agentDefinition.updateMany({
+        where: { agentRole: targetRole },
+        data: { activityMode: "PAUSED_KNOWN_GAP" },
+      })
+      actions.push(`${targetRole} pauzat → PAUSED_KNOWN_GAP`)
+    }
+
+    if (optionLabel.startsWith("Escaladare")) {
+      await p.escalation.create({
+        data: {
+          sourceRole: "OWNER",
+          targetRole: "COG",
+          aboutRole: (affectedRoles || [])[0] ?? "SYSTEM",
+          reason: `Owner escalation: ${situationId}`,
+          details: `Decizie Owner: escaladare manuală. Roluri: ${(affectedRoles || []).join(", ")}`,
+          priority: "HIGH",
+          status: "OPEN",
+        },
+      })
+      actions.push("Escaladare creată la COG")
+    }
+
+    if (optionLabel.startsWith("Acceptă risc")) {
+      actions.push("Situație acceptată — monitorizare activă")
+    }
+
+    if (optionLabel.includes("fals pozitiv")) {
+      // Resolve all events for this situation
+      await p.disfunctionEvent.updateMany({
+        where: { status: "OPEN" },
+        data: {
+          status: "RESOLVED",
+          resolvedAt: new Date(),
+          resolvedBy: `owner_decision_${new Date().toISOString().split("T")[0]}`,
+        },
+      })
+      actions.push("Evenimente rezolvate ca fals pozitiv")
+    }
+
+    return NextResponse.json({
+      decision: optionLabel,
+      situationId,
+      actions,
+      decidedAt: new Date().toISOString(),
+      decidedBy: session.user.id,
+    })
+  } catch (error: any) {
+    console.error("[OWNER DECIDE]", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
