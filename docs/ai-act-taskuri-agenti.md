@@ -1,5 +1,8 @@
 # PLAN CONFORMITATE AI ACT - DISTRIBUȚIE TASKURI
-**Deadline Global: August 2026**
+**Deadline Global: 2 August 2026**  
+**Ultima actualizare:** 03.04.2026
+
+> **NOTĂ IMPORTANTĂ (03.04.2026):** JobGrade va opera cu echipă MIXTĂ — 2 psihologi angajați (1 acreditat CPR pe psihologia muncii cu atestat de liberă practică) + 45 agenți AI. Aceasta schimbă fundamental abordarea Art. 14 (supraveghere umană) și reduce semnificativ riscul și costurile de conformitate. Estimare costuri revizuită: 15-30K EUR (auditor extern) vs. 600-800K EUR anterior.
 
 ---
 
@@ -41,17 +44,26 @@
 - Format comunicare pentru utilizatori non-tehnici
 - Compliance cu GDPR și AI Act simultan
 
-### TASK 1.4: Proceduri Supraveghere Umană (Art. 14)
-**Deliverable:** Framework complet human oversight
-**Format:** PDF procedural + workflow diagrams
-**Deadline:** Iunie 2025
-**Dependențe:** Input de la MOA pentru punctele de intervenție
-**Criterii acceptare:**
-- Definirea punctelor obligatorii de intervenție umană
-- Matrice competențe necesare pentru supervizori
-- Proceduri override pentru fiecare agent AI
-- Training program pentru supervizori
-- SLA-uri timp răspuns intervenție umană
+### TASK 1.4: Proceduri Supraveghere Umană (Art. 14) — **ACTUALIZAT 03.04.2026**
+**Deliverable:** Framework complet human oversight  
+**Format:** PDF procedural + workflow diagrams  
+**Deadline:** ~~Iunie 2025~~ → **Versiune 1.0 completată 03.04.2026** (vezi `docs/procedura-supraveghere-umana-art14.md`)  
+**Status:** ✅ **DRAFT COMPLET** — necesită validare auditor extern
+
+**Actualizare critică — Echipa mixtă AI + psihologi:**
+- JobGrade va avea **2 psihologi angajați**, nu doar agenți AI
+- **1 psiholog acreditat CPR** pe **psihologia muncii, transporturilor și serviciilor** cu **atestat de liberă practică** (nr. marcă Registrul Unic CPR)
+- Supravegherea umană Art. 14 e exercitată de un **profesionist atestat** în exact domeniul sistemului AI
+- Competence matrix bazată pe **standardele CPR** (nu standarde interne inventate)
+- Override **profesional** (judecată clinică) nu doar tehnic (buton)
+
+**Criterii acceptare (revizuite):**
+- ✅ Definirea punctelor obligatorii de intervenție umană — **10 funcționalități AI mapate** cu nivel intervenție
+- ✅ Matrice competențe necesare pentru supervizori — **bazată pe standarde CPR** (acreditare, atestat, specialitate)
+- ✅ Proceduri override pentru fiecare agent AI — **override profesional cu 3 niveluri severitate**
+- ✅ Training program pentru supervizori — **5 module obligatorii** (T1-T5)
+- ⬜ SLA-uri timp răspuns intervenție umană — de definit cu psihologul angajat
+- ⬜ Validare auditor extern AI Act — planificat Q3 2026
 
 ### TASK 1.5: Template-uri Notificare Autorități
 **Deliverable:** Set complet template-uri pentru autorități

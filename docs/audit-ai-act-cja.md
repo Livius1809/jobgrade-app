@@ -82,13 +82,19 @@ JobGrade se încadrează în această categorie prin:
 - **Utilizare API terță parte (Claude):** Beneficiem de conformitatea furnizorului upstream
 - **Focalizare B2B:** Clientela business reduce unele riscuri de impact individual direct
 - **Piață românească:** Experiență locală în reglementări HR
+- **Echipă mixtă AI + umani calificați** (actualizat 03.04.2026):
+  - 2 psihologi angajați (nu colaboratori externi)
+  - 1 psiholog **acreditat de Colegiul Psihologilor din România (CPR)** pe specialitatea **Psihologia muncii, transporturilor și serviciilor**, cu **atestat de liberă practică** și număr de marcă înregistrat în Registrul Unic CPR
+  - Supravegherea umană (Art. 14) este exercitată de un **profesionist atestat** în exact domeniul în care operează sistemul AI
+  - Aceasta depășește cerința minimă Art. 14 — majoritatea furnizorilor AI nu dispun de profesioniști de domeniu angajați
+  - Narațiune: **companie de psihologie organizațională care folosește AI ca instrument**, nu companie tech care aplică AI pe domeniu sensibil
 
-### 3.2 Aspecte Neconforme ❌
+### 3.2 Aspecte Neconforme ❌ (revizuit 03.04.2026)
 - **Lipsa sistemului de management al riscului** (Art. 9)
 - **Documentație tehnică insuficientă** (Art. 11)
 - **Absența jurnalizării conforme** (Art. 12)
 - **Transparență limitată față de utilizatori finali** (Art. 13)
-- **Supraveghere umană neformalizată** (Art. 14)
+- ~~**Supraveghere umană neformalizată** (Art. 14)~~ → **PARȚIAL ACOPERIT** — echipa mixtă există, procedura formală în curs de documentare (vezi Procedura Art. 14)
 - **Testare și validare nesistematizată** (Art. 15)
 
 ---
@@ -103,11 +109,11 @@ JobGrade se încadrează în această categorie prin:
 | Transparență insuficientă | Art. 13 | Mare | Până la 35M EUR |
 
 ### 4.2 Gaps Severitate MARE 🟡
-| Gap | Articol | Impact | Risc Amenzi |
-|-----|---------|--------|-------------|
-| Jurnalizare neconformă | Art. 12 | Mediu | Până la 15M EUR |
-| Supraveghere umană neformalizată | Art. 14 | Mediu | Până la 15M EUR |
-| Testare și validare ad-hoc | Art. 15 | Mediu | Până la 15M EUR |
+| Gap | Articol | Impact | Risc Amenzi | Status (03.04.2026) |
+|-----|---------|--------|-------------|---------------------|
+| Jurnalizare neconformă | Art. 12 | Mediu | Până la 15M EUR | Deschis |
+| ~~Supraveghere umană neformalizată~~ | Art. 14 | ~~Mediu~~ **Redus** | ~~Până la 15M EUR~~ | **PARȚIAL ACOPERIT** — psiholog CPR angajat, procedură în documentare |
+| Testare și validare ad-hoc | Art. 15 | Mediu | Până la 15M EUR | Deschis |
 
 ### 4.3 Gaps Severitate MEDIE 🟢
 | Gap | Articol | Impact | Risc Amenzi |
@@ -276,10 +282,11 @@ JobGrade se încadrează în această categorie prin:
 - **Impact:** Contestații legale și cereri de explicații
 - **Consecință:** Obligația de a modifica fundamental algoritmii
 
-#### 8.3.3 Supraveghere Umană Inadecvată
-- **Risc:** Deciziile automatizate să nu fie revizuite uman
-- **Impact:** Erori în evaluări cu consecințe asupra salariilor
-- **Consecință:** Răspundere solidară cu clienții pentru daune
+#### 8.3.3 Supraveghere Umană ~~Inadecvată~~ (revizuit 03.04.2026)
+- **Risc REDUS:** Echipa include psiholog acreditat CPR pe psihologia muncii
+- **Mitigare:** Psihologul validează deciziile AI critice; override profesional, nu doar tehnic
+- **Avantaj:** Judecata clinică profesionistă > buton de override generic
+- **Cerință reziduală:** Formalizarea procedurii de supraveghere și competence matrix bazată pe standarde CPR
 
 ---
 
@@ -287,20 +294,26 @@ JobGrade se încadrează în această categorie prin:
 
 ### 9.1 Acțiuni Immediate (În 30 de zile)
 1. **Constituirea echipei AI Act** cu responsabilități clare
-2. **Angajarea unui consultant extern** specializat în AI Act
+2. ~~**Angajarea unui consultant extern** specializat în AI Act~~ → **Recomandat:** auditor extern 15-30K EUR, NU 150K+ (echipa internă acoperă 80%)
 3. **Inventarierea completă** a tuturor sistemelor AI utilizate
-4. **Notificarea asigurătorilor** despre riscurile identificate
+4. **Formalizarea rolului psihologului CPR** în procedura de supraveghere Art. 14
+5. **Documentarea competence matrix** bazată pe standardele CPR
 
 ### 9.2 Prioritatea Zero
 - **Sistemul de management al riscului** este prioritatea absolută
 - **Documentația tehnică** trebuie inițiată imediat
-- **Bugetul dedicat conformității** trebuie aprobat urgent
+- **Procedura de supraveghere umană (Art. 14)** — formalizarea rolului psihologului acreditat
 
-### 9.3 Investiția Estimată
-- **Resurse umane:** 2-3 FTE pentru 18 luni
-- **Consultanță externă:** 150.000 - 200.000 EUR
-- **Dezvoltare tehnică:** 300.000 - 500.000 EUR
-- **Total estimat:** 600.000 - 800.000 EUR
+### 9.3 Investiția Estimată (revizuit 03.04.2026)
+
+**Context:** Echipa mixtă (2 psihologi angajați + 45 agenți AI + platformă existentă) reduce semnificativ costurile estimate inițial.
+
+- **Echipa internă:** Proprietar + 2 psihologi + platformă AI (costuri deja acoperite)
+- **Auditor extern AI Act:** 15.000 - 30.000 EUR (validare, nu implementare)
+- **Dezvoltare tehnică suplimentară:** 0 EUR (platforma e construită, agenții CJA+CAA generează documentația)
+- **Total estimat revizuit:** 15.000 - 30.000 EUR (vs. 600K-800K anterior)
+
+**Justificare reducere:** 80% din muncă e realizabilă intern — echipa de agenți AI (CJA, CAA, DOA, SQA, QAA) sub supravegherea psihologului acreditat produce documentația; auditorul extern validează, nu creează de la zero.
 
 ### 9.4 Beneficiile Conformității
 - **Avantaj competitiv** față de concurența neconformă
@@ -321,12 +334,26 @@ Neconformitatea poate rezulta în amenzi de **până la 35 milioane EUR** și in
 ---
 
 **Semnat:**  
-[Nume CJA]  
-Consilier Juridic Agent  
+CJA (Consilier Juridic Agent)  
 Psihobusiness Consulting SRL
 
-**Data:** [Data curentă]
+**Data raport inițial:** Decembrie 2024  
+**Ultima actualizare:** 03.04.2026
 
 ---
 
-*Acest raport constituie o evaluare preliminară și recomandăm consultarea cu experți juridici specializați în AI Act pentru implementarea detaliată.*
+## ADDENDUM — ACTUALIZARE 03.04.2026
+
+### Modificări majore față de raportul inițial
+
+1. **Echipa mixtă confirmată** — 2 psihologi angajați, 1 acreditat CPR pe psihologia muncii cu atestat de liberă practică. Art. 14 trece de la gap MARE la PARȚIAL ACOPERIT.
+
+2. **Reducere estimare costuri** — de la 600K-800K EUR la 15K-30K EUR. Platforma e construită (45 agenți, 89 pagini, 2050 KB entries). Echipa internă produce documentația. Auditor extern doar validează.
+
+3. **Reformulare risc Art. 14** — Supravegherea umană nu mai e "buton de override" generic ci supraveghere profesionistă atestată. Psihologul acreditat = supervizor calificat în exact domeniul sistemului AI.
+
+4. **Narațiune modificată** — JobGrade nu e "companie tech care pune AI pe HR" ci "companie de psihologie organizațională care folosește AI ca instrument sub supraveghere profesionistă". Această distincție e critică la un audit AI Act.
+
+5. **Document de referință nou:** `docs/procedura-supraveghere-umana-art14.md` — procedura formală de supraveghere umană cu rolul psihologului CPR.
+
+*Acest raport constituie o evaluare preliminară actualizată. Se recomandă validarea cu auditor extern specializat AI Act (buget estimat 15-30K EUR).*

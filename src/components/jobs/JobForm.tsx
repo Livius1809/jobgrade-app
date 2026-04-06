@@ -7,6 +7,35 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { JobStatus } from "@/generated/prisma"
 
+// Sufixe/cuvinte cu gen explicit în titluri de post (RO)
+const GENDERED_PATTERNS = [
+  // Masculin explicit
+  { pattern: /\bdirector\b/i, suggestion: "persoană cu rol de conducere / Director(ă)" },
+  { pattern: /\bmanager\b/i, suggestion: "Manager (neutru în RO)" },
+  { pattern: /\bșef\b/i, suggestion: "Responsabil / Coordonator" },
+  { pattern: /\binspector\b/i, suggestion: "Inspector(ă) / Persoană de inspecție" },
+  { pattern: /\boperator\b/i, suggestion: "Operator(ă)" },
+  { pattern: /\bconsultant\b/i, suggestion: "Consultant(ă)" },
+  { pattern: /\banalist\b/i, suggestion: "Analist(ă)" },
+  { pattern: /\bprogramator\b/i, suggestion: "Programator(ă) / Developer" },
+  { pattern: /\binginer\b/i, suggestion: "Inginer(ă) / Engineer" },
+  { pattern: /\bcontabil\b/i, suggestion: "Contabil(ă)" },
+  // Feminin explicit
+  { pattern: /\bdirectoare\b/i, suggestion: "Director(ă) / Persoană cu rol de conducere" },
+  { pattern: /\basistentă\b/i, suggestion: "Asistent(ă)" },
+  { pattern: /\bsecretară\b/i, suggestion: "Secretar(ă) / Asistent(ă) administrativ(ă)" },
+]
+
+function getGenderWarning(title: string): string | null {
+  if (!title || title.length < 2) return null
+  for (const { pattern, suggestion } of GENDERED_PATTERNS) {
+    if (pattern.test(title)) {
+      return `Directiva EU 2023/970, Art. 10(7): Titlul ar putea fi perceput ca având gen implicit. Alternativă: ${suggestion}`
+    }
+  }
+  return null
+}
+
 const schema = z.object({
   title: z.string().min(2, "Minim 2 caractere"),
   code: z.string().optional(),
@@ -65,6 +94,7 @@ export default function JobForm({
   })
 
   const title = watch("title")
+  const genderWarning = getGenderWarning(title)
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -153,6 +183,11 @@ export default function JobForm({
             />
             {errors.title && (
               <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>
+            )}
+            {!errors.title && genderWarning && (
+              <p className="mt-1 text-xs text-amber-600">
+                ⚠ {genderWarning}
+              </p>
             )}
           </div>
 

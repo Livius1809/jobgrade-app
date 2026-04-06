@@ -44,6 +44,9 @@ const PUBLIC_PATHS = [
   "/_next",
   "/favicon",
   "/robots.txt",
+  // /disfunctions acum gated sub auth (pre-prod fix 06.04.2026)
+  "/b2b",
+  "/api/demo-request",
 ]
 
 function isPublicPath(pathname: string): boolean {

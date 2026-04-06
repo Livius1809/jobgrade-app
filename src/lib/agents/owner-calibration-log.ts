@@ -14,6 +14,7 @@
 import type { PrismaClient } from "@/generated/prisma"
 import type { OwnerCalibrationResult, CalibrationFlag } from "./owner-calibration"
 import { ESCALATION_CHAIN } from "./escalation-chain"
+import { getEscalationChain } from "./agent-registry"
 
 // ── Logare calibrare în KB ──────────────────────────────────────────────────
 
@@ -87,13 +88,16 @@ async function propagateToHierarchy(
   // Identifică departamentele afectate pe baza conținutului
   const affectedRoles = identifyAffectedRoles(calibration)
 
+  // Use DB-backed escalation chain with static fallback
+  const escChain = await getEscalationChain(p).catch(() => ESCALATION_CHAIN)
+
   for (const role of affectedRoles) {
     try {
       // Găsește lanțul ierarhic de la rol la COG
       const chain: string[] = [role]
       let current = role
-      while (ESCALATION_CHAIN[current] && current !== "COG") {
-        current = ESCALATION_CHAIN[current]
+      while (escChain[current] && current !== "COG") {
+        current = escChain[current]
         chain.push(current)
       }
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { runColdStart } from "@/lib/kb/cold-start"
 import {
-  runColdStart,
-  ALL_AGENT_ROLES,
-  SELF_INTERVIEW_PROMPTS,
-} from "@/lib/kb/cold-start"
+  getAllAgentRoles,
+  getSelfInterviewPrompts,
+} from "@/lib/agents/agent-registry"
 
 const schema = z.object({
   agentRole: z.string().min(1),
@@ -38,11 +38,12 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body)
 
     if (!parsed.success) {
+      const allRoles = await getAllAgentRoles(prisma)
       return NextResponse.json(
         {
           message: "Date invalide.",
           errors: parsed.error.flatten().fieldErrors,
-          availableRoles: ALL_AGENT_ROLES,
+          availableRoles: allRoles,
         },
         { status: 400 }
       )
@@ -50,11 +51,13 @@ export async function POST(req: NextRequest) {
 
     const { agentRole, maxBatches, clearExisting } = parsed.data
 
-    if (!SELF_INTERVIEW_PROMPTS[agentRole]) {
+    const prompts = await getSelfInterviewPrompts(prisma)
+    if (!prompts[agentRole]) {
+      const allRoles = await getAllAgentRoles(prisma)
       return NextResponse.json(
         {
           message: `Rol "${agentRole}" nu are prompturi de self-interview.`,
-          availableRoles: ALL_AGENT_ROLES,
+          availableRoles: allRoles,
         },
         { status: 400 }
       )
@@ -100,10 +103,13 @@ export async function GET(req: NextRequest) {
 
     const countMap = new Map(counts.map((c: any) => [c.agentRole, c._count.id]))
 
-    const roles = ALL_AGENT_ROLES.map((role) => ({
+    const allRoles = await getAllAgentRoles(prisma)
+    const prompts = await getSelfInterviewPrompts(prisma)
+
+    const roles = allRoles.map((role) => ({
       role,
-      description: SELF_INTERVIEW_PROMPTS[role].description,
-      promptCount: SELF_INTERVIEW_PROMPTS[role].prompts.length,
+      description: prompts[role]?.description || role,
+      promptCount: prompts[role]?.prompts.length || 0,
       existingEntries: countMap.get(role) || 0,
       coldStartDone: (countMap.get(role) || 0) > 0,
     }))

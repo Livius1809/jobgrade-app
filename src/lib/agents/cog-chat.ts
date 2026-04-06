@@ -18,6 +18,7 @@ import { calibrateOwnerInput, getCalibrationPromptSection } from "./owner-calibr
 import { logOwnerCalibration } from "./owner-calibration-log"
 import type { PrismaClient } from "@/generated/prisma"
 import { BINE } from "./moral-core"
+import { searchKB } from "@/lib/kb/search"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -39,13 +40,9 @@ export async function chatWithCOG(
 
   // ── Gather COG's context ───────────────────────────────────────────────────
 
-  // KB
-  const cogKB = await p.kBEntry.findMany({
-    where: { agentRole: "COG", status: "PERMANENT" },
-    orderBy: { confidence: "desc" },
-    take: 10,
-    select: { content: true, tags: true },
-  })
+  // KB — semantic search based on owner's message
+  const cogKB = await searchKB("COG", ownerMessage, 10).catch(() => [])
+
 
   // Org stats
   const agentCount = await p.agentDefinition.count({ where: { isActive: true } })

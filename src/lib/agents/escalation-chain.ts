@@ -56,6 +56,8 @@ export const ESCALATION_CHAIN: Record<string, string> = {
   COA: "COG",
   COCSA: "COG",
   PMA: "COA",
+  // Strategic L4 → COG
+  ACEA: "COG",
   // Strategic → Owner
   COG: "OWNER",
   // Agenți fără subordonați — escaladează la managerul lor
@@ -101,6 +103,8 @@ export const ESCALATION_CHAIN: Record<string, string> = {
   PCM: "PMA",
   NSA: "PMA",
   SCA: "PMA",
+  SVHA: "PMA",
+  MGA: "PMA",
   SAFETY_MONITOR: "COG",
 }
 

@@ -336,7 +336,7 @@ async function executeActions(
       }
 
       // Loguiează în CycleLog
-      await prisma.cycleLog.create({
+      const cycleLog = await prisma.cycleLog.create({
         data: {
           managerRole: config.agentRole,
           targetRole: action.target,
@@ -347,11 +347,56 @@ async function executeActions(
           resolved: action.type === "TRACK",
         },
       }).catch(() => {
-        // CycleLog table might not exist yet — log to console
         console.log(
           `   [${config.agentRole}] ${action.type} → ${action.target}: ${action.description}`
         )
+        return null
       })
+
+      // Calea 1: INTERVENE → AgentTask (delegare downward)
+      if (action.type === "INTERVENE") {
+        try {
+          const { convertInterventionToTask } = await import("./task-delegation")
+          const delegated = convertInterventionToTask(
+            { target: action.target, type: "INTERVENE", description: action.description, details: action.details },
+            config.agentRole,
+          )
+          // Dedup: nu crea task dacă deja există unul activ
+          const existingTask = await prisma.agentTask.findFirst({
+            where: {
+              assignedTo: action.target,
+              assignedBy: config.agentRole,
+              status: { in: ["ASSIGNED", "ACCEPTED", "IN_PROGRESS"] },
+            },
+          }).catch(() => null)
+
+          if (!existingTask) {
+            const deadlineAt = delegated.deadlineHours
+              ? new Date(Date.now() + delegated.deadlineHours * 60 * 60 * 1000)
+              : null
+            await prisma.agentTask.create({
+              data: {
+                businessId: "biz_jobgrade",
+                assignedBy: config.agentRole,
+                cycleLogId: cycleLog?.id ?? null,
+                assignedTo: delegated.assignedTo,
+                title: delegated.title,
+                description: delegated.description,
+                taskType: delegated.taskType,
+                priority: delegated.priority,
+                tags: delegated.tags,
+                deadlineAt,
+                estimatedMinutes: delegated.estimatedMinutes,
+                status: "ASSIGNED",
+              },
+            })
+            console.log(`   📋 Task delegat: ${config.agentRole} → ${action.target}: ${delegated.title}`)
+          }
+        } catch (e: any) {
+          // agent_tasks table might not exist yet — silent
+          console.log(`   [task-delegation] ${e.message}`)
+        }
+      }
 
       executedActions.push(action)
     } catch (err: any) {
@@ -399,19 +444,70 @@ export async function runProactiveCycle(
   console.log(`\n🔄 [${config.agentRole}] Ciclu proactiv start — ${config.subordinates.length} subordonați`)
 
   // 1. COLECTARE
-  const statuses = await collectSubordinateStatuses(config.subordinates, prisma)
+  // Filtrăm subordonații după activityMode — nu evaluăm agenți în stări în care
+  // evaluarea ar produce bucle de INTERVENE fără efect (05.04.2026, Sprint 3 Block 2):
+  //  - DORMANT_UNTIL_DELEGATED: așteaptă Calea 1 (delegare executor funcțională)
+  //  - PAUSED_KNOWN_GAP: pauzați explicit de Owner până la rezolvare cunoscută
+  //  - REACTIVE_TRIGGERED: absența e starea normală, nu disfuncție
+  // Rămân evaluabili: PROACTIVE_CYCLIC + HYBRID.
+  const subordinateModes = await prisma.agentDefinition.findMany({
+    where: { agentRole: { in: config.subordinates } },
+    select: { agentRole: true, activityMode: true },
+  }).catch(() => [] as { agentRole: string; activityMode: string }[])
+  const EVALUABLE_MODES = new Set(["PROACTIVE_CYCLIC", "HYBRID"])
+  const evaluableSubs = config.subordinates.filter((s) => {
+    const mode = subordinateModes.find((m: { agentRole: string; activityMode: string }) => m.agentRole === s)?.activityMode ?? "PROACTIVE_CYCLIC"
+    return EVALUABLE_MODES.has(mode)
+  })
+  const skippedSubs = config.subordinates
+    .filter((s) => !evaluableSubs.includes(s))
+    .map((s) => ({
+      role: s,
+      mode: subordinateModes.find((m: { agentRole: string; activityMode: string }) => m.agentRole === s)?.activityMode ?? "unknown",
+    }))
+  if (skippedSubs.length > 0) {
+    console.log(
+      `   ⤷ Skip evaluare ${skippedSubs.length}/${config.subordinates.length} subordonați (non-evaluable mode): ` +
+        skippedSubs.map((s) => `${s.role}(${s.mode})`).join(", "),
+    )
+  }
+  // Dacă nu a rămas niciun subordonat evaluabil, returnăm rezultat gol — fără
+  // buclă fără efect, fără cicluri de INTERVENE inutile. Managerul e "ocolit"
+  // până când executorii lui migrează din DORMANT la PROACTIVE (post-Calea 1).
+  if (evaluableSubs.length === 0) {
+    console.log(`   ⤷ Toți subordonații sunt non-evaluable — skip ciclu complet`)
+    return {
+      managerId: config.agentRole.toLowerCase(),
+      managerRole: config.agentRole,
+      timestamp,
+      durationMs: Date.now() - startTime,
+      subordinatesChecked: 0,
+      evaluations: [],
+      actions: [],
+      summary: `skip_all_subs_non_evaluable (${skippedSubs.length} subordonați)`,
+      nextCycleAt: new Date(Date.now() + config.cycleIntervalHours * 60 * 60 * 1000).toISOString(),
+    }
+  }
+
+  // Config "efectiv" — cu subordinates restrânși la cei evaluabili.
+  // Fără asta, prompt-ul către Claude ar conține în `SUBORDONAȚII TĂI` lista
+  // completă, iar Claude ar genera IDLE/INTERVENE pentru cei fără statuses
+  // (bug-ul "8 evaluations la COA cu 1 subordonat real" — 05.04.2026).
+  const effectiveConfig: ManagerConfig = { ...config, subordinates: evaluableSubs }
+
+  const statuses = await collectSubordinateStatuses(evaluableSubs, prisma)
 
   // 2. Verifică escalări anterioare
-  await checkResolvedEscalations(config, statuses, prisma).catch(() => {})
+  await checkResolvedEscalations(effectiveConfig, statuses, prisma).catch(() => {})
 
   // 3. Escalări active (pentru context AI)
-  const activeEscalations = await getActiveEscalations(config.agentRole, prisma).catch(
+  const activeEscalations = await getActiveEscalations(effectiveConfig.agentRole, prisma).catch(
     () => [] as Escalation[]
   )
 
-  // 4. EVALUARE (Claude)
+  // 4. EVALUARE (Claude) — pe config efectiv
   const { evaluations, actions, summary } = await evaluateSubordinates(
-    config,
+    effectiveConfig,
     statuses,
     activeEscalations,
     options?.apiKey,
@@ -421,7 +517,7 @@ export async function runProactiveCycle(
   // 5. ACȚIUNE
   let executedActions: CycleAction[] = []
   if (!options?.dryRun) {
-    executedActions = await executeActions(config, actions, prisma)
+    executedActions = await executeActions(effectiveConfig, actions, prisma)
   } else {
     executedActions = actions
   }

@@ -6,10 +6,9 @@ import {
   runAllManagerCycles,
 } from "@/lib/agents/proactive-loop"
 import {
-  MANAGER_CONFIGS,
-  getManagerConfig,
-  ALL_MANAGER_ROLES,
-} from "@/lib/agents/manager-configs"
+  getManagerConfigs,
+  getManagerConfig as getManagerConfigDB,
+} from "@/lib/agents/agent-registry"
 import {
   processTimeouts,
   getEscalationSummary,
@@ -49,11 +48,13 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body)
 
     if (!parsed.success) {
+      const allConfigs = await getManagerConfigs(prisma)
+      const allManagerRoles = allConfigs.map((c) => c.agentRole)
       return NextResponse.json(
         {
           message: "Date invalide.",
           errors: parsed.error.flatten().fieldErrors,
-          availableManagers: ALL_MANAGER_ROLES,
+          availableManagers: allManagerRoles,
         },
         { status: 400 }
       )
@@ -66,12 +67,13 @@ export async function POST(req: NextRequest) {
 
     if (managerRole) {
       // Ciclu individual
-      const config = getManagerConfig(managerRole)
+      const config = await getManagerConfigDB(managerRole, prisma)
       if (!config) {
+        const allConfigs = await getManagerConfigs(prisma)
         return NextResponse.json(
           {
             message: `"${managerRole}" nu e un manager valid.`,
-            availableManagers: ALL_MANAGER_ROLES,
+            availableManagers: allConfigs.map((c) => c.agentRole),
           },
           { status: 400 }
         )
@@ -97,6 +99,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Batch: toți managerii sau per nivel
+    // Filtrăm după activityMode — rulăm ciclu DOAR pentru PROACTIVE_CYCLIC + HYBRID.
+    // REACTIVE_TRIGGERED / DORMANT_UNTIL_DELEGATED / PAUSED_KNOWN_GAP sunt
+    // excluși explicit (vezi project_disfunction_system_status.md — Sprint 3 Block 2).
+    const ALL_CONFIGS = await getManagerConfigs(prisma)
+    const activityModes = await prisma.agentDefinition.findMany({
+      where: { agentRole: { in: ALL_CONFIGS.map((c) => c.agentRole) } },
+      select: { agentRole: true, activityMode: true },
+    })
+    const modeByRole = new Map(activityModes.map((a) => [a.agentRole, a.activityMode]))
+    const CYCLE_ELIGIBLE_MODES = new Set(["PROACTIVE_CYCLIC", "HYBRID"])
+    const MANAGER_CONFIGS = ALL_CONFIGS.filter((c) =>
+      CYCLE_ELIGIBLE_MODES.has(modeByRole.get(c.agentRole) ?? "PROACTIVE_CYCLIC"),
+    )
+    const skippedManagers = ALL_CONFIGS
+      .filter((c) => !CYCLE_ELIGIBLE_MODES.has(modeByRole.get(c.agentRole) ?? "PROACTIVE_CYCLIC"))
+      .map((c) => ({ role: c.agentRole, mode: modeByRole.get(c.agentRole) ?? "unknown" }))
+
     const results = await runAllManagerCycles(MANAGER_CONFIGS, prisma, {
       dryRun,
       level: level as any,
@@ -113,6 +132,7 @@ export async function POST(req: NextRequest) {
       timeoutsProcessed,
       dryRun,
       managersProcessed: results.length,
+      managersSkipped: skippedManagers,
       totalActions,
       totalEscalations,
       results: results.map((r) => ({
@@ -161,8 +181,10 @@ export async function GET(req: NextRequest) {
       ownerAttention: 0,
     }))
 
+    const configs = await getManagerConfigs(prisma)
+
     return NextResponse.json({
-      managers: MANAGER_CONFIGS.map((c) => ({
+      managers: configs.map((c) => ({
         role: c.agentRole,
         level: c.level,
         subordinates: c.subordinates,
@@ -172,15 +194,15 @@ export async function GET(req: NextRequest) {
       })),
       levels: {
         strategic: {
-          managers: MANAGER_CONFIGS.filter((c) => c.level === "strategic").map((c) => c.agentRole),
+          managers: configs.filter((c) => c.level === "strategic").map((c) => c.agentRole),
           cycleHours: 24,
         },
         tactical: {
-          managers: MANAGER_CONFIGS.filter((c) => c.level === "tactical").map((c) => c.agentRole),
+          managers: configs.filter((c) => c.level === "tactical").map((c) => c.agentRole),
           cycleHours: 12,
         },
         operational: {
-          managers: MANAGER_CONFIGS.filter((c) => c.level === "operational").map((c) => c.agentRole),
+          managers: configs.filter((c) => c.level === "operational").map((c) => c.agentRole),
           cycleHours: 4,
         },
       },

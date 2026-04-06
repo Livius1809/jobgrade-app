@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { embedNewEntry } from "@/lib/kb/distill"
 
 // Praguri de promovare Buffer → PERMANENT
 const THRESHOLD_OCCURRENCES = 3       // minim 3 sesiuni distincte
@@ -126,6 +127,9 @@ async function evaluateBuffer(
       data: { status: "APPROVED", reviewedAt: new Date() },
     }),
   ])
+
+  // Generate embedding for the new entry (non-blocking)
+  embedNewEntry(entry.id).catch(() => {})
 
   return {
     bufferId,

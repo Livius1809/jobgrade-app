@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import ContextualAssistant from "@/components/chat/ContextualAssistant"
+import InteractionTracker from "@/components/tracking/InteractionTracker"
 
 export default async function AppLayout({
   children,
@@ -69,6 +71,12 @@ export default async function AppLayout({
       <main className="px-6 py-6" style={{ maxWidth: "72rem", margin: "0 auto" }}>
         {children}
       </main>
+
+      {/* ── Interaction Tracking (invisible) ─────────────────── */}
+      <InteractionTracker />
+
+      {/* ── Contextual Assistant ────────────────────────────── */}
+      <ContextualAssistant />
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="border-t border-border/50 py-4 px-6 mt-8">

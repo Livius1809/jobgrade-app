@@ -538,6 +538,39 @@ export const SELF_INTERVIEW_PROMPTS: Record<
     ],
   },
 
+  MGA: {
+    description: "Management & Governance Advisor — management eficient/eficace, echipe, leadership, multigenerațional, HU-AI",
+    prompts: [
+      "Descrie cele 6 stiluri de leadership Goleman (vizionar, coaching, afiliativ, democratic, pace-setting, commanding) cu aplicare concretă: când folosești fiecare, ce efect are pe echipă, ce riscuri. Integrează cu Situational Leadership (Blanchard) — cum alegi stilul în funcție de maturitatea angajatului.",
+      "Descrie cele 5 disfuncții ale echipei (Lencioni) cu diagnostic: cum identifici fiecare disfuncție, ce întrebări pui, ce observi. Pentru fiecare, propune intervenții concrete pe care managerul le poate aplica imediat. Integrează cu Google Project Aristotle (psychological safety ca fundament).",
+      "Descrie managementul echipelor multigeneraționale (Boomers, X, Millennials, Z): diferențe de valori, așteptări, stil de lucru, comunicare. Propune strategii concrete pentru managerul care are toate 4 generațiile în echipă. Surse: studii validate, nu stereotipuri.",
+      "Descrie integrarea AI în echipele umane existente: ce preia AI, ce rămâne uman, cum colaborează, cum gestionezi rezistența la schimbare per generație. Folosește exemplul JobGrade (47 agenți AI + 2 psihologi) ca studiu de caz de echipă mixtă HU-AI funcțională.",
+      "Descrie modelul Belbin (9 roluri în echipă) + Adizes (PAEI) integrat: cum profilezi o echipă, cum identifici gaps de roluri, cum recompui echipa pentru performanță maximă. Propune un mini-audit de echipă pe care un manager îl poate face în 30 de minute.",
+    ],
+  },
+
+  ACEA: {
+    description: "Analist Context Extern — profilare piață, context legislativ/social/cultural/economic, surse primare, zero bias",
+    prompts: [
+      "Profilează piața HR Tech din România 2025-2026: dimensiune estimată, competitori principali (locali și internaționali), gap-uri de piață, tendințe. Folosește doar surse primare verificabile (INS, Eurostat, rapoarte originale). Menționează explicit sursele și limitările datelor.",
+      "Analizează impactul Directivei EU 2023/970 (transparență salarială) pe piața RO: timeline transpunere, ce companii sunt afectate (praguri dimensiune), ce obligații noi apar, cum se pregătesc companiile. Surse: EUR-Lex, MFP.ro, consultări publice. Evită interpretările de presă.",
+      "Profilează instituțiile care reglementează activitățile clienților JobGrade: ITM, ANSPDCP, ANAF, CPR, CNCD, Autoritatea AI. Pentru fiecare: mandat, competențe, precedente relevante, tendințe de enforcement. Proiectează răspunsuri probabile la solicitări tip. Nivel încredere explicit.",
+      "Analizează contextul social și cultural al pieței muncii din România: demografie forță de muncă, migrație, așteptări generaționale (Z/Millennials/X), atitudini față de evaluare/feedback/ierarhie/merit. Referințe: Daniel David (Psihologia poporului român), INS, studii sociologice RO. Evită generalizări nesursate.",
+      "Construiește un profil tip client B2B JobGrade (companie medie RO, 50-250 angajați): realitatea legislativă aplicabilă, presiuni externe (piață muncii, concurență, reglementări), cultură organizațională tipică, buget HR estimat, maturitate digitală. Toate datele cu sursă primară și metodologie.",
+    ],
+  },
+
+  SVHA: {
+    description: "Specialist Vindecare Holistică Alternativă — Yoga, Tao, TCM, Ayurveda, sisteme de vindecare tradiționale",
+    prompts: [
+      "Descrie cele 8 ramuri ale Yoga (Hatha, Kriya, Tantra, Raja, Kundalini, Jnana, Bhakti, Karma) — principii, practici, texte fondatoare, aplicabilitate în dezvoltarea personală modernă. Cum poate fiecare ramură contribui la wellbeing în context profesional.",
+      "Descrie sistemul Tao complet: Tao Te Ching, Wu Wei, Yin-Yang, ramurile practice (Qigong, Tai Chi, Neidan, Feng Shui) — principii, tehnici, aplicații. Cum se aplică echilibrul taoist în viața profesională și organizațională.",
+      "Descrie Medicina Tradițională Chineză (TCM): fundamente (Wu Xing, Yin-Yang, Qi, meridiane), diagnostic (puls, limbă, 8 principii), terapii (acupunctură, fitoterapie, Tuina, moxibustie, dietoterapie). Concepte relevante pentru înțelegerea echilibrului uman.",
+      "Descrie Ayurveda complet: Tri Dosha (Vata, Pitta, Kapha), Prakriti vs Vikriti, Agni, Panchakarma, Rasayana, Dinacharya, fitoterapie ayurvedică. Cum informează înțelegerea constituției individuale dezvoltarea personală.",
+      "Descrie alte sisteme de vindecare alternativă: Reiki, naturopatie, homeopatie, medicina tibetană (Sowa Rigpa), terapia prin sunet, aromaterapie. Principii, limite, ce oferă ca perspectivă complementară în contextul wellbeing-ului.",
+    ],
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // NIVEL 3 — CONTENT & MARKETING (sub COCSA/ACA)
   // ═══════════════════════════════════════════════════════════════════════════

@@ -12,6 +12,8 @@ import Anthropic from "@anthropic-ai/sdk"
 import type { PrismaClient } from "@/generated/prisma"
 import { sendMarketingEmail, generateOutreachSequence } from "./marketing-executor"
 import { recordClientMemory } from "./client-memory"
+import { calibrateCommunication, getLanguageHints } from "@/lib/comms/calibrate"
+import type { CalibrationContext } from "@/lib/comms/calibrate"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -44,16 +46,43 @@ export async function initiateOutreach(
     return { sequenceGenerated: 0, firstEmailSent: { id: "", status: "no sequence" }, followUpsScheduled: 0 }
   }
 
-  // Send first email immediately
+  // Calibrate first email through L1/L2/L3/L4
   const first = sequence[0]
+  const calibrationCtx: CalibrationContext = {
+    recipientRole: mapRoleToCalibration(prospect.role),
+    isFirstContact: true,
+    language: "ro",
+    contentType: "email",
+    clientProvidedInfo: [],
+  }
+
+  const calibration = calibrateCommunication(
+    `${first.subject}\n${first.body}`,
+    calibrationCtx,
+  )
+
+  // Log calibration issues (non-blocking — we still send but record issues for learning)
+  if (calibration.issues.length > 0) {
+    console.warn(
+      `[SOA] Calibration: ${calibration.issues.length} issues detected`,
+      calibration.issues.map(i => `${i.layer}/${i.rule}: ${i.found}`),
+    )
+  }
+
+  // Send first email
   const emailResult = await sendMarketingEmail(
     prospect.email,
     first.subject,
-    `<div style="font-family: Arial, sans-serif; max-width: 600px;">
+    `<div style="font-family: Georgia, serif; max-width: 580px; line-height: 1.75;">
       <p>${first.body.replace(/\n/g, "</p><p>")}</p>
       <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;">
-      <p style="font-size: 12px; color: #888;">JobGrade — Platformă evaluare joburi cu AI<br>
-      <a href="https://jobgrade.ro">jobgrade.ro</a></p>
+      <p style="font-size: 11px; color: #9CA3AF; font-family: Arial, sans-serif;">
+        Psihobusiness Consulting SRL — servicii de consultanță organizațională<br>
+        <a href="https://jobgrade.ro" style="color:#4F46E5;">jobgrade.ro</a>
+      </p>
+      <p style="font-size: 10px; color: #D1D5DB;">
+        Dacă nu doriți să mai primiți mesaje de la noi, vă rugăm să răspundeți cu „dezabonare".
+      </p>
     </div>`
   )
 
@@ -153,4 +182,15 @@ export async function processScheduledEmails(prisma: PrismaClient): Promise<numb
   }
 
   return sent
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function mapRoleToCalibration(role: string): CalibrationContext["recipientRole"] {
+  const r = role.toLowerCase()
+  if (r.includes("hr") || r.includes("resurse umane") || r.includes("people")) return "HR_DIRECTOR"
+  if (r.includes("ceo") || r.includes("director general") || r.includes("managing")) return "CEO"
+  if (r.includes("cfo") || r.includes("financiar") || r.includes("finance")) return "CFO"
+  if (r.includes("consultant")) return "CONSULTANT"
+  return "GENERAL"
 }

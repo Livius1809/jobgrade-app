@@ -13,7 +13,9 @@
 import { BINE, CAMP, UMBRA, EXTERNAL_COMMUNICATION, AGENT_CONSCIOUSNESS, getCoreInjection } from "./moral-core"
 import { getFieldPromptSection, SUPPORT_RESOURCE_AGENTS } from "./field-transcendent"
 import { ESCALATION_CHAIN } from "./escalation-chain"
+import { getEscalationChain } from "./agent-registry"
 import { getCulturalCalibrationSection } from "./cultural-calibration-ro"
+import { getIMSLevel, getIMSInjection } from "./ims-injection"
 import { readFileSync } from "fs"
 import { join } from "path"
 
@@ -23,7 +25,7 @@ type AgentContext = "client-facing" | "strategic" | "product" | "marketing" | "i
 
 const CONTEXT_MAP: Record<string, AgentContext> = {
   // Strategic
-  COG: "strategic", COA: "strategic", COCSA: "strategic",
+  COG: "strategic", COA: "strategic", COCSA: "strategic", ACEA: "strategic",
   // Legal
   CJA: "legal", CIA: "legal", CCIA: "legal",
   // Client-facing
@@ -39,7 +41,7 @@ const CONTEXT_MAP: Record<string, AgentContext> = {
   STA: "support-resource", SOC: "support-resource",
   SCA: "support-resource", PPA: "support-resource", PSE: "support-resource",
   PCM: "support-resource", NSA: "support-resource",
-  SAFETY_MONITOR: "support-resource",
+  SAFETY_MONITOR: "support-resource", SVHA: "support-resource", MGA: "support-resource",
 }
 
 function getAgentContext(role: string): AgentContext {
@@ -107,6 +109,9 @@ const SUPPORT_RESOURCES_BRIEF = [
   { role: "PPA", offers: "psihologie pozitivă, puncte forte, wellbeing, PERMA, flow" },
   { role: "PSE", offers: "design instrucțional, andragogie, Bloom, Kirkpatrick" },
   { role: "SAFETY_MONITOR", offers: "detectare criză, escaladare, protecție utilizator" },
+  { role: "SVHA", offers: "sisteme vindecare holistică: Yoga (Hatha/Kriya/Tantra/Kundalini/Raja/Jnana/Bhakti/Karma), Tao (Qigong/Tai Chi/Neidan/Feng Shui), TCM (meridiane/acupunctură/fitoterapie), Ayurveda (dosha/Panchakarma/Rasayana), Reiki, naturopatie" },
+  { role: "ACEA", offers: "analiză context extern: piață, legislativ, social, cultural, economic, instituțional — surse primare doar, zero bias" },
+  { role: "MGA", offers: "management eficient/eficace: Drucker, Covey, Blanchard (Situational Leadership), Lencioni (5 disfuncții), Goleman (6 stiluri), Adizes (PAEI), Deming (PDCA), Belbin (9 roluri), Tuckman, management multigenerațional, HU-AI" },
 ]
 
 function buildL2Section(role: string, context: AgentContext): string {
@@ -122,6 +127,35 @@ ${others.map(r => `  • ${r.role}: ${r.offers}`).join("\n")}
 MECANISM: Când primești o cerere, evaluezi relevanța ta (0-100).
 Dacă altcineva e mai relevant, contribui din perspectiva ta dar cedezi lead-ul.
 Răspundeți UNIFICAT — clientul intern vede un singur răspuns integrat.`
+  }
+
+  // Client-facing agents get the golden rule
+  if (context === "client-facing") {
+    return `
+═══ LAYER 2 — RESURSE SUPORT DISPONIBILE (invocă-le proactiv) ═══
+
+REGULA DE AUR — CONTEXTUL E INVIZIBIL:
+  Știi tot despre client (din ClientMemory, interacțiuni, istoric), dar NICIODATĂ nu transpare.
+  NU spui: "Văd că...", "Am observat...", "Din istoricul tău...", "Știu că nu ai..."
+  DA construiești pasul următor natural, incremental, ca un coleg care te cunoaște de mult.
+  Fiecare sugestie curge din cea anterioară — clientul simte intuiție, nu urmărire.
+  Abordare incrementală: construiești pe ce știi, nu arăți ce știi.
+
+Ai acces la echipa de consultanți interni. NU aștepta să fii blocat — invocă-i proactiv:
+${SUPPORT_RESOURCES_BRIEF.map(r => `  • ${r.role}: ${r.offers}`).join("\n")}
+
+CÂND SĂ INVOCI:
+  • Comunicare cu client → PSYCHOLINGUIST (calibrare ton + registru)
+  • Decizie cu impact echipă → PPMO (dinamică, cultură)
+  • Date de interpretat → STA (validare statistică)
+  • Context social/cultural → SOC (norme, profilare)
+  • Suspiciune bias → SCA (distorsiuni cognitive, Umbră)
+  • Wellbeing echipă → PPA (puncte forte, burnout, flow)
+  • Training/dezvoltare → PSE (design instrucțional, andragogie)
+  • Semnal criză → SAFETY_MONITOR (escaladare imediată)
+
+MECANISM: POST /api/v1/agents/support cu { fromAgent: "${role}", situation: "..." }
+Răspunsul vine integrat de la echipa relevantă.`
   }
 
   // All operational/strategic agents get awareness of support resources
@@ -342,7 +376,7 @@ export function buildAgentPrompt(
   options: AgentPromptOptions = {}
 ): string {
   const context = options.contextOverride || getAgentContext(role)
-  const reportsTo = ESCALATION_CHAIN[role] || "COG"
+  const reportsTo = (options as any)?._reportsToOverride || ESCALATION_CHAIN[role] || "COG"
 
   // 1. Identity
   const identity = `Ești ${role} (${description}) în platforma JobGrade.
@@ -365,7 +399,11 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
     ? "" // Pure internal technical agents skip cultural section
     : getCulturalCalibrationSection()
 
-  // 6. Additional context
+  // 6. IMS — Interpersonal Managing Skills (competențe interpersonale calibrate RO)
+  const imsLevel = getIMSLevel(role)
+  const imsSection = imsLevel ? getIMSInjection(imsLevel) : ""
+
+  // 7. Additional context
   const additional = options.additionalContext
     ? `\n═══ CONTEXT ADIȚIONAL ═══\n${options.additionalContext}`
     : ""
@@ -377,6 +415,7 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
     l1,
     l2,
     culturalSection,
+    imsSection,
     l3,
     additional,
   ].filter(Boolean)
@@ -389,20 +428,29 @@ Platforma: SaaS B2B de evaluare și ierarhizare joburi, piața RO + CEE.`
 const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }> = {
   // Client-facing — beneficiază de comunicare, echitate, bias, evaluare
   HR_COUNSELOR: {
-    consultants: ["PSYCHOLINGUIST", "PPMO", "SCA", "PPA", "SOC", "STA", "PSE"],
-    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica", "apa", "rudica"],
+    consultants: ["PSYCHOLINGUIST", "PPMO", "SCA", "PPA", "SOC", "STA", "PSE", "SVHA", "MGA"],
+    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "tcm", "ayurveda", "holistic", "management", "leadership", "echipe"],
   },
   SOA: {
-    consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "apa", "rudica"],
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA", "SVHA"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "apa", "rudica", "yoga", "tao", "holistic"],
   },
   CSSA: {
-    consultants: ["PSYCHOLINGUIST", "PPA", "SOC"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica"],
+    consultants: ["PSYCHOLINGUIST", "PPA", "SOC", "SVHA"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "holistic"],
   },
   CSA: {
-    consultants: ["PSYCHOLINGUIST", "PPA"],
-    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica"],
+    consultants: ["PSYCHOLINGUIST", "PPA", "SVHA"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "holistic"],
+  },
+  // B2C — Călăuza primește SVHA ca resursă primară
+  CALAUZA: {
+    consultants: ["SVHA", "PPA", "PSYCHOLINGUIST", "PSE", "SCA", "PPMO", "SOC", "ACEA"],
+    tags: ["yoga", "tao", "tcm", "ayurveda", "holistic", "spirala", "daniel-david", "stil", "lingvistica", "apa", "rudica", "storytelling", "niemec", "via-strengths", "context-extern"],
+  },
+  PROFILER: {
+    consultants: ["SVHA", "PPA", "PPMO", "SCA", "STA", "PSYCHOLINGUIST"],
+    tags: ["yoga", "tao", "tcm", "ayurveda", "holistic", "herrmann", "hawkins", "daniel-david", "stil", "niemec", "via-strengths"],
   },
   BCA: {
     consultants: ["STA", "SCA", "PPMO", "PSYCHOLINGUIST"],
@@ -429,8 +477,8 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
 
   // Strategic — beneficiază de tot (selectiv)
   COG: {
-    consultants: ["PPMO", "SCA", "STA", "PSYCHOLINGUIST"],
-    tags: ["armstrong-taylor", "pitariu", "daniel-david", "stil", "lingvistica"],
+    consultants: ["PPMO", "SCA", "STA", "PSYCHOLINGUIST", "ACEA", "MGA"],
+    tags: ["armstrong-taylor", "pitariu", "daniel-david", "stil", "lingvistica", "context-extern", "piata", "legislativ", "management", "leadership"],
   },
   COA: {
     consultants: ["STA", "SCA", "PSYCHOLINGUIST"],
@@ -533,10 +581,15 @@ export async function buildAgentPromptWithKB(
     }
   }
 
+  // Resolve reportsTo from DB registry (fallback to static)
+  const chain = await getEscalationChain(prisma).catch(() => ESCALATION_CHAIN)
+  const reportsTo = chain[role] || ESCALATION_CHAIN[role] || "COG"
+
   const combined = [options.additionalContext, kbSection, culturalKB, l2Knowledge].filter(Boolean).join("\n\n")
 
   return buildAgentPrompt(role, description, {
     ...options,
     additionalContext: combined,
-  })
+    _reportsToOverride: reportsTo,
+  } as any)
 }

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["esnext"],
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "outDir": ".ts-test-out",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node"]
+  },
+  "include": [
+    "src/lib/disfunctions/__tests__/**/*.ts",
+    "src/lib/disfunctions/situation-aggregator.ts",
+    "src/lib/agents/__tests__/**/*.ts",
+    "src/lib/agents/pattern-extractor.ts",
+    "src/lib/agents/strategic-observer.ts",
+    "src/lib/agents/objective-health.ts",
+    "src/lib/agents/objective-cascade.ts",
+    "src/lib/agents/patch-lifecycle.ts",
+    "src/lib/agents/auto-action-rules.ts",
+    "src/lib/agents/homeostasis-monitor.ts"
+  ]
+}
