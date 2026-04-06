@@ -39,8 +39,10 @@ export async function POST(req: NextRequest) {
     // Route decision to appropriate action
     if (optionLabel.startsWith("Investighează")) {
       // Delegate to COG via agent task
+      const biz = await p.business.findFirst({ select: { id: true } })
       await p.agentTask.create({
         data: {
+          businessId: biz?.id ?? "biz_jobgrade",
           assignedTo: "COG",
           assignedBy: "OWNER",
           taskType: "INVESTIGATE",
