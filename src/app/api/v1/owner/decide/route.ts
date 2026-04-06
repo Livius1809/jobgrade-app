@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
           assignedTo: "COG",
           assignedBy: "OWNER",
           taskType: "INVESTIGATE",
+          title: `Investighează: ${situationId}`,
           description: `Owner decision: investighează cauza comună pentru situația "${situationId}". Roluri afectate: ${(affectedRoles || []).join(", ")}`,
           priority: "HIGH",
           status: "ASSIGNED",
