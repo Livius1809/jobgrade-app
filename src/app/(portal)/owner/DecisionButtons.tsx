@@ -62,6 +62,15 @@ export default function DecisionButtons({
     )
   }
 
+  if (result && !decided) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+        <p className="text-xs text-red-700">{result}</p>
+        <button onClick={() => setResult(null)} className="text-[10px] text-red-500 underline mt-1">Reîncearcă</button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2">
       <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary/60">

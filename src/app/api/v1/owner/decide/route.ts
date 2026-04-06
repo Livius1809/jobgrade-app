@@ -8,24 +8,22 @@ import { redistributeSubordinates } from "@/lib/disfunctions/reorg-engine"
  *
  * Owner ia o decizie pe o situație din cockpit.
  * Body: { situationId, optionLabel, affectedRoles }
- *
- * Acțiuni posibile:
- * - "Investighează cauza comună" → delegă task la COG
- * - "Redistribuie temporar" → apelează reorg-engine
- * - "Reactivează X" → update activityMode
- * - "Pauză X" → update activityMode PAUSED_KNOWN_GAP
- * - "Escaladare manuală la COG" → crează escalation
- * - "Acceptă risc" → marchează situația monitorizată
- * - "Închide — fals pozitiv" → resolve events
  */
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  // Try session auth first, then internal key
+  const session = await auth().catch(() => null)
+  const hasSessionAuth = session?.user?.id
+  const hasInternalKey = req.headers.get("x-internal-key") === process.env.INTERNAL_API_KEY
+
+  if (!hasSessionAuth && !hasInternalKey) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
   }
-  const role = (session.user as any).role
-  if (role !== "SUPER_ADMIN" && role !== "OWNER") {
-    return NextResponse.json({ error: "Acces restricționat" }, { status: 403 })
+
+  if (hasSessionAuth) {
+    const role = (session!.user as any).role
+    if (role !== "SUPER_ADMIN" && role !== "OWNER") {
+      return NextResponse.json({ error: "Acces restricționat" }, { status: 403 })
+    }
   }
 
   try {
