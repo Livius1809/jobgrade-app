@@ -65,7 +65,7 @@ export default async function SituationsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <meta httpEquiv="refresh" content="30" />
+      <meta httpEquiv="refresh" content="3600" />
 
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold mb-2">Situații — Cockpit Owner</h1>

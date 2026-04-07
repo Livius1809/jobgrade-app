@@ -42,7 +42,7 @@ export default async function OwnerDashboard() {
   return (
     <div className="flex gap-8 items-start">
       <div className="flex-1 min-w-0 space-y-8">
-        <meta httpEquiv="refresh" content="60" />
+        <meta httpEquiv="refresh" content="3600" />
 
         {/* ── Greeting ──────────────────────────────────── */}
         <div>
