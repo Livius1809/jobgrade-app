@@ -408,6 +408,99 @@ async function executeActions(
   return executedActions
 }
 
+// ── Review taskuri completate de subordonați ─────────────────────────────────
+
+async function reviewCompletedTasks(
+  config: ManagerConfig,
+  prisma: any,
+  dryRun?: boolean
+): Promise<void> {
+  // Găsește taskuri COMPLETED ale subordonaților care nu au fost încă reviewuite
+  const completedTasks = await prisma.agentTask.findMany({
+    where: {
+      assignedTo: { in: config.subordinates },
+      assignedBy: config.agentRole,
+      status: "COMPLETED",
+      reviewedAt: null,
+    },
+    orderBy: { completedAt: "asc" },
+    take: 10,
+  }).catch(() => [])
+
+  if (completedTasks.length === 0) return
+
+  console.log(`   📝 [${config.agentRole}] ${completedTasks.length} taskuri completate de revizuit`)
+
+  const client = new Anthropic()
+
+  for (const task of completedTasks) {
+    try {
+      // Manager-ul evaluează calitatea rezultatului
+      const response = await client.messages.create({
+        model: MODEL,
+        max_tokens: 300,
+        system: `Ești ${config.agentRole}, manager. Evaluezi rezultatul unui task completat de subordonatul ${task.assignedTo}.
+Răspunde DOAR în format JSON:
+{"approved": true/false, "feedback": "mesaj scurt pentru subordonat", "reason": "de ce aprobi sau respingi"}
+Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback constructiv.`,
+        messages: [
+          {
+            role: "user",
+            content: `Task: "${task.title}"\nDescriere: ${task.description}\nRezultat raportat: ${task.result || "niciun rezultat documentat"}\nDurată: ${task.completedAt && task.startedAt ? Math.round((new Date(task.completedAt).getTime() - new Date(task.startedAt).getTime()) / 60000) + " min" : "necunoscută"}`,
+          },
+        ],
+      })
+
+      const text = response.content[0].type === "text" ? response.content[0].text : ""
+      let review: { approved: boolean; feedback: string; reason: string }
+
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/)
+        review = jsonMatch ? JSON.parse(jsonMatch[0]) : { approved: true, feedback: "OK", reason: "parsare eșuată" }
+      } catch {
+        review = { approved: true, feedback: "Acceptat", reason: "review automat" }
+      }
+
+      if (dryRun) {
+        console.log(`   [dryRun] ${task.assignedTo}/${task.title}: ${review.approved ? "APPROVED" : "NEEDS_REVISION"} — ${review.feedback}`)
+        continue
+      }
+
+      if (review.approved) {
+        // Aprobat — marchează ca reviewed
+        await prisma.agentTask.update({
+          where: { id: task.id },
+          data: {
+            reviewedBy: config.agentRole,
+            reviewedAt: new Date(),
+            reviewNote: `APPROVED: ${review.feedback}`,
+            resultQuality: 80,
+          },
+        }).catch(() => {})
+
+        console.log(`   ✅ ${task.assignedTo}/${task.title}: APPROVED — ${review.feedback}`)
+      } else {
+        // Respins — reasignare cu feedback
+        await prisma.agentTask.update({
+          where: { id: task.id },
+          data: {
+            status: "ASSIGNED",
+            completedAt: null,
+            reviewedBy: config.agentRole,
+            reviewedAt: new Date(),
+            reviewNote: `NEEDS_REVISION: ${review.feedback}`,
+            resultQuality: 30,
+          },
+        }).catch(() => {})
+
+        console.log(`   🔄 ${task.assignedTo}/${task.title}: NEEDS_REVISION — ${review.feedback}`)
+      }
+    } catch (err: any) {
+      console.error(`   ❌ Review failed [${task.id}]: ${err.message}`)
+    }
+  }
+}
+
 // ── Verificare escalări anterioare rezolvate ──────────────────────────────────
 
 async function checkResolvedEscalations(
@@ -499,6 +592,11 @@ export async function runProactiveCycle(
 
   // 2. Verifică escalări anterioare
   await checkResolvedEscalations(effectiveConfig, statuses, prisma).catch(() => {})
+
+  // 2b. REVIEW taskuri completate de subordonați
+  await reviewCompletedTasks(effectiveConfig, prisma, options?.dryRun).catch((e) => {
+    console.log(`   [review] ${e.message}`)
+  })
 
   // 3. Escalări active (pentru context AI)
   const activeEscalations = await getActiveEscalations(effectiveConfig.agentRole, prisma).catch(
