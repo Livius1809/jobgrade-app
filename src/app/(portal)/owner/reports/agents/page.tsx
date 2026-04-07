@@ -18,6 +18,7 @@ interface AgentReport {
   escalationsOpen: number
   avgPerformance: number | null
   lastActive: string | null
+  depth?: number
 }
 
 export default async function AgentsReportPage() {
@@ -35,6 +36,12 @@ export default async function AgentsReportPage() {
       orderBy: { agentRole: "asc" },
       select: { agentRole: true, displayName: true, level: true, activityMode: true },
     })
+
+    // Hierarchy
+    const hierarchy = await p.$queryRaw`
+      SELECT "childRole", "parentRole" FROM agent_relationships
+      WHERE "relationType" = 'REPORTS_TO'
+    ` as { childRole: string; parentRole: string }[]
 
     // Batch queries for all metrics
     const [kbStats, cycleStats, taskStats, escalationStats, metricStats] = await Promise.all([
@@ -103,6 +110,47 @@ export default async function AgentsReportPage() {
         lastActive: metric?.date ? new Date(metric.date).toLocaleDateString("ro-RO") : null,
       }
     })
+    // Build hierarchy tree with depth levels
+    const parentOf = new Map<string, string>()
+    const childrenOf = new Map<string, string[]>()
+    for (const rel of hierarchy) {
+      parentOf.set(rel.childRole, rel.parentRole)
+      if (!childrenOf.has(rel.parentRole)) childrenOf.set(rel.parentRole, [])
+      childrenOf.get(rel.parentRole)!.push(rel.childRole)
+    }
+
+    // Compute depth for each agent
+    function getDepth(role: string): number {
+      let depth = 0
+      let current = role
+      const seen = new Set<string>()
+      while (parentOf.has(current) && !seen.has(current)) {
+        seen.add(current)
+        current = parentOf.get(current)!
+        depth++
+      }
+      return depth
+    }
+
+    // Sort agents by tree order (DFS)
+    function treeOrder(role: string, result: string[]) {
+      result.push(role)
+      const children = childrenOf.get(role) ?? []
+      children.sort().forEach(c => treeOrder(c, result))
+    }
+
+    const roots = agents
+      .map(a => a.agentRole)
+      .filter(r => !parentOf.has(r))
+    const ordered: string[] = []
+    roots.sort().forEach(r => treeOrder(r, ordered))
+
+    // Re-sort agents by tree order and add depth
+    const agentMap = new Map(agents.map(a => [a.agentRole, a]))
+    agents = ordered
+      .filter(r => agentMap.has(r))
+      .map(r => ({ ...agentMap.get(r)!, depth: getDepth(r) }))
+
   } catch (e: any) {
     console.error("[AGENTS REPORT]", e.message)
   }
@@ -166,8 +214,12 @@ export default async function AgentsReportPage() {
               {agents.map((a) => (
                 <tr key={a.agentRole} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-3 py-2">
-                    <span className="font-mono font-bold text-indigo text-xs">{a.agentRole}</span>
-                    <span className="text-slate-400 ml-1.5 text-[10px]">{a.displayName}</span>
+                    <div className="flex items-center" style={{ paddingLeft: `${(a.depth ?? 0) * 16}px` }}>
+                      {(a.depth ?? 0) > 0 && <span className="text-slate-300 mr-1.5 text-[10px]">└</span>}
+                      <span className="font-mono font-bold text-indigo text-xs">{a.agentRole}</span>
+                      <span className="text-slate-400 ml-1.5 text-[10px]">{a.displayName}</span>
+                      <span className="text-slate-300 ml-1 text-[9px]">N{a.depth ?? 0}</span>
+                    </div>
                   </td>
                   <td className="px-2 py-2 text-center">
                     <span className={`text-[10px] font-bold ${levelColors[a.level] ?? "text-slate-500"}`}>{a.level}</span>
