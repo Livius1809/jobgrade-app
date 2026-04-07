@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
       situationId,
       actions,
       decidedAt: new Date().toISOString(),
-      decidedBy: session.user.id,
+      decidedBy: session!.user.id,
     })
   } catch (error: any) {
     console.error("[OWNER DECIDE]", error)

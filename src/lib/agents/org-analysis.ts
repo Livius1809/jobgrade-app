@@ -189,7 +189,7 @@ export async function analyzeRedundancies(prisma: PrismaClient): Promise<Redunda
 
   // Build comparison pairs (only siblings)
   const pairs: Array<{ a: any; b: any }> = []
-  const agentMap = new Map(agents.map((a: any) => [a.agentRole, a]))
+  const agentMap = new Map<string, any>(agents.map((a: any) => [a.agentRole, a]))
 
   for (const [, siblings] of siblingGroups) {
     for (let i = 0; i < siblings.length; i++) {
@@ -281,7 +281,7 @@ export async function analyzeCoverage(prisma: PrismaClient): Promise<CoverageRep
     where: { createdAt: { gte: thirtyDaysAgo } },
     _count: true,
   })
-  const recentMap = new Map(recentActivity.map((r: any) => [r.agentRole, r._count]))
+  const recentMap = new Map<string, any>(recentActivity.map((r: any) => [r.agentRole, r._count]))
   const agentsIdle = agentRoles.filter(
     (r: string) => kbMap.has(r) && !recentMap.has(r)
   )

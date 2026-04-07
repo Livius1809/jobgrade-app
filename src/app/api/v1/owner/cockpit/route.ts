@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
 
     // Strategic themes via internal API
     const strategicThemes = Array.isArray(strategicThemesRaw)
-      ? strategicThemesRaw.map((t: Record<string, string>) => ({
+      ? (strategicThemesRaw as Record<string, string>[]).map((t) => ({
           severity: t.severity ?? "LOW",
           confidence: t.confidence ?? "LOW",
           title: t.title ?? "",

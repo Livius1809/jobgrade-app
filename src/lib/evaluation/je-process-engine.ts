@@ -1021,7 +1021,7 @@ export async function getHierarchyForValidation(sessionId: string, prisma: any) 
   const allResults = await (prisma as any).jobResult.findMany({
     where: { sessionId, rank: { not: -1 } },
   })
-  const slottedMap = new Map(allResults.map((r: any) => [r.jobId, r]))
+  const slottedMap = new Map<string, any>(allResults.map((r: any) => [r.jobId, r]))
 
   // Obține overrides
   const overrides = await (prisma as any).scoreOverride.findMany({
@@ -1717,13 +1717,13 @@ async function getFinalLettersForJob(
   const facilitatorDecisions = await (prisma as any).facilitatorDecision.findMany({
     where: { sessionId, jobId },
   })
-  const fdMap = new Map(facilitatorDecisions.map((fd: any) => [fd.criterionId, fd.subfactorId]))
+  const fdMap = new Map<string, any>(facilitatorDecisions.map((fd: any) => [fd.criterionId, fd.subfactorId]))
 
   // 2. Verifică consensus finalizat
   const consensuses = await (prisma as any).consensusStatus.findMany({
     where: { sessionId, jobId, finalSubfactorId: { not: null } },
   })
-  const csMap = new Map(consensuses.map((cs: any) => [cs.criterionId, cs.finalSubfactorId]))
+  const csMap = new Map<string, any>(consensuses.map((cs: any) => [cs.criterionId, cs.finalSubfactorId]))
 
   for (const criterion of criteria) {
     // Prioritate 1: Decizie facilitator

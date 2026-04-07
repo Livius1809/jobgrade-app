@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
       _count: { id: true },
     })
 
-    const countMap = new Map(counts.map((c: any) => [c.agentRole, c._count.id]))
+    const countMap = new Map<string, any>(counts.map((c: any) => [c.agentRole, c._count.id]))
 
     const allRoles = await getAllAgentRoles(prisma)
     const prompts = await getSelfInterviewPrompts(prisma)

@@ -47,7 +47,7 @@ export async function getResourceAllocations(): Promise<ResourceAllocation[]> {
     },
   }).catch(() => [])
 
-  const budgetMap = new Map(budgets.map((b: any) => [b.agentRole, b]))
+  const budgetMap = new Map<string, any>(budgets.map((b: any) => [b.agentRole, b]))
 
   // Default budgets by level
   const DEFAULT_BUDGET: Record<string, number> = {

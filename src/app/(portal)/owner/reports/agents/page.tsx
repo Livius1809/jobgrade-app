@@ -88,7 +88,7 @@ export default async function AgentsReportPage() {
     const cycleMap = new Map(cycleStats.map(r => [r.role, Number(r.cycles)]))
     const taskMap = new Map(taskStats.map(r => [r.role, { total: Number(r.total), completed: Number(r.completed) }]))
     const escalationMap = new Map(escalationStats.map(r => [r.role, Number(r.open)]))
-    const metricMap = new Map(metricStats.map((r: any) => [r.agentRole, { score: r.performanceScore, date: r.periodEnd }]))
+    const metricMap = new Map<string, { score: number; date: string }>(metricStats.map((r: any) => [r.agentRole, { score: r.performanceScore, date: r.periodEnd }]))
 
     agents = definitions.map((d: any) => {
       const kb = kbMap.get(d.agentRole) ?? { total: 0, embedded: 0 }
