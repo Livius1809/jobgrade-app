@@ -31,6 +31,8 @@ const CONTEXT_MAP: Record<string, AgentContext> = {
   // Client-facing
   SOA: "client-facing", CSSA: "client-facing", CSA: "client-facing",
   HR_COUNSELOR: "client-facing", BCA: "client-facing", MEDIATOR: "client-facing",
+  // B2C Client-facing
+  CALAUZA: "client-facing", PROFILER: "client-facing",
   // Marketing
   MKA: "marketing", ACA: "marketing", CMA: "marketing", CWA: "marketing",
   CDIA: "marketing",

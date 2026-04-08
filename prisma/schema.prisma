@@ -1385,6 +1385,7 @@ model PayrollImportBatch {
   totalRows   Int
   validRows   Int
   invalidRows Int      @default(0)
+  errors      Json?
   status      String   @default("COMPLETED") // COMPLETED, PARTIAL, FAILED
   createdAt   DateTime @default(now())
 
@@ -1567,7 +1568,11 @@ enum ThreadType {
   TEAM_CHAT // Owner ↔ any agent
   ASSISTANT // Contextual assistant (any user)
   HR_COUNSELOR // B2B HR interface
-  B2C_GUIDE // B2C Călăuza (future)
+  B2C_GUIDE // B2C Călăuza (Card 1)
+  B2C_PROFILER // B2C Profiler (Card 6)
+  B2C_CAREER // B2C Consilier Carieră (Card 3)
+  B2C_RELATIONS // B2C Consilier Dezvoltare Personală (Card 2)
+  B2C_COACH // B2C Coach (Card 4-5)
 }
 
 enum MessageRole {
@@ -2799,6 +2804,395 @@ enum LeadSource {
   LINKEDIN
   EVENT
   MANUAL
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// B2C — Platforma de evoluție personală
+// Pseudonim default (GDPR by design), profil legat de alias nu identitate reală
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Client B2C — cont anonim bazat pe pseudonim
+model B2CUser {
+  id           String       @id @default(cuid())
+  alias        String       @unique // "numele de crisalidă"
+  email        String       @unique // alias@jobgrade.ro (generat automat)
+  passwordHash String?
+  age          Int?
+  gender       Gender?
+  lastJobTitle String?      // ultimul job avut
+  hasCurrentJob Boolean?    // job curent da/nu
+  locale       String       @default("ro")
+  status       B2CUserStatus @default(ONBOARDING)
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Profil evolutiv
+  profile      B2CProfile?
+  // Carduri și progres
+  cards        B2CCardProgress[]
+  // Sesiuni dialog
+  sessions     B2CSession[]
+  // Credite
+  creditBalance B2CCreditBalance?
+  creditTxns    B2CCreditTransaction[]
+  // Comunități
+  memberships  B2CCommunityMember[]
+  // Teste parcurse
+  testResults  B2CTestResult[]
+  // Traseu evolutiv
+  evolutionLog B2CEvolutionEntry[]
+  // Jurnal
+  journalEntries B2CJournalEntry[]
+
+  @@map("b2c_users")
+}
+
+/// Profilul evolutiv — agregat din toate cele 5 fluxuri de profilare
+model B2CProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      B2CUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Herrmann HBDI — cadranele (0-100 fiecare)
+  herrmannA Float?   // Analitic (stânga-sus, albastru)
+  herrmannB Float?   // Secvențial (stânga-jos, verde)
+  herrmannC Float?   // Interpersonal (dreapta-jos, roșu)
+  herrmannD Float?   // Imaginativ (dreapta-sus, galben)
+
+  // Hawkins — nivel estimat pe scala conștiinței (observat, nu declarat)
+  hawkinsEstimate  Int?     // 0-1000
+  hawkinsConfidence Float?  // 0-1, cât de sigur e estimarea
+
+  // VIA Character Strengths — top 5 signature + bottom 3 necultivate
+  viaSignature     String[] // ex: ["curiosity", "honesty", "kindness"]
+  viaUndeveloped   String[] // ex: ["prudence", "self-regulation"]
+
+  // Coordonata spirală globală (cel mai avansat nivel atins pe orice card)
+  spiralLevel      Int      @default(1) // 1=crisalidă, 2=fluture, 3=zbor, 4=salt
+  spiralStage      Int      @default(1) // etapa competenței 1-4
+
+  // Profilare din dialog (insights agregate)
+  dialogInsights   Json?    // structured insights din conversații
+  // Profilare din teste externe (licențiate)
+  externalTests    Json?    // rezultate din teste parteneri, cu referință licență
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("b2c_profiles")
+}
+
+/// Progresul clientului pe fiecare card
+model B2CCardProgress {
+  id       String      @id @default(cuid())
+  userId   String
+  user     B2CUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card     B2CCard     // cardul (CARD_1..CARD_6)
+
+  status   B2CCardStatus @default(LOCKED) // LOCKED, ACTIVE, COMPLETED
+  // Spirala per card
+  phase    B2CSpiralPhase @default(CHRYSALIS) // faza pe acest card
+  stage    Int            @default(1)         // etapa competenței 1-4
+
+  // Chestionar completat la activare card
+  questionnaireData Json? // răspunsurile la mini-chestionarul cardului
+
+  // Comunitate
+  communityReady    Boolean @default(false) // agentul evaluează readiness
+  communityGrantedAt DateTime?
+
+  // CV (doar Card 3)
+  cvFileUrl         String? // S3/Blob URL
+  cvExtractedData   Json?   // extracție AI din CV → format fișă post
+
+  activatedAt  DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, card])
+  @@index([userId, status])
+  @@map("b2c_card_progress")
+}
+
+/// Sesiune de dialog B2C — o conversație cu un agent pe un card
+model B2CSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      B2CUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card      B2CCard  // pe ce card se desfășoară
+  agentRole String   // CALAUZA, PROFILER, CAREER_COUNSELOR, etc.
+
+  // Jaloane sesiune (J0-J7)
+  milestones Json?   // array de { milestone: "J0".."J7", reachedAt: timestamp }
+
+  // Context invizibil — ce a primit agentul la start
+  contextSnapshot Json? // snapshot profil + interacțiuni relevante
+
+  status    B2CSessionStatus @default(ACTIVE)
+  startedAt DateTime         @default(now())
+  endedAt   DateTime?
+
+  // Link la ConversationThread (reutilizăm infrastructure existentă)
+  threadId  String?
+
+  @@index([userId, card])
+  @@index([userId, agentRole])
+  @@map("b2c_sessions")
+}
+
+/// Rezultat test — din L2 intern sau de la parteneri externi
+model B2CTestResult {
+  id        String        @id @default(cuid())
+  userId    String
+  user      B2CUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testType  B2CTestType   // HERRMANN, VIA, HAWKINS, EXTERNAL_LICENSED
+  testName  String        // numele testului (ex: "HBDI Full", "VIA-IS 120", "NEO-PI-R")
+  source    B2CTestSource // INTERNAL_L2, EXTERNAL_PARTNER
+
+  // Rezultate
+  rawScore  Json          // scorul brut complet
+  normScore Json?         // scorul normalizat/interpretat
+  scoring   Json?         // metoda de scorare aplicată
+
+  // Licență (pentru teste externe)
+  partnerId  String?      // identificator partener licențiat
+  licenseRef String?      // referință contract/licență
+
+  // Supervizare
+  supervisedBy String?    // psiholog CPR care supervizează
+
+  administeredAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([userId, testType])
+  @@map("b2c_test_results")
+}
+
+/// Intrare în traseul evolutiv — fiecare moment semnificativ
+model B2CEvolutionEntry {
+  id       String           @id @default(cuid())
+  userId   String
+  user     B2CUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card     B2CCard          // pe ce card s-a întâmplat
+  type     B2CEvolutionType // ce tip de moment
+
+  // Detalii
+  title       String        // titlu scurt vizibil clientului
+  description String?       @db.Text // descriere extinsă
+  phase       B2CSpiralPhase // faza la momentul evenimentului
+  stage       Int            // etapa competenței
+
+  // Metadata
+  sessionId   String?       // sesiunea în care s-a întâmplat
+  agentRole   String?       // agentul care a observat
+  metadata    Json?          // date suplimentare (scor, detalii test, etc.)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, card, createdAt])
+  @@index([userId, createdAt])
+  @@map("b2c_evolution_entries")
+}
+
+/// Comunitate B2C — una per card, acces condiționat
+model B2CCommunity {
+  id          String   @id @default(cuid())
+  card        B2CCard  @unique // o singură comunitate per card
+  name        String   // ex: "Drumul către mine — Comunitatea"
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+
+  members     B2CCommunityMember[]
+  messages    B2CCommunityMessage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("b2c_communities")
+}
+
+/// Membru comunitate — prin pseudonim, acces condiționat de agent
+model B2CCommunityMember {
+  id          String   @id @default(cuid())
+  communityId String
+  community   B2CCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String
+  user        B2CUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Acces condiționat
+  grantedBy   String       // agentRole care a acordat accesul
+  grantReason String?      // motivul acordării
+
+  role        B2CCommunityRole @default(MEMBER)
+  joinedAt    DateTime         @default(now())
+
+  @@unique([communityId, userId])
+  @@map("b2c_community_members")
+}
+
+/// Mesaj în comunitate — prin pseudonim
+model B2CCommunityMessage {
+  id          String   @id @default(cuid())
+  communityId String
+  community   B2CCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  authorId    String       // B2CUser.id (afișat ca alias, nu identitate)
+  content     String       @db.Text
+  metadata    Json?        // flaguri moderare, etc.
+
+  // Moderare
+  flaggedBy   String?      // SAFETY_MONITOR, agent, etc.
+  flagReason  String?
+  isVisible   Boolean      @default(true)
+
+  createdAt   DateTime @default(now())
+
+  @@index([communityId, createdAt])
+  @@map("b2c_community_messages")
+}
+
+/// Credite B2C — separate de B2B
+model B2CCreditBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      B2CUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("b2c_credit_balances")
+}
+
+/// Tranzacții credite B2C
+model B2CCreditTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  user        B2CUser         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        B2CCreditTxnType
+  amount      Int             // pozitiv = adăugare, negativ = consum
+  description String
+  card        B2CCard?        // cardul pentru care s-au consumat creditele
+  sourceId    String?         // referință Stripe payment, etc.
+  createdAt   DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@map("b2c_credit_transactions")
+}
+
+/// Intrare de jurnal — scrisă de client, adaptată la profilul cognitiv
+model B2CJournalEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  user       B2CUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card       B2CCard  // pe ce card a fost generat prompt-ul
+
+  // Prompt-ul adaptat (ce a primit clientul)
+  promptText String   @db.Text
+  // Răspunsul clientului
+  content    String?  @db.Text
+  // Durata sugerată vs. reală
+  suggestedMinutes Int
+  actualMinutes    Int?
+
+  // Calibrare cognitivă (snapshot la momentul generării)
+  herrmannDominance String?   // A, B, C, D, AB, CD, etc.
+  dosageLevel       String?   // SEED, SPROUT, GROWING, DEEPENING, FULL
+  spiralPhase       B2CSpiralPhase @default(CHRYSALIS)
+  competenceStage   Int            @default(1)
+
+  // Scop intern (invizibil clientului)
+  internalPurpose   String?
+  targetDimension   String?   // dimensiunea din Evolution Engine
+
+  status     B2CJournalStatus @default(PROMPT_SENT)
+  createdAt  DateTime         @default(now())
+  writtenAt  DateTime?        // când a scris clientul
+  updatedAt  DateTime         @updatedAt
+
+  @@index([userId, card, createdAt])
+  @@index([userId, status])
+  @@map("b2c_journal_entries")
+}
+
+enum B2CJournalStatus {
+  PROMPT_SENT  // prompt-ul a fost trimis, clientul nu a scris încă
+  WRITING      // clientul a început să scrie
+  COMPLETED    // clientul a terminat
+  SKIPPED      // clientul a sărit (nu a vrut să scrie — informativ, nu punitiv)
+}
+
+// ── B2C Enums ────────────────────────────────────────────────────────────────
+
+enum B2CUserStatus {
+  ONBOARDING   // alias creat, nu a terminat onboarding-ul
+  ACTIVE       // cont activ, interacționează
+  INACTIVE     // nu s-a logat >60 zile
+  SUSPENDED    // suspendat (incident, plată, etc.)
+}
+
+enum B2CCard {
+  CARD_1  // "Drumul către mine" — Călăuza (nucleu)
+  CARD_2  // "Eu și ceilalți, adică NOI" — Consilier Dezvoltare Personală (relații)
+  CARD_3  // "Îmi asum un rol profesional" — Consilier Carieră (profesie)
+  CARD_4  // "Oameni de succes / Oameni de valoare" — Coach (tranziție)
+  CARD_5  // "Eu și antreprenoriatul transformațional" — Coach (integrare)
+  CARD_6  // "Spune-mi despre mine" — Profiler (transversal)
+}
+
+enum B2CCardStatus {
+  LOCKED     // invizibil sau gri, neactivat
+  ACTIVE     // activat (gratuit sau plătit)
+  COMPLETED  // parcurs complet (rare — spirala e continuă)
+}
+
+enum B2CSpiralPhase {
+  CHRYSALIS  // Crisalidă — "Sunt cine cred că sunt"
+  BUTTERFLY  // Fluture — "Văd că sunt mai mult decât credeam"
+  FLIGHT     // Zbor — "Sunt cine sunt, fără mască"
+  LEAP       // Salt — "Vreau să duc asta mai departe"
+}
+
+enum B2CSessionStatus {
+  ACTIVE     // sesiune în desfășurare
+  PAUSED     // client a pus pauză (revine)
+  COMPLETED  // sesiune încheiată natural
+  ESCALATED  // escaladată la SAFETY_MONITOR
+}
+
+enum B2CEvolutionType {
+  MILESTONE    // jalon atins pe spirală (J0-J7)
+  INSIGHT      // moment de claritate / revelație
+  REGRESSION   // regresie temporară (normală pe drum)
+  TRANSITION   // tranziție între carduri
+  HANDOFF      // predare ștafetă către alt agent/călăuză umană
+  TEST_RESULT  // rezultat test integrat în profil
+  COMMUNITY    // acces acordat la comunitate
+}
+
+enum B2CTestType {
+  HERRMANN          // HBDI — profilul cognitiv
+  VIA               // Character Strengths
+  HAWKINS           // Scala conștiinței (estimat)
+  EXTERNAL_LICENSED // test extern, licențiat de la partener
+}
+
+enum B2CTestSource {
+  INTERNAL_L2        // instrumente din echipa de resurse suport
+  EXTERNAL_PARTNER   // teste licențiate de la parteneri terți
+  OWNER_PROVIDED     // teste încărcate de Owner cu metodă de scorare
+}
+
+enum B2CCreditTxnType {
+  PURCHASE        // achiziție credite
+  CARD_ACTIVATION // consum la activare card
+  SERVICE         // consum serviciu plătit (raport, consiliere, etc.)
+  REFUND          // rambursare
+}
+
+enum B2CCommunityRole {
+  MEMBER     // membru standard
+  MENTOR     // fluture care ghidează crisalide
+  MODERATOR  // moderator (agent AI sau uman)
 }
 
 // Force Vercel rebuild Thu, Apr  2, 2026  5:41:11 PM
