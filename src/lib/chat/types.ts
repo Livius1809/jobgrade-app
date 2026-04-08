@@ -1,7 +1,7 @@
 // ── Chat Widget Types ───────────────────────────────────────────────────────
 
 /** Agent roles for client-facing chat */
-export type AgentRole = "soa" | "cssa" | "csa"
+export type AgentRole = "soa" | "cssa" | "csa" | "profiler" | "hr_counselor"
 
 /** Agent display metadata */
 export interface AgentMeta {

@@ -8,6 +8,8 @@ export const VOICE_CONFIG = {
     soa: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_SOA || "",
     cssa: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_CSSA || "",
     csa: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_CSA || "",
+    profiler: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_PROFILER || "",
+    hr_counselor: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_HR_COUNSELOR || "",
   } satisfies Record<AgentRole, string>,
 
   /** Default conversation language */
