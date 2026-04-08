@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma"
 import { injectKBContext } from "@/lib/kb/kb-injector"
 import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
 import { observeInteraction, applyProfileUpdate } from "@/lib/b2c/profiler-shadow"
+import { guardProfileIntegrity, quarantineInteraction } from "@/lib/b2c/coherence-guard"
 
 export const maxDuration = 60
 
@@ -171,7 +172,26 @@ export async function POST(req: NextRequest) {
       thread.messages = thread.messages || []
     }
 
-    // 6. Save user message
+    // 6. Coherence guard — protecție integritate profil
+    const recentClientMessages = (thread.messages || [])
+      .filter((m: any) => m.role === "USER")
+      .map((m: any) => m.content)
+      .slice(-10)
+
+    const guard = await guardProfileIntegrity(
+      message.trim(),
+      user.profile,
+      recentClientMessages,
+      {
+        totalSessions: user.testResults?.length || 0,
+        avgMessageLength: recentClientMessages.length > 0
+          ? Math.round(recentClientMessages.join(" ").split(/\s+/).length / recentClientMessages.length)
+          : 0,
+        dominantTopics: [],
+      }
+    )
+
+    // 7. Save user message
     await p.conversationMessage.create({
       data: { threadId: thread.id, role: "USER", content: message.trim() },
     })
@@ -220,14 +240,19 @@ export async function POST(req: NextRequest) {
       messages: history,
     })
 
-    const assistantText = response.content[0].type === "text" ? response.content[0].text : ""
+    let assistantText = response.content[0].type === "text" ? response.content[0].text : ""
 
-    // 10. Save response
+    // 10. Append protection message if guard detected something
+    if (guard.protectionMessage) {
+      assistantText = assistantText + "\n\n---\n\n" + guard.protectionMessage
+    }
+
+    // 11. Save response
     await p.conversationMessage.create({
       data: { threadId: thread.id, role: "ASSISTANT", content: assistantText },
     })
 
-    // 11. Update thread
+    // 12. Update thread
     await p.conversationThread.update({
       where: { id: thread.id },
       data: {
@@ -236,8 +261,9 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // 12. Profiler shadow — observă invizibil interacțiunea (non-blocking)
-    observeInteraction(
+    // 13. Profiler shadow — observă invizibil (SKIP dacă datele sunt contaminate)
+    if (!guard.quarantine) {
+      observeInteraction(
       {
         card: "CARD_1",
         agentRole: AGENT_ROLE,
@@ -247,10 +273,19 @@ export async function POST(req: NextRequest) {
       },
       user.profile
     ).then(async (update) => {
-      if (update) await applyProfileUpdate(userId, update, prisma).catch(() => {})
-    }).catch(() => {})
+        if (update) await applyProfileUpdate(userId, update, prisma).catch(() => {})
+      }).catch(() => {})
+    } else {
+      // Date contaminate — izolăm, nu actualizăm profilul
+      quarantineInteraction(
+        userId, thread.id,
+        guard.detectionType === "PROXY" ? "PROXY_DETECTED" : "COHERENCE_ANOMALY",
+        `Guard: ${guard.detectionType}, mesaj: "${message.trim().substring(0, 100)}"`,
+        prisma
+      ).catch(() => {})
+    }
 
-    // 13. Create/update session
+    // 14. Create/update session
     await p.b2CSession.upsert({
       where: { id: threadId || "new" },
       create: {
