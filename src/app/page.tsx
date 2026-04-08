@@ -490,6 +490,7 @@ export default function HomePage() {
                 <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Confidențialitate</a></li>
                 <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Cookies</a></li>
                 <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">GDPR</a></li>
+                <li><Link href="/transparenta-ai" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Transparenta AI</Link></li>
               </ul>
             </div>
 

@@ -136,7 +136,7 @@ Generează un anunț complet, atractiv și profesional. Include: titlu captivant
         { status: 400 }
       )
     }
-    console.error("[AI JOB-AD]", error)
+    console.error("[AI JOB-AD]", error instanceof Error ? error.constructor.name : "Unknown")
     return NextResponse.json({ message: "Eroare la generare AI." }, { status: 500 })
   }
 }

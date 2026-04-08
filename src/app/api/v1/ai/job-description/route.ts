@@ -69,7 +69,7 @@ Nu adăuga text în afara JSON-ului.`
         { status: 400 }
       )
     }
-    console.error("[AI JOB-DESC]", error)
+    console.error("[AI JOB-DESC]", error instanceof Error ? error.constructor.name : "Unknown")
     return NextResponse.json({ message: "Eroare la generare AI." }, { status: 500 })
   }
 }

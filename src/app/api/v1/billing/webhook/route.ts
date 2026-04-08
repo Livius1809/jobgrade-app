@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const packageId = session.metadata?.packageId ?? "unknown"
 
     if (!tenantId || credits <= 0) {
-      console.error("[WEBHOOK] Missing metadata:", session.metadata)
+      console.error("[WEBHOOK] Missing metadata in checkout session")
       return NextResponse.json({ received: true })
     }
 

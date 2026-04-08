@@ -6,16 +6,18 @@ import { join } from "path"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
-import { getClientProfile, formatClientProfileForPrompt, recordClientMemory, recordSupportInteraction } from "@/lib/agents/client-memory"
+import { getClientProfile, formatClientProfileForPrompt, recordClientMemory } from "@/lib/agents/client-memory"
 import { createEscalation, ESCALATION_CHAIN } from "@/lib/agents/escalation-chain"
 import { injectKBContext } from "@/lib/kb/kb-injector"
+import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
+import { observeB2BInteraction, applyB2BInsight } from "@/lib/b2b/counselor-shadow"
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
 import { checkEscalation, getEscalationBlockResponse } from "@/lib/security/escalation-detector"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
 
 export const maxDuration = 60
 
-const AGENT_ROLE = "CSA"
+const AGENT_ROLE = "HR_COUNSELOR"
 const THREAD_TYPE = "ASSISTANT" as const
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -26,7 +28,7 @@ let cachedSystemPrompt: string | null = null
 function loadSystemPrompt(): string {
   if (cachedSystemPrompt) return cachedSystemPrompt
   try {
-    const filepath = join(process.cwd(), "src", "lib", "agents", "system-prompts", "csa-system-prompt.md")
+    const filepath = join(process.cwd(), "src", "lib", "agents", "system-prompts", "hr-counselor-system-prompt.md")
     cachedSystemPrompt = readFileSync(filepath, "utf-8")
     return cachedSystemPrompt
   } catch {
@@ -36,58 +38,34 @@ function loadSystemPrompt(): string {
 
 // ── Escalation detection ────────────────────────────────────────────────────
 
-const ESCALATION_TRIGGERS_CSSA = [
-  { pattern: /nemul[tț]um|dezam[aă]gi|frustrat|furios|plec|reziliez/i, reason: "Client nemulțumit — escaladare la CSSA", priority: "HIGH" as const, target: "CSSA" },
-  { pattern: /upgrade|tier\s*superior|plan\s*mai\s*mare|pre[tț]/i, reason: "Cerere comercială — redirecționare CSSA/SOA", priority: "MEDIUM" as const, target: "CSSA" },
-  { pattern: /feature\s*nou|func[tț]ionalitate\s*lips[aă]|de\s*ce\s*nu\s*pot/i, reason: "Feature request — redirecționare CSSA → PMA", priority: "MEDIUM" as const, target: "CSSA" },
-  { pattern: /problema\s*recurent|a\s*treia\s*oar[aă]|din\s*nou\s*acela[sș]i/i, reason: "Problemă recurentă — escaladare cu istoric", priority: "HIGH" as const, target: "CSSA" },
-]
-
-const ESCALATION_TRIGGERS_QLA = [
-  { pattern: /bug|eroare\s*500|crash|nu\s*func[tț]ioneaz[aă]|se\s*blocheaz[aă]/i, reason: "Bug confirmat — escaladare la QLA", priority: "HIGH" as const, target: "QLA" },
-  { pattern: /date\s*pierdute|calcul\s*gre[sș]it|rezultat\s*incorect/i, reason: "Bug date/calcule — escaladare la QLA", priority: "CRITICAL" as const, target: "QLA" },
-  { pattern: /foarte\s*[iî]ncet|se\s*[iî]ncarc[aă]\s*greu|performan[tț][aă]/i, reason: "Problemă performanță — escaladare la QLA", priority: "MEDIUM" as const, target: "QLA" },
-]
-
-const ESCALATION_TRIGGERS_EMA = [
-  { pattern: /date\s*migra|import\s*e[sș]uat|date\s*vechi\s*lips[aă]/i, reason: "Eroare date/migrare — escaladare la EMA", priority: "HIGH" as const, target: "EMA" },
+const ESCALATION_TRIGGERS = [
+  { pattern: /conflict\s*(între|intre|evaluator)|dezacord\s*(comitet|evaluator)|nu\s*cad\s*de\s*acord|impas\s*evaluare/i, reason: "Mediere necesară — conflict între membrii comitetului de evaluare", priority: "HIGH" as const },
+  { pattern: /lege\s*munc|cod\s*munc|contract\s*(individual|colectiv)|discriminare|hărțuire|h[aă]r[tț]uire|concediere\s*(abuziv|ilegal)|drepturile?\s*(mele|angaja)/i, reason: "Întrebare juridică — legislație muncii, contracte, discriminare", priority: "HIGH" as const },
+  { pattern: /test\s*psihometric|evaluare\s*psihologic|profil\s*personalitate|assessment\s*center|baterie\s*(de\s*)?teste/i, reason: "Cerere evaluare psihometrică — redirecționare PPMO", priority: "MEDIUM" as const },
+  { pattern: /negociere\s*salar|mărire\s*salar|m[aă]rire\s*salar|pay\s*gap|diferenț[aă]\s*salarial|echitate\s*salarial/i, reason: "Negociere salarială — redirecționare pay gap analysis", priority: "HIGH" as const },
+  { pattern: /vreau\s*s[aă]\s*plec|reziliez|anule?z|churn/i, reason: "Risc churn confirmat — client amenință cu plecarea", priority: "CRITICAL" as const },
+  { pattern: /nemul[tț]um|dezam[aă]gi|frustrat|furios/i, reason: "Client nemulțumit — intervenție necesară", priority: "HIGH" as const },
 ]
 
 function detectEscalation(message: string, reply: string): { needed: boolean; reason: string; priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"; target: string } | null {
   const combined = `${message} ${reply}`
-
-  // Check QLA triggers first (bugs are highest priority)
-  for (const trigger of ESCALATION_TRIGGERS_QLA) {
+  for (const trigger of ESCALATION_TRIGGERS) {
     if (trigger.pattern.test(combined)) {
-      return { needed: true, reason: trigger.reason, priority: trigger.priority, target: trigger.target }
+      const target = ESCALATION_CHAIN[AGENT_ROLE] || "PMA"
+      return { needed: true, reason: trigger.reason, priority: trigger.priority, target }
     }
   }
-
-  // Check EMA triggers
-  for (const trigger of ESCALATION_TRIGGERS_EMA) {
-    if (trigger.pattern.test(combined)) {
-      return { needed: true, reason: trigger.reason, priority: trigger.priority, target: trigger.target }
-    }
-  }
-
-  // Check CSSA triggers
-  for (const trigger of ESCALATION_TRIGGERS_CSSA) {
-    if (trigger.pattern.test(combined)) {
-      return { needed: true, reason: trigger.reason, priority: trigger.priority, target: trigger.target }
-    }
-  }
-
   return null
 }
 
-// ── POST /api/v1/agents/csa/chat ────────────────────────────────────────────
+// ── POST /api/v1/agents/hr-counselor/chat ──────────────────────────────────
 
 /**
- * POST /api/v1/agents/csa/chat
+ * POST /api/v1/agents/hr-counselor/chat
  *
- * Chat cu CSA (Customer Support Agent) — client-facing B2B.
- * Triază, diagnostichează și rezolvă cererile de suport.
- * Tier 1 — rezolvare directă. Tier 2+ — escaladare la CSSA/QLA/EMA.
+ * Chat cu HR_COUNSELOR — client-facing B2B principal.
+ * Facilitează sesiunile de evaluare și ierarhizare a joburilor,
+ * ghidează procesul de consens, integrează funcționalitate MGA (mediere).
  *
  * Body: { message: string, threadId?: string, companyId?: string }
  */
@@ -205,6 +183,7 @@ export async function POST(req: NextRequest) {
       memoryPrompt,
       "",
       kbContext,
+      injectCommercialKnowledge(message.trim(), "B2B"),
       "",
       "REGULA DE AUR — NICIODATĂ nu transpare urmărirea:",
       "- NU spui \"Văd că ai vizitat...\", \"Am observat că nu ai...\"",
@@ -212,13 +191,14 @@ export async function POST(req: NextRequest) {
       "- Clientul simte că ești intuitiv, nu că l-ai urmărit",
       "- Contextul e INVIZIBIL — informează tonul și direcția, nu conținutul explicit",
       "",
-      "COMPORTAMENT SUPORT:",
-      "- Confirmare imediată: clientul trebuie să știe că a fost auzit",
-      "- Diagnostic rapid: maxim 2 întrebări de clarificare",
-      "- Rezolvare Tier 1 direct, cu pași clari și numerotați",
-      "- Tier 2+: escaladare transparentă cu timeframe estimat",
-      "- Follow-up: confirmă întotdeauna rezolvarea",
-      "- NICIODATĂ nu minimiza problema clientului",
+      "COMPORTAMENT HR COUNSELOR:",
+      "- Răspunsuri structurate, adaptate la nivelul de expertiză al interlocutorului (2-4 paragrafe)",
+      "- Dacă clientul e frustrat, validează emoția ÎNAINTE de a oferi soluția",
+      "- Facilitează consensul cu obiectivitate — focusează pe argumente, nu persoane",
+      "- Când detectezi conflict între evaluatori, activează mediere (MGA): anonimizare, redirecționare pe date",
+      "- Dacă apar întrebări juridice (legislație muncii, discriminare, contracte) → semnalează că nu ești jurist și recomandă validare CJA",
+      "- Dacă clientul cere evaluare psihometrică → redirecționează elegant spre PPMO",
+      "- Fiecare interacțiune trebuie să lase clientul mai încrezător în procesul de evaluare",
     ].filter(Boolean).join("\n")
 
     // 6. Call Claude
@@ -266,16 +246,33 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => {})
 
-    // 10. Record support interaction in client memory (non-blocking)
-    recordSupportInteraction(
+    // 10. Record memory from interaction (non-blocking)
+    recordClientMemory(
       tenantId,
-      message.trim().substring(0, 150),
-      assistantText.substring(0, 150),
+      "HISTORY",
+      `HR_COUNSELOR chat: "${message.trim().substring(0, 100)}"`,
       AGENT_ROLE,
-      prisma
+      prisma,
+      { importance: 0.5, tags: ["hr-counselor", "chat", "evaluare", "facilitare"] }
     ).catch(() => {})
 
-    // 11. Check escalation triggers
+    // 11. HR_Counselor shadow — observă invizibil interacțiunea B2B (non-blocking)
+    const existingMemory = clientProfile ? formatClientProfileForPrompt(clientProfile) : ""
+    observeB2BInteraction(
+      {
+        source: AGENT_ROLE,
+        interactionType: "CHAT",
+        summary: "",
+        clientAction: message.trim(),
+        systemResponse: assistantText,
+        tenantId,
+      },
+      existingMemory
+    ).then(async (insight) => {
+      if (insight) await applyB2BInsight(tenantId, insight, prisma).catch(() => {})
+    }).catch(() => {})
+
+    // 12. Check escalation triggers
     const escalation = detectEscalation(message, assistantText)
     if (escalation) {
       createEscalation({
@@ -283,7 +280,7 @@ export async function POST(req: NextRequest) {
         targetRole: escalation.target,
         aboutRole: AGENT_ROLE,
         reason: escalation.reason,
-        details: `Mesaj client suport: "${message.trim().substring(0, 200)}"`,
+        details: `Mesaj client: "${message.trim().substring(0, 200)}"`,
         priority: escalation.priority,
       }, prisma).catch(() => {})
     }

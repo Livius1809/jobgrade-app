@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
+import { checkEscalation, getEscalationBlockResponse } from "@/lib/security/escalation-detector"
+import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
 
 export const maxDuration = 60
 
@@ -32,14 +34,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mesajul nu poate fi gol" }, { status: 400 })
     }
 
-    // Prompt injection pre-filter
+    // 0a. Prompt injection pre-filter
     const injectionCheck = checkPromptInjection(message.trim())
     if (injectionCheck.blocked) {
       return NextResponse.json({ reply: getInjectionBlockResponse(), blocked: true })
     }
 
+    // 0b. Escalation detector — sliding window (VUL-005)
     const userId = session.user.id
+    const escalationCheck = checkEscalation(
+      userId,
+      message.trim(),
+      injectionCheck.detections.map((d) => d.category),
+      injectionCheck.flagged
+    )
+    if (escalationCheck.blocked) {
+      console.warn(`[ASSISTANT] Escalation blocked for user ${userId}: ${escalationCheck.reason}`)
+      return NextResponse.json({ reply: getEscalationBlockResponse(), blocked: true })
+    }
     const tenantId = (session.user as any).tenantId
+
+    // 0c. Budget cap check (BUILD-008)
+    const budgetCheck = checkBudget(tenantId || userId, 'B2B', 0.015)
+    if (!budgetCheck.allowed) {
+      return NextResponse.json({
+        response: getBudgetExceededResponse('ro'),
+        blocked: true,
+      })
+    }
 
     // 1. Build full client context
     const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
@@ -91,6 +113,9 @@ export async function POST(req: NextRequest) {
     })
 
     const assistantText = response.content[0].type === "text" ? response.content[0].text : ""
+
+    // 5b. Record API usage (BUILD-008)
+    recordAPIUsage(tenantId || userId, 'B2B', 0.015)
 
     // 6. Save assistant response
     await p.conversationMessage.create({

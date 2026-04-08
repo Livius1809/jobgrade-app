@@ -9,7 +9,9 @@ import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
 import { observeInteraction, applyProfileUpdate } from "@/lib/b2c/profiler-shadow"
 import { guardProfileIntegrity, quarantineInteraction } from "@/lib/b2c/coherence-guard"
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
+import { checkEscalation, getEscalationBlockResponse } from "@/lib/security/escalation-detector"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
+import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
 
 export const maxDuration = 60
 
@@ -84,6 +86,34 @@ export async function POST(req: NextRequest) {
     if (injectionCheck.blocked) {
       return NextResponse.json({
         reply: getInjectionBlockResponse(),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
+    }
+
+    // 0c. Escalation detector — sliding window (VUL-005)
+    const escalationCheck = checkEscalation(
+      userId,
+      message.trim(),
+      injectionCheck.detections.map((d) => d.category),
+      injectionCheck.flagged
+    )
+    if (escalationCheck.blocked) {
+      console.warn(`[${AGENT_ROLE}] Escalation blocked for user ${userId}: ${escalationCheck.reason}`)
+      return NextResponse.json({
+        reply: getEscalationBlockResponse(),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
+    }
+
+    // 0d. Budget cap check (BUILD-008)
+    const budgetCheck = checkBudget(userId, 'B2C', 0.015)
+    if (!budgetCheck.allowed) {
+      return NextResponse.json({
+        reply: getBudgetExceededResponse('ro'),
         threadId: threadId || null,
         agentRole: AGENT_ROLE,
         blocked: true,
@@ -257,6 +287,9 @@ export async function POST(req: NextRequest) {
 
     let assistantText = response.content[0].type === "text" ? response.content[0].text : ""
 
+    // 9b. Record API usage (BUILD-008)
+    recordAPIUsage(userId, 'B2C', 0.015)
+
     // 10. Append protection message if guard detected something
     if (guard.protectionMessage) {
       assistantText = assistantText + "\n\n---\n\n" + guard.protectionMessage
@@ -330,7 +363,7 @@ export async function POST(req: NextRequest) {
       agentRole: AGENT_ROLE,
     })
   } catch (e: any) {
-    console.error(`[${AGENT_ROLE}] Error:`, e.message)
+    console.error(`[${AGENT_ROLE}] Error:`, e instanceof Error ? e.constructor.name : "Unknown")
     return NextResponse.json(
       { error: "Nu am putut procesa mesajul", details: e.message },
       { status: 500 }

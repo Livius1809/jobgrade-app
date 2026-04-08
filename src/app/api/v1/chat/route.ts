@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { chatWithCOG } from "@/lib/agents/cog-chat"
+import { checkPromptInjection, getInjectionBlockResponse, checkEscalation, getEscalationBlockResponse } from "@/lib/security"
 
 /**
  * POST /api/v1/chat
@@ -24,12 +25,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mesajul nu poate fi gol" }, { status: 400 })
     }
 
+    // 0a. Prompt injection pre-filter
+    const injectionCheck = checkPromptInjection(message.trim())
+    if (injectionCheck.blocked) {
+      return NextResponse.json({ reply: getInjectionBlockResponse(), blocked: true })
+    }
+
+    // 0b. Escalation detector — sliding window (VUL-005)
+    const escalationCheck = checkEscalation(
+      session.user.id,
+      message.trim(),
+      injectionCheck.detections.map((d) => d.category),
+      injectionCheck.flagged
+    )
+    if (escalationCheck.blocked) {
+      return NextResponse.json({ reply: getEscalationBlockResponse(), blocked: true })
+    }
+
     const response = await chatWithCOG(message.trim(), prisma, history)
     return NextResponse.json(response)
   } catch (e: any) {
-    console.error("[CHAT PROXY] Error:", e.message)
+    console.error("[CHAT PROXY] Error:", e instanceof Error ? e.constructor.name : "Unknown")
     return NextResponse.json(
-      { error: "Nu am putut procesa mesajul", details: e.message },
+      { error: "Nu am putut procesa mesajul" },
       { status: 500 }
     )
   }

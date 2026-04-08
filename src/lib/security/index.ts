@@ -2,7 +2,9 @@
  * Security module index — centralized exports
  *
  * VUL-004: Prompt injection filter
+ * VUL-005: Escalation detector (sliding window)
  * VUL-009: B2C authentication
+ * VUL-015: CORS protection
  * VUL-031: CSRF protection
  * VUL-032: File upload validation
  * VUL-034: Secrets audit (env validation)
@@ -10,9 +12,11 @@
  */
 
 export { checkPromptInjection, getInjectionBlockResponse } from "./prompt-injection-filter"
+export { checkEscalation, resetEscalation, getEscalationBlockResponse } from "./escalation-detector"
 export { generateB2CToken, verifyB2CToken, extractB2CAuth, verifyB2COwnership } from "./b2c-auth"
 export { checkRateLimit, rateLimitHeaders } from "./rate-limiter"
 export { checkCSRF } from "./csrf-guard"
+export { handleCORSPreflight, setCORSHeaders } from "./cors-guard"
 export { validateUpload, MAX_FILE_SIZE } from "./upload-validator"
 
 // ── Secrets Audit (VUL-034) ───────────────────────────────────────────────────

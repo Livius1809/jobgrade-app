@@ -95,7 +95,7 @@ Asigură-te că suma ponderilor este exact 100.`
         { status: 400 }
       )
     }
-    console.error("[AI KPI-SHEET]", error)
+    console.error("[AI KPI-SHEET]", error instanceof Error ? error.constructor.name : "Unknown")
     return NextResponse.json({ message: "Eroare la generare." }, { status: 500 })
   }
 }

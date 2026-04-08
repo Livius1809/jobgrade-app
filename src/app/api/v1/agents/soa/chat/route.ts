@@ -10,6 +10,8 @@ import { getClientProfile, formatClientProfileForPrompt, recordClientMemory } fr
 import { createEscalation, ESCALATION_CHAIN } from "@/lib/agents/escalation-chain"
 import { injectKBContext } from "@/lib/kb/kb-injector"
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
+import { checkEscalation, getEscalationBlockResponse } from "@/lib/security/escalation-detector"
+import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
 
 export const maxDuration = 60
 
@@ -80,7 +82,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mesajul nu poate fi gol" }, { status: 400 })
     }
 
-    // 0. Prompt injection pre-filter
+    // 0a. Prompt injection pre-filter
     const injectionCheck = checkPromptInjection(message.trim())
     if (injectionCheck.blocked) {
       return NextResponse.json({
@@ -91,8 +93,35 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // 0b. Escalation detector — sliding window (VUL-005)
     const userId = session.user.id
+    const escalationCheck = checkEscalation(
+      userId,
+      message.trim(),
+      injectionCheck.detections.map((d) => d.category),
+      injectionCheck.flagged
+    )
+    if (escalationCheck.blocked) {
+      console.warn(`[${AGENT_ROLE}] Escalation blocked for user ${userId}: ${escalationCheck.reason}`)
+      return NextResponse.json({
+        reply: getEscalationBlockResponse(),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
+    }
     const tenantId = companyId || (session.user as any).tenantId
+
+    // 0c. Budget cap check (BUILD-008)
+    const budgetCheck = checkBudget(tenantId || userId, 'B2B', 0.015)
+    if (!budgetCheck.allowed) {
+      return NextResponse.json({
+        reply: getBudgetExceededResponse('ro'),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
+    }
 
     // 1. Build client context + client memory profile + KB context
     const [clientContext, clientProfile, kbContext] = await Promise.all([
@@ -170,6 +199,9 @@ export async function POST(req: NextRequest) {
 
     const assistantText = response.content[0].type === "text" ? response.content[0].text : ""
 
+    // 6b. Record API usage (BUILD-008)
+    recordAPIUsage(tenantId || userId, 'B2B', 0.015)
+
     // 7. Save assistant response
     await p.conversationMessage.create({
       data: { threadId: thread.id, role: "ASSISTANT", content: assistantText },
@@ -230,7 +262,7 @@ export async function POST(req: NextRequest) {
       agentRole: AGENT_ROLE,
     })
   } catch (e: any) {
-    console.error(`[${AGENT_ROLE}] Error:`, e.message)
+    console.error(`[${AGENT_ROLE}] Error:`, e instanceof Error ? e.constructor.name : "Unknown")
     return NextResponse.json(
       { error: "Nu am putut procesa mesajul", details: e.message },
       { status: 500 }

@@ -255,7 +255,7 @@ Fii specific, folosește datele furnizate, și oferă perspective practice pentr
         { status: 400 }
       )
     }
-    console.error("[AI SESSION-ANALYSIS]", error)
+    console.error("[AI SESSION-ANALYSIS]", error instanceof Error ? error.constructor.name : "Unknown")
     return NextResponse.json({ message: "Eroare la generare." }, { status: 500 })
   }
 }

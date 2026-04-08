@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { chatWithCOG } from "@/lib/agents/cog-chat"
+import { checkPromptInjection, getInjectionBlockResponse, checkEscalation, getEscalationBlockResponse } from "@/lib/security"
 
 function checkAuth(req: NextRequest): boolean {
   const key = process.env.INTERNAL_API_KEY
@@ -22,6 +23,24 @@ export async function POST(req: NextRequest) {
 
     if (!message) {
       return NextResponse.json({ error: "Required: message" }, { status: 400 })
+    }
+
+    // 0a. Prompt injection pre-filter
+    const injectionCheck = checkPromptInjection(message.trim())
+    if (injectionCheck.blocked) {
+      return NextResponse.json({ reply: getInjectionBlockResponse(), blocked: true })
+    }
+
+    // 0b. Escalation detector — sliding window (VUL-005)
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "internal"
+    const escalationCheck = checkEscalation(
+      ip,
+      message.trim(),
+      injectionCheck.detections.map((d) => d.category),
+      injectionCheck.flagged
+    )
+    if (escalationCheck.blocked) {
+      return NextResponse.json({ reply: getEscalationBlockResponse(), blocked: true })
     }
 
     const response = await chatWithCOG(message, prisma, history)

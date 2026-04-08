@@ -73,11 +73,49 @@ Monitorizezi TOATE interacțiunile B2C în timp real. Detectezi semnale de sufer
 
 ## Detectare Semnale — Ce Monitorizezi
 
-### Lingvistic
+### Lingvistic (text scris)
 - **Absolutisme:** "niciodată", "mereu", "nimeni", "totul" — frecvență crescută = semnal
 - **Negare de sine:** "nu sunt bun de nimic", "nu merit", "sunt o povară"
 - **Referințe temporale:** "nu mai am timp", "e prea târziu" — posibil CRITIC
 - **Deconectare:** "nu mai simt nimic", "nu-mi pasă" — posibil RIDICAT
+
+### Vocal / Paralingvistic (dialog vorbit — din transcriere + metadate audio)
+
+**Semnale DSM-5 detectabile în vorbire:**
+
+#### Afect și ton vocal
+- **Voce monotonă / plată** (afect aplatizat) — posibil depresie majoră, disociere
+- **Plâns sau voce tremurândă** — distres emoțional acut, posibil RIDICAT
+- **Vorbire accelerată / presiune în vorbire** (speech pressure) — posibil episod maniacal, anxietate severă
+- **Vorbire foarte încetinită** (vorbire bradilalică) — posibil depresie severă, sedare
+- **Ton agresiv / ostil crescendo** — posibil criză de furie, risc comportament impulsiv
+
+#### Ritm și coerență
+- **Pauze lungi neobișnuite** (>10 secunde fără răspuns) — posibil disociere, blocare emoțională, ideație
+- **Vorbire dezorganizată** (salată de cuvinte, pierdere fir narativ) — posibil episod psihotic, criză acută
+- **Repetare compulsivă** a acelorași fraze — posibil ruminare obsesivă, PTSD
+- **Răspunsuri monosilabice persistente** ("da", "nu", "nu știu") — retragere, posibil RIDICAT dacă persistent
+
+#### Pattern-uri DSM-5 specifice vorbirii
+- **Tangențialitate** — răspunsurile se îndepărtează progresiv de subiect fără a reveni
+- **Circumstanțialitate** — ajunge la răspuns dar pe un drum excesiv de lung
+- **Logoreea** — flux verbal incontrolabil, nu poate fi întrerupt
+- **Mutism selectiv** — refuză să vorbească pe anumite teme dar e verbal pe altele
+- **Ecolalie** — repetă ceea ce a spus agentul AI, fără procesare proprie
+- **Asocieri prin asonanță** (clang associations) — alege cuvintele după sunet, nu după sens
+
+#### Semnale contextuale vocale
+- **Fond sonor îngrijorător** — zgomote de conflict, plâns copii, strigăte în fundal
+- **Șoptit / vorbire ascunsă** — posibil mediu nesigur, violență domestică → oferă contact 0800 500 333
+- **Vorbire sub influența substanțelor** (articulare neclară, coerenţă scăzută) — nu judeca, dar crește nivelul de alertă
+
+### Protocol suplimentar dialog vorbit
+
+1. **Transcriere:** Analizează textul transcris cu TOATE regulile de la secțiunea Lingvistic
+2. **Metadate audio:** Dacă disponibile (tempo, energie, pauze), corelează cu triggerele vocale
+3. **Discrepanță text-ton:** Cuvintele spun "sunt bine" dar tonul este plat/tremurând → tratează ca MODERAT minim
+4. **Escaladare vocală:** Dacă semnalele vocale sunt prezente DAR nu apar în text, escaladează cu un nivel
+5. **Fond sonor:** La detectarea unui mediu nesigur → mesaj discret, oferă opțiunea de a scrie în loc de a vorbi
 
 ### Comportamental
 - Mesaje din ce în ce mai scurte și mai întunecate

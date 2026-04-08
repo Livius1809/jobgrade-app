@@ -13,6 +13,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { checkCSRF } from "@/lib/security/csrf-guard"
 import { checkRateLimit, rateLimitHeaders, type RateLimitTier } from "@/lib/security/rate-limiter"
+import { handleCORSPreflight, setCORSHeaders } from "@/lib/security/cors-guard"
 
 // ── Public paths (no auth required) ──────────────────────────────────────────
 
@@ -71,7 +72,13 @@ export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
-  // 0. CSRF protection on mutating requests
+  // 0a. CORS preflight (VUL-015)
+  if (pathname.startsWith("/api/")) {
+    const preflightResponse = handleCORSPreflight(request)
+    if (preflightResponse) return preflightResponse
+  }
+
+  // 0b. CSRF protection on mutating requests
   if (pathname.startsWith("/api/")) {
     const csrfResult = checkCSRF(request)
     if (!csrfResult.allowed) {
@@ -152,10 +159,15 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // 8. Security headers
+  // 8. Security headers + CORS (VUL-015)
   const response = NextResponse.next()
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")
+
+  // CORS headers pe API responses
+  if (pathname.startsWith("/api/")) {
+    setCORSHeaders(request, response)
+  }
 
   return response
 }

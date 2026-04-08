@@ -89,7 +89,7 @@ Generează EXCLUSIV conținutul postului, gata de publicat.`
         { status: 400 }
       )
     }
-    console.error("[AI SOCIAL-MEDIA]", error)
+    console.error("[AI SOCIAL-MEDIA]", error instanceof Error ? error.constructor.name : "Unknown")
     return NextResponse.json({ message: "Eroare la generare." }, { status: 500 })
   }
 }

@@ -88,7 +88,7 @@ Nu adăuga text în afara JSON-ului.`
         { status: 400 }
       )
     }
-    console.error("[AI COMPANY-EXTRACT]", error)
+    console.error("[AI COMPANY-EXTRACT]", error instanceof Error ? error.constructor.name : "Unknown")
     return NextResponse.json({ message: "Eroare la extragere." }, { status: 500 })
   }
 }

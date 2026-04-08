@@ -1,14 +1,23 @@
 /**
  * support-department.ts — Departamentul Suport (7 resurse)
  *
- * Mecanism de triaj + colaborare + sinteză pentru cereri de ajutor.
+ * REGULĂ UNIVERSALĂ: Orice input care ajunge la Layer 2 (Resurse Suport)
+ * activează această procedură. Nu se merge direct la un specialist —
+ * se merge la departament, care face triaj, colaborare și sinteză.
  *
  * Flow:
  * 1. Agent/HR_COUNSELOR trimite cerere la departament (nu la specialist specific)
  * 2. TRIAJ: fiecare resursă evaluează relevanța sa (0-100)
- * 3. Cei relevanți contribuie din perspectiva lor
- * 4. Liderul = cel cu contribuția cea mai mare — integrează
+ * 3. Cei relevanți (>20%) contribuie din perspectiva lor
+ * 4. Liderul = cel cu contribuția cea mai mare — integrează (dinamic per cerere)
  * 5. Răspuns unificat, validat CÂMP, livrat solicitantului
+ * 6. KB learn — toți contributorii rețin experiența
+ *
+ * Acest mecanism este universal valabil pentru:
+ * - Cereri punctuale de ajutor (ex: agent nu știe cum să răspundă)
+ * - Proiecte complexe (ex: curricula B2C — PSE devine lider, ceilalți contribuie)
+ * - Consultări interdisciplinare (ex: M4 Card 1 — PSE+SVHA+PPA+SCA)
+ * - Orice altă situație care necesită expertiză din L2
  *
  * Resurse suport: PSYCHOLINGUIST, PPMO, STA, SOC, SCA, PPA, PSE
  * Client-facing (NU resursă suport): HR_COUNSELOR

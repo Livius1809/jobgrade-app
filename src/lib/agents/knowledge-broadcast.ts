@@ -57,7 +57,7 @@ export async function broadcastToAll(
     } catch { /* duplicate or error — skip */ }
   }
 
-  console.log(`[BROADCAST] "${item.content.substring(0, 60)}..." → ${created}/${agents.length} agenți`)
+  console.log(`[BROADCAST] KB entry → ${created}/${agents.length} agenți`)
   return created
 }
 

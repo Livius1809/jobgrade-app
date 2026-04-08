@@ -2827,6 +2827,10 @@ model B2CUser {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
+  // GDPR Art.17 — soft delete (VUL-027)
+  deletedAt          DateTime?  // marcaj ștergere soft
+  deleteScheduledFor DateTime?  // data hard delete (deletedAt + 30 zile)
+
   // Profil evolutiv
   profile      B2CProfile?
   // Carduri și progres
@@ -3128,6 +3132,7 @@ enum B2CUserStatus {
   ACTIVE       // cont activ, interacționează
   INACTIVE     // nu s-a logat >60 zile
   SUSPENDED    // suspendat (incident, plată, etc.)
+  DELETED      // marcat pentru ștergere GDPR (soft delete, 30 zile grație)
 }
 
 enum B2CCard {

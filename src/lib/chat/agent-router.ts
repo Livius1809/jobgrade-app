@@ -90,7 +90,7 @@ export function getAgentForPath(pathname: string): AgentRole {
 export function getAgentEndpoint(agent: AgentRole): string {
   // B2C agents have dedicated endpoints
   if (agent === "profiler") return "/api/v1/b2c/profiler/chat"
-  if (agent === "hr_counselor") return "/api/v1/agents/cssa/chat" // HR_COUNSELOR uses CSSA endpoint for now
+  if (agent === "hr_counselor") return "/api/v1/agents/hr-counselor/chat"
   return `/api/v1/agents/${agent}/chat`
 }
 

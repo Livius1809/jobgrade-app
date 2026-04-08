@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       }),
     })
   } catch (e: any) {
-    console.error("[TEAM CHAT] Error:", e.message)
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    console.error("[TEAM CHAT] Error:", e instanceof Error ? e.constructor.name : "Unknown")
+    return NextResponse.json({ error: "Eroare internă" }, { status: 500 })
   }
 }
