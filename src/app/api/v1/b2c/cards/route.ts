@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 
 export const maxDuration = 15
 
@@ -52,6 +53,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "userId e obligatoriu" }, { status: 400 })
   }
 
+  // B2C Auth
+  const b2cAuth = extractB2CAuth(req)
+  if (!b2cAuth || !verifyB2COwnership(b2cAuth, userId)) {
+    return NextResponse.json({ error: "Autentificare B2C invalidă" }, { status: 401 })
+  }
+
   try {
     const cards = await p.b2CCardProgress.findMany({
       where: { userId },
@@ -99,6 +106,12 @@ export async function POST(req: NextRequest) {
 
     if (!userId || !card) {
       return NextResponse.json({ error: "userId și card sunt obligatorii" }, { status: 400 })
+    }
+
+    // B2C Auth
+    const b2cAuth = extractB2CAuth(req)
+    if (!b2cAuth || !verifyB2COwnership(b2cAuth, userId)) {
+      return NextResponse.json({ error: "Autentificare B2C invalidă" }, { status: 401 })
     }
 
     // Verifică user
@@ -201,6 +214,12 @@ export async function PATCH(req: NextRequest) {
 
     if (!userId || !card || !questionnaireData) {
       return NextResponse.json({ error: "userId, card și questionnaireData sunt obligatorii" }, { status: 400 })
+    }
+
+    // B2C Auth
+    const b2cAuth = extractB2CAuth(req)
+    if (!b2cAuth || !verifyB2COwnership(b2cAuth, userId)) {
+      return NextResponse.json({ error: "Autentificare B2C invalidă" }, { status: 401 })
     }
 
     const progress = await p.b2CCardProgress.findUnique({

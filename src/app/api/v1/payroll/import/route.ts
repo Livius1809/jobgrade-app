@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { calculateTotalMonthlyGross } from "@/lib/payroll/criteria-mapping"
 import ExcelJS from "exceljs"
+import { validateUpload } from "@/lib/security/upload-validator"
 
 export const maxDuration = 60
 
@@ -137,15 +138,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Fișierul lipsește." }, { status: 400 })
     }
 
-    const allowedTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel",
-    ]
-    if (!allowedTypes.includes(file.type) && !file.name.match(/\.xlsx?$/i)) {
-      return NextResponse.json(
-        { message: "Format invalid. Acceptăm doar fișiere Excel (.xlsx, .xls)." },
-        { status: 400 }
-      )
+    // Validare strictă: dimensiune + tip + magic bytes
+    const uploadCheck = await validateUpload(file, [".xlsx"])
+    if (!uploadCheck.valid) {
+      return NextResponse.json({ message: uploadCheck.error }, { status: 400 })
     }
 
     // Read Excel

@@ -2,33 +2,17 @@
  * proxy.ts — Securitate platformă JobGrade (Next.js 16 proxy)
  *
  * Mecanisme:
- * 1. Rate limiting per IP (100 req/min API, 200 req/min pages)
- * 2. Auth protection — redirect la login dacă nu e autentificat
- * 3. API key validation pe rutele interne (/api/v1/agents/*, /api/v1/kb/*)
- * 4. Security headers
+ * 1. CSRF protection — Origin/Referer validation pe mutating requests
+ * 2. Rate limiting per IP (Redis-backed cu fallback in-memory)
+ * 3. Auth protection — redirect la login dacă nu e autentificat
+ * 4. API key validation pe rutele interne (/api/v1/agents/*, /api/v1/kb/*)
+ * 5. Security headers
  */
 
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-
-// ── Rate Limiting (in-memory, per IP) ────────────────────────────────────────
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function checkRateLimit(ip: string, limit: number): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + 60_000 })
-    return true
-  }
-
-  if (entry.count >= limit) return false
-
-  entry.count++
-  return true
-}
+import { checkCSRF } from "@/lib/security/csrf-guard"
+import { checkRateLimit, rateLimitHeaders, type RateLimitTier } from "@/lib/security/rate-limiter"
 
 // ── Public paths (no auth required) ──────────────────────────────────────────
 
@@ -44,13 +28,14 @@ const PUBLIC_PATHS = [
   "/_next",
   "/favicon",
   "/robots.txt",
-  // /disfunctions acum gated sub auth (pre-prod fix 06.04.2026)
   "/b2b",
   "/api/demo-request",
+  "/api/health",
+  "/api/v1/b2c/onboarding",
 ]
 
 function isPublicPath(pathname: string): boolean {
-  if (pathname === "/") return true // Homepage is public
+  if (pathname === "/") return true
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p))
 }
 
@@ -62,20 +47,54 @@ function isInternalAPI(pathname: string): boolean {
     pathname.startsWith("/api/v1/admin/")
 }
 
+// ── Rate limit tier detection ────────────────────────────────────────────────
+
+function detectRateLimitTier(pathname: string): RateLimitTier {
+  // Chat endpoints (Claude API calls — most expensive)
+  if (pathname.includes("/chat/") || pathname.includes("/chat")) {
+    return "CHAT"
+  }
+  // B2C endpoints
+  if (pathname.startsWith("/api/v1/b2c/")) {
+    return "B2C_API"
+  }
+  // B2B endpoints
+  if (pathname.startsWith("/api/v1/")) {
+    return "B2B_API"
+  }
+  return "GENERAL"
+}
+
 // ── Proxy (Next.js 16 format) ────────────────────────────────────────────────
 
-export default function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown"
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
-  // 1. Rate limiting
-  const isAPI = pathname.startsWith("/api/")
-  const limit = isAPI ? 100 : 200
-  if (!checkRateLimit(ip, limit)) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    )
+  // 0. CSRF protection on mutating requests
+  if (pathname.startsWith("/api/")) {
+    const csrfResult = checkCSRF(request)
+    if (!csrfResult.allowed) {
+      return NextResponse.json(
+        { error: "Request blocked — invalid origin" },
+        { status: 403 }
+      )
+    }
+  }
+
+  // 1. Rate limiting (Redis-backed)
+  if (pathname.startsWith("/api/")) {
+    const tier = detectRateLimitTier(pathname)
+    const result = await checkRateLimit(ip, tier)
+    if (!result.allowed) {
+      return NextResponse.json(
+        { error: "Prea multe cereri. Te rog așteaptă un minut." },
+        {
+          status: 429,
+          headers: rateLimitHeaders(result, tier),
+        }
+      )
+    }
   }
 
   // 2. Skip public paths
@@ -109,12 +128,20 @@ export default function proxy(request: NextRequest) {
       request.cookies.get("authjs.session-token")?.value ||
       request.cookies.get("__Secure-authjs.session-token")?.value
     if (!sessionToken) {
-      // Return 404 — don't redirect to login, don't reveal the route exists
       return new NextResponse("Not Found", { status: 404 })
     }
   }
 
-  // 6. Auth check — redirect to login if no session
+  // 6. B2C API routes — require B2C token (except onboarding)
+  if (pathname.startsWith("/api/v1/b2c/") && !pathname.startsWith("/api/v1/b2c/onboarding")) {
+    const authHeader = request.headers.get("authorization")
+    const cookieToken = request.cookies.get("b2c-token")?.value
+    if (!authHeader?.startsWith("Bearer ") && !cookieToken) {
+      return NextResponse.json({ error: "B2C token lipsește" }, { status: 401 })
+    }
+  }
+
+  // 7. Auth check — redirect to login if no session
   const sessionToken =
     request.cookies.get("authjs.session-token")?.value ||
     request.cookies.get("__Secure-authjs.session-token")?.value
@@ -125,7 +152,7 @@ export default function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // 6. Add security headers
+  // 8. Security headers
   const response = NextResponse.next()
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")

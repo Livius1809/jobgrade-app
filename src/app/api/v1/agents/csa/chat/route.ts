@@ -9,6 +9,7 @@ import { buildClientContext, formatContextForPrompt } from "@/lib/context/client
 import { getClientProfile, formatClientProfileForPrompt, recordClientMemory, recordSupportInteraction } from "@/lib/agents/client-memory"
 import { createEscalation, ESCALATION_CHAIN } from "@/lib/agents/escalation-chain"
 import { injectKBContext } from "@/lib/kb/kb-injector"
+import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
 
 export const maxDuration = 60
 
@@ -102,6 +103,17 @@ export async function POST(req: NextRequest) {
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return NextResponse.json({ error: "Mesajul nu poate fi gol" }, { status: 400 })
+    }
+
+    // 0. Prompt injection pre-filter
+    const injectionCheck = checkPromptInjection(message.trim())
+    if (injectionCheck.blocked) {
+      return NextResponse.json({
+        reply: getInjectionBlockResponse(),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
     }
 
     const userId = session.user.id

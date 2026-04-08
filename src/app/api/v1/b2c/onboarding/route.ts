@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { generateB2CToken } from "@/lib/security/b2c-auth"
 
 export const maxDuration = 30
 
@@ -116,10 +117,14 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Generează token B2C pentru autentificare
+    const token = generateB2CToken(user.id, cleanAlias)
+
     return NextResponse.json({
       userId: user.id,
       alias: cleanAlias,
       email,
+      token,
       cards: cardRecords.map((c: any) => ({
         card: c.card,
         status: c.status,

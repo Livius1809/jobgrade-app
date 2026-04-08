@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
+import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
 
 export const maxDuration = 60
 
@@ -29,6 +30,12 @@ export async function POST(req: NextRequest) {
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return NextResponse.json({ error: "Mesajul nu poate fi gol" }, { status: 400 })
+    }
+
+    // Prompt injection pre-filter
+    const injectionCheck = checkPromptInjection(message.trim())
+    if (injectionCheck.blocked) {
+      return NextResponse.json({ reply: getInjectionBlockResponse(), blocked: true })
     }
 
     const userId = session.user.id

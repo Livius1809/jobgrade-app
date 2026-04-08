@@ -8,6 +8,8 @@ import { injectKBContext } from "@/lib/kb/kb-injector"
 import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
 import { observeInteraction, applyProfileUpdate } from "@/lib/b2c/profiler-shadow"
 import { guardProfileIntegrity, quarantineInteraction } from "@/lib/b2c/coherence-guard"
+import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
+import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 
 export const maxDuration = 60
 
@@ -66,6 +68,26 @@ export async function POST(req: NextRequest) {
 
     if (!userId || !message?.trim()) {
       return NextResponse.json({ error: "userId și message sunt obligatorii" }, { status: 400 })
+    }
+
+    // 0a. B2C Auth — verifică token + ownership
+    const b2cAuth = extractB2CAuth(req)
+    if (!b2cAuth) {
+      return NextResponse.json({ error: "Token B2C invalid sau lipsă" }, { status: 401 })
+    }
+    if (!verifyB2COwnership(b2cAuth, userId)) {
+      return NextResponse.json({ error: "Nu ai acces la acest cont" }, { status: 403 })
+    }
+
+    // 0b. Prompt injection pre-filter
+    const injectionCheck = checkPromptInjection(message.trim())
+    if (injectionCheck.blocked) {
+      return NextResponse.json({
+        reply: getInjectionBlockResponse(),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
     }
 
     // 1. Verifică user B2C

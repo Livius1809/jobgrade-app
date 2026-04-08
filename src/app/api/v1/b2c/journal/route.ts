@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { prisma } from "@/lib/prisma"
+import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 import {
   generateJournalPrompt,
   determineHermannDominance,
@@ -38,6 +39,12 @@ export async function POST(req: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: "userId e obligatoriu" }, { status: 400 })
+    }
+
+    // B2C Auth
+    const b2cAuth = extractB2CAuth(req)
+    if (!b2cAuth || !verifyB2COwnership(b2cAuth, userId)) {
+      return NextResponse.json({ error: "Autentificare B2C invalidă" }, { status: 401 })
     }
 
     // 1. Load user + profile + session history
@@ -251,6 +258,12 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "journalId și content sunt obligatorii" }, { status: 400 })
     }
 
+    // B2C Auth
+    const b2cAuth = extractB2CAuth(req)
+    if (!b2cAuth) {
+      return NextResponse.json({ error: "Autentificare B2C invalidă" }, { status: 401 })
+    }
+
     const journal = await p.b2CJournalEntry.findUnique({
       where: { id: journalId },
     })
@@ -316,6 +329,12 @@ export async function GET(req: NextRequest) {
 
   if (!userId) {
     return NextResponse.json({ error: "userId e obligatoriu" }, { status: 400 })
+  }
+
+  // B2C Auth
+  const b2cAuth = extractB2CAuth(req)
+  if (!b2cAuth || !verifyB2COwnership(b2cAuth, userId)) {
+    return NextResponse.json({ error: "Autentificare B2C invalidă" }, { status: 401 })
   }
 
   try {
