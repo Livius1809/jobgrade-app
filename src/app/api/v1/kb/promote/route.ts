@@ -77,18 +77,30 @@ async function evaluateBuffer(
 
   // Criteriu 3 — Unicitate (FTS simplu: primele 80 de caractere ca fingerprint)
   const fingerprint = buffer.rawContent.slice(0, 80).trim()
+  const fingerprintQuery = fingerprint
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length >= 4)
+    .map((w) => w.replace(/['"\\:&|!<>()@*]/g, ""))
+    .filter(Boolean)
+    .slice(0, 5)
+    .join(" | ")
+
+  if (!fingerprintQuery) {
+    return {
+      bufferId,
+      decision: "PENDING_MORE_DATA",
+      reason: "Fingerprint insuficient pentru verificare unicitate.",
+    }
+  }
+
   const duplicate = await prisma.$queryRaw<{ id: string; confidence: number }[]>`
     SELECT id, confidence FROM kb_entries
     WHERE "agentRole" = ${agentRole}
       AND status = 'PERMANENT'::"KBStatus"
       AND confidence > ${THRESHOLD_CONFLICT_CONFIDENCE}
       AND to_tsvector('simple', unaccent(content))
-          @@ to_tsquery('simple', unaccent(${fingerprint
-            .toLowerCase()
-            .split(/\s+/)
-            .filter((w) => w.length >= 4)
-            .slice(0, 5)
-            .join(" | ")}))
+          @@ to_tsquery('simple', unaccent(${fingerprintQuery}))
     LIMIT 1
   `
 

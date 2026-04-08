@@ -230,12 +230,21 @@ export async function GET(req: NextRequest) {
         : 0,
     }))
 
-    // Rituals: compute overdue (simplistic — if lastRunAt > 2x expected interval)
+    // Rituals: compute overdue using cron-based heuristic thresholds
     let overdueRituals = 0
-    for (const r of ritualsRaw as Array<{ lastRunAt: Date | null }>) {
+    for (const r of ritualsRaw as Array<{ cronExpression: string | null; lastRunAt: Date | null }>) {
       if (!r.lastRunAt) { overdueRituals++; continue }
       const ageMs = now.getTime() - new Date(r.lastRunAt).getTime()
-      if (ageMs > 14 * 86400000) overdueRituals++ // >14 days since last run
+      // Determine threshold based on cron expression
+      let thresholdMs = 14 * 86400000 // default: 14 days
+      if (r.cronExpression) {
+        if (r.cronExpression.includes("0 0 * * 0")) {
+          thresholdMs = 10 * 86400000 // weekly → 10 days
+        } else if (r.cronExpression.includes("0 0 1 * *")) {
+          thresholdMs = 45 * 86400000 // monthly → 45 days
+        }
+      }
+      if (ageMs > thresholdMs) overdueRituals++
     }
 
     // Measurement gaps
@@ -307,7 +316,7 @@ export async function GET(req: NextRequest) {
 
 async function fetchStrategicThemes(): Promise<unknown[]> {
   try {
-    const base = `http://localhost:${process.env.PORT ?? 3001}`
+    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
     const key = process.env.INTERNAL_API_KEY!
     const res = await fetch(`${base}/api/v1/strategic-themes?windowHours=168`, {
       headers: { "x-internal-key": key },

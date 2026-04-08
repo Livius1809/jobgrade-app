@@ -29,17 +29,19 @@ export async function searchKB(
   agentRole: string,
   query: string,
   limit = 10,
-  kbType?: string
+  kbType?: string,
+  offset = 0
 ): Promise<KBSearchResult[]> {
   // Try semantic search first
   try {
-    const results = await semanticSearch(agentRole, query, limit, kbType)
+    const results = await semanticSearch(agentRole, query, limit, kbType, offset)
     if (results.length > 0) return results
-  } catch {
+  } catch (err) {
     // Fallback to full-text if Voyage API fails
+    console.error("[KB SEARCH] Semantic search failed, falling back to full-text:", err)
   }
 
-  return fullTextSearch(agentRole, query, limit, kbType)
+  return fullTextSearch(agentRole, query, limit, kbType, offset)
 }
 
 /**
@@ -49,14 +51,30 @@ async function semanticSearch(
   agentRole: string,
   query: string,
   limit: number,
-  kbType?: string
+  kbType?: string,
+  offset = 0
 ): Promise<KBSearchResult[]> {
   const queryEmbedding = await generateEmbedding(query, "query")
   const vecStr = `[${queryEmbedding.join(",")}]`
 
-  const kbTypeFilter = kbType
-    ? `AND "kbType" = '${kbType}'::"KBType"`
-    : ""
+  if (kbType) {
+    return prisma.$queryRawUnsafe<KBSearchResult[]>(
+      `SELECT id, "agentRole", content, "kbType"::text, source::text, confidence, tags,
+              1 - (embedding <=> $1::vector) AS similarity
+       FROM kb_entries
+       WHERE "agentRole" = $2
+         AND status = 'PERMANENT'::"KBStatus"
+         AND embedding IS NOT NULL
+         AND "kbType" = $4::"KBType"
+       ORDER BY embedding <=> $1::vector
+       LIMIT $3 OFFSET $5`,
+      vecStr,
+      agentRole,
+      limit,
+      kbType,
+      offset
+    )
+  }
 
   return prisma.$queryRawUnsafe<KBSearchResult[]>(
     `SELECT id, "agentRole", content, "kbType"::text, source::text, confidence, tags,
@@ -65,12 +83,12 @@ async function semanticSearch(
      WHERE "agentRole" = $2
        AND status = 'PERMANENT'::"KBStatus"
        AND embedding IS NOT NULL
-       ${kbTypeFilter}
      ORDER BY embedding <=> $1::vector
-     LIMIT $3`,
+     LIMIT $3 OFFSET $4`,
     vecStr,
     agentRole,
-    limit
+    limit,
+    offset
   )
 }
 
@@ -121,7 +139,8 @@ async function fullTextSearch(
   agentRole: string,
   query: string,
   limit: number,
-  kbType?: string
+  kbType?: string,
+  offset = 0
 ): Promise<KBSearchResult[]> {
   const orQuery = buildOrQuery(query)
   if (!orQuery) return []
@@ -136,7 +155,7 @@ async function fullTextSearch(
         AND "kbType" = ${kbType}::"KBType"
         AND to_tsvector('simple', unaccent(content)) @@ to_tsquery('simple', unaccent(${orQuery}))
       ORDER BY similarity DESC, confidence DESC
-      LIMIT ${limit}
+      LIMIT ${limit} OFFSET ${offset}
     `
   }
 
@@ -148,7 +167,7 @@ async function fullTextSearch(
       AND status = 'PERMANENT'::"KBStatus"
       AND to_tsvector('simple', unaccent(content)) @@ to_tsquery('simple', unaccent(${orQuery}))
     ORDER BY similarity DESC, confidence DESC
-    LIMIT ${limit}
+    LIMIT ${limit} OFFSET ${offset}
   `
 }
 

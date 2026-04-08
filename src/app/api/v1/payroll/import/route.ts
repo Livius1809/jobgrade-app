@@ -228,6 +228,17 @@ export async function POST(req: NextRequest) {
       const tenureOrg = cellToNumber(row.getCell(16).value)
       const tenureRole = cellToNumber(row.getCell(17).value)
 
+      // Validate non-negative salary fields
+      const salaryFields = { baseSalary, fixedAllowances, annualBonuses, annualCommissions, benefitsInKind, mealVouchers }
+      let hasNegative = false
+      for (const [field, value] of Object.entries(salaryFields)) {
+        if (value < 0) {
+          errors.push({ row: rowNumber, field, message: `Valoarea „${field}" nu poate fi negativă (${value}).` })
+          hasNegative = true
+        }
+      }
+      if (hasNegative) return
+
       // Normalize salary to 8h equivalent
       const totalMonthlyGross = calculateTotalMonthlyGross({
         baseSalary,
@@ -296,6 +307,29 @@ export async function POST(req: NextRequest) {
             ...entry,
           })),
         })
+      }
+
+      // Calculate salary quartiles for the batch
+      if (validEntries.length > 0) {
+        const batchEntries = await tx.payrollEntry.findMany({
+          where: { batchId: batchRecord.id },
+          orderBy: { totalMonthlyGross: "asc" },
+          select: { id: true, totalMonthlyGross: true },
+        })
+
+        const total = batchEntries.length
+        if (total > 0) {
+          const quartileSize = Math.ceil(total / 4)
+          await Promise.all(
+            batchEntries.map((entry: any, index: number) => {
+              const quartile = Math.min(4, Math.floor(index / quartileSize) + 1)
+              return tx.payrollEntry.update({
+                where: { id: entry.id },
+                data: { salaryQuartile: quartile },
+              })
+            })
+          )
+        }
       }
 
       return batchRecord

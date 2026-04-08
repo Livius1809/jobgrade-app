@@ -8,8 +8,32 @@ function checkAuth(req: NextRequest): boolean {
   return req.headers.get("x-internal-key") === key
 }
 
-// In-memory store for latest plan (will be replaced by DB storage later)
-let latestPlan: any = null
+// Read latest business plan from DB instead of in-memory
+async function getLatestPlanFromDB(): Promise<any | null> {
+  try {
+    const p = prisma as any
+    const entry = await p.kBEntry.findFirst({
+      where: {
+        agentRole: "COG",
+        kbType: "METHODOLOGY",
+        content: { startsWith: "[Business Plan" },
+        status: "PERMANENT",
+      },
+      orderBy: { createdAt: "desc" },
+      select: { content: true, tags: true, createdAt: true },
+    })
+    if (!entry) return null
+    // Extract version from content: "[Business Plan v3] ..."
+    const vMatch = entry.content.match(/\[Business Plan v(\d+)\]/)
+    return {
+      version: vMatch ? parseInt(vMatch[1], 10) : 1,
+      generatedAt: entry.createdAt,
+      sections: { executiveSummary: { content: entry.content.replace(/\[Business Plan v\d+\]\s*/, "") } },
+    }
+  } catch {
+    return null
+  }
+}
 
 /**
  * GET /api/v1/agents/business-plan
@@ -18,14 +42,15 @@ let latestPlan: any = null
 export async function GET(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!latestPlan) {
+  const plan = await getLatestPlanFromDB()
+  if (!plan) {
     return NextResponse.json({
       message: "No business plan generated yet. POST to generate.",
       version: 0,
     })
   }
 
-  return NextResponse.json(latestPlan)
+  return NextResponse.json(plan)
 }
 
 /**
@@ -37,8 +62,8 @@ export async function POST(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
-    const plan = await generateBusinessPlan(prisma, latestPlan)
-    latestPlan = plan
+    const previousPlan = await getLatestPlanFromDB()
+    const plan = await generateBusinessPlan(prisma, previousPlan)
 
     // Notify Owner
     try {

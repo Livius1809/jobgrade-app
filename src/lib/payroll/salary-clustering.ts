@@ -156,13 +156,28 @@ export async function calculateSalaryClasses(
     }
   }
 
-  // 2. Determină numărul de clase
-  const effectiveClasses = numClasses ?? optimalClassCount(entries.length)
-  const finalClasses = Math.min(effectiveClasses, entries.length)
+  // 2. Filter out entries with null/undefined totalMonthlyGross
+  const validEntries = entries.filter(
+    (e: any) => e.totalMonthlyGross != null && e.totalMonthlyGross !== undefined
+  )
 
-  // 3. Extrage valorile sortate
-  const sortedValues: number[] = entries.map(
-    (e: any) => Number(e.totalMonthlyGross) || 0
+  if (validEntries.length === 0) {
+    return {
+      tenantId,
+      numClasses: 0,
+      totalEntries: 0,
+      classes: [],
+      anomalies: [],
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  // 3. Determină numărul de clase
+  const effectiveClasses = numClasses ?? optimalClassCount(validEntries.length)
+  const finalClasses = Math.min(effectiveClasses, validEntries.length)
+
+  const sortedValues: number[] = validEntries.map(
+    (e: any) => Number(e.totalMonthlyGross)
   )
 
   // 4. Jenks Natural Breaks
@@ -173,8 +188,8 @@ export async function calculateSalaryClasses(
 
   const gradeAssignments: { id: string; grade: number }[] = []
 
-  for (const entry of entries) {
-    const value = Number(entry.totalMonthlyGross) || 0
+  for (const entry of validEntries) {
+    const value = Number(entry.totalMonthlyGross)
     const grade = assignGrade(value, breakpoints)
 
     if (!classMap.has(grade)) {
@@ -207,8 +222,8 @@ export async function calculateSalaryClasses(
   const ANOMALY_THRESHOLD = 0.4
   const anomalies: Anomaly[] = []
 
-  for (const entry of entries) {
-    const value = Number(entry.totalMonthlyGross) || 0
+  for (const entry of validEntries) {
+    const value = Number(entry.totalMonthlyGross)
     const grade = assignGrade(value, breakpoints)
     const cls = classes.find((c) => c.grade === grade)
     if (!cls || cls.count < 2) continue
@@ -244,7 +259,7 @@ export async function calculateSalaryClasses(
   return {
     tenantId,
     numClasses: finalClasses,
-    totalEntries: entries.length,
+    totalEntries: validEntries.length,
     classes,
     anomalies,
     createdAt: new Date().toISOString(),

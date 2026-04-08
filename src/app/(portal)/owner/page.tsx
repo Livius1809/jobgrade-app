@@ -13,7 +13,7 @@ export const metadata = { title: "Owner Dashboard — JobGrade" }
 async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
   try {
     const key = process.env.INTERNAL_API_KEY
-    const base = `http://localhost:${process.env.PORT ?? 3000}`
+    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
     const res = await fetch(`${base}/api/v1/owner/cockpit`, {
       headers: { "x-internal-key": key ?? "" },
       cache: "no-store",

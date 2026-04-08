@@ -297,28 +297,24 @@ export async function generateCoherenceReport(
       }
     }
 
-    // Dispersie excesivă la nivel de grad
+    // Dispersie excesivă la nivel de grad — ALWAYS added when CV exceeds threshold
     if (cv > THRESHOLD_DISPERSIE && gradeEntries.length >= 3) {
-      // Adaugă o incoerență de tip DISPERSIE_EXCESIVA pentru gradul întreg
-      // (doar dacă nu există deja outlieri care explică dispersia)
-      if (incoerente.length === 0) {
-        const incoerenta: IncoherentaEntry = {
-          entryId: `grade-${grad}`,
-          jobCode: "*",
-          jobTitle: `Toate posturile din gradul ${grad}`,
-          department: "*",
-          gender: "*",
-          totalMonthlyGross: round2(medie),
-          grad,
-          tip: "DISPERSIE_EXCESIVA",
-          deviatieProcentFataDeMedie: cv,
-          justificariPosibile: [],
-          poateJustifica: false,
-          descriere: `Gradul ${grad} are coeficient de variație ${cv}% (prag: ${THRESHOLD_DISPERSIE}%). Salariile sunt prea dispersate pentru același grad.`,
-        }
-        incoerente.push(incoerenta)
-        toateIncoerente.push(incoerenta)
+      const incoerenta: IncoherentaEntry = {
+        entryId: `grade-${grad}`,
+        jobCode: "*",
+        jobTitle: `Toate posturile din gradul ${grad}`,
+        department: "*",
+        gender: "*",
+        totalMonthlyGross: round2(medie),
+        grad,
+        tip: "DISPERSIE_EXCESIVA",
+        deviatieProcentFataDeMedie: cv,
+        justificariPosibile: [],
+        poateJustifica: false,
+        descriere: `Gradul ${grad} are coeficient de variație ${cv}% (prag: ${THRESHOLD_DISPERSIE}%). Salariile sunt prea dispersate pentru același grad.`,
       }
+      incoerente.push(incoerenta)
+      toateIncoerente.push(incoerenta)
     }
 
     coherentaPerGrad.push({

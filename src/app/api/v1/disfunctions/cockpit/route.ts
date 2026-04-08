@@ -76,31 +76,29 @@ export async function GET(req: NextRequest) {
 
   const chainByRole = new Map<string, string[]>()
   if (uniqueRoles.length > 0) {
-    // Build escalation chains in parallel
-    const chains = await Promise.all(
-      uniqueRoles.map(async (role) => {
-        const chain: string[] = []
-        let current = role
-        const visited = new Set<string>()
-        for (let i = 0; i < 10; i++) {
-          if (visited.has(current)) break
-          visited.add(current)
-          const rel = await prisma.agentRelationship.findFirst({
-            where: {
-              childRole: current,
-              relationType: "REPORTS_TO",
-              isActive: true,
-            },
-            select: { parentRole: true },
-          })
-          if (!rel) break
-          chain.push(rel.parentRole)
-          current = rel.parentRole
-        }
-        return [role, chain] as const
-      }),
-    )
-    for (const [role, chain] of chains) {
+    // Batch-load all REPORTS_TO relationships upfront (single query)
+    const allRels = await prisma.agentRelationship.findMany({
+      where: { relationType: "REPORTS_TO", isActive: true },
+      select: { childRole: true, parentRole: true },
+    })
+    // Build lookup: childRole → parentRole
+    const parentByChild = new Map<string, string>()
+    for (const rel of allRels) {
+      parentByChild.set(rel.childRole, rel.parentRole)
+    }
+    // Traverse chains in memory (no additional queries)
+    for (const role of uniqueRoles) {
+      const chain: string[] = []
+      let current = role
+      const visited = new Set<string>()
+      for (let i = 0; i < 10; i++) {
+        if (visited.has(current)) break
+        visited.add(current)
+        const parent = parentByChild.get(current)
+        if (!parent) break
+        chain.push(parent)
+        current = parent
+      }
       chainByRole.set(role, chain)
     }
   }

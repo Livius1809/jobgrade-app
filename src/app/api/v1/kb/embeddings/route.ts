@@ -48,13 +48,14 @@ export async function POST(request: NextRequest) {
   const dryRun = searchParams.get("dryRun") === "true"
 
   if (dryRun) {
-    const where = agentRole
-      ? `WHERE embedding IS NULL AND status = 'PERMANENT' AND "agentRole" = '${agentRole}'`
-      : `WHERE embedding IS NULL AND status = 'PERMANENT'`
-
-    const [{ count }] = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
-      `SELECT count(*) FROM kb_entries ${where}`
-    )
+    const [{ count }] = agentRole
+      ? await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+          `SELECT count(*) FROM kb_entries WHERE embedding IS NULL AND status = 'PERMANENT' AND "agentRole" = $1`,
+          agentRole
+        )
+      : await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+          `SELECT count(*) FROM kb_entries WHERE embedding IS NULL AND status = 'PERMANENT'`
+        )
 
     return NextResponse.json({
       dryRun: true,

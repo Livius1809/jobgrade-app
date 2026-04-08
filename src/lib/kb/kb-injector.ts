@@ -51,7 +51,8 @@ export async function injectKBContext(
       "Folosește aceste cunoștințe pentru a-ți calibra răspunsul.",
       "Nu le cita direct — integrează-le natural în conversație.",
     ].join("\n")
-  } catch {
+  } catch (err) {
+    console.error("[KB INJECTOR] Failed to inject KB context:", err)
     return ""
   }
 }

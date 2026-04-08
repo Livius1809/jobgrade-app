@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { situationId, optionLabel, affectedRoles } = await req.json()
+    const { situationId, optionLabel, affectedRoles, eventIds } = await req.json()
 
     if (!situationId || !optionLabel) {
       return NextResponse.json({ error: "situationId + optionLabel required" }, { status: 400 })
@@ -100,24 +100,41 @@ export async function POST(req: NextRequest) {
     }
 
     if (optionLabel.includes("fals pozitiv")) {
-      // Resolve all events for this situation
+      // Resolve only the specific events for this situation
+      if (!eventIds || !Array.isArray(eventIds) || eventIds.length === 0) {
+        return NextResponse.json(
+          { error: "eventIds[] required for false positive marking — cannot resolve all open events" },
+          { status: 400 },
+        )
+      }
       await p.disfunctionEvent.updateMany({
-        where: { status: "OPEN" },
+        where: { id: { in: eventIds }, status: "OPEN" },
         data: {
           status: "RESOLVED",
           resolvedAt: new Date(),
           resolvedBy: `owner_decision_${new Date().toISOString().split("T")[0]}`,
         },
       })
-      actions.push("Evenimente rezolvate ca fals pozitiv")
+      actions.push(`${eventIds.length} evenimente rezolvate ca fals pozitiv`)
     }
+
+    // ── Audit trail ────────────────────────────────────────────────────────
+    console.info(JSON.stringify({
+      type: "OWNER_DECISION",
+      userId: hasSessionAuth ? session!.user.id : "INTERNAL_API",
+      action: optionLabel,
+      situationId,
+      affectedRoles: affectedRoles || [],
+      actions,
+      timestamp: new Date().toISOString(),
+    }))
 
     return NextResponse.json({
       decision: optionLabel,
       situationId,
       actions,
       decidedAt: new Date().toISOString(),
-      decidedBy: session!.user.id,
+      decidedBy: hasSessionAuth ? session!.user.id : "INTERNAL_API",
     })
   } catch (error: any) {
     console.error("[OWNER DECIDE]", error)

@@ -35,6 +35,18 @@ interface OutcomeSignal {
   detail: string
 }
 
+/** Default deviation threshold (%) — currentValue sub target cu acest % = underperforming */
+const DEFAULT_DEVIATION_PCT = 20
+
+/** Default trend window — câte measurements consecutive pentru trend analysis */
+const DEFAULT_TREND_WINDOW = 3
+
+/** Sub acest % din target → CRITICAL severity */
+const CRITICAL_THRESHOLD_RATIO = 0.25
+
+/** Sub acest % din target → HIGH severity (dar >= CRITICAL_THRESHOLD_RATIO) */
+const HIGH_THRESHOLD_RATIO = 0.5
+
 // Frecvența așteptată de colectare → zile maxime fără measurement
 const FREQUENCY_MAX_DAYS: Record<string, number> = {
   per_session: 7,    // dacă nimeni n-a folosit serviciul în 7 zile, e semnal
@@ -48,8 +60,8 @@ export async function GET(req: NextRequest) {
   }
 
   const url = new URL(req.url)
-  const deviationPct = Number(url.searchParams.get("deviationPct") ?? "20")
-  const trendWindow = Number(url.searchParams.get("trendWindow") ?? "3")
+  const deviationPct = Number(url.searchParams.get("deviationPct") ?? String(DEFAULT_DEVIATION_PCT))
+  const trendWindow = Number(url.searchParams.get("trendWindow") ?? String(DEFAULT_TREND_WINDOW))
   const dryRun = url.searchParams.get("dryRun") === "true"
   const businessId = url.searchParams.get("businessId")
 
@@ -110,7 +122,9 @@ export async function GET(req: NextRequest) {
       const threshold = targetValue * (1 - deviationPct / 100)
       if (currentValue < threshold) {
         const gap = ((targetValue - currentValue) / targetValue * 100).toFixed(1)
-        const sev = currentValue < targetValue * 0.5 ? "HIGH" : "MEDIUM"
+        const sev = currentValue < targetValue * CRITICAL_THRESHOLD_RATIO ? "CRITICAL"
+          : currentValue < targetValue * HIGH_THRESHOLD_RATIO ? "HIGH"
+          : "MEDIUM"
         signals.push({
           serviceCode, serviceName,
           signal: "underperforming",

@@ -183,6 +183,7 @@ export async function autoRevertExpired(): Promise<{ reverted: number; escalated
         where: { id: event.id },
         data: { status: "ESCALATED" },
       })
+      console.warn(`[REORG-ESCALATED] Reorganization ${event.id} active >72h, escalated. Original role: ${event.triggeredByRole}`)
       escalated++
     } else {
       await prisma.reorganizationEvent.update({

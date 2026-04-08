@@ -212,16 +212,23 @@ export async function runAllSentinels(prisma: PrismaClient): Promise<{
     select: { agentRole: true },
   })
 
+  const settled = await Promise.allSettled(
+    managers.map((m: { agentRole: string }) => runPatternSentinel(m.agentRole, prisma))
+  )
+
   const results: SentinelResult[] = []
   let totalSignals = 0
   let alerts = 0
 
-  for (const m of managers) {
-    const result = await runPatternSentinel(m.agentRole, prisma)
-    results.push(result)
-    totalSignals += result.signals.length
-    alerts += result.signals.filter(s => s.severity === "ALERT").length
-    await new Promise(r => setTimeout(r, 1000))
+  for (const outcome of settled) {
+    if (outcome.status === "fulfilled") {
+      const result = outcome.value
+      results.push(result)
+      totalSignals += result.signals.length
+      alerts += result.signals.filter((s: { severity: string }) => s.severity === "ALERT").length
+    } else {
+      console.warn(`[SENTINEL] Manager failed: ${outcome.reason}`)
+    }
   }
 
   return { totalManagers: managers.length, totalSignals, alerts, results }

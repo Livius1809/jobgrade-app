@@ -252,6 +252,14 @@ export async function propagateEntry(
   // Calculează confidence propagată
   const propagatedConfidence = Math.round(entry.confidence * CONFIDENCE_DISCOUNT * 100) / 100
 
+  // Skip if propagated confidence falls below threshold (natural depth limiter)
+  if (propagatedConfidence < MIN_CONFIDENCE_TO_PROPAGATE) {
+    console.log(
+      `   ⏭ ${entry.agentRole}: skipped propagation — confidence ${propagatedConfidence} < ${MIN_CONFIDENCE_TO_PROPAGATE}`
+    )
+    return result
+  }
+
   for (const target of targets) {
     try {
       // Abstractizează cunoștința pentru target
@@ -358,7 +366,8 @@ export async function runBatchPropagation(
     status: "PERMANENT",
     confidence: { gte: MIN_CONFIDENCE_TO_PROPAGATE },
     validatedAt: { gte: since },
-    source: { not: "PROPAGATED" }, // nu propaga ce e deja propagat (evită cicluri)
+    // Allow PROPAGATED entries too — depth is naturally limited by confidence floor:
+    // 1.0 * 0.85^3 = 0.61 < MIN_CONFIDENCE_TO_PROPAGATE (0.70)
     agentRole: { in: PROPAGATION_SOURCE_ROLES },
   }
 
@@ -396,11 +405,6 @@ export async function runBatchPropagation(
       skipped++
       continue
     }
-
-    // Verifică depth limit (nu propaga la infinit)
-    // Entries cu source != PROPAGATED sunt depth 0 (original)
-    // Această verificare e redundantă cu filtrul source: { not: "PROPAGATED" }
-    // dar adăugăm safety check pentru cazuri edge
 
     const result = await propagateEntry(entry, prisma, options)
     results.push(result)

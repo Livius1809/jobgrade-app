@@ -14,7 +14,7 @@ export default async function OwnerEvolutionPage() {
   let report: any = null
   try {
     const key = process.env.INTERNAL_API_KEY
-    const base = `http://localhost:${process.env.PORT ?? 3000}`
+    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
     const res = await fetch(`${base}/api/v1/agents/cog-chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-internal-key": key ?? "" },
