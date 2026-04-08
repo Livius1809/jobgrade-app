@@ -5,6 +5,8 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import { prisma } from "@/lib/prisma"
 import { injectKBContext } from "@/lib/kb/kb-injector"
+import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
+import { observeInteraction, applyProfileUpdate } from "@/lib/b2c/profiler-shadow"
 
 export const maxDuration = 60
 
@@ -196,6 +198,7 @@ export async function POST(req: NextRequest) {
       crossCardContext.length ? `Activitate pe alte carduri: ${crossCardContext.join(", ")}` : "",
       testsContext,
       kbContext,
+      injectCommercialKnowledge(message.trim(), "B2C"),
       "",
       "--- CALIBRARE CĂLĂUZA ---",
       "Ești cel mai RAR vorbești dintre toți agenții. Răspunsuri SCURTE (1-3 paragrafe).",
@@ -233,7 +236,21 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // 12. Create/update session
+    // 12. Profiler shadow — observă invizibil interacțiunea (non-blocking)
+    observeInteraction(
+      {
+        card: "CARD_1",
+        agentRole: AGENT_ROLE,
+        conversationSummary: "",
+        lastClientMessage: message.trim(),
+        lastAgentResponse: assistantText,
+      },
+      user.profile
+    ).then(async (update) => {
+      if (update) await applyProfileUpdate(userId, update, prisma).catch(() => {})
+    }).catch(() => {})
+
+    // 13. Create/update session
     await p.b2CSession.upsert({
       where: { id: threadId || "new" },
       create: {

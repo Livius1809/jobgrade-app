@@ -5,6 +5,8 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import { prisma } from "@/lib/prisma"
 import { injectKBContext } from "@/lib/kb/kb-injector"
+import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
+import { observeInteraction, applyProfileUpdate } from "@/lib/b2c/profiler-shadow"
 
 export const maxDuration = 60
 
@@ -189,6 +191,7 @@ export async function POST(req: NextRequest) {
       testsContext,
       evolutionContext,
       kbContext,
+      injectCommercialKnowledge(message.trim(), "B2C"),
       "",
       "--- COMPORTAMENT ---",
       isFirstMessage
@@ -230,7 +233,21 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 12. Create/update B2C session
+    // 12. Profiler shadow — observă propria interacțiune (non-blocking)
+    observeInteraction(
+      {
+        card: "CARD_6",
+        agentRole: AGENT_ROLE,
+        conversationSummary: "",
+        lastClientMessage: message.trim(),
+        lastAgentResponse: assistantText,
+      },
+      user.profile
+    ).then(async (update) => {
+      if (update) await applyProfileUpdate(userId, update, prisma).catch(() => {})
+    }).catch(() => {})
+
+    // 13. Create/update B2C session
     await p.b2CSession.upsert({
       where: { id: threadId || "new" },
       create: {

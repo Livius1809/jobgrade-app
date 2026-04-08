@@ -9,6 +9,8 @@ import { buildClientContext, formatContextForPrompt } from "@/lib/context/client
 import { getClientProfile, formatClientProfileForPrompt, recordClientMemory } from "@/lib/agents/client-memory"
 import { createEscalation, ESCALATION_CHAIN } from "@/lib/agents/escalation-chain"
 import { injectKBContext } from "@/lib/kb/kb-injector"
+import { injectCommercialKnowledge } from "@/lib/shared/commercial-knowledge"
+import { observeB2BInteraction, applyB2BInsight } from "@/lib/b2b/counselor-shadow"
 
 export const maxDuration = 60
 
@@ -139,6 +141,7 @@ export async function POST(req: NextRequest) {
       memoryPrompt,
       "",
       kbContext,
+      injectCommercialKnowledge(message.trim(), "B2B"),
       "",
       "REGULA DE AUR — NICIODATĂ nu transpare urmărirea:",
       "- NU spui \"Văd că ai vizitat...\", \"Am observat că nu ai...\"",
@@ -205,7 +208,23 @@ export async function POST(req: NextRequest) {
       { importance: 0.4, tags: ["cssa", "chat", "customer-success"] }
     ).catch(() => {})
 
-    // 11. Check escalation triggers
+    // 11. HR_Counselor shadow — observă invizibil interacțiunea B2B (non-blocking)
+    const existingMemory = clientProfile ? formatClientProfileForPrompt(clientProfile) : ""
+    observeB2BInteraction(
+      {
+        source: AGENT_ROLE,
+        interactionType: "CHAT",
+        summary: "",
+        clientAction: message.trim(),
+        systemResponse: assistantText,
+        tenantId,
+      },
+      existingMemory
+    ).then(async (insight) => {
+      if (insight) await applyB2BInsight(tenantId, insight, prisma).catch(() => {})
+    }).catch(() => {})
+
+    // 12. Check escalation triggers
     const escalation = detectEscalation(message, assistantText)
     if (escalation) {
       createEscalation({
