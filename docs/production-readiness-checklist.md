@@ -357,16 +357,28 @@ Platforma **NU se lanseaza** fara aceste elemente:
 
 **Efort total estimat blockeri P0: ~3-4 saptamani lucru** (Claude + Owner + DPO)
 
-### Decizii Owner necesare inainte de lansare
+### Decizii Owner — APROBATE 09.04.2026
 
-| # | Decizie | Impact |
-|---|---------|--------|
-| 1 | Unde ruleaza Keycloak in productie? (Cloud-IAM / VPS / inlocuire NextAuth) | Blocheaza deployment |
-| 2 | Unde ruleaza n8n in productie? (n8n Cloud / VPS / Hetzner) | Blocheaza workflow-uri autonome |
-| 3 | Subdomenii separate (`app.jobgrade.ro`) sau domeniu unic? | Impacteaza CORS, cookies, SSL |
-| 4 | ntfy → serviciu production-grade? (Pushover / PagerDuty) | Impacteaza alerting |
-| 5 | Cookie consent banner — necesar? (depinde de analytics) | Legal GDPR |
-| 6 | Inregistrare ANSPDCP — necesar? (verificare DPO) | Legal GDPR |
+| # | Decizie | Rezultat |
+|---|---------|----------|
+| 1 | Keycloak in productie? | **ELIMINAT** — rămânem pe NextAuth. Keycloak se adaugă doar la cerere Enterprise SSO/LDAP |
+| 2 | n8n in productie? | **n8n Cloud** (~20 EUR/lună) |
+| 3 | Subdomenii? | **NU** — un singur domeniu jobgrade.ro |
+| 4 | ntfy? | **Email Resend principal + ntfy backup urgent** |
+| 5 | Cookie consent? | **NU** — fără cookies non-esențiale, Vercel Analytics server-side |
+| 6 | ANSPDCP? | Verificare cu DPO la review DPIA |
+
+### Alte decizii 09.04.2026
+- Vercel: un singur proiect (`jobgrade-v2` cu `jobgrade.ro`), `jobgrade-app` șters
+- UptimeRobot: configurat, interval 5 min ✅
+- Resend SPF/DKIM: verified ✅
+- Pentest: OWASP ZAP acum + extern (Bit Sentinel) la 60 zile post-lansare
+- DDoS: Cloudflare DNS proxy
+- Rate limiting: calibrare la 30 zile date reale
+- Rotare chei: trimestrial
+- Alertare preventivă: 70% pe TOȚI furnizorii externi (regulă universală)
+- Single point of failure Owner: risc acceptat la lansare, backup uman la 20+ clienți
+- Oblio.eu: în derulare, nu blocker lansare (facturare manuală la primii clienți)
 
 ---
 
@@ -409,4 +421,46 @@ Platforma **NU se lanseaza** fara aceste elemente:
 
 ---
 
-*Document viu — se actualizeaza la fiecare progres. Ultima actualizare: 08.04.2026*
+---
+
+## CE RĂMÂNE DE FĂCUT — DOAR OWNER
+
+Acțiuni care necesită exclusiv intervenția Owner (nu pot fi delegate la Claude):
+
+| # | Acțiune | Efort | Când | Detalii |
+|---|---------|-------|------|---------|
+| 1 | **Oblio.eu** — creare cont + API key | 1h | Pre-lansare | Facturare automată Stripe → oblio |
+| 2 | **Stripe checkout test live** — o plată reală cu card | 30 min | Pre-lansare | Verificare flux complet: plată → credite → factură |
+| 3 | **n8n Cloud** — creare cont + migrare workflows | 2h | Pre-lansare | Export din Docker local, import în n8n Cloud |
+| 4 | **Cloudflare** — activare DNS proxy | 30 min | Pre-lansare | Cont gratuit, setare DNS proxy pe jobgrade.ro |
+| 5 | **Neon producție** — creare proiect nou | 15 min | La deploy | Proiect separat de dev |
+| 6 | **Rotare chei** — generare chei noi la toți furnizorii | 2h | La deploy | Anthropic, Stripe, Google, LinkedIn, ElevenLabs, Resend |
+| 7 | **Demo flow** — testare end-to-end ca și client | 2h | Pre-lansare | Landing → demo request → onboarding → evaluare → raport |
+| 8 | **DPO review** — trimitere DPIA draft pentru validare | 30 min | Pre-lansare | Draft generat de Claude, DPO validează |
+| 9 | **Jurist validare** — transparență AI + breach templates | 30 min | Pre-lansare | Documente generate, jurist verifică |
+| 10 | **Benchmark salarii** — date de la surse externe | 2h | Pre-lansare | Paywell, date INS, piață RO |
+| 11 | **Backup uman** — identificare persoană de backup | — | La 20+ clienți | Acces limitat la Vercel/Neon pentru urgențe |
+
+**Efort total Owner: ~12h** distribuite pe 6 săptămâni.
+
+---
+
+## CE FACE CLAUDE (fără intervenție Owner)
+
+| Categorie | Items | Efort estimat |
+|---|---|---|
+| Pagini 404/500 + loading states + empty states | 4 items | 1 zi |
+| DPIA draft + Incident Response Plan + breach templates | 3 items | 2 zile |
+| Sentry integrare | 1 item | 2h |
+| Seed data producție (criterii, KB, agenți) | 3 items | 3h |
+| Teste (unit, integration, E2E, OWASP ZAP) | 5 items | 5 zile |
+| Documentație (ghid utilizator, runbook, API docs) | 4 items | 3 zile |
+| Planuri contingență (documentare) | 5 items | 2 zile |
+| Onboarding B2B ghid | 1 item | 1 zi |
+| Templates email | 2 items | 1 zi |
+| Optimizări (bundle, imagini, indexuri DB, connection pooling) | 5 items | 2 zile |
+| **Total** | **33 items** | **~18 zile lucru** |
+
+---
+
+*Document viu — se actualizează la fiecare progres. Ultima actualizare: 09.04.2026*

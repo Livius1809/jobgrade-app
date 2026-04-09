@@ -6,10 +6,23 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: {
-    default: "JobGrade",
+    default: "JobGrade — Evaluare și ierarhizare posturi",
     template: "%s | JobGrade",
   },
-  description: "Evaluează joburile corect. Construiește structuri salariale echitabile.",
+  description:
+    "Platformă AI de evaluare posturi, structurare salarială și dezvoltare profesională. Conformitate Directiva EU 2023/970.",
+  metadataBase: new URL("https://jobgrade.ro"),
+  openGraph: {
+    title: "JobGrade — Evaluare și ierarhizare posturi",
+    description:
+      "Platformă AI de evaluare posturi, structurare salarială și dezvoltare profesională. Conformitate Directiva EU 2023/970.",
+    siteName: "JobGrade",
+    locale: "ro_RO",
+    type: "website",
+  },
+  icons: {
+    icon: "/favicon.svg",
+  },
 }
 
 export default function RootLayout({
