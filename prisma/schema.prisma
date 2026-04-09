@@ -662,6 +662,7 @@ model AiGeneration {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId, createdAt])
   @@map("ai_generations")
 }
 
@@ -683,6 +684,7 @@ model Report {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId, type])
   @@map("reports")
 }
 
@@ -712,6 +714,7 @@ model CreditTransaction {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId, createdAt])
   @@map("credit_transactions")
 }
 
@@ -731,6 +734,7 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, read, createdAt])
   @@map("notifications")
 }
 
@@ -2849,6 +2853,8 @@ model B2CUser {
   // Jurnal
   journalEntries B2CJournalEntry[]
 
+  @@index([deleteScheduledFor])
+  @@index([status])
   @@map("b2c_users")
 }
 
