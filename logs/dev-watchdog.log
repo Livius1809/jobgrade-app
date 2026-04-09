@@ -1,0 +1,6 @@
+[2026-04-09 10:17:00] ═══ Dev Watchdog started ═══
+[2026-04-09 10:17:00] App dir: /c/Users/Liviu/OneDrive/Desktop/exercitiu instalare_visual/jobgrade-app
+[2026-04-09 10:17:00] Port: 3000
+[2026-04-09 10:17:00] Check interval: 60s
+[2026-04-09 10:17:00] Max failures before restart: 3
+[2026-04-09 10:17:00] Dev server already running on :3000
