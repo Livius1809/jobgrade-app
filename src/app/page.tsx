@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import dynamic from "next/dynamic"
+import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
 import { ScrollReveal } from "@/components/home/ScrollReveal"
 import { ServiceNode } from "@/components/home/ServiceNode"
 import { PersistentLabels } from "@/components/home/PersistentLabels"
@@ -8,7 +8,6 @@ import { SpiralPath } from "@/components/home/SpiralPath"
 import { ApexVisual } from "@/components/home/ApexVisual"
 import { FloatingCTA } from "@/components/home/FloatingCTA"
 
-const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), { ssr: false })
 
 /* ═══════════════════════════════════════════════════════════════════════
    STORY DATA — fiecare secvență din povestea Spirala-Oglindă
@@ -524,7 +523,7 @@ export default function HomePage() {
       </footer>
 
       {/* Agent host: SOA — ghid de vânzări pe pagina principală */}
-      <ChatWidget />
+      <ChatWidgetLoader />
     </div>
   )
 }
