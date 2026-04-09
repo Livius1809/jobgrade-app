@@ -7,6 +7,8 @@ import { calibrateOwnerInput } from "@/lib/agents/owner-calibration"
 import { logOwnerCalibration } from "@/lib/agents/owner-calibration-log"
 import Anthropic from "@anthropic-ai/sdk"
 
+export const maxDuration = 60
+
 const MODEL = "claude-sonnet-4-20250514"
 
 /**

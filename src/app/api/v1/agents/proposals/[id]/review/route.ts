@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { prisma } from "@/lib/prisma"
+
+export const maxDuration = 60
 import { validateHierarchy } from "@/lib/agents/hierarchy-validator"
 import { notifyProposalForOwner } from "@/lib/agents/owner-notify"
 
