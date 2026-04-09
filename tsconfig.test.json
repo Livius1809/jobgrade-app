@@ -25,6 +25,15 @@
     "src/lib/agents/objective-cascade.ts",
     "src/lib/agents/patch-lifecycle.ts",
     "src/lib/agents/auto-action-rules.ts",
-    "src/lib/agents/homeostasis-monitor.ts"
+    "src/lib/agents/homeostasis-monitor.ts",
+    "src/lib/security/__tests__/**/*.ts",
+    "src/lib/security/prompt-injection-filter.ts",
+    "src/lib/security/escalation-detector.ts",
+    "src/lib/ai/__tests__/**/*.ts",
+    "src/lib/ai/budget-cap.ts",
+    "src/lib/ai/degraded-mode.ts",
+    "src/lib/ai/client.ts",
+    "src/lib/db/__tests__/**/*.ts",
+    "src/lib/db/retention-policy.ts"
   ]
 }
