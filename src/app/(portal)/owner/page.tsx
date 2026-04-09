@@ -12,14 +12,175 @@ export const metadata = { title: "Owner Dashboard — JobGrade" }
 
 async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
   try {
-    const key = process.env.INTERNAL_API_KEY
-    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
-    const res = await fetch(`${base}/api/v1/owner/cockpit`, {
-      headers: { "x-internal-key": key ?? "" },
-      cache: "no-store",
+    // Import direct — evită self-fetch HTTP care eșuează în SSR Next.js 16
+    const { prisma } = await import("@/lib/prisma")
+    const { computeOwnerCockpit } = await import("@/lib/owner/cockpit-aggregator")
+    const { evaluateHomeostasis } = await import("@/lib/agents/homeostasis-monitor")
+    const { computeObjectiveHealth } = await import("@/lib/agents/objective-health")
+
+    const businessId = "biz_jobgrade"
+    const now = new Date()
+    const h24 = new Date(now.getTime() - 24 * 3600000)
+
+    const [
+      signalCount24h, objectivesRaw, patchesRaw, homeoTargetsRaw,
+      recentViolationsRaw, quarantinedCount, budgetsRaw, businessRaw,
+      pruneFlaggedCount, outcomesRaw, ritualsRaw, wildcardsPendingCount,
+      disfunctionsRaw, fluxStepRolesRaw, allObjectivesRaw, agentRelationshipsRaw,
+    ] = await Promise.all([
+      prisma.externalSignal.count({ where: { capturedAt: { gte: h24 } } }).catch(() => 0),
+      prisma.organizationalObjective.findMany({
+        where: { businessId, status: { notIn: ["ARCHIVED"] } },
+        select: {
+          id: true, code: true, title: true, businessId: true,
+          metricName: true, metricUnit: true, targetValue: true, currentValue: true,
+          direction: true, startDate: true, deadlineAt: true, completedAt: true,
+          priority: true, status: true, ownerRoles: true, contributorRoles: true, tags: true,
+        },
+      }).catch(() => []),
+      prisma.agentBehaviorPatch.findMany({
+        where: { businessId, status: { in: ["PROPOSED", "APPROVED", "ACTIVE"] } },
+        select: { status: true, targetRole: true, createdAt: true },
+      }).catch(() => []),
+      prisma.homeostaticTarget.findMany({
+        where: { businessId, isActive: true },
+        select: {
+          id: true, code: true, name: true, metricName: true, metricUnit: true,
+          targetType: true, targetEntityId: true,
+          minValue: true, maxValue: true, optimalValue: true,
+          warningPct: true, criticalPct: true, lastReading: true, autoCorrect: true,
+        },
+      }).catch(() => []),
+      prisma.boundaryViolation.findMany({
+        where: { createdAt: { gte: h24 } },
+        select: { id: true, rule: { select: { severity: true, code: true } } },
+      }).catch(() => []),
+      prisma.quarantineEntry.count({ where: { status: "QUARANTINED" } }).catch(() => 0),
+      prisma.resourceBudget.findMany({
+        where: { businessId, isActive: true },
+        select: { agentRole: true, maxLlmCostPerDay: true, usedLlmCost: true },
+      }).catch(() => []),
+      prisma.business.findUnique({
+        where: { id: businessId },
+        select: { lifecyclePhase: true },
+      }).catch(() => null),
+      prisma.pruneCandidate.count({ where: { status: "FLAGGED" } }).catch(() => 0),
+      prisma.serviceOutcome.findMany({
+        where: { businessId, isActive: true },
+        select: { serviceCode: true, currentValue: true, targetValue: true, collectionFrequency: true },
+      }).catch(() => []),
+      prisma.ritual.findMany({
+        where: { businessId, isActive: true },
+        select: { code: true, cronExpression: true, lastRunAt: true },
+      }).catch(() => []),
+      prisma.wildCard.count({ where: { businessId, respondedAt: null } }).catch(() => 0),
+      prisma.disfunctionEvent.findMany({
+        where: { status: { in: ["OPEN", "REMEDIATING", "ESCALATED"] } },
+        select: {
+          id: true, class: true, severity: true, status: true,
+          targetType: true, targetId: true, signal: true,
+          detectedAt: true, resolvedAt: true, remediationOk: true,
+          detectorSource: true, durationMs: true,
+        },
+      }).catch(() => []),
+      prisma.fluxStepRole.findMany({
+        select: { fluxId: true, stepId: true, roleCode: true, raci: true, isCritical: true },
+      }).catch(() => []),
+      prisma.organizationalObjective.findMany({
+        where: { businessId },
+        select: { code: true, title: true, priority: true, status: true, ownerRoles: true, contributorRoles: true },
+      }).catch(() => []),
+      prisma.agentRelationship.findMany({
+        where: { relationType: "REPORTS_TO", isActive: true },
+        select: { childRole: true, parentRole: true },
+      }).catch(() => []),
+    ])
+
+    // Post-processing
+    const homeoInputs = (homeoTargetsRaw as any[]).map((t: any) => ({
+      id: t.id, code: t.code, name: t.name,
+      metricName: t.metricName, metricUnit: t.metricUnit ?? null,
+      targetType: t.targetType, targetEntityId: t.targetEntityId ?? null,
+      minValue: t.minValue, maxValue: t.maxValue, optimalValue: t.optimalValue,
+      warningPct: t.warningPct, criticalPct: t.criticalPct,
+      lastReading: t.lastReading, autoCorrect: t.autoCorrect,
+    }))
+    const homeoEvaluations = evaluateHomeostasis(homeoInputs)
+
+    const disfForHealth = (disfunctionsRaw as any[]).map((d: any) => ({
+      id: d.id, targetType: d.targetType, targetId: d.targetId,
+      signal: d.signal, severity: d.severity, status: d.status,
+    }))
+    const objHealthReports = computeObjectiveHealth({
+      objectives: (objectivesRaw as any[]).map((o: any) => ({
+        id: o.id, code: o.code, title: o.title, businessId: o.businessId,
+        metricName: o.metricName, metricUnit: o.metricUnit ?? null,
+        targetValue: o.targetValue, currentValue: o.currentValue,
+        direction: o.direction, startDate: o.startDate, deadlineAt: o.deadlineAt,
+        completedAt: o.completedAt, priority: o.priority, status: o.status,
+        ownerRoles: o.ownerRoles, contributorRoles: o.contributorRoles, tags: o.tags,
+      })),
+      strategicThemes: [],
+      disfunctions: disfForHealth,
     })
-    if (!res.ok) return null
-    return res.json()
+
+    const budgets = (budgetsRaw as any[]).map((b: any) => ({
+      agentRole: b.agentRole,
+      withinBudget: b.usedLlmCost <= b.maxLlmCostPerDay,
+      costUsedPct: b.maxLlmCostPerDay > 0 ? Math.round((b.usedLlmCost / b.maxLlmCostPerDay) * 100) : 0,
+    }))
+
+    let overdueRituals = 0
+    for (const r of ritualsRaw as any[]) {
+      if (!r.lastRunAt) { overdueRituals++; continue }
+      const ageMs = now.getTime() - new Date(r.lastRunAt).getTime()
+      let thresholdMs = 14 * 86400000
+      if (r.cronExpression?.includes("0 0 * * 0")) thresholdMs = 10 * 86400000
+      else if (r.cronExpression?.includes("0 0 1 * *")) thresholdMs = 45 * 86400000
+      if (ageMs > thresholdMs) overdueRituals++
+    }
+
+    const measurementGaps = (outcomesRaw as any[]).filter((o: any) => o.currentValue === null).length
+
+    const inputs: any = {
+      signalCount24h, strategicThemes: [],
+      objectives: objHealthReports.map((r: any) => ({
+        code: r.objectiveCode, title: r.objectiveTitle,
+        priority: (objectivesRaw as any[]).find((o: any) => o.code === r.objectiveCode)?.priority ?? "MEDIUM",
+        status: r.recommendedStatus,
+        ownerRoles: (objectivesRaw as any[]).find((o: any) => o.code === r.objectiveCode)?.ownerRoles ?? [],
+        contributorRoles: (objectivesRaw as any[]).find((o: any) => o.code === r.objectiveCode)?.contributorRoles ?? [],
+        healthScore: r.healthScore, riskLevel: r.riskLevel,
+      })),
+      patches: patchesRaw,
+      homeoEvaluations: homeoEvaluations.map((e: any) => ({
+        status: e.status, targetCode: e.targetCode, targetName: e.targetName,
+      })),
+      recentViolations: (recentViolationsRaw as any[]).map((v: any) => ({
+        severity: v.rule.severity, ruleCode: v.rule.code,
+      })),
+      quarantinedCount,
+      budgets,
+      lifecyclePhase: (businessRaw as any)?.lifecyclePhase ?? "GROWTH",
+      pruneCandidatesFlagged: pruneFlaggedCount,
+      outcomes: outcomesRaw,
+      overdueRituals,
+      unansweredWildCards: wildcardsPendingCount,
+      measurementGaps,
+      disfunctionEvents: disfunctionsRaw,
+      fluxStepRoles: fluxStepRolesRaw,
+      allObjectives: (allObjectivesRaw as any[]).map((o: any) => {
+        const hr = objHealthReports.find((r: any) => r.objectiveCode === o.code)
+        return {
+          code: o.code, title: o.title, priority: o.priority,
+          ownerRoles: o.ownerRoles, contributorRoles: o.contributorRoles,
+          healthScore: hr?.healthScore ?? null, riskLevel: hr?.riskLevel,
+        }
+      }),
+      agentRelationships: agentRelationshipsRaw,
+    }
+
+    return computeOwnerCockpit(inputs)
   } catch {
     return null
   }
