@@ -1,8 +1,26 @@
 # Infrastructure — JobGrade
 
+## ⚠️ ATENȚIE: Sursa oficială este `../../docker-compose.yml`
+
+**Fișierul `docker-compose.yml` real** trăiește în root-ul monorepo-ului
+(`C:\...\exercitiu instalare_visual\docker-compose.yml`) deoarece referă
+foldere relative la root: `scripts/`, `n8n-workflows/`, `jobgrade-app/`,
+`remediation-runner/`.
+
+**Fișierul din `infra/docker-compose.yml`** este o **COPIE de referință**
+versionată în git, cu scopul:
+1. Versionare în istoricul Git (root nu e repo)
+2. Vizibilitate pentru deploy
+3. Referință de configurare la migrare producție
+
+**Modificările se fac ÎN AMBELE LOCURI** sau:
+1. Modifici în root (real)
+2. Copiezi în infra/ (`cp ../docker-compose.yml infra/docker-compose.yml`)
+3. Comit infra/ în git
+
 ## docker-compose.yml
 
-**Sursă oficială** pentru stack-ul Docker local (dev). Conține:
+Stack-ul Docker local (dev). Conține:
 - PostgreSQL (Neon dev local)
 - Redis (Upstash local fallback)
 - Keycloak (NU mai e folosit — eliminat din arhitectură, vezi `project_keycloak_trigger.md`)
