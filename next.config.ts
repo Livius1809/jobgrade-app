@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@react-pdf/renderer", "exceljs"],
 
+  // Security: nu expunem X-Powered-By: Next.js (information disclosure)
+  poweredByHeader: false,
+
   // Security headers
   async headers() {
     return [

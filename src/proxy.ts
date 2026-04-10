@@ -33,6 +33,10 @@ const PUBLIC_PATHS = [
   "/api/demo-request",
   "/api/health",
   "/api/v1/b2c/onboarding",
+  // AI Act + GDPR transparency — obligatoriu public (10.04.2026)
+  "/transparenta-ai",
+  "/gdpr",
+  "/termeni",
 ]
 
 function isPublicPath(pathname: string): boolean {
