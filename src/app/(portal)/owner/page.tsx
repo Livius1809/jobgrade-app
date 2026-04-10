@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import CogChat from "@/components/chat/CogChat"
 import LayerCardInteractive from "./LayerCardInteractive"
+import OrganismPulse from "./OrganismPulse"
 import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
 import DecisionButtons from "./DecisionButtons"
 
@@ -197,6 +198,7 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
     const estimatedCost24hUsd = Math.round(totalExecTasks * 0.10 * 100) / 100
 
     // NEW: Vital signs latest — citire din docs/vital-signs/ (dacă există)
+    // Include cele 10 teste cu status + notes pentru meta-panel "Organism Pulse"
     let vitalSignsLatest: any = undefined
     try {
       const fs = await import("node:fs")
@@ -213,6 +215,14 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
             fail: latest.summary?.fail || 0,
             skip: latest.summary?.skip || 0,
             runAt: latest.reportDate || null,
+            tests: Array.isArray(latest.tests)
+              ? latest.tests.map((t: any) => ({
+                  name: t.name,
+                  status: t.status,
+                  notes: t.notes || "",
+                  metrics: t.metrics || {},
+                }))
+              : [],
           }
         }
       }
@@ -311,6 +321,14 @@ export default async function OwnerDashboard() {
           </div>
         ) : (
           <>
+            {/* ══════════ ORGANISM PULSE (meta-panel peste straturi) ══════════ */}
+            <OrganismPulse
+              verdict={data.vitalSigns.verdict}
+              summary={data.vitalSigns.summary}
+              runAt={data.vitalSigns.runAt}
+              tests={data.vitalSigns.tests}
+            />
+
             {/* ══════════ SECȚIUNEA 1: Organismul ══════════ */}
             <section>
               <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">

@@ -101,6 +101,18 @@ export interface OwnerCockpitResult {
     evolution: LayerStatus
     rhythm: LayerStatus
   }
+  // NEW 10.04.2026: Organism Pulse — vital signs meta-panel deasupra celor 8 straturi
+  vitalSigns: {
+    verdict: "ALIVE" | "WEAKENED" | "CRITICAL" | "UNKNOWN"
+    summary: { pass: number; warn: number; fail: number; skip: number }
+    runAt: string | null
+    tests: Array<{
+      name: string
+      status: "PASS" | "WARN" | "FAIL" | "SKIP"
+      notes?: string
+      metrics?: Record<string, unknown>
+    }>
+  }
   decisions: DecisionItem[]
   situationsSummary: ReturnType<typeof summarizeSituations>
 }
@@ -152,7 +164,7 @@ export interface CockpitInputs {
   overdueRituals: number
   unansweredWildCards: number
   measurementGaps: number
-  // NEW 10.04.2026 — vital signs latest
+  // NEW 10.04.2026 — vital signs latest (10 teste + verdict overall)
   vitalSignsLatest?: {
     verdict: "ALIVE" | "WEAKENED" | "CRITICAL" | "UNKNOWN"
     pass: number
@@ -160,6 +172,12 @@ export interface CockpitInputs {
     fail: number
     skip: number
     runAt: string | null
+    tests?: Array<{
+      name: string
+      status: "PASS" | "WARN" | "FAIL" | "SKIP"
+      notes?: string
+      metrics?: Record<string, unknown>
+    }>
   }
 
   // CAUZALITATE
@@ -626,9 +644,26 @@ export function computeOwnerCockpit(inputs: CockpitInputs): OwnerCockpitResult {
     inputs.agentRelationships,
   )
 
+  // 4. Vital Signs — meta-panel "Organism Pulse"
+  const vs = inputs.vitalSignsLatest
+  const vitalSigns: OwnerCockpitResult["vitalSigns"] = vs
+    ? {
+        verdict: vs.verdict,
+        summary: { pass: vs.pass, warn: vs.warn, fail: vs.fail, skip: vs.skip },
+        runAt: vs.runAt,
+        tests: vs.tests || [],
+      }
+    : {
+        verdict: "UNKNOWN",
+        summary: { pass: 0, warn: 0, fail: 0, skip: 0 },
+        runAt: null,
+        tests: [],
+      }
+
   return {
     generatedAt: new Date().toISOString(),
     layers,
+    vitalSigns,
     decisions,
     situationsSummary,
   }
