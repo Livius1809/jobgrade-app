@@ -476,7 +476,18 @@ Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback cons
             reviewNote: `APPROVED: ${review.feedback}`,
             resultQuality: 80,
           },
-        }).catch(() => {})
+        }).catch(async (e: Error) => {
+          console.error(`[proactive-loop] Failed to mark task ${task.id} as APPROVED: ${e.message}`)
+          try {
+            const Sentry = await import("@sentry/nextjs").catch(() => null)
+            if (Sentry) {
+              Sentry.captureException(e, {
+                tags: { module: "proactive-loop", function: "reviewCompletedTasks", action: "approve", taskId: task.id },
+                level: "warning",
+              })
+            }
+          } catch {}
+        })
 
         console.log(`   ✅ ${task.assignedTo}/${task.title}: APPROVED — ${review.feedback}`)
       } else {
@@ -491,7 +502,18 @@ Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback cons
             reviewNote: `NEEDS_REVISION: ${review.feedback}`,
             resultQuality: 30,
           },
-        }).catch(() => {})
+        }).catch(async (e: Error) => {
+          console.error(`[proactive-loop] Failed to mark task ${task.id} as NEEDS_REVISION: ${e.message}`)
+          try {
+            const Sentry = await import("@sentry/nextjs").catch(() => null)
+            if (Sentry) {
+              Sentry.captureException(e, {
+                tags: { module: "proactive-loop", function: "reviewCompletedTasks", action: "reject", taskId: task.id },
+                level: "warning",
+              })
+            }
+          } catch {}
+        })
 
         console.log(`   🔄 ${task.assignedTo}/${task.title}: NEEDS_REVISION — ${review.feedback}`)
       }
@@ -591,11 +613,31 @@ export async function runProactiveCycle(
   const statuses = await collectSubordinateStatuses(evaluableSubs, prisma)
 
   // 2. Verifică escalări anterioare
-  await checkResolvedEscalations(effectiveConfig, statuses, prisma).catch(() => {})
+  await checkResolvedEscalations(effectiveConfig, statuses, prisma).catch(async (e: Error) => {
+    console.error(`[proactive-loop] checkResolvedEscalations failed for ${effectiveConfig.agentRole}: ${e.message}`)
+    try {
+      const Sentry = await import("@sentry/nextjs").catch(() => null)
+      if (Sentry) {
+        Sentry.captureException(e, {
+          tags: { module: "proactive-loop", function: "checkResolvedEscalations", agentRole: effectiveConfig.agentRole },
+          level: "warning",
+        })
+      }
+    } catch {}
+  })
 
   // 2b. REVIEW taskuri completate de subordonați
-  await reviewCompletedTasks(effectiveConfig, prisma, options?.dryRun).catch((e) => {
-    console.log(`   [review] ${e.message}`)
+  await reviewCompletedTasks(effectiveConfig, prisma, options?.dryRun).catch(async (e: Error) => {
+    console.error(`[proactive-loop] reviewCompletedTasks failed for ${effectiveConfig.agentRole}: ${e.message}`)
+    try {
+      const Sentry = await import("@sentry/nextjs").catch(() => null)
+      if (Sentry) {
+        Sentry.captureException(e, {
+          tags: { module: "proactive-loop", function: "reviewCompletedTasks", agentRole: effectiveConfig.agentRole },
+          level: "warning",
+        })
+      }
+    } catch {}
   })
 
   // 3. Escalări active (pentru context AI)

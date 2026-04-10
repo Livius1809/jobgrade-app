@@ -12,6 +12,7 @@ import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/
 import { checkEscalation, getEscalationBlockResponse } from "@/lib/security/escalation-detector"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
+import { guardBoundaries, getBoundaryBlockResponse } from "@/lib/agents/boundary-guard"
 
 export const maxDuration = 60
 
@@ -109,7 +110,23 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 0d. Budget cap check (BUILD-008)
+    // 0d. Boundary check (immune system) — A3 audit
+    const boundaryVerdict = await guardBoundaries(prisma, {
+      sourceType: "client_input",
+      sourceRole: "B2C_USER",
+      content: message.trim(),
+    }, null)
+
+    if (!boundaryVerdict.passed && boundaryVerdict.highestAction === "BLOCK") {
+      return NextResponse.json({
+        reply: getBoundaryBlockResponse(boundaryVerdict, "ro"),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
+    }
+
+    // 0e. Budget cap check (BUILD-008)
     const budgetCheck = checkBudget(userId, 'B2C', 0.015)
     if (!budgetCheck.allowed) {
       return NextResponse.json({

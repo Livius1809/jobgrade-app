@@ -14,6 +14,7 @@ import { observeB2BInteraction, applyB2BInsight } from "@/lib/b2b/counselor-shad
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"
 import { checkEscalation, getEscalationBlockResponse } from "@/lib/security/escalation-detector"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
+import { guardBoundaries, getBoundaryBlockResponse } from "@/lib/agents/boundary-guard"
 
 export const maxDuration = 60
 
@@ -113,6 +114,22 @@ export async function POST(req: NextRequest) {
       })
     }
     const tenantId = companyId || (session.user as any).tenantId
+
+    // 0d. Boundary check (immune system) — A3 audit
+    const boundaryVerdict = await guardBoundaries(prisma, {
+      sourceType: "client_input",
+      sourceRole: "B2B_USER",
+      content: message.trim(),
+    }, tenantId)
+
+    if (!boundaryVerdict.passed && boundaryVerdict.highestAction === "BLOCK") {
+      return NextResponse.json({
+        reply: getBoundaryBlockResponse(boundaryVerdict, "ro"),
+        threadId: threadId || null,
+        agentRole: AGENT_ROLE,
+        blocked: true,
+      })
+    }
 
     // 0c. Budget cap check (BUILD-008)
     const budgetCheck = checkBudget(tenantId || userId, 'B2B', 0.015)
