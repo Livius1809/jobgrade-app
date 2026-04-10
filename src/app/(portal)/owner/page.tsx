@@ -489,6 +489,7 @@ function DecisionCard({ decision }: { decision: DecisionItem }) {
           situationId={d.situationId}
           options={d.options}
           affectedRoles={d.affectedRoles}
+          eventIds={d.eventIds ?? []}
         />
       )}
 

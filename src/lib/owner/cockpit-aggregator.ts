@@ -85,6 +85,8 @@ export interface DecisionItem {
   firstSeenAt: string
   lastSeenAt: string
   eventCount: number
+  /** Raw disfunction event IDs — needed by decide endpoint to mark them RESOLVED. */
+  eventIds: string[]
 }
 
 export interface OwnerCockpitResult {
@@ -519,6 +521,7 @@ function buildCausalityChains(
       firstSeenAt: sit.firstSeenAt,
       lastSeenAt: sit.lastSeenAt,
       eventCount: sit.eventIds.length,
+      eventIds: [...sit.eventIds],
     }
   })
 }

@@ -10,21 +10,18 @@ export default async function OwnerEvolutionPage() {
   if (!session) redirect("/login")
   if (session.user.role !== "SUPER_ADMIN" && session.user.role !== "OWNER") redirect("/portal")
 
-  // Fetch owner calibration report
+  // Fetch owner calibration report — direct server-side call (no self-fetch)
   let report: any = null
   try {
-    const key = process.env.INTERNAL_API_KEY
-    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
-    const res = await fetch(`${base}/api/v1/agents/cog-chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-internal-key": key ?? "" },
-      body: JSON.stringify({
-        message: "Generează raportul de evoluție Owner: 1) Aliniere L1 (decizii morale, veto-uri), 2) Aliniere L2 (calibrare comunicare, interacțiuni cu consultanții), 3) Aliniere L3 (conformitate legal), 4) Pattern-uri observate (ce decizii iei frecvent, ce amâni), 5) Reflecție: ce servește BINELE și ce ar putea fi Umbră."
-      }),
-      cache: "no-store",
-    })
-    if (res.ok) report = await res.json()
-  } catch { /* non-blocking */ }
+    const { prisma } = await import("@/lib/prisma")
+    const { chatWithCOG } = await import("@/lib/agents/cog-chat")
+    report = await chatWithCOG(
+      "Generează raportul de evoluție Owner: 1) Aliniere L1 (decizii morale, veto-uri), 2) Aliniere L2 (calibrare comunicare, interacțiuni cu consultanții), 3) Aliniere L3 (conformitate legal), 4) Pattern-uri observate (ce decizii iei frecvent, ce amâni), 5) Reflecție: ce servește BINELE și ce ar putea fi Umbră.",
+      prisma,
+    )
+  } catch (e: any) {
+    console.error("[OWNER EVOLUTION]", e?.message ?? e)
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

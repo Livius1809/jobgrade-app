@@ -37,11 +37,14 @@ export default async function AgentsReportPage() {
       select: { agentRole: true, displayName: true, level: true, activityMode: true },
     })
 
-    // Hierarchy
-    const hierarchy = await p.$queryRaw`
-      SELECT "childRole", "parentRole" FROM agent_relationships
-      WHERE "relationType" = 'REPORTS_TO'
-    ` as { childRole: string; parentRole: string }[]
+    // Hierarchy — use Prisma Client (handles enum casting) instead of raw SQL.
+    // The previous raw query failed because Postgres rejects text = enum
+    // comparison without an explicit ::"RelationType" cast, causing the whole
+    // report to throw and render the empty state.
+    const hierarchy = await p.agentRelationship.findMany({
+      where: { relationType: "REPORTS_TO", isActive: true },
+      select: { childRole: true, parentRole: true },
+    }) as { childRole: string; parentRole: string }[]
 
     // Batch queries for all metrics
     const [kbStats, cycleStats, taskStats, escalationStats, metricStats] = await Promise.all([

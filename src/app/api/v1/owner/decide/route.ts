@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         )
       }
       await p.disfunctionEvent.updateMany({
-        where: { id: { in: eventIds }, status: "OPEN" },
+        where: { id: { in: eventIds }, status: { in: ["OPEN", "REMEDIATING", "ESCALATED"] } },
         data: {
           status: "RESOLVED",
           resolvedAt: new Date(),
@@ -116,6 +116,33 @@ export async function POST(req: NextRequest) {
         },
       })
       actions.push(`${eventIds.length} evenimente rezolvate ca fals pozitiv`)
+    }
+
+    // ── Persistence: close the situation so it disappears from cockpit ─────────
+    //
+    // Regardless of which action branch ran above (except "fals pozitiv" which
+    // already resolved them), mark the underlying disfunction events as
+    // RESOLVED. Without this step the situation aggregator re-builds the same
+    // card on every page load (events stay OPEN/REMEDIATING/ESCALATED), which
+    // is the exact symptom of BUG 1 — decisions appear not to persist.
+    //
+    // We only touch events that are still in an active state, so a race with
+    // the auto-healer doesn't overwrite a more recent RESOLVED marker.
+    if (!optionLabel.includes("fals pozitiv") && Array.isArray(eventIds) && eventIds.length > 0) {
+      const resolvedBy = `owner_decision_${new Date().toISOString().split("T")[0]}`
+      const updated = await p.disfunctionEvent.updateMany({
+        where: { id: { in: eventIds }, status: { in: ["OPEN", "REMEDIATING", "ESCALATED"] } },
+        data: {
+          status: "RESOLVED",
+          resolvedAt: new Date(),
+          resolvedBy,
+          remediationAction: optionLabel,
+          remediationLevel: "OWNER",
+        },
+      })
+      if (updated.count > 0) {
+        actions.push(`${updated.count} evenimente închise (decizie Owner)`)
+      }
     }
 
     // ── Audit trail ────────────────────────────────────────────────────────

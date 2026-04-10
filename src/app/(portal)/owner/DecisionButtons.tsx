@@ -12,10 +12,12 @@ export default function DecisionButtons({
   situationId,
   options,
   affectedRoles,
+  eventIds,
 }: {
   situationId: string
   options: DecisionOption[]
   affectedRoles: string[]
+  eventIds: string[]
 }) {
   const [decided, setDecided] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -33,6 +35,7 @@ export default function DecisionButtons({
           situationId,
           optionLabel: option.label,
           affectedRoles,
+          eventIds,
         }),
       })
 

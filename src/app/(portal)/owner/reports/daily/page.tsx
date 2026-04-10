@@ -3,22 +3,20 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 
 export const metadata = { title: "Raport zilnic — Owner Dashboard" }
+export const maxDuration = 60
 
+// Direct server-side call to chatWithCOG — evită self-fetch HTTP care eșuează
+// în SSR pe Next.js 16 (same fix pattern as /owner page.tsx from 07.04.2026).
 async function fetchCOGReport() {
   try {
-    const key = process.env.INTERNAL_API_KEY
-    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
-    const res = await fetch(`${base}/api/v1/agents/cog-chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-internal-key": key ?? "" },
-      body: JSON.stringify({
-        message: "Generează raportul zilnic complet: 1) Starea fiecărui departament (tehnic, business, legal, marketing), 2) Taskuri în lucru cu blocaje și factor blocant, 3) KPI-uri: entries KB noi, cicluri manageriale executate, escaladări, brainstorming activ, 4) Acțiuni recomandate pentru Owner. Format structurat."
-      }),
-      cache: "no-store",
-    })
-    if (!res.ok) return null
-    return res.json()
-  } catch {
+    const { prisma } = await import("@/lib/prisma")
+    const { chatWithCOG } = await import("@/lib/agents/cog-chat")
+    return await chatWithCOG(
+      "Generează raportul zilnic complet: 1) Starea fiecărui departament (tehnic, business, legal, marketing), 2) Taskuri în lucru cu blocaje și factor blocant, 3) KPI-uri: entries KB noi, cicluri manageriale executate, escaladări, brainstorming activ, 4) Acțiuni recomandate pentru Owner. Format structurat.",
+      prisma,
+    )
+  } catch (e: any) {
+    console.error("[DAILY REPORT]", e?.message ?? e)
     return null
   }
 }
