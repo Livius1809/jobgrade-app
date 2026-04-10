@@ -111,6 +111,10 @@ export interface CockpitInputs {
   // AWARENESS
   signalCount24h: number
   strategicThemes: { severity: string; confidence: string; title: string }[]
+  // NEW 10.04.2026 — signal→task pipeline
+  signalsProcessed24h?: number
+  signalsPending?: number
+  reactiveTasksCreated24h?: number
 
   // GOALS
   objectives: {
@@ -121,6 +125,10 @@ export interface CockpitInputs {
 
   // ACTION
   patches: { status: string; targetRole: string; createdAt: string | Date }[]
+  // NEW 10.04.2026 — task executor
+  tasksExecuted24h?: { completed: number; blocked: number; failed: number; assigned: number }
+  proactiveCycles24h?: number
+  selfTasksExecuted24h?: number
 
   // HOMEOSTASIS
   homeoEvaluations: { status: string; targetCode: string; targetName: string }[]
@@ -132,6 +140,9 @@ export interface CockpitInputs {
   // METABOLISM
   budgets: { agentRole: string; withinBudget: boolean; costUsedPct: number }[]
   lifecyclePhase: string
+  // NEW 10.04.2026 — cron state + cost estimate
+  executorCronEnabled?: boolean
+  estimatedCost24hUsd?: number
 
   // EVOLUTION
   pruneCandidatesFlagged: number
@@ -141,6 +152,15 @@ export interface CockpitInputs {
   overdueRituals: number
   unansweredWildCards: number
   measurementGaps: number
+  // NEW 10.04.2026 — vital signs latest
+  vitalSignsLatest?: {
+    verdict: "ALIVE" | "WEAKENED" | "CRITICAL" | "UNKNOWN"
+    pass: number
+    warn: number
+    fail: number
+    skip: number
+    runAt: string | null
+  }
 
   // CAUZALITATE
   disfunctionEvents: EventInput[]
@@ -152,23 +172,32 @@ export interface CockpitInputs {
 // ── Layer health computation ─────────────────────────────────────────────────
 
 function computeAwareness(inputs: CockpitInputs): LayerStatus {
-  const { signalCount24h, strategicThemes } = inputs
+  const {
+    signalCount24h,
+    strategicThemes,
+    signalsPending = 0,
+    reactiveTasksCreated24h = 0,
+  } = inputs
   const criticalThemes = strategicThemes.filter(t => t.severity === "CRITICAL")
   const highThemes = strategicThemes.filter(t => t.severity === "HIGH" || t.confidence === "HIGH")
   const alarms: Alarm[] = []
 
   if (criticalThemes.length > 0) alarms.push({ message: `${criticalThemes.length} temă(e) CRITICAL`, severity: "CRITICAL" })
   if (signalCount24h === 0) alarms.push({ message: "Zero semnale externe în 24h", severity: "MEDIUM" })
+  if (signalsPending > 50) alarms.push({ message: `${signalsPending} semnale neprocesate (backlog mare)`, severity: "HIGH" })
+  else if (signalsPending > 10) alarms.push({ message: `${signalsPending} semnale neprocesate`, severity: "MEDIUM" })
 
   let status: LayerHealth = "HEALTHY"
-  if (criticalThemes.length > 0) status = "CRITICAL"
-  else if (highThemes.length > 0 || signalCount24h === 0) status = "WARNING"
+  if (criticalThemes.length > 0 || signalsPending > 50) status = "CRITICAL"
+  else if (highThemes.length > 0 || signalCount24h === 0 || signalsPending > 10) status = "WARNING"
 
   return {
     key: "awareness", label: "Conștiință", status,
     subFactors: [
       { name: "Semnale 24h", value: signalCount24h, status: signalCount24h > 0 ? "HEALTHY" : "WARNING" },
       { name: "Teme strategice", value: strategicThemes.length, status: criticalThemes.length > 0 ? "CRITICAL" : highThemes.length > 0 ? "WARNING" : "HEALTHY" },
+      { name: "Semnale neprocesate", value: signalsPending, status: signalsPending > 50 ? "CRITICAL" : signalsPending > 10 ? "WARNING" : "HEALTHY" },
+      { name: "Tasks reactive 24h", value: reactiveTasksCreated24h, status: "HEALTHY" },
     ],
     alarmCount: alarms.length, alarms,
   }
@@ -205,7 +234,12 @@ function computeGoals(inputs: CockpitInputs): LayerStatus {
 }
 
 function computeAction(inputs: CockpitInputs): LayerStatus {
-  const { patches } = inputs
+  const {
+    patches,
+    tasksExecuted24h = { completed: 0, blocked: 0, failed: 0, assigned: 0 },
+    proactiveCycles24h = 0,
+    selfTasksExecuted24h = 0,
+  } = inputs
   const now = Date.now()
   const proposed = patches.filter(p => p.status === "PROPOSED")
   const active = patches.filter(p => p.status === "ACTIVE")
@@ -216,15 +250,23 @@ function computeAction(inputs: CockpitInputs): LayerStatus {
   if (pending48h.length > 3) alarms.push({ message: `${pending48h.length} patch-uri pending >48h`, severity: "HIGH" })
   else if (pending24h.length > 0) alarms.push({ message: `${pending24h.length} patch-uri pending >24h`, severity: "MEDIUM" })
 
+  // Task executor health
+  const totalExecuted = tasksExecuted24h.completed + tasksExecuted24h.blocked + tasksExecuted24h.failed
+  const successRate = totalExecuted > 0 ? Math.round((tasksExecuted24h.completed / totalExecuted) * 100) : null
+  if (tasksExecuted24h.failed > 5) alarms.push({ message: `${tasksExecuted24h.failed} taskuri eșuate 24h`, severity: "HIGH" })
+  if (tasksExecuted24h.assigned > 50 && totalExecuted < 5) alarms.push({ message: `${tasksExecuted24h.assigned} taskuri neexecutate (executor inactiv?)`, severity: "HIGH" })
+
   let status: LayerHealth = "HEALTHY"
-  if (pending48h.length > 3) status = "CRITICAL"
-  else if (pending24h.length > 0) status = "WARNING"
+  if (pending48h.length > 3 || tasksExecuted24h.failed > 5) status = "CRITICAL"
+  else if (pending24h.length > 0 || (totalExecuted > 0 && successRate !== null && successRate < 70)) status = "WARNING"
 
   return {
     key: "action", label: "Acțiune", status,
     subFactors: [
-      { name: "Propuse", value: proposed.length, status: pending24h.length > 0 ? "WARNING" : "HEALTHY" },
-      { name: "Active", value: active.length, status: "HEALTHY" },
+      { name: "Tasks executate 24h", value: `${tasksExecuted24h.completed}/${totalExecuted || "—"}`, status: successRate !== null && successRate < 70 ? "WARNING" : "HEALTHY" },
+      { name: "Self-tasks 24h", value: selfTasksExecuted24h, status: "HEALTHY" },
+      { name: "Cicluri proactive", value: proactiveCycles24h, status: proactiveCycles24h > 0 ? "HEALTHY" : "WARNING" },
+      { name: "Patch-uri propuse", value: proposed.length, status: pending24h.length > 0 ? "WARNING" : "HEALTHY" },
     ],
     alarmCount: alarms.length, alarms,
   }
@@ -279,24 +321,32 @@ function computeImmune(inputs: CockpitInputs): LayerStatus {
 }
 
 function computeMetabolism(inputs: CockpitInputs): LayerStatus {
-  const { budgets, lifecyclePhase } = inputs
+  const {
+    budgets,
+    lifecyclePhase,
+    executorCronEnabled = false,
+    estimatedCost24hUsd = 0,
+  } = inputs
   const overBudget = budgets.filter(b => !b.withinBudget)
   const overBudget120 = budgets.filter(b => b.costUsedPct > 120)
   const alarms: Alarm[] = []
 
   if (overBudget120.length > 0) alarms.push({ message: `${overBudget120.length} agent(i) >120% buget`, severity: "HIGH" })
   else if (overBudget.length > 0) alarms.push({ message: `${overBudget.length} agent(i) >100% buget`, severity: "MEDIUM" })
+  if (estimatedCost24hUsd > 50) alarms.push({ message: `Cost 24h ~$${estimatedCost24hUsd.toFixed(2)} (peste $50)`, severity: "HIGH" })
+  else if (estimatedCost24hUsd > 10) alarms.push({ message: `Cost 24h ~$${estimatedCost24hUsd.toFixed(2)}`, severity: "MEDIUM" })
 
   let status: LayerHealth = "HEALTHY"
-  if (overBudget120.length > 0) status = "CRITICAL"
-  else if (overBudget.length > 0) status = "WARNING"
+  if (overBudget120.length > 0 || estimatedCost24hUsd > 50) status = "CRITICAL"
+  else if (overBudget.length > 0 || estimatedCost24hUsd > 10) status = "WARNING"
 
   return {
     key: "metabolism", label: "Metabolism", status,
     subFactors: [
       { name: "Faza", value: lifecyclePhase, status: "HEALTHY" },
-      { name: "Bugete active", value: budgets.length, status: "HEALTHY" },
-      { name: "Depășite", value: overBudget.length, status: overBudget.length > 0 ? "WARNING" : "HEALTHY" },
+      { name: "Cron executor", value: executorCronEnabled ? "ON" : "OFF", status: executorCronEnabled ? "HEALTHY" : "HEALTHY" },
+      { name: "Cost 24h", value: `$${estimatedCost24hUsd.toFixed(2)}`, status: estimatedCost24hUsd > 50 ? "CRITICAL" : estimatedCost24hUsd > 10 ? "WARNING" : "HEALTHY" },
+      { name: "Bugete depășite", value: overBudget.length, status: overBudget.length > 0 ? "WARNING" : "HEALTHY" },
     ],
     alarmCount: alarms.length, alarms,
   }
@@ -323,7 +373,13 @@ function computeEvolution(inputs: CockpitInputs): LayerStatus {
 }
 
 function computeRhythm(inputs: CockpitInputs): LayerStatus {
-  const { outcomes, overdueRituals, unansweredWildCards, measurementGaps } = inputs
+  const {
+    outcomes,
+    overdueRituals,
+    unansweredWildCards,
+    measurementGaps,
+    vitalSignsLatest,
+  } = inputs
   const measured = outcomes.filter(o => o.currentValue !== null)
   const onTarget = measured.filter(o => o.currentValue! >= o.targetValue)
   const offTarget = measured.length > 0 ? measured.length - onTarget.length : 0
@@ -334,14 +390,21 @@ function computeRhythm(inputs: CockpitInputs): LayerStatus {
   if (overdueRituals > 2) alarms.push({ message: `${overdueRituals} ritualuri întârziate`, severity: "HIGH" })
   else if (overdueRituals > 0) alarms.push({ message: `${overdueRituals} ritual(uri) întârziat(e)`, severity: "MEDIUM" })
   if (measurementGaps > 0) alarms.push({ message: `${measurementGaps} outcomes fără date`, severity: "MEDIUM" })
+  if (vitalSignsLatest?.verdict === "CRITICAL") alarms.push({ message: "Vital signs: CRITICAL", severity: "CRITICAL" })
+  else if (vitalSignsLatest?.verdict === "WEAKENED") alarms.push({ message: "Vital signs: WEAKENED", severity: "MEDIUM" })
 
   let status: LayerHealth = "HEALTHY"
-  if (offTargetPct > 50 || overdueRituals > 2) status = "CRITICAL"
-  else if (overdueRituals > 0 || offTarget > 0 || measurementGaps > 0) status = "WARNING"
+  if (offTargetPct > 50 || overdueRituals > 2 || vitalSignsLatest?.verdict === "CRITICAL") status = "CRITICAL"
+  else if (overdueRituals > 0 || offTarget > 0 || measurementGaps > 0 || vitalSignsLatest?.verdict === "WEAKENED") status = "WARNING"
+
+  const vitalLabel = vitalSignsLatest
+    ? `${vitalSignsLatest.verdict} (${vitalSignsLatest.pass}P/${vitalSignsLatest.warn}W/${vitalSignsLatest.fail}F)`
+    : "Nerulat"
 
   return {
     key: "rhythm", label: "Ritm", status,
     subFactors: [
+      { name: "Vital signs", value: vitalLabel, status: vitalSignsLatest?.verdict === "CRITICAL" ? "CRITICAL" : vitalSignsLatest?.verdict === "WEAKENED" ? "WARNING" : vitalSignsLatest ? "HEALTHY" : "WARNING" },
       { name: "Outcomes măsurate", value: `${onTarget.length}/${outcomes.length}`, status: offTarget > 0 ? "WARNING" : "HEALTHY" },
       { name: "Ritualuri overdue", value: overdueRituals, status: overdueRituals > 0 ? "WARNING" : "HEALTHY" },
       { name: "Gaps date", value: measurementGaps, status: measurementGaps > 0 ? "WARNING" : "HEALTHY" },

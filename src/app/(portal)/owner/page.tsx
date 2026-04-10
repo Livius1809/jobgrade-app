@@ -27,6 +27,9 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
       recentViolationsRaw, quarantinedCount, budgetsRaw, businessRaw,
       pruneFlaggedCount, outcomesRaw, ritualsRaw, wildcardsPendingCount,
       disfunctionsRaw, fluxStepRolesRaw, allObjectivesRaw, agentRelationshipsRaw,
+      // NEW 10.04.2026 — organism metrics
+      tasksExecutedRaw, signalsPendingCount, reactiveTasksCount,
+      proactiveCyclesCount, selfTasksCount,
     ] = await Promise.all([
       prisma.externalSignal.count({ where: { capturedAt: { gte: h24 } } }).catch(() => 0),
       prisma.organizationalObjective.findMany({
@@ -94,6 +97,37 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
         where: { relationType: "REPORTS_TO", isActive: true },
         select: { childRole: true, parentRole: true },
       }).catch(() => []),
+
+      // NEW 10.04.2026: Task executor — grouped by status ultimele 24h
+      prisma.agentTask.groupBy({
+        by: ["status"],
+        where: { updatedAt: { gte: h24 } },
+        _count: { _all: true },
+      }).catch(() => [] as any[]),
+
+      // NEW: Semnale pending (neprocesate)
+      prisma.externalSignal.count({ where: { processedAt: null } }).catch(() => 0),
+
+      // NEW: Taskuri reactive create 24h (signal→task pipeline)
+      prisma.agentTask.count({
+        where: {
+          assignedBy: "COSO",
+          tags: { has: "signal-reactive" },
+          createdAt: { gte: h24 },
+        },
+      }).catch(() => 0),
+
+      // NEW: Cicluri proactive rulate 24h
+      prisma.cycleLog.count({ where: { createdAt: { gte: h24 } } }).catch(() => 0),
+
+      // NEW: Self-tasks executate 24h (OWNER→manager completate)
+      prisma.agentTask.count({
+        where: {
+          assignedBy: "OWNER",
+          status: "COMPLETED",
+          completedAt: { gte: h24 },
+        },
+      }).catch(() => 0),
     ])
 
     // Post-processing
@@ -142,8 +176,64 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
 
     const measurementGaps = (outcomesRaw as any[]).filter((o: any) => o.currentValue === null).length
 
+    // NEW 10.04.2026: Agregare task executor metrics din groupBy
+    const taskStatusMap: Record<string, number> = {}
+    for (const row of (tasksExecutedRaw as any[])) {
+      taskStatusMap[row.status] = row._count?._all ?? 0
+    }
+    const tasksExecuted24h = {
+      completed: taskStatusMap["COMPLETED"] || 0,
+      blocked: taskStatusMap["BLOCKED"] || 0,
+      failed: (taskStatusMap["FAILED"] || 0) + (taskStatusMap["CANCELLED"] || 0),
+      assigned: taskStatusMap["ASSIGNED"] || 0,
+    }
+
+    // NEW: Cron state
+    const executorCronEnabled = process.env.EXECUTOR_CRON_ENABLED === "true"
+
+    // NEW: Cost estimate 24h — approximation bazat pe număr taskuri executate
+    // (fără tokens reale stocate, folosim heuristică ~$0.15/task research, $0.05/task content)
+    const totalExecTasks = tasksExecuted24h.completed + tasksExecuted24h.blocked
+    const estimatedCost24hUsd = Math.round(totalExecTasks * 0.10 * 100) / 100
+
+    // NEW: Vital signs latest — citire din docs/vital-signs/ (dacă există)
+    let vitalSignsLatest: any = undefined
+    try {
+      const fs = await import("node:fs")
+      const path = await import("node:path")
+      const vsDir = path.resolve(process.cwd(), "docs", "vital-signs")
+      if (fs.existsSync(vsDir)) {
+        const files = fs.readdirSync(vsDir).filter((f: string) => f.endsWith(".json")).sort().reverse()
+        if (files.length > 0) {
+          const latest = JSON.parse(fs.readFileSync(path.join(vsDir, files[0]), "utf-8"))
+          vitalSignsLatest = {
+            verdict: latest.overallStatus || "UNKNOWN",
+            pass: latest.summary?.pass || 0,
+            warn: latest.summary?.warn || 0,
+            fail: latest.summary?.fail || 0,
+            skip: latest.summary?.skip || 0,
+            runAt: latest.reportDate || null,
+          }
+        }
+      }
+    } catch {
+      // Vital signs absent — ok, rămâne undefined
+    }
+
     const inputs: any = {
       signalCount24h, strategicThemes: [],
+      // NEW: signal pipeline metrics
+      signalsPending: signalsPendingCount,
+      reactiveTasksCreated24h: reactiveTasksCount,
+      // NEW: task executor metrics
+      tasksExecuted24h,
+      proactiveCycles24h: proactiveCyclesCount,
+      selfTasksExecuted24h: selfTasksCount,
+      // NEW: metabolism enrichment
+      executorCronEnabled,
+      estimatedCost24hUsd,
+      // NEW: vital signs
+      vitalSignsLatest,
       objectives: objHealthReports.map((r: any) => ({
         code: r.objectiveCode, title: r.objectiveTitle,
         priority: (objectivesRaw as any[]).find((o: any) => o.code === r.objectiveCode)?.priority ?? "MEDIUM",
