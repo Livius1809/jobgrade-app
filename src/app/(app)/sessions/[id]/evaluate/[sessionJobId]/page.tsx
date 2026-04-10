@@ -19,12 +19,12 @@ export default async function EvaluatePage({
   const participant = await prisma.sessionParticipant.findFirst({
     where: { sessionId, userId },
   })
-  if (!participant) redirect(`/app/sessions/${sessionId}`)
+  if (!participant) redirect(`/sessions/${sessionId}`)
 
   const evalSession = await prisma.evaluationSession.findFirst({
     where: { id: sessionId, tenantId, status: "IN_PROGRESS" },
   })
-  if (!evalSession) redirect(`/app/sessions/${sessionId}`)
+  if (!evalSession) redirect(`/sessions/${sessionId}`)
 
   const sessionJob = await prisma.sessionJob.findFirst({
     where: { id: sessionJobId, sessionId },

@@ -224,7 +224,7 @@ export function trialExpiringEmail(
       </p>
       ${p(`După expirare, datele introduse și evaluările create vor fi păstrate încă 30 de zile — suficient timp să decizi dacă platforma se potrivește nevoilor tale.`)}
       ${p(`Dacă dorești să continui, poți activa un abonament direct din platformă. Dacă ai nevoie de mai mult timp sau ai întrebări, răspunde la acest email — te ajutăm.`)}
-      ${ctaButton(`${APP_URL}/app/settings/billing`, "Activează abonamentul")}
+      ${ctaButton(`${APP_URL}/settings/billing`, "Activează abonamentul")}
       <p style="margin:28px 0 0;font-size:14px;color:#374151;">
         Cu stimă,<br>
         <strong>Echipa JobGrade</strong>

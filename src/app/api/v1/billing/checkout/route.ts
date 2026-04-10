@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: "payment",
-      success_url: `${APP_URL}/app/settings/billing?success=1&credits=${pkg.credits}`,
-      cancel_url: `${APP_URL}/app/settings/billing?canceled=1`,
+      success_url: `${APP_URL}/settings/billing?success=1&credits=${pkg.credits}`,
+      cancel_url: `${APP_URL}/settings/billing?canceled=1`,
       metadata: {
         tenantId,
         packageId: pkg.id,

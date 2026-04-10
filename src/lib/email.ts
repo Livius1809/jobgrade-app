@@ -83,7 +83,7 @@ export async function sendSessionInviteEmail({
   deadline?: Date
   sessionId: string
 }) {
-  const sessionUrl = `${APP_URL}/app/sessions/${sessionId}`
+  const sessionUrl = `${APP_URL}/sessions/${sessionId}`
   const deadlineStr = deadline
     ? deadline.toLocaleDateString("ro-RO", {
         day: "2-digit",

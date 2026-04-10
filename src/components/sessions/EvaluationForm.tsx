@@ -123,7 +123,7 @@ export default function EvaluationForm({
         setError(json.message || "Eroare la trimitere.")
         setSubmitting(false)
       } else {
-        router.push(`/app/sessions/${sessionId}`)
+        router.push(`/sessions/${sessionId}`)
         router.refresh()
       }
     } catch {

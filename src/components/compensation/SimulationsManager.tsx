@@ -240,7 +240,7 @@ export default function SimulationsManager({
         {selectedPkg && kpis.length === 0 && (
           <p className="text-sm text-gray-400">
             Acest post nu are KPI-uri definite. Mergi la{" "}
-            <a href="/app/compensation/kpis" className="text-blue-600 hover:underline">
+            <a href="/compensation/kpis" className="text-blue-600 hover:underline">
               KPI-uri
             </a>{" "}
             pentru a le adăuga.

@@ -45,7 +45,7 @@ export default async function ReportsPage() {
         {completedSessions.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-sm">
             Nicio sesiune finalizată.{" "}
-            <Link href="/app/sessions" className="text-blue-600 hover:underline">
+            <Link href="/sessions" className="text-blue-600 hover:underline">
               Vezi sesiunile active
             </Link>
           </div>
@@ -72,7 +72,7 @@ export default async function ReportsPage() {
                 <tr key={s.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <Link
-                      href={`/app/sessions/${s.id}/results`}
+                      href={`/sessions/${s.id}/results`}
                       className="font-medium text-gray-900 hover:text-blue-600 text-sm"
                     >
                       {s.name}
@@ -87,7 +87,7 @@ export default async function ReportsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-start gap-2">
                       <Link
-                        href={`/app/sessions/${s.id}/results`}
+                        href={`/sessions/${s.id}/results`}
                         className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
                       >
                         Vezi ierarhia

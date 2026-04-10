@@ -118,7 +118,7 @@ export default async function ConsensusPage({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link
-              href={`/app/sessions/${sessionId}`}
+              href={`/sessions/${sessionId}`}
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               ← Sesiune
@@ -133,7 +133,7 @@ export default async function ConsensusPage({
           </p>
         </div>
         <Link
-          href={`/app/sessions/${sessionId}/results`}
+          href={`/sessions/${sessionId}/results`}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           Vezi ierarhia →

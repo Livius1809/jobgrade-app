@@ -1508,6 +1508,7 @@ export async function finalizeSession(sessionId: string, prisma: any) {
       output: JSON.stringify(reportContent),
       model: "system",
       tokensUsed: 0,
+      credits: 0, // Raportul final e intern — zero credite consumate
     },
   })
 

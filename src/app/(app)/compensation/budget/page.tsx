@@ -99,7 +99,7 @@ export default async function BudgetPage() {
           <p className="text-lg mb-1">Niciun pachet de compensații definit</p>
           <p className="text-sm">
             Mergi la{" "}
-            <a href="/app/compensation/packages" className="text-blue-600 hover:underline">
+            <a href="/compensation/packages" className="text-blue-600 hover:underline">
               Pachete
             </a>{" "}
             pentru a crea primul pachet

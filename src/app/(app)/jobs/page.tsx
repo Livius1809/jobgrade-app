@@ -74,13 +74,13 @@ export default async function JobsPage({
         </div>
         <div className="flex gap-2">
           <Link
-            href="/app/jobs/import"
+            href="/jobs/import"
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Import Excel
           </Link>
           <Link
-            href="/app/jobs/new"
+            href="/jobs/new"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             + Fișă nouă
@@ -115,7 +115,7 @@ export default async function JobsPage({
           </button>
           {(search || status) && (
             <Link
-              href="/app/jobs"
+              href="/jobs"
               className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
             >
               Resetează
@@ -133,7 +133,7 @@ export default async function JobsPage({
               Adaugă prima fișă de post pentru a începe evaluarea
             </p>
             <Link
-              href="/app/jobs/new"
+              href="/jobs/new"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               + Fișă nouă
@@ -169,7 +169,7 @@ export default async function JobsPage({
                 <tr key={job.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <Link
-                      href={`/app/jobs/${job.id}`}
+                      href={`/jobs/${job.id}`}
                       className="font-medium text-gray-900 hover:text-blue-600"
                     >
                       {job.title}
@@ -203,7 +203,7 @@ export default async function JobsPage({
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Link
-                      href={`/app/jobs/${job.id}`}
+                      href={`/jobs/${job.id}`}
                       className="text-sm text-blue-600 hover:underline"
                     >
                       Editează
@@ -226,7 +226,7 @@ export default async function JobsPage({
           <div className="flex gap-2">
             {page > 1 && (
               <Link
-                href={`/app/jobs?page=${page - 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
+                href={`/jobs?page=${page - 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
               >
                 ← Anterior
@@ -234,7 +234,7 @@ export default async function JobsPage({
             )}
             {page < totalPages && (
               <Link
-                href={`/app/jobs?page=${page + 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
+                href={`/jobs?page=${page + 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
               >
                 Următor →

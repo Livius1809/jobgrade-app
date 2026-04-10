@@ -94,6 +94,9 @@ export async function POST(req: NextRequest) {
           summary: result.summary,
           nextCycleAt: result.nextCycleAt,
           durationMs: result.durationMs,
+          selfTasksExecuted: result.selfTasksExecuted,
+          selfTasksBlocked: result.selfTasksBlocked,
+          selfTasksFailed: result.selfTasksFailed,
         },
       })
     }

@@ -118,7 +118,7 @@ export default function JobForm({
         return
       }
 
-      router.push(`/app/jobs/${json.id ?? jobId}`)
+      router.push(`/jobs/${json.id ?? jobId}`)
       router.refresh()
     } catch {
       setError("A apărut o eroare. Încearcă din nou.")

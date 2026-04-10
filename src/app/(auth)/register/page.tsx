@@ -66,7 +66,7 @@ export default function RegisterPage() {
         return
       }
 
-      router.push("/login?registered=true")
+      router.push("/login?registered=true&callbackUrl=/onboarding")
     } catch {
       setError("A apărut o eroare. Încearcă din nou.")
       setLoading(false)

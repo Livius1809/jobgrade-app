@@ -177,7 +177,7 @@ export default function JobImportForm() {
           </button>
           {result && (
             <button
-              onClick={() => router.push("/app/jobs")}
+              onClick={() => router.push("/jobs")}
               className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
             >
               Vezi toate posturile →

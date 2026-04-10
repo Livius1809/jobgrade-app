@@ -38,6 +38,7 @@ interface ProfileData {
 interface CompanyProfileFormProps {
   tenantName: string
   profile: ProfileData | null
+  onSuccessRedirect?: string
 }
 
 const INDUSTRY_OPTIONS = [
@@ -66,6 +67,7 @@ const SIZE_OPTIONS = [
 export default function CompanyProfileForm({
   tenantName,
   profile,
+  onSuccessRedirect,
 }: CompanyProfileFormProps) {
   const router = useRouter()
   const [error, setError] = useState("")
@@ -148,7 +150,11 @@ export default function CompanyProfileForm({
       }
 
       setSuccess("Profilul a fost salvat cu succes.")
-      router.refresh()
+      if (onSuccessRedirect) {
+        router.push(onSuccessRedirect)
+      } else {
+        router.refresh()
+      }
     } catch {
       setError("A apărut o eroare. Încearcă din nou.")
     } finally {

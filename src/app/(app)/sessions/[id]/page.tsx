@@ -91,7 +91,7 @@ export default async function SessionDetailPage({
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Link
-              href="/app/sessions"
+              href="/sessions"
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               ← Sesiuni
@@ -223,7 +223,7 @@ export default async function SessionDetailPage({
                     <td className="px-6 py-4 text-right">
                       {isParticipant && evalSession.status === "IN_PROGRESS" && (
                         <Link
-                          href={`/app/sessions/${id}/evaluate/${sj.id}`}
+                          href={`/sessions/${id}/evaluate/${sj.id}`}
                           className="text-sm text-blue-600 hover:underline"
                         >
                           {submitted ? "Vizualizează" : "Evaluează →"}
@@ -233,7 +233,7 @@ export default async function SessionDetailPage({
                         session!.user.role === "COMPANY_ADMIN" ||
                         session!.user.role === "OWNER") && (
                         <Link
-                          href={`/app/sessions/${id}/consensus/${sj.id}`}
+                          href={`/sessions/${id}/consensus/${sj.id}`}
                           className="text-sm text-purple-600 hover:underline ml-3"
                         >
                           Consens

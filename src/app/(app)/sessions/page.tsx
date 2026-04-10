@@ -59,7 +59,7 @@ export default async function SessionsPage() {
           </p>
         </div>
         <Link
-          href="/app/sessions/new"
+          href="/sessions/new"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           + Sesiune nouă
@@ -73,7 +73,7 @@ export default async function SessionsPage() {
             Creează prima sesiune pentru a începe evaluarea joburilor
           </p>
           <Link
-            href="/app/sessions/new"
+            href="/sessions/new"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             + Sesiune nouă
@@ -91,7 +91,7 @@ export default async function SessionsPage() {
             return (
               <Link
                 key={s.id}
-                href={`/app/sessions/${s.id}`}
+                href={`/sessions/${s.id}`}
                 className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"
               >
                 <div className="flex items-start justify-between mb-3">

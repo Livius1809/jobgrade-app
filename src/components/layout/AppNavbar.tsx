@@ -40,7 +40,7 @@ export default function AppNavbar({ user }: AppNavbarProps) {
 
         {/* Credite */}
         <Link
-          href="/app/settings/billing"
+          href="/settings/billing"
           className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
         >
           💳 <span>credite</span>
@@ -59,7 +59,7 @@ export default function AppNavbar({ user }: AppNavbarProps) {
             {/* Dropdown */}
             <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 hidden group-hover:block z-50">
               <Link
-                href="/app/settings/security"
+                href="/settings/security"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Profilul meu

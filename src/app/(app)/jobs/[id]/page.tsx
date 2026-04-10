@@ -61,7 +61,7 @@ export default async function EditJobPage({
           )}
         </div>
         <Link
-          href="/app/jobs"
+          href="/jobs"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
           ← Înapoi
@@ -98,7 +98,7 @@ export default async function EditJobPage({
               >
                 <div>
                   <Link
-                    href={`/app/sessions/${sj.session.id}`}
+                    href={`/sessions/${sj.session.id}`}
                     className="text-sm font-medium text-blue-600 hover:underline"
                   >
                     {sj.session.name}

@@ -90,7 +90,7 @@ export default function NewSessionWizard({
         return
       }
 
-      router.push(`/app/sessions/${json.id}`)
+      router.push(`/sessions/${json.id}`)
     } catch {
       setError("A apărut o eroare. Încearcă din nou.")
       setLoading(false)

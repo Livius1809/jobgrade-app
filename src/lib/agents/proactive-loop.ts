@@ -63,6 +63,9 @@ export interface CycleResult {
   actions: CycleAction[]
   summary: string
   nextCycleAt: string
+  selfTasksExecuted?: number
+  selfTasksBlocked?: number
+  selfTasksFailed?: number
 }
 
 // ── Constante ─────────────────────────────────────────────────────────────────
@@ -290,12 +293,51 @@ Generează propuneri DOAR pentru gap-uri sau redundanțe cu severity HIGH.`
 
 // ── Execuție acțiuni ──────────────────────────────────────────────────────────
 
+/**
+ * Găsește primul obiectiv organizațional activ pentru care managerul este owner
+ * sau contributor. Folosit la delegarea taskurilor prin ciclul proactiv pentru a
+ * păstra linking-ul task → obiectiv (vezi vital-signs Test 8 "Scop").
+ *
+ * Returnează null dacă managerul nu are niciun obiectiv activ — în acest caz
+ * taskul va fi creat cu objectiveId=null și tag `orphan:no-objective` pentru
+ * audit. Asta semnalează un gap organizațional real: un manager fără obiective
+ * activează dar continuă să delege → Owner trebuie alertat.
+ */
+async function findManagerObjectiveId(
+  managerRole: string,
+  prisma: any
+): Promise<string | null> {
+  try {
+    const obj = await prisma.organizationalObjective.findFirst({
+      where: {
+        completedAt: null,
+        OR: [
+          { ownerRoles: { has: managerRole } },
+          { contributorRoles: { has: managerRole } },
+        ],
+      },
+      orderBy: [
+        // Preferă obiective dedicate rolului (pattern: *--{role})
+        { code: "desc" },
+      ],
+      select: { id: true },
+    })
+    return obj?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 async function executeActions(
   config: ManagerConfig,
   actions: CycleAction[],
   prisma: any
 ): Promise<CycleAction[]> {
   const executedActions: CycleAction[] = []
+
+  // Lookup o singură dată per ciclu: obiectivul activ al managerului.
+  // Toate taskurile delegate în acest ciclu se leagă de el (coerență narativă).
+  const managerObjectiveId = await findManagerObjectiveId(config.agentRole, prisma)
 
   for (const action of actions) {
     try {
@@ -374,6 +416,9 @@ async function executeActions(
             const deadlineAt = delegated.deadlineHours
               ? new Date(Date.now() + delegated.deadlineHours * 60 * 60 * 1000)
               : null
+            const taskTags = managerObjectiveId
+              ? delegated.tags
+              : [...delegated.tags, "orphan:no-objective"]
             await prisma.agentTask.create({
               data: {
                 businessId: "biz_jobgrade",
@@ -384,7 +429,8 @@ async function executeActions(
                 description: delegated.description,
                 taskType: delegated.taskType,
                 priority: delegated.priority,
-                tags: delegated.tags,
+                objectiveId: managerObjectiveId,
+                tags: taskTags,
                 deadlineAt,
                 estimatedMinutes: delegated.estimatedMinutes,
                 status: "ASSIGNED",
@@ -610,6 +656,48 @@ export async function runProactiveCycle(
   // (bug-ul "8 evaluations la COA cu 1 subordonat real" — 05.04.2026).
   const effectiveConfig: ManagerConfig = { ...config, subordinates: evaluableSubs }
 
+  // 0. SELF-TASKS — execută taskurile proprii ASSIGNED înainte de evaluare subordonați.
+  // Esențial pentru a primi obiective de la Owner/COG. Fix GAP B din E2E test #1 (10.04.2026):
+  // managerii erau orbi la propriile taskuri.
+  let selfTasksExecuted = 0
+  let selfTasksBlocked = 0
+  let selfTasksFailed = 0
+  try {
+    const selfTasks = await prisma.agentTask.findMany({
+      where: {
+        assignedTo: config.agentRole,
+        status: "ASSIGNED",
+        // Doar taskuri recente — nu resuscităm istoric vechi stale
+        createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+      },
+      orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+      take: 3, // max 3 self-tasks per ciclu pentru control cost
+      select: { id: true, title: true, priority: true },
+    })
+
+    if (selfTasks.length > 0 && !options?.dryRun) {
+      console.log(`   ⤷ Self-tasks ASSIGNED: ${selfTasks.length} — execut înainte de subordonați`)
+      // Dynamic import pentru a evita ciclul de dependențe
+      const { executeTask } = await import("./task-executor")
+      for (const t of selfTasks) {
+        try {
+          const r = await executeTask(t.id)
+          if (r.outcome === "COMPLETED") selfTasksExecuted++
+          else if (r.outcome === "BLOCKED") selfTasksBlocked++
+          else selfTasksFailed++
+          console.log(`      → ${t.priority.padEnd(8)} "${t.title.slice(0, 50)}" ${r.outcome}`)
+        } catch (e: any) {
+          selfTasksFailed++
+          console.log(`      → FAILED "${t.title.slice(0, 50)}": ${e.message.slice(0, 80)}`)
+        }
+      }
+    } else if (selfTasks.length > 0) {
+      console.log(`   ⤷ Self-tasks ASSIGNED: ${selfTasks.length} (dry-run — nu execut)`)
+    }
+  } catch (e: any) {
+    console.error(`[proactive-loop] self-tasks step failed for ${config.agentRole}: ${e.message}`)
+  }
+
   const statuses = await collectSubordinateStatuses(evaluableSubs, prisma)
 
   // 2. Verifică escalări anterioare
@@ -676,6 +764,9 @@ export async function runProactiveCycle(
     actions: executedActions,
     summary,
     nextCycleAt,
+    selfTasksExecuted,
+    selfTasksBlocked,
+    selfTasksFailed,
   }
 
   console.log(

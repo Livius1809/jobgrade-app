@@ -102,7 +102,7 @@ export default async function SessionResultsPage({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link
-              href={`/app/sessions/${id}`}
+              href={`/sessions/${id}`}
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               ← Sesiune
@@ -203,7 +203,7 @@ export default async function SessionResultsPage({
                     </td>
                     <td className="px-6 py-4">
                       <Link
-                        href={`/app/sessions/${id}/consensus/${sj.id}`}
+                        href={`/sessions/${id}/consensus/${sj.id}`}
                         className="text-sm text-blue-600 hover:underline"
                       >
                         Consens →
