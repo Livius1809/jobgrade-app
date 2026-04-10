@@ -29,12 +29,18 @@ const prisma = new PrismaClient({ adapter })
 
 const SESSION_NAME = "Evaluare Q2 2026 — Poziții Tehnice"
 
-// Scoruri țintă realiste pentru cele 3 joburi (diferențiate)
-// CTO trebuie să iasă cel mai sus, DEV Senior la mijloc, Junior cel mai jos
-const JOB_TARGET_PROFILE: Record<string, string> = {
-  "CTO-001": "H", // Scor ridicat (subfactor index mare)
-  "DEV-001": "F", // Scor mediu-ridicat
-  "DEV-002": "C", // Scor mediu-jos
+// Profile per-criteriu pentru fiecare job. Scoring-table are max range variabil
+// per criteriu (Knowledge A-G, Communications A-E, BusinessImpact A-D,
+// WorkingConditions A-C). Profilul uniform "F" cade pe criteriile cu max E.
+// Folosim profile distincte ca să producem ranking clar CTO > Senior > Junior.
+// Criterii (ordine seed): Educație, Comunicare, Rezolvare probleme, Decizii, Impact afaceri, Condiții
+const JOB_PROFILE_PER_CRITERION: Record<string, string[]> = {
+  // CTO — vârf: cunoaștere ridicată + comunicare strategică + impact major
+  "CTO-001": ["G", "E", "G", "G", "D", "B"],
+  // Senior Dev — mid: cunoaștere bună + comunicare moderată
+  "DEV-001": ["E", "C", "E", "D", "C", "B"],
+  // Junior Dev — start: cunoaștere medie + impact limitat
+  "DEV-002": ["C", "B", "C", "B", "B", "A"],
 }
 
 // Variație mică per user ca să nu fie toate identice
@@ -108,16 +114,23 @@ async function main() {
   let evalCount = 0
   for (const sj of session.sessionJobs) {
     const jobCode = sj.job.code || ""
-    const baseSubfactor = JOB_TARGET_PROFILE[jobCode] || "E"
+    const profile = JOB_PROFILE_PER_CRITERION[jobCode] || ["D", "C", "D", "D", "C", "B"]
 
     for (const assignment of sj.assignments) {
       const variation = USER_VARIATION[assignment.user.email] || 0
-      const userSubfactorCode = applyVariation(baseSubfactor, variation)
 
-      for (const criterion of criteria) {
-        // Găsește subfactor-ul cu acel cod
-        const subfactor = criterion.subfactors.find((s: any) => s.code === userSubfactorCode)
-          || criterion.subfactors[5] // fallback F
+      for (let ci = 0; ci < criteria.length; ci++) {
+        const criterion = criteria[ci]
+        // Litera de bază pentru acest criteriu + variația user-ului
+        const baseCode = profile[ci] || "C"
+        const userSubfactorCode = applyVariation(baseCode, variation)
+
+        // Găsește subfactor-ul cu acel cod — cu fallback la cel mai apropiat valid
+        let subfactor = criterion.subfactors.find((s: any) => s.code === userSubfactorCode)
+        if (!subfactor) {
+          // Dacă litera depășește max criteriului, ia ultimul subfactor valid (max)
+          subfactor = criterion.subfactors[criterion.subfactors.length - 1]
+        }
         if (!subfactor) continue
 
         await prisma.evaluation.upsert({

@@ -80,4 +80,89 @@ test.describe("B2B Demo Critical Path", () => {
     await page.waitForURL(/\/login/, { timeout: 10000 })
     expect(page.url()).toContain("/login")
   })
+
+  test("FLUX COMPLET: register → login → onboarding → sessions/new", async ({ page }) => {
+    // Email + companie unice per rulare pentru a evita coliziuni
+    const ts = Date.now()
+    const testEmail = `test-${ts}@example.com`
+    const testPassword = "TestPass123!"
+    const testCompany = `TestCo ${ts}`
+
+    // ─── Step 1: Register ─────────────────────────────────────────────
+    await page.goto("/register", { waitUntil: "domcontentloaded" })
+    await page.locator("input[placeholder*='Exemplu SRL'], input[placeholder*='companie']")
+      .first()
+      .fill(testCompany)
+    // Prenume (first input text după companie)
+    const textInputs = page.locator("input[type='text']")
+    await textInputs.nth(1).fill("Test")
+    await textInputs.nth(2).fill("User")
+    await page.locator("input[type='email']").fill(testEmail)
+    await page.locator("input[type='password']").first().fill(testPassword)
+    // Confirm password e al doilea input password (există toggle show — poate fi input type=text)
+    // Încercăm pe bază de name/attributes
+    const confirmPwd = page.locator("input[name='confirmPassword']")
+    if (await confirmPwd.count() > 0) {
+      await confirmPwd.fill(testPassword)
+    } else {
+      // Fallback: al doilea password input
+      await page.locator("input[type='password']").nth(1).fill(testPassword).catch(() => {})
+    }
+    // Check terms + gdpr
+    await page.locator("input[type='checkbox']").nth(0).check()
+    await page.locator("input[type='checkbox']").nth(1).check()
+
+    await page.locator("button[type='submit']").click()
+
+    // ─── Step 2: Redirect la login cu callbackUrl ────────────────────
+    await page.waitForURL(/\/login/, { timeout: 20_000 })
+    expect(page.url()).toContain("callbackUrl=")
+    expect(decodeURIComponent(page.url())).toContain("/onboarding")
+
+    // ─── Step 3: Login cu contul nou ─────────────────────────────────
+    await page.locator("input[type='email']").fill(testEmail)
+    await page.locator("input[type='password']").first().fill(testPassword)
+    await page.locator("button[type='submit']").click()
+
+    // ─── Step 4: Ajunge pe /onboarding ───────────────────────────────
+    await page.waitForURL((url) => url.pathname === "/onboarding", { timeout: 20_000 })
+
+    // Verifică header-ul de welcome (heading specific, nu aria announcer)
+    await expect(page.getByRole("heading", { name: /Bine ai venit/i })).toBeVisible({
+      timeout: 10_000,
+    })
+
+    // ─── Step 5: Completează profil companie ────────────────────────
+    // Mission + Vision sunt textarea-uri
+    const textareas = page.locator("textarea")
+    const taCount = await textareas.count()
+    if (taCount >= 2) {
+      // Găsim mission + vision după label sau poziție
+      await textareas.nth(0).fill("Ajutăm companiile să construiască ierarhii salariale echitabile și transparente.")
+      if (taCount >= 2) {
+        await textareas.nth(1).fill("Lider regional în evaluarea obiectivă a posturilor până în 2028.")
+      }
+    }
+
+    // Industry select — primul select din pagină
+    const industrySelect = page.locator("select").first()
+    if (await industrySelect.count() > 0) {
+      await industrySelect.selectOption({ index: 1 }).catch(() => {})
+    }
+
+    // Submit profil — folosim locator specific (există și buton "Ieși" cu type=submit)
+    const saveButton = page.getByRole("button", { name: /Salvează profilul/i })
+    const [companyResponse] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes("/api/v1/company") && res.request().method() === "PUT",
+        { timeout: 15_000 }
+      ),
+      saveButton.click(),
+    ])
+    expect(companyResponse.status(), `PUT /api/v1/company failed: ${companyResponse.status()}`).toBe(200)
+
+    // ─── Step 6: Redirect la sessions/new ───────────────────────────
+    await page.waitForURL(/\/sessions\/new/, { timeout: 20_000 })
+    expect(page.url()).toContain("/sessions/new")
+  })
 })

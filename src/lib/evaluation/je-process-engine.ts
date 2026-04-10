@@ -107,6 +107,35 @@ const CRITERION_KEY_MAP: Record<string, string> = {
   WorkingConditions: "WorkingConditions",
 }
 
+/**
+ * Mapare: nume criterii seed-uite în română (afișate user-ului) →
+ * cheia din SCORING_TABLE (internă, engleză).
+ * Fix 10.04.2026: engine-ul popula letters cu chei românești, iar
+ * calculateTotalPoints căuta chei engleze → total 0, grade 8 degenerat.
+ */
+const CRITERION_NAME_TO_KEY: Record<string, string> = {
+  "Educație / Experiență": "Knowledge",
+  "Comunicare": "Communications",
+  "Rezolvarea problemelor": "ProblemSolving",
+  "Luarea deciziilor": "DecisionMaking",
+  "Impact asupra afacerii": "BusinessImpact",
+  "Condiții de lucru": "WorkingConditions",
+  // Aliasuri comune
+  "Educatie / Experienta": "Knowledge",
+  "Educație": "Knowledge",
+  "Rezolvare probleme": "ProblemSolving",
+  "Decizie": "DecisionMaking",
+  "Impact": "BusinessImpact",
+  "Condiții muncă": "WorkingConditions",
+}
+
+/** Normalizează cheia unui criteriu: dacă e română, mapează la engleză. */
+function normalizeCriterionKey(name: string): string {
+  if (CRITERION_NAME_TO_KEY[name]) return CRITERION_NAME_TO_KEY[name]
+  // Fallback: dacă numele e deja o cheie valid engleză, returnează-l ca atare
+  return name
+}
+
 /** Ordinul literelor pentru calcul divergență */
 const LETTER_ORDER: Record<string, number> = {
   A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7,
@@ -159,6 +188,7 @@ async function addJournalEntry(
       }),
       model: "system",
       tokensUsed: 0,
+      credits: 0, // Journal entry — audit trail intern, zero credite
     },
   })
 }
@@ -1727,16 +1757,20 @@ async function getFinalLettersForJob(
   const csMap = new Map<string, any>(consensuses.map((cs: any) => [cs.criterionId, cs.finalSubfactorId]))
 
   for (const criterion of criteria) {
+    // Cheia folosită în scoring table (engleză). Criteriile din DB pot avea
+    // nume românești — normalizăm înainte de a le pune în letters.
+    const key = normalizeCriterionKey(criterion.name)
+
     // Prioritate 1: Decizie facilitator
     if (fdMap.has(criterion.id)) {
       const sf = criterion.subfactors.find((s: any) => s.id === fdMap.get(criterion.id))
-      if (sf) { letters[criterion.name] = sf.code; continue }
+      if (sf) { letters[key] = sf.code; continue }
     }
 
     // Prioritate 2: Consens finalizat
     if (csMap.has(criterion.id)) {
       const sf = criterion.subfactors.find((s: any) => s.id === csMap.get(criterion.id))
-      if (sf) { letters[criterion.name] = sf.code; continue }
+      if (sf) { letters[key] = sf.code; continue }
     }
 
     // Prioritate 3: Modă din evaluări
@@ -1756,7 +1790,7 @@ async function getFinalLettersForJob(
       const freq: Record<string, number> = {}
       for (const l of evLetters) freq[l] = (freq[l] ?? 0) + 1
       const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1])
-      letters[criterion.name] = sorted[0][0]
+      letters[key] = sorted[0][0]
     }
   }
 
