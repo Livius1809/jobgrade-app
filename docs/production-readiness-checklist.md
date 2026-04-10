@@ -357,6 +357,29 @@ Platforma **NU se lanseaza** fara aceste elemente:
 
 **Efort total estimat blockeri P0: ~3-4 saptamani lucru** (Claude + Owner + DPO)
 
+### ⚠️ ATENȚIE INFRASTRUCTURĂ — VERIFICĂRI OBLIGATORII LA DEPLOY
+
+**Înainte de orice deploy producție, verifică `infra/docker-compose.yml`:**
+
+| Item | Verificare | De ce |
+|---|---|---|
+| **APP_URL n8n** | Trebuie să fie portul corect (`:3000` în dev, URL producție în prod) | 10.04.2026: era `:3001` greșit, toate workflow-urile eșuau cu ECONNREFUSED → zero cicluri management 4+ zile |
+| **JOBGRADE_API_URL n8n** | Idem | Idem |
+| **INTERNAL_API_KEY** | NU comit cheia reală — folosește Vercel Env Vars în producție | Securitate (BUILD-001) |
+| **Servicii eliminate** | Verifică să nu mai existe în producție: `keycloak`, `remediation-runner`, `localstack` | Nu funcționează în Vercel serverless |
+| **n8n migrat la Hetzner** | Self-hosted VPS (~€4.85/lună), nu n8n Cloud (limită exec) | Procedură: vezi `project_production_readiness.md` |
+
+**Verificare rapidă:**
+```bash
+# Verifică ce port folosește n8n
+docker exec jobgrade_n8n env | grep "APP_URL\|JOBGRADE_API_URL"
+# Verifică că workflow-urile rulează cu succes (nu eșec masiv)
+docker exec jobgrade_postgres psql -U postgres -d n8n_dev -c \
+  "SELECT name, COUNT(*) FILTER (WHERE status='success') AS ok, COUNT(*) FILTER (WHERE status='error') AS err FROM execution_entity e JOIN workflow_entity w ON e.\"workflowId\"=w.id WHERE \"startedAt\" > NOW() - INTERVAL '1 hour' GROUP BY name;"
+```
+
+---
+
 ### Decizii Owner — APROBATE 09.04.2026
 
 | # | Decizie | Rezultat |
