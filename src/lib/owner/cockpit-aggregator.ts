@@ -363,11 +363,21 @@ function generateDecisionOptions(
 
   // Role cluster (multiple roles same signal)
   if (roles.length >= 3) {
-    options.push({
-      label: "Investighează cauza comună",
-      description: `${roles.length} roluri raportează același semnal — probabil o dependență sistemică, nu probleme individuale. Deleghez investigația la COG.`,
-      risk: "LOW",
-    })
+    // Anti auto-referință: dacă COG e în lista celor afectați, nu poate investiga el însuși
+    const cogAffected = roles.includes("COG")
+    if (cogAffected) {
+      options.push({
+        label: "Escaladare directă la Owner",
+        description: `${roles.length} roluri raportează același semnal, INCLUSIV COG. Auto-investigarea nu e posibilă — Owner trebuie să intervină manual sau să delege la o resursă externă.`,
+        risk: "LOW",
+      })
+    } else {
+      options.push({
+        label: "Investighează cauza comună",
+        description: `${roles.length} roluri raportează același semnal — probabil o dependență sistemică, nu probleme individuale. Deleghez investigația la COG.`,
+        risk: "LOW",
+      })
+    }
     options.push({
       label: "Redistribuie temporar",
       description: `Redistribuie sarcinile rolurilor afectate (${roles.join(", ")}) la peers activi. Auto-revert în 24h.`,

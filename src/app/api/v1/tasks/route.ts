@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // ── Expire-check: mark overdue tasks as EXPIRED ──
+  // ── Expire-check: mark overdue tasks as EXPIRED + recovery flow ──
   if (action === "expire-check") {
     const now = new Date()
     const overdue = await prisma.agentTask.findMany({
@@ -217,15 +217,74 @@ export async function POST(req: NextRequest) {
     })
 
     let expired = 0
+    let recoveryTasksCreated = 0
+    let escalated = 0
+
     for (const task of overdue) {
       await prisma.agentTask.update({
         where: { id: task.id },
         data: { status: "EXPIRED", failedAt: now, failureReason: "deadline_exceeded" },
       })
       expired++
+
+      // Recovery flow: nu lăsăm taskurile expirate "moarte"
+      try {
+        // 1. Determină escalation chain (assignedTo → manager)
+        const relationship = await prisma.agentRelationship.findFirst({
+          where: { childRole: task.assignedTo, relationType: "REPORTS_TO", isActive: true },
+          select: { parentRole: true },
+        }).catch(() => null)
+
+        const escalateTo = relationship?.parentRole || "COG"
+
+        // 2. Creează task de recovery (INVESTIGATION) către manager
+        await prisma.agentTask.create({
+          data: {
+            businessId: task.businessId,
+            assignedBy: "SYSTEM",
+            assignedTo: escalateTo,
+            title: `RECOVERY: ${task.title}`,
+            description: `Task original expirat (id=${task.id}, asignat la ${task.assignedTo}). Decide: (a) reasignare la alt subordonat, (b) extindere deadline cu notificare client, (c) abandon cu lecție învățată. Context original:\n${task.description ?? "(fără descriere)"}`,
+            taskType: "INVESTIGATION",
+            priority: "HIGH",
+            status: "ASSIGNED",
+            deadlineAt: new Date(now.getTime() + 4 * 3600000), // 4h
+            tags: ["recovery", "task_expired", `original:${task.id}`, `original_assignee:${task.assignedTo}`],
+          },
+        }).catch((err) => {
+          console.warn(`[expire-check] Failed to create recovery task: ${err.message}`)
+        })
+        recoveryTasksCreated++
+
+        // 3. Pentru taskuri CRITICAL/HIGH, creează și disfunction event (D2 functional management)
+        if (task.priority === "CRITICAL" || task.priority === "HIGH") {
+          await prisma.disfunctionEvent.create({
+            data: {
+              class: "D2_FUNCTIONAL_MGMT",
+              severity: task.priority === "CRITICAL" ? "CRITICAL" : "HIGH",
+              status: "OPEN",
+              targetType: "ROLE",
+              targetId: task.assignedTo,
+              signal: "task_expired",
+              detectedAt: now,
+              detectorSource: "expire-check-cron",
+            },
+          }).catch((err) => {
+            console.warn(`[expire-check] Failed to create disfunction event: ${err.message}`)
+          })
+          escalated++
+        }
+      } catch (err) {
+        console.warn(`[expire-check] Recovery flow error for task ${task.id}: ${err instanceof Error ? err.message : "unknown"}`)
+      }
     }
 
-    return NextResponse.json({ expired, checked: overdue.length })
+    return NextResponse.json({
+      expired,
+      checked: overdue.length,
+      recoveryTasksCreated,
+      escalated,
+    })
   }
 
   // ── Manual create ──

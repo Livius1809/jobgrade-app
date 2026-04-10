@@ -76,5 +76,38 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  // Sincronizare cu tabela escalations: când un eveniment trece la ESCALATED,
+  // creează automat înregistrare în escalations (single source of truth)
+  if (nextStatus === "ESCALATED") {
+    try {
+      const externalId = `disfunction:${event.id}`
+      const existing = await prisma.escalation.findUnique({
+        where: { externalId },
+      }).catch(() => null)
+
+      if (!existing) {
+        const aboutRole = event.targetType === "ROLE" ? event.targetId : event.targetId
+        await prisma.escalation.create({
+          data: {
+            externalId,
+            sourceRole: event.targetType === "ROLE" ? event.targetId : "SYSTEM",
+            targetRole: "OWNER",
+            aboutRole,
+            reason: `Disfuncție escaladată: ${event.signal} (${event.severity})`,
+            details: `Eveniment ${event.id}: ${event.targetType}=${event.targetId}, detectat la ${event.detectedAt.toISOString()}`,
+            priority: event.severity,
+            status: "OPEN",
+            timeoutHours: 24,
+          },
+        }).catch((err) => {
+          console.warn(`[remediate] Failed to create escalation record: ${err.message}`)
+        })
+      }
+    } catch (err) {
+      // Non-blocking — escaladarea principală a reușit, doar sincronizarea a eșuat
+      console.warn(`[remediate] Escalation sync error: ${err instanceof Error ? err.message : "unknown"}`)
+    }
+  }
+
   return NextResponse.json({ event: updated })
 }
