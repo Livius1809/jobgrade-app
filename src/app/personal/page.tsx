@@ -1,8 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import dynamic from "next/dynamic"
-
-const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), { ssr: false })
+import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
 
 export const metadata = {
   title: "JobGrade — Un drum care începe cu tine",
@@ -304,7 +302,7 @@ export default function PersonalPage() {
       </footer>
 
       {/* Agent host: PROFILER — primul contact pe pagina B2C */}
-      <ChatWidget />
+      <ChatWidgetLoader />
     </div>
   )
 }

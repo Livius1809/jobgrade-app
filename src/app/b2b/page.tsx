@@ -1,9 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
-import dynamic from "next/dynamic"
+import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
 import DemoForm from "./DemoForm"
-
-const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), { ssr: false })
 
 export const metadata = {
   title: "JobGrade B2B — Evaluare posturi conformă cu Directiva EU 2023/970",
@@ -249,7 +247,7 @@ export default function B2BLanding() {
       </footer>
 
       {/* Agent host: HR_COUNSELOR — consilier dedicat pe pagina B2B */}
-      <ChatWidget />
+      <ChatWidgetLoader />
     </div>
   )
 }
