@@ -61,8 +61,9 @@ const ACTION_ROLES: Record<string, UserRole[]> = {
   confirmAdjustment: OWNER_ONLY,
   getAdjustmentImpact: ADMIN_ROLES,
 
-  // Sprint 8: Finalize
-  finalizeSession: OWNER_ONLY,
+  // Sprint 8: Finalize — extins la ADMIN_ROLES (OWNER + COMPANY_ADMIN + SUPER_ADMIN)
+  // Fix 10.04.2026: client solo cu rol COMPANY_ADMIN era blocat de OWNER_ONLY
+  finalizeSession: ADMIN_ROLES,
   getSessionJournal: ADMIN_ROLES,
 }
 
