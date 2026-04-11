@@ -1,9 +1,10 @@
 import { Resend } from "resend"
+import { getAppUrl } from "@/lib/get-app-url"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM = process.env.EMAIL_FROM ?? "JobGrade <noreply@jobgrade.ro>"
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+const APP_URL = getAppUrl()
 
 // ── Invite user ────────────────────────────────────────────────────
 export async function sendInviteEmail({

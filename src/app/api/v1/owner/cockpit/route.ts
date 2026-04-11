@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { computeOwnerCockpit, type CockpitInputs } from "@/lib/owner/cockpit-aggregator"
 import { evaluateHomeostasis } from "@/lib/agents/homeostasis-monitor"
 import { computeObjectiveHealth } from "@/lib/agents/objective-health"
+import { getAppUrl } from "@/lib/get-app-url"
 
 export const dynamic = "force-dynamic"
 
@@ -316,7 +317,7 @@ export async function GET(req: NextRequest) {
 
 async function fetchStrategicThemes(): Promise<unknown[]> {
   try {
-    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT ?? 3000}`
+    const base = process.env.NEXTAUTH_URL || getAppUrl()
     const key = process.env.INTERNAL_API_KEY!
     const res = await fetch(`${base}/api/v1/strategic-themes?windowHours=168`, {
       headers: { "x-internal-key": key },

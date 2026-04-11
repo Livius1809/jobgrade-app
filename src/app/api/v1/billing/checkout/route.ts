@@ -3,12 +3,13 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe, CREDIT_PACKAGES } from "@/lib/stripe"
+import { getAppUrl } from "@/lib/get-app-url"
 
 const schema = z.object({
   packageId: z.enum(["credits_50", "credits_150", "credits_500"]),
 })
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+const APP_URL = getAppUrl()
 
 export async function POST(req: NextRequest) {
   try {

@@ -11,7 +11,9 @@
  *   - Indigo #4F46E5 accent, CTA orange #E85D43
  */
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+import { getAppUrl } from "@/lib/get-app-url"
+
+const APP_URL = getAppUrl()
 
 // ── Shared layout pieces ──────────────────────────────────────────
 

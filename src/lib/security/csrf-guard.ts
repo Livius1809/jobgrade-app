@@ -7,11 +7,12 @@
  */
 
 import type { NextRequest } from "next/server"
+import { getAppUrl } from "@/lib/get-app-url"
 
 // ── Allowed origins ───────────────────────────────────────────────────────────
 
 function getAllowedOrigins(): string[] {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  const appUrl = getAppUrl()
   const origins = [
     appUrl,
     "http://localhost:3000",
