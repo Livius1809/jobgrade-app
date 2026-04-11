@@ -9,6 +9,12 @@ import DecisionButtons from "./DecisionButtons"
 
 export const metadata = { title: "Owner Dashboard — JobGrade" }
 
+// Force SSR per request — page hits Prisma in fetchCockpit() and reads
+// docs/vital-signs/ from filesystem. Both fail at build-time prerendering
+// (build cluster has no DB connection guaranteed and no docs/vital-signs/),
+// causing the page to be marked as error → 404 hard on runtime.
+export const dynamic = "force-dynamic"
+
 // ── Data fetching ───────────────────────────────────────────────────────────
 
 async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
@@ -423,6 +429,7 @@ export default async function OwnerDashboard() {
             <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Oglinda ta: aliniere L1+L2+L3, pattern-uri, reflecție" icon="🪞" />
             <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="KB, performanță, brainstorming, cicluri, escaladări" icon="📅" />
             <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
+            <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM tokens, infra, breakdown per agent și per zi" icon="💰" />
           </div>
         </div>
 
@@ -436,6 +443,8 @@ export default async function OwnerDashboard() {
             <QuickLink href="/personal" label="Portal B2C" />
             <QuickLink href="/jobs" label="Fișe de post" />
             <QuickLink href="/sessions" label="Sesiuni" />
+            <QuickLink href="/owner/payroll" label="Payroll" />
+            <QuickLink href="/owner/situations" label="Situații" />
             <QuickLink href="/reports" label="Rapoarte export" />
             <QuickLink href="/settings/users" label="Utilizatori" />
             <QuickLink href="/settings/billing" label="Facturare" />
