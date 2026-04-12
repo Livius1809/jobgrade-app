@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       await prisma.agentTask.create({
         data: {
           title: `REACT ${signal.category}: ${(signal.title || "Signal").slice(0, 100)}`,
-          description: `Semnal extern detectat în categoria ${signal.category}.\n**Sursă:** ${signal.source || "unknown"}\n**URL:** ${signal.url || "N/A"}\n**Titlu:** ${signal.title || "?"}\n\nAnalizează impactul și propune acțiuni.`,
+          description: `Semnal extern detectat în categoria ${signal.category}.\n**Sursă:** ${signal.source || "unknown"}\n**Titlu:** ${signal.title || "?"}\n\nAnalizează impactul și propune acțiuni.`,
           assignedTo: role,
           assignedBy: "COSO",
           status: "ASSIGNED",
