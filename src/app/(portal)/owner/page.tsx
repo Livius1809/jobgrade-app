@@ -439,6 +439,7 @@ export default async function OwnerDashboard() {
             Acces rapid
           </h2>
           <div className="flex flex-wrap gap-3">
+            <QuickLink href="/media-books" label="Media Books" />
             <QuickLink href="/portal" label="Portal B2B" />
             <QuickLink href="/personal" label="Portal B2C" />
             <QuickLink href="/jobs" label="Fișe de post" />
