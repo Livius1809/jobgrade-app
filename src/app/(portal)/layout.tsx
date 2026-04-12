@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import SignOutButton from "@/components/auth/SignOutButton"
 
 export default async function PortalLayout({
   children,
@@ -47,14 +48,7 @@ export default async function PortalLayout({
             <span className="text-sm text-text-secondary">
               {session.user.name}
             </span>
-            <form action="/api/auth/signout" method="POST">
-              <button
-                type="submit"
-                className="text-xs text-text-secondary/60 hover:text-coral transition-colors"
-              >
-                Ieși din cont
-              </button>
-            </form>
+            <SignOutButton />
           </div>
         </div>
       </header>
