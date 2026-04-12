@@ -37,6 +37,10 @@ const PUBLIC_PATHS = [
   "/transparenta-ai",
   "/gdpr",
   "/termeni",
+  // Media Books — conținut public, produs de structura organismului
+  "/media-books",
+  // Auth flow — reset password
+  "/reset-password",
 ]
 
 function isPublicPath(pathname: string): boolean {
