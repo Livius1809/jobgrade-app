@@ -28,6 +28,50 @@ import { buildAgentPrompt } from "./agent-prompt-builder"
 import { getManagerConfig } from "./agent-registry"
 
 const MODEL = "claude-sonnet-4-20250514"
+
+// ── Strategic roles get live system status injected into their prompt ──────────
+const STRATEGIC_ROLES = new Set(["COG", "COA", "COCSA", "PMA"])
+
+async function getSystemStatusForPrompt(): Promise<string> {
+  try {
+    const now = new Date()
+    const h24 = new Date(now.getTime() - 24 * 3600000)
+
+    const [tasksByStatus, kbTotal, kbLast24h, disfOpen, cycleCount, agentCount, signalsPending] =
+      await Promise.all([
+        prisma.agentTask.groupBy({ by: ["status"], _count: { _all: true } }),
+        prisma.kBEntry.count(),
+        prisma.kBEntry.count({ where: { createdAt: { gte: h24 } } }),
+        prisma.disfunctionEvent.count({ where: { status: { in: ["OPEN", "REMEDIATING", "ESCALATED"] } } }),
+        prisma.cycleLog.count({ where: { createdAt: { gte: h24 } } }),
+        prisma.agentDefinition.count({ where: { isActive: true } }),
+        prisma.externalSignal.count({ where: { processedAt: null } }),
+      ])
+
+    const statusMap: Record<string, number> = {}
+    for (const s of tasksByStatus) statusMap[s.status] = s._count._all
+    const total = Object.values(statusMap).reduce((a, b) => a + b, 0)
+    const completed = statusMap["COMPLETED"] || 0
+    const failed = statusMap["FAILED"] || 0
+    const blocked = statusMap["BLOCKED"] || 0
+    const rate = total > 0 ? Math.round((completed / (completed + failed + blocked || 1)) * 100) : 0
+
+    return `
+═══ STARE REALĂ ORGANISM (live din DB — ${now.toISOString().slice(0, 16)}) ═══
+Platform: OPERATIONAL | https://jobgrade.ro
+Agenți activi: ${agentCount}
+Tasks: ${total} total | COMPLETED ${completed} | FAILED ${failed} | BLOCKED ${blocked} | Succes rate: ${rate}%
+KB entries: ${kbTotal} (${kbLast24h > 0 ? "+" + kbLast24h : "0"} ultimele 24h)
+Cicluri proactive/24h: ${cycleCount}
+Disfuncții OPEN: ${disfOpen}
+Signals pending: ${signalsPending}
+IMPORTANT: Aceste date sunt LIVE din DB, nu din KB static. Folosește-le ca sursă de adevăr.
+═══════════════════════════════════════════════════════════════════════════════
+`
+  } catch {
+    return "\n[System status unavailable — DB query failed]\n"
+  }
+}
 const MAX_SUB_TASKS = 10
 
 // Mapping pentru blocker types returnate de LLM → enum BlockerType valid în DB
@@ -155,10 +199,12 @@ async function loadTaskContext(taskId: string) {
 
 // ─── Prompt building ──────────────────────────────────────────────────────────
 
-function buildSystemForExecutor(role: string, description: string): string {
+async function buildSystemForExecutor(role: string, description: string): Promise<string> {
+  const liveStatus = STRATEGIC_ROLES.has(role) ? await getSystemStatusForPrompt() : ""
+
   return buildAgentPrompt(role, description, {
     includeSystemPrompt: true,
-    additionalContext: `
+    additionalContext: `${liveStatus}
 ═══ MOD EXECUȚIE TASK ═══
 
 Ești invocat pentru a EXECUTA un task concret. Foloseşte tool-ul "submit_task_result" pentru a returna rezultatul.
@@ -551,7 +597,7 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
   })
 
   try {
-    const system = buildSystemForExecutor(task.assignedTo, description)
+    const system = await buildSystemForExecutor(task.assignedTo, description)
     const userMessage = buildUserMessage(ctx)
 
     const { payload, tokensUsed, webSearchCount } = await invokeLLM(system, userMessage, task)
