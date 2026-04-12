@@ -76,6 +76,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = (user as any).role
         token.locale = (user as any).locale
       }
+
+      // Validate user still exists and is ACTIVE in DB (every request).
+      // Prevents access after logout, user deletion, or status change.
+      // Cost: 1 lightweight DB query per request (indexed by id).
+      if (token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { id: true, status: true, role: true },
+        })
+        if (!dbUser || dbUser.status !== "ACTIVE") {
+          // Return empty token — NextAuth treats this as "no session"
+          return {} as typeof token
+        }
+        // Sync role from DB (in case it changed since token was issued)
+        token.role = dbUser.role
+      }
+
       return token
     },
     async session({ session, token }) {
