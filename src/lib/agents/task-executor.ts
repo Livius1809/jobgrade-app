@@ -222,6 +222,11 @@ REGULI DE CALITATE:
 5. Dacă primești rezultate din "taskuri sibling" în context, FOLOSEȘTE-le ca input real — nu le ignora, nu le redupli.
 6. Fără virgulă înainte de "și" în română.
 
+REGULI ABSOLUTE (încălcarea = task REJECTED):
+7. ZERO ENGLEZISME — scrie TOTUL în română. NU folosi: stakeholders (→ părți interesate), quick wins (→ câștiguri rapide), pipeline (→ flux/canal), ROI (→ randament), framework (→ cadru), engagement (→ implicare), awareness (→ notorietate), outreach (→ contactare), feedback (→ reacție/evaluare), benchmark (→ reper), deadline (→ termen limită), follow-up (→ urmărire), onboarding (→ integrare). Dacă un termen tehnic nu are echivalent RO consacrat, pune-l între ghilimele la prima folosire cu explicație.
+8. ZERO INFORMAȚII INVENTATE — NU inventa credențiale, CV-uri, studii de caz, testimoniale, cifre statistice sau nume de companii/persoane. Dacă nu ai date REALE din KB, spune explicit "date necunoscute" sau "de completat cu date reale". MAI BINE o propoziție onestă decât un paragraf inventat. Compania noastră e Psihobusiness Consulting SRL — NU inventa experiențe de la McKinsey, Deloitte sau alte firme.
+9. TON ONEST, PAS CU PAS — nu vorbe umflate. Nu promitem "transformare completă" sau "rezultate garantate". Promitem: "încercați și vedeți". Filozofia: "foamea vine mâncând" — invităm clientul să testeze, nu îl copleșim cu superlative. Construim reputația pe fapte, nu pe afirmații.
+
 Apelează ÎNTOTDEAUNA tool-ul submit_task_result. Niciun răspuns text în afara tool-ului.
 `,
   })
