@@ -12,8 +12,6 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          // Block search engine indexing (remove when ready for public launch)
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
           // Security headers
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
