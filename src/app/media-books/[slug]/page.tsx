@@ -117,9 +117,9 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
               id={`section-${i}`}
               className={`${isAlt ? "bg-white" : "bg-background"}`}
             >
-              <div className="max-w-4xl mx-auto px-6 py-16 sm:py-20">
+              <div className="max-w-4xl mx-auto px-6 pt-16 pb-20 sm:pt-20 sm:pb-24">
                 {/* Section header */}
-                <div className="flex items-start gap-4 mb-10">
+                <div className="flex items-start gap-4 mb-12">
                   <span className="flex-shrink-0 w-12 h-12 rounded-xl bg-indigo/10 flex items-center justify-center text-xl">
                     {SECTION_ICONS[i] || "📌"}
                   </span>
@@ -139,18 +139,24 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
                 {/* Section content */}
                 <div className="prose prose-slate prose-lg max-w-none
                   prose-headings:text-indigo-dark prose-headings:font-semibold
-                  prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3
-                  prose-p:text-text-warm prose-p:leading-relaxed prose-p:mb-4
+                  prose-h3:text-lg prose-h3:mt-10 prose-h3:mb-4
+                  prose-p:text-text-warm prose-p:leading-relaxed prose-p:mb-5
                   prose-li:text-text-warm prose-li:leading-relaxed
                   prose-strong:text-foreground
                   prose-a:text-coral prose-a:no-underline hover:prose-a:underline
                   prose-table:text-sm prose-table:mt-6 prose-table:mb-6
                   prose-th:bg-indigo/5 prose-th:text-indigo-dark prose-th:px-4 prose-th:py-3 prose-th:text-left
                   prose-td:border-border prose-td:px-4 prose-td:py-3
-                  prose-ul:my-4 prose-ol:my-4
-                  prose-blockquote:border-l-coral prose-blockquote:bg-coral/5 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic">
+                  prose-ul:my-5 prose-ol:my-5
+                  prose-blockquote:border-l-coral prose-blockquote:bg-coral/5 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
+                  [&>*:last-child]:mb-0">
                   <ReactMarkdown>{section.body}</ReactMarkdown>
                 </div>
+              </div>
+
+              {/* Section bottom divider */}
+              <div className="max-w-4xl mx-auto px-6">
+                <div className="border-b border-border/30" />
               </div>
 
               {/* Mid-page CTA after section 3 */}
