@@ -14,10 +14,9 @@ export default function B2BLanding() {
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.svg" alt="JobGrade" width={32} height={32} />
-            <span className="text-lg font-semibold text-indigo-700">JobGrade</span>
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#problema" className="text-slate-600 hover:text-indigo-600">Problema</a>
@@ -59,7 +58,7 @@ export default function B2BLanding() {
 
       {/* ══════════ S2: PROBLEMA ══════════ */}
       <section id="problema" className="bg-slate-900 text-white py-20">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">
             Trei probleme reale pe care le rezolvăm
           </h2>
@@ -86,7 +85,7 @@ export default function B2BLanding() {
 
       {/* ══════════ S3: SOLUȚIA ══════════ */}
       <section id="solutia" className="py-24">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Cum funcționează JobGrade
           </h2>
@@ -112,7 +111,7 @@ export default function B2BLanding() {
 
       {/* ══════════ S4: DE CE JOBGRADE ══════════ */}
       <section className="bg-indigo-50/50 py-20">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-12">
             Ce ne diferențiază
           </h2>
@@ -129,7 +128,7 @@ export default function B2BLanding() {
 
       {/* ══════════ S5: PRICING ══════════ */}
       <section id="pricing" className="py-24">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Prețuri transparente — ca și serviciul nostru
           </h2>
@@ -244,7 +243,7 @@ export default function B2BLanding() {
 
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="bg-slate-900 text-slate-400 py-12">
-        <div className="max-w-5xl mx-auto px-6 text-center space-y-3">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-3">
           <p className="text-sm">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
           <div className="flex justify-center gap-6 text-xs">
             <Link href="/privacy" className="hover:text-white">Politica de confidențialitate</Link>
