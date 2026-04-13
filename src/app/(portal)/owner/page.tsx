@@ -336,6 +336,14 @@ export default async function OwnerDashboard() {
               runAt={data.vitalSigns.runAt}
               tests={data.vitalSigns.tests}
             />
+            <div className="flex justify-end -mt-2 mb-2">
+              <Link
+                href="/owner/health-guide"
+                className="text-[10px] text-text-secondary/50 hover:text-indigo transition-colors"
+              >
+                Cum citesc aceste date? →
+              </Link>
+            </div>
 
             {/* ══════════ SECȚIUNEA 1: Organismul ══════════ */}
             <section>
