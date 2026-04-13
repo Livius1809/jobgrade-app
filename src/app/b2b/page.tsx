@@ -64,7 +64,7 @@ export default function B2BLanding() {
             Trei probleme reale pe care le rezolvăm
           </h2>
           <p className="text-center text-slate-500 text-sm mb-4">Un singur termen-limită</p>
-          <div className="grid md:grid-cols-3 gap-8 mt-12">
+          <div className="grid md:grid-cols-3 gap-8 mt-14">
             <PainCard
               icon="📅"
               title="Sancțiuni din 2027"
@@ -85,12 +85,12 @@ export default function B2BLanding() {
       </section>
 
       {/* ══════════ S3: SOLUȚIA ══════════ */}
-      <section id="solutia" className="py-20">
+      <section id="solutia" className="py-24">
         <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
+          <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Cum funcționează JobGrade
           </h2>
-          <div className="grid md:grid-cols-3 gap-10 mt-12">
+          <div className="grid md:grid-cols-3 gap-10 mt-14">
             <StepCard
               step="1"
               title="Definești posturile"
@@ -128,12 +128,12 @@ export default function B2BLanding() {
       </section>
 
       {/* ══════════ S5: PRICING ══════════ */}
-      <section id="pricing" className="py-20">
+      <section id="pricing" className="py-24">
         <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
+          <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Prețuri transparente — ca și serviciul nostru
           </h2>
-          <p className="text-center text-indigo-600 font-semibold mt-2 mb-12">
+          <p className="text-center text-indigo-600 font-semibold mt-4 mb-16">
             Ofertă de lansare: -25% pentru primele 20 de companii
           </p>
 
@@ -220,7 +220,7 @@ export default function B2BLanding() {
               </p>
             </div>
           </div>
-          <div className="mt-12 text-center space-y-2">
+          <div className="mt-14 text-center space-y-2">
             <p className="text-slate-400 text-sm">Psihobusiness Consulting SRL &middot; Personal acreditat CPR &middot; Metodologie validată</p>
             <p className="text-slate-500 text-xs">Conform AI Act Art. 14 — supervizare umană obligatorie</p>
           </div>
@@ -305,26 +305,28 @@ function PricingCard({
       recommended ? "border-indigo-500 shadow-xl shadow-indigo-100 relative" : "border-slate-200"
     }`}>
       {recommended && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+        <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
           Recomandat
         </span>
       )}
-      <h3 className="text-lg font-bold text-slate-900">{tier}</h3>
-      <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
-      <div className="mt-4 mb-6">
+      <div className="pt-2">
+        <h3 className="text-lg font-bold text-slate-900">{tier}</h3>
+        <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
+      </div>
+      <div className="mt-5 mb-8">
         <span className="text-slate-400 text-sm line-through mr-2">{originalPrice} RON</span>
         <span className="text-3xl font-extrabold text-slate-900">{price}</span>
         <span className="text-sm text-slate-500"> RON/poziție</span>
       </div>
-      <ul className="space-y-2 mb-6">
+      <ul className="space-y-3 mb-8">
         {features.map((f, i) => (
           <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-            <span className="text-indigo-500 mt-0.5">&#10003;</span>
+            <span className="text-indigo-500 mt-0.5 shrink-0">&#10003;</span>
             {f}
           </li>
         ))}
       </ul>
-      <a href="#demo" className={`block text-center py-2.5 rounded-lg font-semibold text-sm transition-colors ${
+      <a href="#demo" className={`block text-center py-3 rounded-lg font-semibold text-sm transition-colors ${
         recommended
           ? "bg-[#E85D43] text-white hover:bg-[#d04e36]"
           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
