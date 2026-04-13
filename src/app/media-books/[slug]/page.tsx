@@ -146,7 +146,7 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
                     .mb-section h3 {
                       margin-top: 2.5rem; margin-bottom: 1rem;
                       font-size: 1.125rem; font-weight: 700; letter-spacing: 0.01em;
-                      color: var(--indigo) !important;
+                      color: #4F46E5 !important;
                       padding-left: 0.875rem;
                       border-left: 3px solid var(--indigo) !important;
                     }
