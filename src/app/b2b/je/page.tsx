@@ -104,6 +104,8 @@ export default function B2BLanding() {
               step="3"
               title="Primești rapoarte conforme cu Directiva EU 2023/970"
               text="Ierarhizarea posturilor, analiza decalajului salarial conform Directivei EU 2023/970, documentație de audit — generate automat, gata pentru raportare, inspecție sau negociere colectivă."
+              link="/media-books/job-grading"
+              linkLabel="Vezi ghidul complet →"
             />
           </div>
         </div>
@@ -226,6 +228,44 @@ export default function B2BLanding() {
         </div>
       </section>
 
+      {/* ══════════ S6.5: RESURSE ══════════ */}
+      <section className="py-24 bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
+            Resurse pentru organizația dvs.
+          </h2>
+          <p className="text-center text-slate-500 text-sm mb-14 max-w-xl mx-auto">
+            Ghiduri interactive despre evaluarea posturilor, conformitate salarială
+            și cerințele Directivei EU 2023/970. Citiți înainte de demo.
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            <ResourceCard
+              icon="📊"
+              title="Ierarhizarea posturilor"
+              text="Ghid complet: metodologie, criterii, pași practici și context legislativ românesc."
+              href="/media-books/job-grading"
+            />
+            <ResourceCard
+              icon="⚖️"
+              title="Analiza decalajului salarial"
+              text="Ce presupune raportul de decalaj salarial pe gen, conform Art. 9 Directiva EU 2023/970."
+              href="/media-books/pay-gap-analysis"
+            />
+            <ResourceCard
+              icon="🤝"
+              title="Evaluarea comună"
+              text="Cum funcționează evaluarea comună angajator-angajați, conform Art. 10 Directiva EU 2023/970."
+              href="/media-books/joint-assessment"
+            />
+          </div>
+          <div className="mt-8 text-center">
+            <Link href="/media-books" className="text-sm text-indigo-600 hover:text-indigo-800 transition-colors">
+              Toate ghidurile →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════ S7: CTA + FORMULAR DEMO ══════════ */}
       <section id="demo" className="py-20 bg-gradient-to-b from-white to-indigo-50/30">
         <div className="max-w-2xl mx-auto px-6 text-center">
@@ -271,7 +311,7 @@ function PainCard({ icon, title, text }: { icon: string; title: string; text: st
   )
 }
 
-function StepCard({ step, title, text }: { step: string; title: string; text: string }) {
+function StepCard({ step, title, text, link, linkLabel }: { step: string; title: string; text: string; link?: string; linkLabel?: string }) {
   return (
     <div className="text-center">
       <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">
@@ -279,7 +319,23 @@ function StepCard({ step, title, text }: { step: string; title: string; text: st
       </div>
       <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
       <p className="text-slate-500 text-sm leading-relaxed text-justify">{text}</p>
+      {link && (
+        <Link href={link} className="inline-block mt-3 text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
+          {linkLabel || "Află mai mult →"}
+        </Link>
+      )}
     </div>
+  )
+}
+
+function ResourceCard({ icon, title, text, href }: { icon: string; title: string; text: string; href: string }) {
+  return (
+    <Link href={href} className="block rounded-xl border border-slate-200 bg-white p-6 hover:border-indigo-300 hover:shadow-md transition-all group">
+      <span className="text-2xl">{icon}</span>
+      <h3 className="text-base font-bold text-slate-900 mt-3 mb-2 group-hover:text-indigo-600 transition-colors">{title}</h3>
+      <p className="text-slate-500 text-sm leading-relaxed text-justify">{text}</p>
+      <span className="inline-block mt-3 text-xs text-indigo-600 group-hover:translate-x-1 transition-transform">Citește ghidul →</span>
+    </Link>
   )
 }
 
