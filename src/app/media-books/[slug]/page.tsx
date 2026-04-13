@@ -137,26 +137,41 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
                 </div>
 
                 {/* Section content */}
-                <div className="prose prose-slate prose-lg max-w-none
-                  prose-headings:text-indigo-dark prose-headings:font-semibold
-                  prose-h3:text-lg prose-h3:mt-10 prose-h3:mb-4
-                  prose-p:text-text-warm prose-p:leading-relaxed prose-p:mb-5
-                  prose-li:text-text-warm prose-li:leading-relaxed
-                  prose-strong:text-foreground
-                  prose-a:text-coral prose-a:no-underline hover:prose-a:underline
-                  prose-table:text-sm prose-table:mt-6 prose-table:mb-6
-                  prose-th:bg-indigo/5 prose-th:text-indigo-dark prose-th:px-4 prose-th:py-3 prose-th:text-left
-                  prose-td:border-border prose-td:px-4 prose-td:py-3
-                  prose-ul:my-5 prose-ol:my-5
-                  prose-blockquote:border-l-coral prose-blockquote:bg-coral/5 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
-                  [&>*:last-child]:mb-0">
-                  <ReactMarkdown>{section.body}</ReactMarkdown>
+                <div
+                  className="prose prose-slate prose-lg max-w-none"
+                  style={{
+                    ["--tw-prose-headings" as string]: "var(--indigo-dark)",
+                    ["--tw-prose-links" as string]: "var(--coral)",
+                    ["--tw-prose-bold" as string]: "var(--foreground, #1a1a1a)",
+                    ["--tw-prose-body" as string]: "var(--text-warm)",
+                    ["--tw-prose-bullets" as string]: "var(--text-secondary)",
+                    ["--tw-prose-counters" as string]: "var(--text-secondary)",
+                    ["--tw-prose-th-borders" as string]: "var(--border)",
+                    ["--tw-prose-td-borders" as string]: "var(--border)",
+                  }}
+                >
+                  <style>{`
+                    .mb-section p { margin-bottom: 1.25rem; }
+                    .mb-section h3 { margin-top: 2.5rem; margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600; }
+                    .mb-section ul, .mb-section ol { margin-top: 1.25rem; margin-bottom: 1.25rem; }
+                    .mb-section li { line-height: 1.8; }
+                    .mb-section table { margin-top: 1.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; }
+                    .mb-section th { background: rgba(79,70,229,0.05); padding: 0.75rem 1rem; text-align: left; }
+                    .mb-section td { padding: 0.75rem 1rem; }
+                    .mb-section blockquote { border-left: 3px solid var(--coral); background: rgba(232,93,67,0.05); padding: 0.5rem 1rem; border-radius: 0 0.5rem 0.5rem 0; font-style: normal; }
+                    .mb-section a { text-decoration: none; }
+                    .mb-section a:hover { text-decoration: underline; }
+                    .mb-section > *:last-child { margin-bottom: 0; }
+                  `}</style>
+                  <div className="mb-section">
+                    <ReactMarkdown>{section.body}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
 
               {/* Section bottom divider */}
-              <div className="max-w-4xl mx-auto px-6">
-                <div className="border-b border-border/30" />
+              <div className="max-w-4xl mx-auto px-6 pb-2">
+                <div className="border-b border-border/50" />
               </div>
 
               {/* Mid-page CTA after section 3 */}
