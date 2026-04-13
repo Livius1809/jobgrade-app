@@ -3207,4 +3207,13 @@ enum B2CCommunityRole {
   MODERATOR  // moderator (agent AI sau uman)
 }
 
-// Force Vercel rebuild Thu, Apr  2, 2026  5:41:11 PM
+// ── System Config (runtime toggles, no redeploy needed) ──────────────────────
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  label     String?
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}

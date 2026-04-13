@@ -38,8 +38,12 @@ const FILTER_TIERS: Record<string, Set<string>> = {
   full: new Set(Object.keys(CATEGORY_ROLE_MAP)),
 }
 
-function getActiveCategories(): Set<string> {
-  const level = process.env.SIGNAL_FILTER_LEVEL || "focused"
+async function getActiveCategories(): Promise<Set<string>> {
+  let level = process.env.SIGNAL_FILTER_LEVEL || "focused"
+  try {
+    const dbConfig = await prisma.systemConfig.findUnique({ where: { key: "SIGNAL_FILTER_LEVEL" } })
+    if (dbConfig) level = dbConfig.value
+  } catch { /* DB unavailable — use env var */ }
   return FILTER_TIERS[level] || FILTER_TIERS.focused
 }
 
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const activeCategories = getActiveCategories()
+  const activeCategories = await getActiveCategories()
 
   try {
     const signals = await prisma.externalSignal.findMany({

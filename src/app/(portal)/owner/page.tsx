@@ -7,6 +7,7 @@ import OrganismPulse from "./OrganismPulse"
 import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
 import DecisionButtons from "./DecisionButtons"
 import PilotToggle from "@/components/owner/PilotToggle"
+import OrganismControls from "@/components/owner/OrganismControls"
 
 export const metadata = { title: "Owner Dashboard — JobGrade" }
 
@@ -433,6 +434,14 @@ export default async function OwnerDashboard() {
             <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM tokens, infra, breakdown per agent și per zi" icon="💰" />
           </div>
         </div>
+
+        {/* ── Control organism viu ──────────────────────────── */}
+        <section>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
+            Control organism viu
+          </h2>
+          <OrganismControls />
+        </section>
 
         {/* ── Conturi pilot ────────────────────────────────── */}
         <PilotSection />

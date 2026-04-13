@@ -26,8 +26,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // Kill-switch: EXECUTOR_CRON_ENABLED must be "true"
-  if (process.env.EXECUTOR_CRON_ENABLED !== "true") {
+  // Kill-switch: check DB config first, env var fallback
+  let executorEnabled = process.env.EXECUTOR_CRON_ENABLED === "true"
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    const dbConfig = await prisma.systemConfig.findUnique({ where: { key: "EXECUTOR_CRON_ENABLED" } })
+    if (dbConfig) executorEnabled = dbConfig.value === "true"
+  } catch { /* DB unavailable — use env var */ }
+
+  if (!executorEnabled) {
     return NextResponse.json({
       ok: false,
       reason: "EXECUTOR_CRON_ENABLED kill-switch is not 'true'",
