@@ -27,7 +27,13 @@ import { prisma } from "@/lib/prisma"
 import { buildAgentPrompt } from "./agent-prompt-builder"
 import { getManagerConfig } from "./agent-registry"
 
-const MODEL = "claude-sonnet-4-20250514"
+// Model selection: Sonnet for CRITICAL tasks, Haiku for the rest (4-5x cheaper)
+const MODEL_SONNET = "claude-sonnet-4-20250514"
+const MODEL_HAIKU = "claude-haiku-4-5-20251001"
+
+function selectModel(priority: string | null): string {
+  return priority === "CRITICAL" ? MODEL_SONNET : MODEL_HAIKU
+}
 
 // ── Strategic roles get live system status injected into their prompt ──────────
 const STRATEGIC_ROLES = new Set(["COG", "COA", "COCSA", "PMA"])
@@ -424,7 +430,7 @@ async function invokeLLM(
 
   for (let turn = 0; turn < 3; turn++) {
     const response = await client.messages.create({
-      model: MODEL,
+      model: selectModel(task.priority),
       max_tokens: 8192,
       system,
       tools,

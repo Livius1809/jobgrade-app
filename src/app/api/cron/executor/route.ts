@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await executeQueue({
-      limit: 10,
+      limit: 5,
       maxAgeHours: 720, // 30 days — tasks transferred from dev have older createdAt
     })
 

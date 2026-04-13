@@ -1,7 +1,16 @@
 /**
- * Vercel Cron endpoint — scan unprocessed external signals and create reactive tasks.
+ * Vercel Cron endpoint — scan unprocessed external signals with intelligent filtering.
  *
- * Runs every 15 minutes. Invokes the internal signal→task pipeline.
+ * Runs every 15 minutes. Filters signals by priority tier before creating tasks.
+ * Only categories in the ACTIVE tier generate Claude API tasks (cost-bearing).
+ * Lower-tier signals are marked as processed and stored for periodic batch review.
+ *
+ * Filter levels (configurable via SIGNAL_FILTER_LEVEL env var):
+ *   "critical"  — only LEGAL_REG (legal compliance, can't miss)
+ *   "focused"   — LEGAL_REG + COMPETITIVE (default — launch mode)
+ *   "broad"     — adds MARKET, TECHNOLOGY, TALENT
+ *   "full"      — all categories processed (high cost, post-revenue)
+ *
  * Auth: CRON_SECRET (auto-injected by Vercel for cron invocations).
  */
 
@@ -10,7 +19,7 @@ import { prisma } from "@/lib/prisma"
 
 export const maxDuration = 60
 
-// Category → executor role mapping (mirrors reactive-scan route)
+// Category → executor role mapping
 const CATEGORY_ROLE_MAP: Record<string, string> = {
   LEGAL_REG: "CIA",
   COMPETITIVE: "MKA",
@@ -21,11 +30,26 @@ const CATEGORY_ROLE_MAP: Record<string, string> = {
   ECONOMIC: "COAFin",
 }
 
+// Filter tiers — which categories generate tasks at each level
+const FILTER_TIERS: Record<string, Set<string>> = {
+  critical: new Set(["LEGAL_REG"]),
+  focused: new Set(["LEGAL_REG", "COMPETITIVE"]),
+  broad: new Set(["LEGAL_REG", "COMPETITIVE", "MARKET", "TECHNOLOGY", "TALENT"]),
+  full: new Set(Object.keys(CATEGORY_ROLE_MAP)),
+}
+
+function getActiveCategories(): Set<string> {
+  const level = process.env.SIGNAL_FILTER_LEVEL || "focused"
+  return FILTER_TIERS[level] || FILTER_TIERS.focused
+}
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const activeCategories = getActiveCategories()
 
   try {
     const signals = await prisma.externalSignal.findMany({
@@ -35,14 +59,27 @@ export async function GET(request: NextRequest) {
     })
 
     if (signals.length === 0) {
-      return NextResponse.json({ ok: true, processed: 0, message: "No pending signals" })
+      return NextResponse.json({ ok: true, processed: 0, stored: 0, message: "No pending signals" })
     }
 
     let created = 0
+    let stored = 0
+
     for (const signal of signals) {
+      // Mark ALL signals as processed (prevents re-scanning)
+      await prisma.externalSignal.update({
+        where: { id: signal.id },
+        data: { processedAt: new Date() },
+      })
+
+      // Only create tasks for active-tier categories
+      if (!activeCategories.has(signal.category)) {
+        stored++
+        continue
+      }
+
       const role = CATEGORY_ROLE_MAP[signal.category] || "COG"
 
-      // Find first active objective for the role
       const objective = await prisma.organizationalObjective.findFirst({
         where: {
           status: "ACTIVE",
@@ -57,11 +94,11 @@ export async function GET(request: NextRequest) {
       await prisma.agentTask.create({
         data: {
           title: `REACT ${signal.category}: ${(signal.title || "Signal").slice(0, 100)}`,
-          description: `Semnal extern detectat în categoria ${signal.category}.\n**Sursă:** ${signal.source || "unknown"}\n**Titlu:** ${signal.title || "?"}\n\nAnalizează impactul și propune acțiuni.`,
+          description: `Semnal extern detectat în categoria ${signal.category}.\n**Sursă:** ${signal.source || "unknown"}\n**Titlu:** ${signal.title || "?"}\n\nAnalizează impactul și propune acțiuni concrete pentru JobGrade.`,
           assignedTo: role,
           assignedBy: "COSO",
           status: "ASSIGNED",
-          priority: "HIGH",
+          priority: signal.category === "LEGAL_REG" ? "CRITICAL" : "HIGH",
           taskType: "INVESTIGATION",
           businessId: "biz_jobgrade",
           objectiveId: objective?.id || null,
@@ -70,17 +107,15 @@ export async function GET(request: NextRequest) {
         },
       })
 
-      await prisma.externalSignal.update({
-        where: { id: signal.id },
-        data: { processedAt: new Date() },
-      })
-
       created++
     }
 
     return NextResponse.json({
       ok: true,
+      level: process.env.SIGNAL_FILTER_LEVEL || "focused",
+      activeCategories: [...activeCategories],
       processed: created,
+      stored,
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
