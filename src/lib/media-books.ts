@@ -21,8 +21,8 @@ export const MEDIA_BOOKS: MediaBookConfig[] = [
   {
     code: "MB-R1",
     slug: "job-grading",
-    title: "Job Grading",
-    subtitle: "Ierarhizare și evaluare posturi",
+    title: "Evaluarea posturilor de lucru",
+    subtitle: "Metodologie, criterii și conformare cu Directiva EU 2023/970",
     type: "Raport",
     icon: "📊",
   },
