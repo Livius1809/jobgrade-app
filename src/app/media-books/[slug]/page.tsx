@@ -174,7 +174,23 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
                     .mb-section > *:last-child { margin-bottom: 0; }
                   `}</style>
                   <div className="mb-section">
-                    <ReactMarkdown>{section.body}</ReactMarkdown>
+                    <ReactMarkdown
+                      components={{
+                        h3: ({ children }) => (
+                          <h3 style={{
+                            marginTop: "2.5rem", marginBottom: "1rem",
+                            fontSize: "1.125rem", fontWeight: 700, letterSpacing: "0.01em",
+                            color: "#4F46E5",
+                            paddingLeft: "0.875rem",
+                            borderLeft: "3px solid #4F46E5",
+                          }}>
+                            {children}
+                          </h3>
+                        ),
+                      }}
+                    >
+                      {section.body}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
