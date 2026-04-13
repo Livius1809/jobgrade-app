@@ -6,6 +6,7 @@ import LayerCardInteractive from "./LayerCardInteractive"
 import OrganismPulse from "./OrganismPulse"
 import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
 import DecisionButtons from "./DecisionButtons"
+import PilotToggle from "@/components/owner/PilotToggle"
 
 export const metadata = { title: "Owner Dashboard — JobGrade" }
 
@@ -433,6 +434,9 @@ export default async function OwnerDashboard() {
           </div>
         </div>
 
+        {/* ── Conturi pilot ────────────────────────────────── */}
+        <PilotSection />
+
         {/* ── Acces rapid ──────────────────────────────────── */}
         <div>
           <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
@@ -457,6 +461,37 @@ export default async function OwnerDashboard() {
       <aside className="hidden lg:block w-[380px] shrink-0 sticky top-24">
         <CogChat />
       </aside>
+    </div>
+  )
+}
+
+// ── Pilot Section ───────────────────────────────────────────────────────────
+
+async function PilotSection() {
+  const { prisma } = await import("@/lib/prisma")
+  const tenants = await prisma.tenant.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, name: true, isPilot: true, slug: true },
+    orderBy: { name: "asc" },
+  }).catch(() => [])
+
+  if (tenants.length === 0) return null
+
+  return (
+    <div>
+      <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
+        Conturi pilot
+      </h2>
+      <div className="space-y-2">
+        {tenants.map(t => (
+          <PilotToggle
+            key={t.id}
+            tenantId={t.id}
+            tenantName={`${t.name} (${t.slug})`}
+            initialValue={t.isPilot}
+          />
+        ))}
+      </div>
     </div>
   )
 }

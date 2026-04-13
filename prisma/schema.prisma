@@ -17,6 +17,7 @@ model Tenant {
   name             String
   slug             String       @unique
   plan             Plan         @default(STARTER)
+  isPilot          Boolean      @default(false)
   locale           String       @default("ro")
   status           TenantStatus @default(ACTIVE)
   stripeCustomerId String?
