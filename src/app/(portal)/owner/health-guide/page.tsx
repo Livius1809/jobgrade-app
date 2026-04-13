@@ -44,14 +44,14 @@ export default function HealthGuidePage() {
         <div className="space-y-6">
           <LayerGuide
             icon="👁" name="Conștiință" tag="Awareness"
-            question="Organismul 'vede" ce se întâmplă în mediul extern?"
+            question="Organismul vede ce se pe mediul extern?"
             factors={[
               { name: "Semnale 24h", green: "≥1 semnal captat", yellow: "0 (nu vede nimic)", red: "—" },
               { name: "Teme strategice", green: "0 teme critice", yellow: "HIGH prezente", red: "CRITICAL prezente" },
               { name: "Semnale neprocesate", green: "≤10 backlog", yellow: "11-50", red: ">50" },
             ]}
-            causeIfRed="Organismul e 'orb" la mediul extern. Semnale legislative sau competitive pot fi ratate."
-            checkFirst="Filtrul signals e pe 'critical"? FLUX-047 e activ în n8n?"
+            causeIfRed="Organismul nu percepe mediul extern. Semnale legislative sau competitive pot fi ratate."
+            checkFirst="Filtrul signals e pe nivel critical? FLUX-047 e activ?"
             affects="Obiective (nu detectează riscuri) → Acțiune (nu creează tasks reactive)"
           />
           <LayerGuide
@@ -62,7 +62,7 @@ export default function HealthGuidePage() {
               { name: "Sănătate medie", green: "≥60%", yellow: "<60%", red: "—" },
               { name: "Obiective CRITICAL", green: "0", yellow: "—", red: "≥1 în risc CRITICAL" },
             ]}
-            causeIfRed="Un obiectiv strategic (ex: 'primul client B2B") e sub risc. Termen depășit sau KPI neîndeplinit."
+            causeIfRed="Un obiectiv strategic e sub risc. Termen depășit sau KPI neîndeplinit."
             checkFirst="Care obiectiv e CRITICAL? Termen depășit? Contribuitori inactivi?"
             affects="Acțiune (tasks nu avansează) → Ritm (outcomes sub target)"
           />
@@ -74,8 +74,8 @@ export default function HealthGuidePage() {
               { name: "Cicluri proactive", green: "≥1 ciclu 24h", yellow: "0 cicluri", red: "—" },
               { name: "Patch-uri pending", green: "0 >24h", yellow: "pending >24h", red: ">3 pending >48h" },
             ]}
-            causeIfRed="Organismul e 'paralizat". Tasks se blochează sau eșuează în serie."
-            checkFirst="Toggle 'Executor activ" e ON? Credit API disponibil? Câte tasks FAILED?"
+            causeIfRed="Organismul e paralizat. Tasks se blochează sau eșuează în serie."
+            checkFirst="Toggle Executor activ e ON? Credit API disponibil? Câte tasks FAILED?"
             affects="Metabolism (costuri fără output) → Evoluție (nu se acumulează experiență)"
           />
           <LayerGuide
