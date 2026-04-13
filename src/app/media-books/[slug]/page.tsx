@@ -151,16 +151,45 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
                   }}
                 >
                   <style>{`
-                    .mb-section p { margin-bottom: 1.25rem; }
-                    .mb-section h3 { margin-top: 2.5rem; margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600; }
-                    .mb-section ul, .mb-section ol { margin-top: 1.25rem; margin-bottom: 1.25rem; }
-                    .mb-section li { line-height: 1.8; }
-                    .mb-section table { margin-top: 1.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; }
-                    .mb-section th { background: rgba(79,70,229,0.05); padding: 0.75rem 1rem; text-align: left; }
-                    .mb-section td { padding: 0.75rem 1rem; }
-                    .mb-section blockquote { border-left: 3px solid var(--coral); background: rgba(232,93,67,0.05); padding: 0.5rem 1rem; border-radius: 0 0.5rem 0.5rem 0; font-style: normal; }
-                    .mb-section a { text-decoration: none; }
+                    /* Paragrafe — spațiu confortabil */
+                    .mb-section p { margin-bottom: 1.25rem; line-height: 1.8; color: var(--text-warm); }
+
+                    /* Sub-titluri h3 — indigo, border stânga, evidențiate clar */
+                    .mb-section h3 {
+                      margin-top: 2.5rem; margin-bottom: 1rem;
+                      font-size: 1.1rem; font-weight: 700; letter-spacing: 0.01em;
+                      color: var(--indigo-dark);
+                      padding-left: 0.875rem;
+                      border-left: 3px solid var(--indigo);
+                    }
+
+                    /* Bold în body — coral subtil, nu la fel ca heading */
+                    .mb-section p strong, .mb-section li strong {
+                      color: var(--indigo-dark); font-weight: 600;
+                    }
+
+                    /* Liste — spațiu între items */
+                    .mb-section ul, .mb-section ol { margin-top: 1rem; margin-bottom: 1.5rem; padding-left: 1.25rem; }
+                    .mb-section li { line-height: 1.8; margin-bottom: 0.5rem; color: var(--text-warm); }
+                    .mb-section ul > li::marker { color: var(--coral); }
+                    .mb-section ol > li::marker { color: var(--indigo); font-weight: 600; }
+
+                    /* Liste numerotate — numere indigo */
+                    .mb-section ol { list-style-type: decimal; }
+
+                    /* Tabele */
+                    .mb-section table { margin-top: 1.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; border-collapse: collapse; width: 100%; }
+                    .mb-section th { background: rgba(79,70,229,0.05); padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: var(--indigo-dark); }
+                    .mb-section td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+
+                    /* Blockquote */
+                    .mb-section blockquote { border-left: 3px solid var(--coral); background: rgba(232,93,67,0.05); padding: 0.75rem 1.25rem; border-radius: 0 0.5rem 0.5rem 0; font-style: normal; margin: 1.5rem 0; }
+
+                    /* Link-uri */
+                    .mb-section a { color: var(--coral); text-decoration: none; }
                     .mb-section a:hover { text-decoration: underline; }
+
+                    /* Ultimul element — fără margin */
                     .mb-section > *:last-child { margin-bottom: 0; }
                   `}</style>
                   <div className="mb-section">
