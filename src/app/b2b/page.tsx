@@ -4,8 +4,8 @@ import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
 import DemoForm from "./DemoForm"
 
 export const metadata = {
-  title: "JobGrade B2B — Evaluare posturi conformă cu Directiva EU 2023/970",
-  description: "Platformă de evaluare și ierarhizare a posturilor pentru companii românești. Metodologie validată, 5-10x mai accesibilă decât consultanța tradițională.",
+  title: "Evaluare și ierarhizare posturi — JobGrade",
+  description: "Serviciu de evaluare și ierarhizare a posturilor conform Directivei EU 2023/970. Metodologie validată, accesibilă companiilor românești.",
 }
 
 export default function B2BLanding() {
@@ -60,9 +60,10 @@ export default function B2BLanding() {
       {/* ══════════ S2: PROBLEMA ══════════ */}
       <section id="problema" className="bg-slate-900 text-white py-20">
         <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
-            Trei probleme reale, un singur termen-limită
+          <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">
+            Trei probleme reale pe care le rezolvăm
           </h2>
+          <p className="text-center text-slate-500 text-sm mb-4">Un singur termen-limită</p>
           <div className="grid md:grid-cols-3 gap-8 mt-12">
             <PainCard
               icon="📅"
@@ -71,8 +72,8 @@ export default function B2BLanding() {
             />
             <PainCard
               icon="💰"
-              title="Consultanța costă 30.000–150.000 EUR"
-              text="Metodologiile clasice (Hay, Mercer, WTW) au fost create pentru multinaționale. Pentru o companie românească de 500 angajați, prețul depășește 80.000 EUR."
+              title="Costul ridicat cu consultanța clasică"
+              text="Consultanța tradițională costă între 30.000 și 150.000 EUR. Metodologiile clasice (Hay, Mercer, WTW) au fost create pentru multinaționale. Pentru o companie românească de 500 angajați, prețul depășește 80.000 EUR."
             />
             <PainCard
               icon="⚖️"
@@ -136,7 +137,7 @@ export default function B2BLanding() {
             Ofertă de lansare: -25% pentru primele 20 de companii
           </p>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-6 items-start">
             <PricingCard
               tier="Starter"
               subtitle="1–50 poziții distincte"
@@ -184,13 +185,14 @@ export default function B2BLanding() {
             />
           </div>
 
-          <p className="text-center text-xs text-slate-400 mt-8 max-w-lg mx-auto leading-relaxed">
-            Prețuri RON/poziție, fără TVA. Facturare unică. Reînnoire anuală 50%.
-          </p>
-          <p className="text-center text-xs text-slate-500 mt-3 max-w-lg mx-auto leading-relaxed">
-            Tarifare progresivă: pentru peste 150 de poziții, primele 50 se tarifează la prețul Starter,
-            pozițiile 51–150 la prețul Professional și cele de peste 150 la prețul Enterprise.
-          </p>
+          <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed">
+            <p>Prețuri RON/poziție, fără TVA. Facturare unică per proiect de evaluare.</p>
+            <p className="text-slate-500">
+              <strong>Tarifare progresivă:</strong> plătiți fiecare poziție la prețul intervalului în care se încadrează.
+              De exemplu, pentru 120 de poziții: primele 50 la preț Starter, următoarele 70 la preț Professional.
+              Pentru 200 de poziții: 50 Starter + 100 Professional + 50 Enterprise.
+            </p>
+          </div>
         </div>
       </section>
 

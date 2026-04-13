@@ -14,12 +14,14 @@ export default function DemoForm() {
 
     const form = e.currentTarget
     const data = {
-      companyName: (form.elements.namedItem("companyName") as HTMLInputElement).value,
       contactName: (form.elements.namedItem("contactName") as HTMLInputElement).value,
+      contactRole: (form.elements.namedItem("contactRole") as HTMLInputElement).value || undefined,
       contactEmail: (form.elements.namedItem("contactEmail") as HTMLInputElement).value,
       contactPhone: (form.elements.namedItem("contactPhone") as HTMLInputElement).value || undefined,
-      companySize: (form.elements.namedItem("companySize") as HTMLSelectElement).value || undefined,
+      companyName: (form.elements.namedItem("companyName") as HTMLInputElement).value,
       industry: (form.elements.namedItem("industry") as HTMLInputElement).value || undefined,
+      companySize: (form.elements.namedItem("companySize") as HTMLSelectElement).value || undefined,
+      distinctPositions: (form.elements.namedItem("distinctPositions") as HTMLInputElement).value || undefined,
     }
 
     try {
@@ -59,14 +61,16 @@ export default function DemoForm() {
       onSubmit={handleSubmit}
       className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-left space-y-5"
     >
+      {/* ── Persoana de contact ──────────────────── */}
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Persoana de contact</p>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Nume companie</label>
-          <input name="companyName" required className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
+          <label className="block text-sm font-medium text-slate-700 mb-1">Nume și prenume</label>
+          <input name="contactName" required className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Persoană de contact</label>
-          <input name="contactName" required className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
+          <label className="block text-sm font-medium text-slate-700 mb-1">Funcția</label>
+          <input name="contactRole" placeholder="ex: Director HR, Manager C&B" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -77,6 +81,19 @@ export default function DemoForm() {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
           <input name="contactPhone" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
+        </div>
+      </div>
+
+      {/* ── Organizația ──────────────────────────── */}
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-2">Organizația</p>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Nume companie</label>
+          <input name="companyName" required className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Industrie</label>
+          <input name="industry" placeholder="ex: Producție, IT, Servicii financiare" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -95,10 +112,6 @@ export default function DemoForm() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Poziții distincte (estimat)</label>
           <input name="distinctPositions" type="number" placeholder="ex: 80" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
         </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Industrie</label>
-        <input name="industry" placeholder="ex: Producție, IT, Servicii financiare" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
       </div>
 
       {status === "error" && (
