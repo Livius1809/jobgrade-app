@@ -76,8 +76,8 @@ export default function B2BLanding() {
             />
             <PainCard
               icon="⚖️"
-              title="Excel-ul nu e apărabil juridic"
-              text="Sarcina probei e inversată: angajatorul demonstrează că nu discriminează. Un spreadsheet fără audit trail nu rezistă la inspecție ITM."
+              title="Tabelele în Excel nu constituie probe juridice"
+              text="Sarcina probei e inversată: angajatorul trebuie să demonstreze că nu discriminează. O foaie de calcul fără un registru complet al modificărilor nu rezistă la o inspecție ITM."
             />
           </div>
         </div>
@@ -93,17 +93,17 @@ export default function B2BLanding() {
             <StepCard
               step="1"
               title="Definești posturile"
-              text="Importați fișele de post sau creați-le direct. JobGrade extrage elementele relevante pentru evaluare. Intrare minimă: obiectul de activitate."
+              text="Importați fișele de post sau creați-le direct. JobGrade extrage elementele relevante pentru evaluare. Efort minim din partea dvs. — introduceți doar fișele de post existente."
             />
             <StepCard
               step="2"
               title="Evaluezi cu comitetul"
-              text="Comitetul intern evaluează pe 6 criterii obiective. AI-ul asistă și semnalează inconsistențe — dar decizia rămâne umană, conform Art. 14 AI Act."
+              text="Comitetul intern desemnat de organizația-client evaluează pe 4 criterii obiective. AI-ul asistă și semnalează inconsistențe — dar decizia rămâne umană, conform Art. 14 AI Act."
             />
             <StepCard
               step="3"
-              title="Primești rapoarte conforme"
-              text="Grading, analiză pay gap, documentație audit — generate automat, gata pentru raportare, inspecție sau negociere colectivă."
+              title="Primești rapoarte conforme cu Directiva EU 2023/970"
+              text="Ierarhizarea posturilor, analiza decalajului salarial conform Directivei EU 2023/970, documentație de audit — generate automat, gata pentru raportare, inspecție sau negociere colectivă."
             />
           </div>
         </div>
@@ -117,11 +117,11 @@ export default function B2BLanding() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <DiffCard icon="📉" title="5–10x mai accesibil" text="Aceeași rigurozitate metodologică, fără costurile consultanței tradiționale." />
-            <DiffCard icon="⚡" title="Zile, nu luni" text="Implementare în 2–4 săptămâni, nu 4–8 luni. Comitetul lucrează în ritmul propriu." />
-            <DiffCard icon="⚖️" title="6 criterii neutre gen" text="Educație, Comunicare, Rezolvare probleme, Decizii, Impact afaceri, Condiții muncă." />
-            <DiffCard icon="🔒" title="Audit trail complet" text="Fiecare evaluare, vot, ajustare — înregistrate cu timestamp și justificare." />
+            <DiffCard icon="⚡" title="Zile, nu luni" text="Implementare în 2–4 săptămâni, nu 4–8 luni. Durata efectivă e sub controlul dvs. — comitetul lucrează în ritmul propriu." />
+            <DiffCard icon="⚖️" title="4 criterii neutre din perspectiva genului" text="Criterii obiective de evaluare conformă cu cerințele legislației privind transparența salarială." />
+            <DiffCard icon="🔒" title="Trasabilitate completă" text="Fiecare evaluare, vot și ajustare — înregistrate cu dată, oră și justificare. Registru de audit accesibil oricând." />
             <DiffCard icon="🏢" title="Per poziție, nu per angajat" text="Plătiți pentru cele 80 de posturi distincte, nu pentru cei 800 de angajați." />
-            <DiffCard icon="🧠" title="AI + psihologi acreditați" text="2 psihologi CPR supervizează. AI-ul procesează date, nu ia decizii." />
+            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat de Colegiul Psihologilor din România în domeniul psihologiei muncii, transporturilor și serviciilor, cu experiență în resurse umane și proiecte pentru organizații din România. AI-ul procesează date, nu ia decizii." />
           </div>
         </div>
       </section>
@@ -143,11 +143,12 @@ export default function B2BLanding() {
               price="150"
               originalPrice="200"
               features={[
-                "Evaluare pe 6 criterii",
+                "Evaluare pe 4 criterii neutre",
                 "Comitet — până la 4 membri",
-                "Raport grading final",
-                "Export PDF audit",
-                "Asistență AI",
+                "Raport evaluare final",
+                "Export PDF pentru audit",
+                "Asistență AI de specialitate (HR, legislația muncii)",
+                "Panou de control cu instrumente de bază",
                 "Suport e-mail",
               ]}
             />
@@ -160,10 +161,11 @@ export default function B2BLanding() {
               features={[
                 "Tot din Starter, plus:",
                 "Comitet — până la 8 membri",
-                "Analiză pay gap pe gen",
-                "Integrare cu MVV",
-                "Suport prioritar + video call",
-                "Sesiune onboarding (60 min)",
+                "Analiză decalaj salarial pe gen (conform Directivei EU 2023/970)",
+                "Integrare cu misiunea, viziunea și valorile organizației",
+                "Panou de control cu instrumente avansate",
+                "Suport prioritar și sesiuni video",
+                "Sesiune de integrare inițială (60 min)",
               ]}
             />
             <PricingCard
@@ -173,17 +175,21 @@ export default function B2BLanding() {
               originalPrice="120"
               features={[
                 "Tot din Professional, plus:",
-                "Comitet — fără limită",
-                "Dashboard management avansat",
-                "API integrare HR",
-                "Account manager dedicat",
-                "SLA răspuns 24h",
+                "Comitet — fără limită membri",
+                "Panou de control complet cu rapoarte detaliate",
+                "Conectare cu sistemele interne de resurse umane",
+                "Responsabil de cont dedicat",
+                "Răspuns garantat în 24 de ore",
               ]}
             />
           </div>
 
-          <p className="text-center text-xs text-slate-400 mt-8">
+          <p className="text-center text-xs text-slate-400 mt-8 max-w-lg mx-auto leading-relaxed">
             Prețuri RON/poziție, fără TVA. Facturare unică. Reînnoire anuală 50%.
+          </p>
+          <p className="text-center text-xs text-slate-500 mt-3 max-w-lg mx-auto leading-relaxed">
+            Tarifare progresivă: pentru peste 150 de poziții, primele 50 se tarifează la prețul Starter,
+            pozițiile 51–150 la prețul Professional și cele de peste 150 la prețul Enterprise.
           </p>
         </div>
       </section>
@@ -192,7 +198,7 @@ export default function B2BLanding() {
       <section className="bg-slate-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-12">
-            Numerele vorbesc
+            Cifrele vorbesc
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
@@ -213,7 +219,7 @@ export default function B2BLanding() {
             </div>
           </div>
           <div className="mt-12 text-center space-y-2">
-            <p className="text-slate-400 text-sm">Psihobusiness Consulting SRL &middot; 2 psihologi acreditați CPR &middot; Metodologie validată</p>
+            <p className="text-slate-400 text-sm">Psihobusiness Consulting SRL &middot; Personal acreditat CPR &middot; Metodologie validată</p>
             <p className="text-slate-500 text-xs">Conform AI Act Art. 14 — supervizare umană obligatorie</p>
           </div>
         </div>
@@ -259,7 +265,7 @@ function PainCard({ icon, title, text }: { icon: string; title: string; text: st
     <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
       <span className="text-2xl">{icon}</span>
       <h3 className="text-lg font-bold text-white mt-3 mb-2">{title}</h3>
-      <p className="text-slate-300 text-sm leading-relaxed">{text}</p>
+      <p className="text-slate-300 text-sm leading-relaxed text-justify">{text}</p>
     </div>
   )
 }
@@ -271,7 +277,7 @@ function StepCard({ step, title, text }: { step: string; title: string; text: st
         {step}
       </div>
       <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-      <p className="text-slate-500 text-sm leading-relaxed">{text}</p>
+      <p className="text-slate-500 text-sm leading-relaxed text-justify">{text}</p>
     </div>
   )
 }
@@ -281,7 +287,7 @@ function DiffCard({ icon, title, text }: { icon: string; title: string; text: st
     <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
       <span className="text-xl">{icon}</span>
       <h3 className="text-sm font-bold text-slate-900 mt-2 mb-1">{title}</h3>
-      <p className="text-slate-500 text-xs leading-relaxed">{text}</p>
+      <p className="text-slate-500 text-xs leading-relaxed text-justify">{text}</p>
     </div>
   )
 }

@@ -92,9 +92,13 @@ export default function DemoForm() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Industrie</label>
-          <input name="industry" placeholder="ex: Manufacturing, IT, Financiar" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
+          <label className="block text-sm font-medium text-slate-700 mb-1">Poziții distincte (estimat)</label>
+          <input name="distinctPositions" type="number" placeholder="ex: 80" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Industrie</label>
+        <input name="industry" placeholder="ex: Producție, IT, Servicii financiare" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none" />
       </div>
 
       {status === "error" && (
