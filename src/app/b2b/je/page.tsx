@@ -205,19 +205,21 @@ export default function B2BLanding() {
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
-              <p className="text-sm text-slate-400 uppercase tracking-wider mb-3">ROI concret</p>
+              <p className="text-sm text-slate-400 uppercase tracking-wider mb-3">Economie vs. consultanță tradițională</p>
               <p className="text-3xl font-bold text-emerald-400 mb-4">50.000 – 90.000 RON</p>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                economie pentru o companie cu 80 de poziții distincte vs. consultanță tradițională.
-                JobGrade: 7.500–12.000 RON. Consultanță: 60.000–100.000 RON.
+              <p className="text-slate-300 text-sm leading-relaxed text-justify">
+                Economie estimată pentru o companie cu 80 de poziții distincte.
+                JobGrade: 7.500–12.000 RON. Consultanță tradițională: 60.000–100.000 RON.
               </p>
             </div>
             <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
-              <p className="text-sm text-slate-400 uppercase tracking-wider mb-3">Costul inacțiunii</p>
-              <p className="text-3xl font-bold text-red-400 mb-4">180.000 – 750.000 RON/an</p>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                risc anual estimat de non-conformitate pentru o companie cu 200–500 angajați
-                (amenzi, litigii, daune reputaționale). Investiția JobGrade: sub 1% din risc.
+              <p className="text-sm text-slate-400 uppercase tracking-wider mb-3">Riscul non-conformității</p>
+              <p className="text-slate-300 text-sm leading-relaxed space-y-3 text-justify">
+                <span className="block">Directiva EU 2023/970 prevede consecințe concrete pentru angajatorii non-conformi:</span>
+                <span className="block">• <strong className="text-slate-200">Art. 23</strong> — Sancțiuni efective, proporționale și disuasive, stabilite de fiecare stat membru</span>
+                <span className="block">• <strong className="text-slate-200">Art. 16</strong> — Dreptul lucrătorului la compensare integrală, fără limită superioară stabilită</span>
+                <span className="block">• <strong className="text-slate-200">Art. 20</strong> — Sarcina probei inversată: angajatorul demonstrează că nu a discriminat</span>
+                <span className="block mt-2 text-slate-400 text-xs">Riscurile includ: sancțiuni administrative, litigii individuale și colective, compensări retroactive și daune reputaționale.</span>
               </p>
             </div>
           </div>
