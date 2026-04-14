@@ -15,7 +15,11 @@ interface DataInput {
   href: string
 }
 
-// DATA_INPUTS sunt acum inline în secțiunea "Inputuri client" + "Date relevante"
+const INPUT_LABELS: Record<string, string> = {
+  jobs: "Fișe de post",
+  jobs_complete: "Fișe de post complete",
+  payroll: "Stat de salarii",
+}
 
 /* ── Servicii — ce poate accesa cu datele respective ──────────────── */
 
@@ -272,7 +276,7 @@ export default async function PortalPage() {
                   {cat.services.map((svc) => {
                     const missingInputs = svc.requiredInputs.filter(r => !data.providedInputs.has(r))
                     const available = missingInputs.length === 0
-                    const missingLabels = missingInputs.map(id => DATA_INPUTS.find(d => d.id === id)?.label || id)
+                    const missingLabels = missingInputs.map(id => INPUT_LABELS[id] || id)
 
                     return (
                       <div key={svc.id} className="flex items-center justify-between gap-3">
