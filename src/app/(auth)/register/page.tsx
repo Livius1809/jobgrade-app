@@ -130,8 +130,10 @@ export default function RegisterPage() {
               <span className="font-bold text-slate-700 mt-0.5">3.</span>
               <div>
                 <p>Semnăm contractul de prestări servicii</p>
-                <p className="text-slate-400 mt-1">3.1 Descarcă contractul standard (disponibil după înregistrare)</p>
-                <p className="text-slate-400">3.2 Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
+                <div className="mt-2 ml-1 space-y-1">
+                  <p className="text-slate-400"><span className="font-bold text-slate-500">3.1</span> Descarcă contractul standard (disponibil după înregistrare)</p>
+                  <p className="text-slate-400"><span className="font-bold text-slate-500">3.2</span> Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
+                </div>
               </div>
             </div>
             <div className="flex items-start gap-2">
