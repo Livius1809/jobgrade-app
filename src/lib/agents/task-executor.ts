@@ -72,6 +72,14 @@ Cicluri proactive/24h: ${cycleCount}
 Disfuncții OPEN: ${disfOpen}
 Signals pending: ${signalsPending}
 IMPORTANT: Aceste date sunt LIVE din DB, nu din KB static. Folosește-le ca sursă de adevăr.
+
+ACȚIUNI OPERAȚIONALE DISPONIBILE (doar COG/COA/COCSA):
+Dacă decizi că un parametru operațional trebuie ajustat, include în output:
+  ACTION: SET_CONFIG key=SIGNAL_FILTER_LEVEL value=critical reason="prea multe semnale irelevante"
+  ACTION: SET_CONFIG key=EXECUTOR_BATCH_SIZE value=3 reason="reducem încărcarea API"
+  ACTION: SET_CONFIG key=PROACTIVE_CYCLE_INTERVAL value=30 reason="interval mai mare pentru economie"
+Valori valide: SIGNAL_FILTER_LEVEL (critical/focused/broad/full), EXECUTOR_BATCH_SIZE (1-10), PROACTIVE_CYCLE_INTERVAL (5-120 min).
+Acțiunile sunt executate AUTOMAT după completarea task-ului. NU poți opri executorul (doar Owner).
 ═══════════════════════════════════════════════════════════════════════════════
 `
   } catch {
@@ -599,6 +607,12 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
     }
   }
 
+  // Execute operational actions embedded in output (COG/COA/COCSA only)
+  const actions = await executeOperationalActions(payload.result, task.assignedTo)
+  const resultWithActions = actions.length > 0
+    ? `${payload.result}\n\n--- ACȚIUNI EXECUTATE AUTOMAT ---\n${actions.join("\n")}`
+    : payload.result
+
   await (prisma as any).agentTask.update({
     where: { id: task.id },
     data: {
@@ -606,10 +620,67 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
       acceptedAt: task.acceptedAt || now,
       startedAt: task.startedAt || now,
       completedAt: now,
-      result: payload.result,
+      result: resultWithActions,
     },
   })
   return { outcome: "COMPLETED", subTaskIds }
+}
+
+// ─── Action Executor — COG poate executa acțiuni operaționale ────────────────
+
+// Roluri care pot emite acțiuni operaționale
+const OPERATIONAL_ROLES = new Set(["COG", "COA", "COCSA"])
+
+// Pattern: ACTION: SET_CONFIG key=SIGNAL_FILTER_LEVEL value=critical reason="prea multe semnale irelevante"
+const ACTION_PATTERN = /ACTION:\s*SET_CONFIG\s+key=(\S+)\s+value=(\S+)(?:\s+reason="([^"]*)")?/g
+
+// Allowlist — aceleași chei ca în adjust-config endpoint
+const ALLOWED_CONFIG_KEYS = new Set([
+  "SIGNAL_FILTER_LEVEL",
+  "EXECUTOR_BATCH_SIZE",
+  "PROACTIVE_CYCLE_INTERVAL",
+])
+
+const CONFIG_VALIDATORS: Record<string, (v: string) => boolean> = {
+  SIGNAL_FILTER_LEVEL: (v) => ["critical", "focused", "broad", "full"].includes(v),
+  EXECUTOR_BATCH_SIZE: (v) => { const n = parseInt(v); return !isNaN(n) && n >= 1 && n <= 10 },
+  PROACTIVE_CYCLE_INTERVAL: (v) => { const n = parseInt(v); return !isNaN(n) && n >= 5 && n <= 120 },
+}
+
+async function executeOperationalActions(result: string, agentRole: string): Promise<string[]> {
+  if (!OPERATIONAL_ROLES.has(agentRole)) return []
+
+  const actions: string[] = []
+  let match: RegExpExecArray | null
+
+  while ((match = ACTION_PATTERN.exec(result)) !== null) {
+    const [, key, value, reason] = match
+
+    if (!ALLOWED_CONFIG_KEYS.has(key)) {
+      actions.push(`[REJECTED] ${key} — nu e în allowlist`)
+      continue
+    }
+
+    const validator = CONFIG_VALIDATORS[key]
+    if (validator && !validator(value)) {
+      actions.push(`[REJECTED] ${key}=${value} — valoare invalidă`)
+      continue
+    }
+
+    try {
+      await prisma.systemConfig.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      })
+      actions.push(`[EXECUTED] ${key}=${value} (${reason || "fără motiv"})`)
+      console.log(`[ACTION] ${agentRole} SET_CONFIG ${key}=${value} reason="${reason || ""}"`)
+    } catch (e: any) {
+      actions.push(`[FAILED] ${key}=${value} — ${e.message}`)
+    }
+  }
+
+  return actions
 }
 
 // ─── QC Gate — verificare automată conținut client-facing ────────────────────
