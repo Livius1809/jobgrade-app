@@ -9,10 +9,12 @@ import { z } from "zod"
 
 const schema = z
   .object({
+    cui: z.string().min(2, "CUI obligatoriu").regex(/^(RO)?\d{2,10}$/, "Format CUI invalid (ex: RO12345678 sau 12345678)"),
     companyName: z.string().min(2, "Minim 2 caractere"),
     firstName: z.string().min(2, "Minim 2 caractere"),
     lastName: z.string().min(2, "Minim 2 caractere"),
     email: z.string().email("Email invalid"),
+    phone: z.string().min(10, "Telefon obligatoriu"),
     password: z
       .string()
       .min(8, "Minim 8 caractere")
@@ -75,8 +77,8 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Creează cont</h2>
-      <p className="text-gray-500 mb-8">Începe evaluarea joburilor în compania ta</p>
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">Creează contul organizației</h2>
+      <p className="text-slate-500 mb-8">Introdu datele companiei pentru a accesa portalul JobGrade</p>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
@@ -98,21 +100,39 @@ export default function RegisterPage() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Numele companiei
-          </label>
-          <input
-            {...register("companyName")}
-            type="text"
-            placeholder="Exemplu SRL"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
-          />
-          {errors.companyName && (
-            <p className="mt-1 text-xs text-red-600">{errors.companyName.message}</p>
-          )}
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Organizația</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              CUI
+            </label>
+            <input
+              {...register("cui")}
+              type="text"
+              placeholder="RO12345678"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
+            />
+            {errors.cui && (
+              <p className="mt-1 text-xs text-red-600">{errors.cui.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Denumire companie
+            </label>
+            <input
+              {...register("companyName")}
+              type="text"
+              placeholder="Exemplu SRL"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
+            />
+            {errors.companyName && (
+              <p className="mt-1 text-xs text-red-600">{errors.companyName.message}</p>
+            )}
+          </div>
         </div>
 
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-2">Persoana de contact</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -144,23 +164,40 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email profesional
-          </label>
-          <input
-            {...register("email")}
-            type="email"
-            placeholder="ana@companie.ro"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
-          />
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-          )}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Email profesional
+            </label>
+            <input
+              {...register("email")}
+              type="email"
+              placeholder="ana@companie.ro"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Telefon
+            </label>
+            <input
+              {...register("phone")}
+              type="tel"
+              placeholder="0721 234 567"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral text-sm"
+            />
+            {errors.phone && (
+              <p className="mt-1 text-xs text-red-600">{errors.phone.message}</p>
+            )}
+          </div>
         </div>
 
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-2">Securitate</p>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Parolă
           </label>
           <div className="relative">
