@@ -14,7 +14,7 @@ export function FloatingCTA() {
 
   useEffect(() => {
     function onScroll() {
-      const spiralZone = document.getElementById("spiral-zone")
+      const spiralZone = document.getElementById("poveste")
       const convergence = document.getElementById("convergence")
       if (!spiralZone || !convergence) return
 

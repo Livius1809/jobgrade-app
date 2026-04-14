@@ -7,6 +7,7 @@ import { PersistentLabels } from "@/components/home/PersistentLabels"
 import { SpiralPath } from "@/components/home/SpiralPath"
 import { ApexVisual } from "@/components/home/ApexVisual"
 import { FloatingCTA } from "@/components/home/FloatingCTA"
+import { FloatingB2C } from "@/components/home/FloatingB2C"
 import { ServicesDropdown } from "@/components/home/ServicesDropdown"
 
 
@@ -285,6 +286,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       <PersistentLabels />
       <FloatingCTA />
+      <FloatingB2C />
 
       {/* ═══════════════════════════════════════════════════════════
            HEADER
@@ -351,28 +353,9 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-           BIFURCAȚIE — Spirala se desparte
-         ═══════════════════════════════════════════════════════════ */}
-      <section id="poveste" className="py-12 px-6">
-        <ScrollReveal>
-          <div className="grid items-center gap-8 px-6" style={{ gridTemplateColumns: "1fr 2fr 1fr", maxWidth: "64rem", margin: "0 auto" }}>
-            <span className="text-sm font-medium tracking-wider text-coral uppercase text-right">
-              Pentru tine
-            </span>
-            <div className="flex justify-center">
-              <div className="w-2 h-2 rounded-full bg-indigo-dark/20" />
-            </div>
-            <span className="text-sm font-medium tracking-wider text-indigo uppercase text-left">
-              Pentru companii
-            </span>
-          </div>
-        </ScrollReveal>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════
            POVESTEA — Secvențele 1-9 cu respirații
          ═══════════════════════════════════════════════════════════ */}
-      <div id="spiral-zone" className="relative flex flex-col gap-6 md:gap-10 py-8">
+      <div id="poveste" className="relative flex flex-col gap-6 md:gap-10 py-8">
         <SpiralPath />
 
         {/* Secv 1: Omul */}
