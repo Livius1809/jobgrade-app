@@ -62,11 +62,18 @@ export default function AuthLayout({
                 </div>
               </div>
             </div>
-            <div className="mt-8 pt-6 border-t border-slate-100">
-              <p className="text-xs text-slate-400">
+            <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
+              <p className="text-sm font-semibold text-slate-900">Cum funcționează</p>
+              <div className="text-xs text-slate-500 space-y-2">
+                <p>✓ Semnăm un contract de prestări servicii</p>
+                <p>✓ Alegi abonamentul și serviciile de care ai nevoie</p>
+                <p>✓ Prima oră de consultanță cu un specialist HR este inclusă</p>
+                <p>✓ Plata per serviciu sau abonament lunar, fără angajament minim</p>
+              </div>
+              <p className="text-xs text-slate-400 mt-4">
                 Psihobusiness Consulting SRL &middot; CIF RO15790994
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-400">
                 Conform Directiva EU 2023/970 &middot; GDPR &middot; AI Act Art. 14
               </p>
             </div>
