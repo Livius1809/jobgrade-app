@@ -135,7 +135,7 @@ const sequences3 = [
     },
     b2b: {
       evocative: "Patru generații și AI... în aceeași sală. Același obiectiv. Limbaje diferite.",
-      service: "Management multigenerațional și echipe mixte om-AI",
+      service: "Managementul structurilor și echipelor mixte om-AI",
     },
   },
 ] as const
