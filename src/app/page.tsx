@@ -126,15 +126,26 @@ const sequences3 = [
     text: [
       "Ce e corect azi... nu e suficient mâine.",
       "Oamenii cresc. Rolurile se transformă. Contextele se schimbă. Generații diferite aduc limbaje diferite la aceeași masă — și fiecare are dreptate... din locul său.",
-      "Iar acum... la aceeași masă stau nu doar generații diferite, ci și inteligențe diferite. Omul și AI-ul, fiecare cu atuurile sale, trebuie să învețe să lucreze împreună.",
       "Cine nu evoluează... nu rămâne pe loc. Rămâne în urmă — nu față de piață, ci față de sine.",
+    ],
+    b2b: {
+      evocative: "Patru generații în aceeași sală. Același obiectiv... Limbaje diferite.",
+      service: "Management multigenerațional",
+    },
+  },
+  {
+    id: "om-ai",
+    text: [
+      "Iar acum... la aceeași masă stau nu doar generații diferite, ci și inteligențe diferite.",
+      "Omul și AI-ul, fiecare cu atuurile sale... trebuie să învețe să lucreze împreună. Nu unul în locul celuilalt — ci unul prin celălalt.",
+      "Departamente conduse de oameni. Departamente operate de AI. Echipe în care ambele inteligențe colaborează. Structuri noi... pentru o realitate nouă.",
     ],
     b2c: {
       evocative: "Cum lucrezi cu o inteligență care nu obosește... dar nici nu simte?",
       service: "Eu și ceilalți",
     },
     b2b: {
-      evocative: "Patru generații și AI... în aceeași sală. Același obiectiv. Limbaje diferite.",
+      evocative: "Structuri noi. Echipe noi. Aceleași valori... dar instrumente diferite.",
       service: "Managementul structurilor și echipelor mixte om-AI",
     },
   },
@@ -397,6 +408,10 @@ export default function HomePage() {
         {/* Secv 7: Evoluția */}
         <div data-cone-section="8">
           <StorySection text={sequences3[2].text} b2b={sequences3[2].b2b} />
+        </div>
+        {/* Secv 7b: Om-AI */}
+        <div data-cone-section="8b">
+          <StorySection text={sequences3[3].text} b2c={sequences3[3].b2c} b2b={sequences3[3].b2b} />
         </div>
         {/* Respirație 3 */}
         <div data-cone-section="9">
