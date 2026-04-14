@@ -308,7 +308,6 @@ export default function HomePage() {
             <a href="#poveste" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Povestea</a>
             <ServicesDropdown />
             <a href="#convergence" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Despre noi</a>
-            <Link href="/login" className="text-sm font-medium text-text-warm hover:text-coral transition-colors duration-200">Intră în platformă</Link>
           </nav>
         </div>
       </header>
