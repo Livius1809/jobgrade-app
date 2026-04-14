@@ -101,10 +101,10 @@ const sequences3 = [
     text: [
       "Din echilibru... vine performanța reală. Nu cea stoarsă din ore suplimentare și presiune, ci aceea care apare când oamenii știu ce fac, de ce fac... și simt că e drept.",
       "Performanța care nu are nevoie de monitorizare, pentru că vine din interior.",
-      "Dar performanța reală nu se susține singură. Are nevoie de procese care nu împiedică... de o cultură care nu contrazice ce scrie pe pereți... și de o structură care ține pasul cu oamenii ei.",
+      "Dar performanța reală nu se susține singură. Are nevoie de procese care nu împiedică... de o cultură care nu contrazice ce e declarat... și de o structură care ține pasul cu oamenii ei.",
     ],
     b2b: {
-      evocative: "Cultura nu e ce scrie pe perete. E ce se întâmplă când nimeni nu se uită.",
+      evocative: "Cultura nu e cea declarată. E ce se întâmplă când nimeni nu se uită.",
       service: "Cultură organizațională și performanță",
     },
   },
