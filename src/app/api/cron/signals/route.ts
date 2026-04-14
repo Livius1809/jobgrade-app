@@ -38,6 +38,12 @@ const FILTER_TIERS: Record<string, Set<string>> = {
   full: new Set(Object.keys(CATEGORY_ROLE_MAP)),
 }
 
+// Keyword filter per category — signals must contain at least one keyword to generate a task
+// Prevents irrelevant signals from consuming API credit (e.g. "film reviews" in LEGAL_REG)
+const CATEGORY_KEYWORDS: Record<string, RegExp> = {
+  LEGAL_REG: /munc[aăi]|salar|transparen[tț]|discrimin|egal|remunera|angajat|angajator|HR|resurse umane|directiv[aă]|grading|evaluar|post|funct|competen[tț]|GDPR|AI Act|dreptul muncii|codul muncii|concedier|demiter|contract de munc|SSM|securitate.*munc/i,
+}
+
 async function getActiveCategories(): Promise<Set<string>> {
   let level = process.env.SIGNAL_FILTER_LEVEL || "focused"
   try {
@@ -80,6 +86,16 @@ export async function GET(request: NextRequest) {
       if (!activeCategories.has(signal.category)) {
         stored++
         continue
+      }
+
+      // Keyword relevance filter — drop signals that don't match domain keywords
+      const keywordFilter = CATEGORY_KEYWORDS[signal.category]
+      if (keywordFilter) {
+        const textToCheck = `${signal.title || ""} ${signal.summary || ""}`
+        if (!keywordFilter.test(textToCheck)) {
+          stored++
+          continue
+        }
       }
 
       const role = CATEGORY_ROLE_MAP[signal.category] || "COG"

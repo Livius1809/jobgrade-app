@@ -60,7 +60,24 @@ export async function GET(request: NextRequest) {
     const retryCount = getRetryCount(task.tags)
 
     if (retryCount >= 3) {
-      // Escalate to hierarchical manager
+      // Check if this is already an escalation task (prevent circular escalation loops)
+      const isEscalation = task.tags.some(t => t === "escalation" || t.startsWith("original:"))
+
+      if (isEscalation) {
+        // Stop the loop — mark as CANCELLED with reason, do NOT create another escalation
+        await prisma.agentTask.update({
+          where: { id: task.id },
+          data: {
+            status: "CANCELLED",
+            tags: [...task.tags, "circular-escalation-stopped"],
+            failureReason: "Escalare circulară oprită automat. Necesită intervenție manuală (Owner/Claude).",
+          },
+        })
+        escalated++
+        continue
+      }
+
+      // Escalate to hierarchical manager (only for non-escalation tasks)
       const relationship = await prisma.agentRelationship.findFirst({
         where: { childRole: task.assignedTo, relationType: "REPORTS_TO", isActive: true },
         select: { parentRole: true },
