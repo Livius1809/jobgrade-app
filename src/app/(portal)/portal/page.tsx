@@ -17,6 +17,7 @@ interface DataInput {
 
 const DATA_INPUTS: DataInput[] = [
   { id: "jobs", label: "Fișe de post", description: "Descrierea posturilor din organizație", href: "/jobs" },
+  { id: "jobs_complete", label: "Fișe de post complete", description: "Fișe cu atribuții, responsabilități, cerințe detaliate", href: "/jobs" },
   { id: "payroll", label: "Stat de salarii", description: "Salariile actuale pe poziții și angajați", href: "/compensation/packages" },
 ]
 
@@ -58,11 +59,12 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Dezvoltare organizațională",
     color: "fuchsia",
     services: [
-      { id: "eval-personal", label: "Evaluarea personalului", href: "#", requiredInputs: ["jobs", "payroll"], color: "fuchsia" },
-      { id: "diagnosis", label: "Diagnoză organizațională", href: "#", requiredInputs: ["jobs"], color: "fuchsia" },
-      { id: "omAI", label: "Managementul structurilor om-AI", href: "#", requiredInputs: ["jobs"], color: "fuchsia" },
-      { id: "quality", label: "Procese interne și Manualul calității", href: "#", requiredInputs: ["jobs"], color: "fuchsia" },
-      { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs", "payroll"], color: "fuchsia" },
+      { id: "eval-personal", label: "Evaluarea personalului", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
+      { id: "diagnosis", label: "Diagnoză organizațională", href: "#", requiredInputs: ["jobs_complete"], color: "fuchsia" },
+      { id: "multigen", label: "Managementul echipelor multigeneraționale", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
+      { id: "omAI", label: "Managementul structurilor și echipelor mixte om-AI", href: "#", requiredInputs: ["jobs_complete"], color: "fuchsia" },
+      { id: "quality", label: "Procese interne și Manualul calității", href: "#", requiredInputs: ["jobs_complete"], color: "fuchsia" },
+      { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
     ],
   },
   {
