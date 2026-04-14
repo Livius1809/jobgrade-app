@@ -82,7 +82,7 @@ async function getPortalData(tenantId: string) {
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
-    prisma.salaryGrade.count({ where: { tenantId } }).then(c => c > 0).catch(() => false),
+    (prisma as any).payrollEntry.count({ where: { tenantId } }).then((c: number) => c > 0).catch(() => false),
   ])
 
   const providedInputs = new Set<string>()
