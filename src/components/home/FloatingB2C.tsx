@@ -61,7 +61,7 @@ export function FloatingB2C() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
         </svg>
-        Spațiul tău personal
+        Intră în spațiul tău
       </Link>
     </div>
   )
