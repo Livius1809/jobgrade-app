@@ -69,7 +69,7 @@ export default function RegisterPage() {
         return
       }
 
-      router.push("/login?registered=true&callbackUrl=/onboarding")
+      router.push("/welcome")
     } catch {
       setError("A apărut o eroare. Încearcă din nou.")
       setLoading(false)
@@ -120,22 +120,26 @@ export default function RegisterPage() {
           <div className="text-xs text-slate-500 space-y-3">
             <div className="flex items-start gap-2">
               <span className="font-bold text-slate-700 mt-0.5">1.</span>
-              <p>Optează pentru un tip de abonament (vezi planurile disponibile)</p>
+              <p><a href="/b2b/abonamente" className="text-indigo-600 hover:underline">Vezi planurile disponibile</a> și alege abonamentul potrivit</p>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold text-slate-700 mt-0.5">2.</span>
-              <div>
-                <p>Semnăm contractul de prestări servicii</p>
-                <p className="text-slate-400 mt-1">2.1 Descarcă contractul standard (disponibil după înregistrare)</p>
-                <p className="text-slate-400">2.2 Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
-              </div>
+              <p>Înregistrează-te folosind formularul alăturat →</p>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold text-slate-700 mt-0.5">3.</span>
-              <p>Efectuezi plata abonamentului ales</p>
+              <div>
+                <p>Semnăm contractul de prestări servicii</p>
+                <p className="text-slate-400 mt-1">3.1 Descarcă contractul standard (disponibil după înregistrare)</p>
+                <p className="text-slate-400">3.2 Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
+              </div>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold text-slate-700 mt-0.5">4.</span>
+              <p>Efectuezi plata abonamentului ales</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-bold text-slate-700 mt-0.5">5.</span>
               <p>Contul se activează automat — primești acces la portal și prima oră de consultanță cu un specialist HR</p>
             </div>
           </div>

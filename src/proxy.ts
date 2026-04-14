@@ -20,6 +20,7 @@ import { handleCORSPreflight, setCORSHeaders } from "@/lib/security/cors-guard"
 const PUBLIC_PATHS = [
   "/login",
   "/register",
+  "/welcome",
   "/forgot-password",
   "/api/auth",
   "/api/v1/auth/register",
