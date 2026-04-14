@@ -3,8 +3,8 @@ import Link from "next/link"
 import { BillingToggle } from "@/components/b2b/BillingToggle"
 
 export const metadata = {
-  title: "Abonamente — JobGrade",
-  description: "Planuri de abonament pentru platforma JobGrade. Acces la portal, găzduire date, suport și consultanță HR inclusă.",
+  title: "Abonament și credite — JobGrade",
+  description: "Un singur abonament, toate serviciile. Plătești cu credite, doar pentru ce folosești.",
 }
 
 export default function AbonamentePage() {
@@ -19,8 +19,9 @@ export default function AbonamentePage() {
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link href="/" className="text-slate-600 hover:text-indigo-600">Pagina principală</Link>
-            <a href="#planuri" className="text-slate-600 hover:text-indigo-600">Planuri</a>
-            <a href="#compara" className="text-slate-600 hover:text-indigo-600">Compară</a>
+            <a href="#abonament" className="text-slate-600 hover:text-indigo-600">Abonament</a>
+            <a href="#credite" className="text-slate-600 hover:text-indigo-600">Credite</a>
+            <a href="#servicii" className="text-slate-600 hover:text-indigo-600">Servicii</a>
             <Link href="/register" className="bg-[#E85D43] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#d04e36] transition-colors">
               Creează cont
             </Link>
@@ -33,20 +34,21 @@ export default function AbonamentePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-violet-50/30" />
         <div className="relative max-w-4xl mx-auto px-6 py-20 md:py-28 text-center">
           <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            Un abonament,{" "}
-            <span className="text-indigo-600">tot ce ai nevoie</span>
+            Un singur abonament.{" "}
+            <span className="text-indigo-600">Toate serviciile.</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Accesul la portal, găzduirea datelor, suportul tehnic și prima oră de consultanță HR sunt incluse în fiecare plan. Plătești pentru resursele pe care le folosești.
+            Accesul la portal, găzduirea datelor, suportul și consultanța sunt incluse.
+            Serviciile le plătești cu credite, doar pentru ce folosești.
           </p>
         </div>
       </section>
 
-      {/* ══════════ CE INCLUDE ORICE ABONAMENT ══════════ */}
+      {/* ══════════ CE INCLUDE ABONAMENTUL ══════════ */}
       <section className="bg-slate-50 py-16">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-10">
-            Inclus în orice abonament
+            Inclus în abonament
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <IncludedCard icon="🏠" title="Acces la portal" text="Platforma completă, disponibilă 24/7, actualizări legislative incluse" />
@@ -57,191 +59,173 @@ export default function AbonamentePage() {
         </div>
       </section>
 
-      {/* ══════════ PLANURI ══════════ */}
-      <section id="planuri" className="py-24">
-        <div className="max-w-5xl mx-auto px-6">
+      {/* ══════════ ABONAMENT — CARD UNIC ══════════ */}
+      <section id="abonament" className="py-24">
+        <div className="max-w-2xl mx-auto px-6">
           <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
-            Alege planul potrivit
+            Abonamentul
           </h2>
           <p className="text-center text-slate-500 text-sm mb-8 max-w-xl mx-auto">
-            Trei planuri, diferențiate după volumul de date, resursele de procesare și prețul per credit de consultanță.
+            Același preț pentru toți. Diferența o faci prin ce servicii consumi.
           </p>
 
           <BillingToggle>
             {(isAnnual) => (
-              <>
-                <div className="grid md:grid-cols-3 gap-6 items-start">
-                  {/* Esențial */}
-                  <div className="rounded-2xl p-6 border-2 border-slate-200">
-                    <div className="pt-2">
-                      <h3 className="text-lg font-bold text-slate-900">Esențial</h3>
-                      <p className="text-xs text-slate-400 mt-1">Pentru organizații mici, la început de drum</p>
-                    </div>
-                    <div className="mt-5 mb-2">
-                      <span className="text-3xl font-extrabold text-slate-900">—</span>
-                      <span className="text-sm text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
-                    </div>
-                    {isAnnual && (
-                      <p className="text-xs text-emerald-600 mb-6">Echivalent — RON/lună (economisești 20%)</p>
-                    )}
-                    {!isAnnual && <div className="mb-6" />}
-                    <ul className="space-y-3 mb-8">
-                      <FeatureItem text="Acces portal + găzduire date" />
-                      <FeatureItem text="Până la 50 poziții distincte" />
-                      <FeatureItem text="1h consultanță HR/lună inclusă" />
-                      <FeatureItem text="Suport email" />
-                      <FeatureItem text="Credite consultanță AI la preț standard" />
-                      <FeatureItem text="Rapoarte de bază (evaluare + conformitate)" />
-                      <FeatureItem text="Export PDF pentru audit" />
-                    </ul>
-                    <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">
-                      Solicită ofertă
-                    </Link>
-                  </div>
+              <div className="rounded-2xl p-8 border-2 border-indigo-500 shadow-xl shadow-indigo-100">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-slate-900">Abonament JobGrade</h3>
+                  <p className="text-sm text-slate-500 mt-2">Tot ce ai nevoie pentru a începe</p>
+                </div>
 
-                  {/* Professional */}
-                  <div className="rounded-2xl p-6 border-2 border-indigo-500 shadow-xl shadow-indigo-100 relative">
-                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                      Recomandat
-                    </span>
-                    <div className="pt-2">
-                      <h3 className="text-lg font-bold text-slate-900">Professional</h3>
-                      <p className="text-xs text-slate-400 mt-1">Pentru organizații în creștere, cu nevoi avansate</p>
-                    </div>
-                    <div className="mt-5 mb-2">
-                      <span className="text-3xl font-extrabold text-slate-900">—</span>
-                      <span className="text-sm text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
-                    </div>
-                    {isAnnual && (
-                      <p className="text-xs text-emerald-600 mb-6">Echivalent — RON/lună (economisești 20%)</p>
-                    )}
-                    {!isAnnual && <div className="mb-6" />}
-                    <ul className="space-y-3 mb-8">
-                      <FeatureItem text="Tot din Esențial, plus:" highlight />
-                      <FeatureItem text="Până la 150 poziții distincte" />
-                      <FeatureItem text="Import date salariale (payroll)" />
-                      <FeatureItem text="Benchmark salarial" />
-                      <FeatureItem text="Calendar conformitate" />
-                      <FeatureItem text="1 sesiune psiholog acreditat inclusă" />
-                      <FeatureItem text="Credite consultanță AI la preț redus" />
-                      <FeatureItem text="Suport prioritar + sesiuni video" />
-                    </ul>
-                    <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-[#E85D43] text-white hover:bg-[#d04e36]">
-                      Solicită ofertă
-                    </Link>
-                  </div>
+                <div className="mt-6 text-center">
+                  <span className="text-4xl font-extrabold text-slate-900">—</span>
+                  <span className="text-lg text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
+                  {isAnnual && (
+                    <p className="text-sm text-emerald-600 mt-1">Echivalent — RON/lună (economisești 20%)</p>
+                  )}
+                </div>
 
-                  {/* Enterprise */}
-                  <div className="rounded-2xl p-6 border-2 border-slate-200">
-                    <div className="pt-2">
-                      <h3 className="text-lg font-bold text-slate-900">Enterprise</h3>
-                      <p className="text-xs text-slate-400 mt-1">Pentru organizații mari, cu cerințe complexe</p>
-                    </div>
-                    <div className="mt-5 mb-2">
-                      <span className="text-3xl font-extrabold text-slate-900">—</span>
-                      <span className="text-sm text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
-                    </div>
-                    {isAnnual && (
-                      <p className="text-xs text-emerald-600 mb-6">Echivalent — RON/lună (economisești 20%)</p>
-                    )}
-                    {!isAnnual && <div className="mb-6" />}
-                    <ul className="space-y-3 mb-8">
-                      <FeatureItem text="Tot din Professional, plus:" highlight />
-                      <FeatureItem text="Poziții distincte nelimitate" />
-                      <FeatureItem text="Evaluare comună Art. 10 inclus" />
-                      <FeatureItem text="Portal angajați Art. 7" />
-                      <FeatureItem text="3 sesiuni psiholog acreditat incluse" />
-                      <FeatureItem text="Credite consultanță AI la cel mai mic preț" />
-                      <FeatureItem text="Integrare cu sisteme HR existente" />
-                      <FeatureItem text="Responsabil de cont dedicat" />
-                    </ul>
-                    <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">
-                      Solicită ofertă
-                    </Link>
+                <div className="mt-8 grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <FeatureItem text="Acces complet la portal" />
+                    <FeatureItem text="Găzduire date securizată (GDPR)" />
+                    <FeatureItem text="1h consultanță HR/lună" />
+                    <FeatureItem text="Suport email + chat" />
+                  </div>
+                  <div className="space-y-3">
+                    <FeatureItem text="Actualizări legislative automate" />
+                    <FeatureItem text="Export PDF/Excel" />
+                    <FeatureItem text="Acces la toate serviciile (cu credite)" />
+                    <FeatureItem text="Fără limită de poziții sau angajați" />
                   </div>
                 </div>
 
-                <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed text-center">
-                  <p>Prețuri fără TVA. {isAnnual ? "Facturare anuală (plată unică)." : "Facturare lunară."} Fără angajament minim.</p>
-                  <p>Serviciile (evaluare posturi, analiză decalaj salarial, evaluare comună) se adaugă separat, cu preț per proiect sau per credit.</p>
-                  <p className="text-slate-500 font-medium">Prețurile definitive vor fi publicate în curând. Contactați-ne pentru o ofertă personalizată.</p>
+                <div className="mt-8 text-center">
+                  <Link href="/register" className="inline-flex items-center justify-center px-8 py-3 rounded-xl text-base font-semibold text-white transition-all hover:shadow-xl bg-[#E85D43] hover:bg-[#d04e36]">
+                    Creează cont
+                  </Link>
+                  <p className="text-xs text-slate-400 mt-3">
+                    {isAnnual ? "Facturare anuală (plată unică). Fără angajament ulterior." : "Facturare lunară. Poți anula oricând."}
+                  </p>
                 </div>
-              </>
+              </div>
             )}
           </BillingToggle>
         </div>
       </section>
 
-      {/* ══════════ TABEL COMPARATIV ══════════ */}
-      <section id="compara" className="bg-slate-50 py-20">
+      {/* ══════════ CREDITE ══════════ */}
+      <section id="credite" className="bg-slate-50 py-24">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-10">
-            Comparație detaliată
+          <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
+            Credite
           </h2>
+          <p className="text-center text-slate-500 text-sm mb-16 max-w-xl mx-auto">
+            Creditele sunt moneda platformei. Fiecare serviciu are un cost în credite.
+            Cumperi pachete de credite — cu cât cumperi mai multe, cu atât prețul per credit scade.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 items-start">
+            <CreditPackCard
+              name="Pachet Start"
+              credits="—"
+              pricePerCredit="—"
+              total="—"
+              description="Pentru primele evaluări și rapoarte"
+            />
+            <CreditPackCard
+              name="Pachet Business"
+              credits="—"
+              pricePerCredit="—"
+              total="—"
+              description="Pentru utilizare regulată"
+              recommended
+              discount="10%"
+            />
+            <CreditPackCard
+              name="Pachet Enterprise"
+              credits="—"
+              pricePerCredit="—"
+              total="—"
+              description="Pentru organizații cu volum mare"
+              discount="20%"
+            />
+          </div>
+
+          <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed text-center">
+            <p>Creditele nu expiră. Se pot achiziționa oricând pachete suplimentare.</p>
+            <p className="text-slate-500 font-medium">Prețurile per credit vor fi publicate în curând.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════ CE COSTĂ FIECARE SERVICIU ══════════ */}
+      <section id="servicii" className="py-24">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
+            Cât costă fiecare serviciu
+          </h2>
+          <p className="text-center text-slate-500 text-sm mb-14 max-w-xl mx-auto">
+            Fiecare serviciu are un cost exprimat în credite. Costul depinde de volumul de date procesate.
+          </p>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr>
-                  <th className="text-left py-3 px-4 text-slate-500 font-medium border-b border-slate-200">Dimensiune</th>
-                  <th className="text-center py-3 px-4 text-slate-900 font-bold border-b border-slate-200">Esențial</th>
-                  <th className="text-center py-3 px-4 text-indigo-600 font-bold border-b border-slate-200">Professional</th>
-                  <th className="text-center py-3 px-4 text-slate-900 font-bold border-b border-slate-200">Enterprise</th>
+                  <th className="text-left py-3 px-4 text-slate-500 font-medium border-b border-slate-200">Serviciu</th>
+                  <th className="text-center py-3 px-4 text-slate-500 font-medium border-b border-slate-200">Unitate</th>
+                  <th className="text-center py-3 px-4 text-slate-500 font-medium border-b border-slate-200">Cost (credite)</th>
                 </tr>
               </thead>
               <tbody className="text-xs text-slate-600">
-                <CompareSection title="Date și stocare" />
-                <CompareRow label="Poziții distincte" v1="Până la 50" v2="Până la 150" v3="Nelimitat" />
-                <CompareRow label="Angajați (date salariale)" v1="Până la 200" v2="Până la 1.000" v3="Nelimitat" />
-                <CompareRow label="Istoric date (retenție)" v1="12 luni" v2="36 luni" v3="Nelimitat" />
-
-                <CompareSection title="Procesare și rapoarte" />
-                <CompareRow label="Evaluare posturi" v1="✓" v2="✓" v3="✓" />
-                <CompareRow label="Raport conformitate Art. 4" v1="✓" v2="✓" v3="✓" />
-                <CompareRow label="Raport decalaj salarial Art. 9" v1="✓" v2="✓" v3="✓" />
-                <CompareRow label="Import payroll" v1="—" v2="✓" v3="✓" />
-                <CompareRow label="Benchmark salarial" v1="—" v2="✓" v3="✓" />
-                <CompareRow label="Evaluare comună Art. 10" v1="—" v2="—" v3="✓" />
-                <CompareRow label="Portal angajați Art. 7" v1="—" v2="—" v3="✓" />
-                <CompareRow label="Calendar conformitate" v1="—" v2="✓" v3="✓" />
-                <CompareRow label="Monitorizare continuă + alerte" v1="—" v2="✓" v3="✓" />
-
-                <CompareSection title="Consultanță și suport" />
-                <CompareRow label="Consultanță HR (inclusă/lună)" v1="1h" v2="1h" v3="1h" />
-                <CompareRow label="Sesiuni psiholog acreditat" v1="La cerere" v2="1 inclusă" v3="3 incluse" />
-                <CompareRow label="Credite consultanță AI" v1="Preț standard" v2="Preț redus" v3="Cel mai mic preț" />
-                <CompareRow label="Suport" v1="Email" v2="Email + Chat + Video" v3="Dedicat" />
-
-                <CompareSection title="Integrări" />
-                <CompareRow label="Export PDF/Excel" v1="✓" v2="✓" v3="✓" />
-                <CompareRow label="Integrare sisteme HR" v1="—" v2="—" v3="✓" />
+                <ServiceRow service="Evaluarea posturilor" unit="per poziție" credits="—" active />
+                <ServiceRow service="Structuri salariale + benchmark" unit="per proiect" credits="—" active />
+                <ServiceRow service="Analiza decalajului salarial" unit="per angajat" credits="—" active />
+                <ServiceRow service="Evaluarea comună (Art. 10)" unit="per proiect" credits="—" active />
+                <ServiceRow service="Consultanță AI (peste 1h inclusă)" unit="per sesiune" credits="—" active />
+                <ServiceRow service="Sesiune psiholog acreditat" unit="per oră" credits="—" active />
+                <ServiceRow service="Evaluarea personalului" unit="per angajat" credits="—" />
+                <ServiceRow service="Diagnoză organizațională" unit="per proiect" credits="—" />
+                <ServiceRow service="Managementul structurilor om-AI" unit="per proiect" credits="—" />
+                <ServiceRow service="Procese interne + Manual calitate" unit="per proiect" credits="—" />
+                <ServiceRow service="Cultură organizațională" unit="per proiect" credits="—" />
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-8 text-center text-xs text-slate-400">
+            <p>Serviciile fără cost specificat sunt în pregătire. Costurile vor fi publicate la activare.</p>
           </div>
         </div>
       </section>
 
       {/* ══════════ FAQ ══════════ */}
-      <section className="py-20">
+      <section className="bg-slate-50 py-20">
         <div className="max-w-2xl mx-auto px-6">
           <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-10">
             Întrebări frecvente
           </h2>
           <div className="space-y-6">
             <FaqItem
-              q="Ce plătesc lunar și ce plătesc separat?"
-              a="Abonamentul lunar include: accesul la portal, găzduirea datelor, suportul tehnic și 1h de consultanță HR. Serviciile (evaluare posturi, analiză decalaj salarial etc.) se plătesc separat, per proiect sau per credit."
+              q="Cum funcționează creditele?"
+              a="Creditele sunt moneda platformei. Cumperi un pachet de credite și le folosești pentru orice serviciu: evaluare posturi, analiză salarială, consultanță AI. Cu cât cumperi mai multe, cu atât prețul per credit scade."
             />
             <FaqItem
-              q="Pot schimba planul ulterior?"
-              a="Da. Puteți trece la un plan superior oricând. Diferența de preț se calculează proporțional pentru perioada rămasă."
+              q="Creditele expiră?"
+              a="Nu. Creditele rămân în cont cât timp abonamentul este activ."
             />
             <FaqItem
-              q="Ce sunt creditele de consultanță AI?"
-              a="Creditele vă permit să interacționați cu consultantul AI al platformei pentru întrebări despre evaluare, legislație, interpretare rapoarte. Prețul per credit scade pe măsură ce planul crește."
+              q="Ce se întâmplă dacă rămân fără credite?"
+              a="Poți achiziționa oricând un pachet suplimentar. Serviciile nu se opresc, doar nu poți lansa altele noi până nu ai credite disponibile."
             />
             <FaqItem
-              q="Ce se întâmplă cu datele mele dacă renunț?"
-              a="Datele vă aparțin. La încheierea abonamentului, aveți 30 de zile să le exportați. După aceea sunt șterse conform politicii GDPR."
+              q="De ce un singur abonament?"
+              a="Pentru simplitate. Nu vrem să te gândești la ce plan ți se potrivește. Toți clienții au acces la aceleași funcționalități. Diferența o faci prin ce servicii folosești și cât de des."
+            />
+            <FaqItem
+              q="Pot plăti anual?"
+              a="Da. Plata anuală vine cu un discount de 20% față de plata lunară."
             />
             <FaqItem
               q="Trebuie să semnez un contract?"
@@ -255,10 +239,10 @@ export default function AbonamentePage() {
       <section className="bg-slate-900 py-16">
         <div className="max-w-2xl mx-auto px-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-4">
-            Începe cu un cont gratuit
+            Simplu. Un abonament. Toate serviciile.
           </h2>
           <p className="text-slate-400 mb-8">
-            Înregistrarea e gratuită. Alegi planul și plătești doar când ești pregătit.
+            Înregistrarea e gratuită. Alegi abonamentul, semnezi contractul, plătești și ești gata.
           </p>
           <Link
             href="/register"
@@ -299,30 +283,63 @@ function IncludedCard({ icon, title, text }: { icon: string; title: string; text
 
 function FeatureItem({ text, highlight }: { text: string; highlight?: boolean }) {
   return (
-    <li className="flex items-start gap-2 text-sm text-slate-600">
+    <div className="flex items-start gap-2 text-sm text-slate-600">
       <span className="text-indigo-500 mt-0.5 shrink-0">&#10003;</span>
       <span className={highlight ? "font-semibold text-slate-900" : ""}>{text}</span>
-    </li>
+    </div>
   )
 }
 
-function CompareSection({ title }: { title: string }) {
+function CreditPackCard({
+  name, credits, pricePerCredit, total, description, recommended, discount,
+}: {
+  name: string; credits: string; pricePerCredit: string; total: string
+  description: string; recommended?: boolean; discount?: string
+}) {
   return (
-    <tr>
-      <td colSpan={4} className="pt-6 pb-2 px-4 text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-200">
-        {title}
+    <div className={`rounded-2xl p-6 border-2 ${
+      recommended ? "border-indigo-500 shadow-xl shadow-indigo-100 relative" : "border-slate-200"
+    }`}>
+      {recommended && (
+        <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+          Cel mai popular
+        </span>
+      )}
+      <div className="pt-2">
+        <h3 className="text-lg font-bold text-slate-900">{name}</h3>
+        <p className="text-xs text-slate-400 mt-1">{description}</p>
+      </div>
+      <div className="mt-5 mb-2">
+        <span className="text-3xl font-extrabold text-slate-900">{credits}</span>
+        <span className="text-sm text-slate-500"> credite</span>
+      </div>
+      <div className="mb-6 space-y-1">
+        <p className="text-xs text-slate-500">{pricePerCredit} RON/credit</p>
+        <p className="text-sm font-semibold text-slate-700">{total} RON total</p>
+        {discount && (
+          <p className="text-xs text-emerald-600 font-medium">Discount {discount} față de prețul standard</p>
+        )}
+      </div>
+      <Link href="/register" className={`block text-center py-3 rounded-lg font-semibold text-sm transition-colors ${
+        recommended
+          ? "bg-[#E85D43] text-white hover:bg-[#d04e36]"
+          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+      }`}>
+        Solicită ofertă
+      </Link>
+    </div>
+  )
+}
+
+function ServiceRow({ service, unit, credits, active }: { service: string; unit: string; credits: string; active?: boolean }) {
+  return (
+    <tr className={`border-b border-slate-100 ${!active ? "opacity-50" : ""}`}>
+      <td className="py-3 px-4 text-slate-700 font-medium">
+        {service}
+        {!active && <span className="ml-2 text-[9px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full">în pregătire</span>}
       </td>
-    </tr>
-  )
-}
-
-function CompareRow({ label, v1, v2, v3 }: { label: string; v1: string; v2: string; v3: string }) {
-  return (
-    <tr className="border-b border-slate-100">
-      <td className="py-2.5 px-4 text-slate-700">{label}</td>
-      <td className="py-2.5 px-4 text-center">{v1}</td>
-      <td className="py-2.5 px-4 text-center font-medium text-indigo-600">{v2}</td>
-      <td className="py-2.5 px-4 text-center">{v3}</td>
+      <td className="py-3 px-4 text-center text-slate-500">{unit}</td>
+      <td className="py-3 px-4 text-center font-semibold">{credits}</td>
     </tr>
   )
 }
