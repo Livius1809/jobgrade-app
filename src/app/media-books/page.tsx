@@ -1,16 +1,17 @@
 import Link from "next/link"
+import Image from "next/image"
 import { getMediaBooksSummary } from "@/lib/media-books"
 
 export const dynamic = "force-dynamic"
 export const metadata = {
-  title: "Media Books — JobGrade",
-  description: "Ghiduri interactive pentru evaluarea și ierarhizarea posturilor. Rapoarte de conformitate EU 2023/970.",
+  title: "Ghiduri — JobGrade",
+  description: "Ghiduri pentru evaluarea posturilor, conformitate salarială și dezvoltare organizațională.",
 }
 
 const STATUS_BADGE = {
   ready: { label: "Disponibil", bg: "bg-emerald-100", text: "text-emerald-700" },
-  "in-progress": { label: "În lucru", bg: "bg-amber-100", text: "text-amber-700" },
-  planned: { label: "Planificat", bg: "bg-slate-100", text: "text-slate-500" },
+  "in-progress": { label: "În pregătire", bg: "bg-amber-100", text: "text-amber-700" },
+  planned: { label: "În curând", bg: "bg-slate-100", text: "text-slate-500" },
 }
 
 export default async function MediaBooksIndex() {
@@ -23,14 +24,18 @@ export default async function MediaBooksIndex() {
       {/* Header */}
       <header className="border-b border-border/50">
         <div className="max-w-4xl mx-auto px-6 py-12">
-          <Link href="/" className="text-sm text-text-secondary hover:text-coral transition-colors mb-6 inline-block">
-            ← Pagina principală
-          </Link>
-          <h1 className="text-3xl font-bold text-indigo-dark mb-3">Media Books</h1>
+          <div className="flex items-center justify-between mb-8">
+            <Link href="/">
+              <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
+            </Link>
+            <Link href="/" className="text-sm text-text-secondary hover:text-coral transition-colors">
+              ← Pagina principală
+            </Link>
+          </div>
+          <h1 className="text-3xl font-bold text-indigo-dark mb-3">Ghiduri</h1>
           <p className="text-lg text-text-warm max-w-2xl">
-            Ghiduri interactive pentru evaluarea posturilor, conformitate salarială
-            și dezvoltare organizațională. Fiecare ghid combină expertiză HR, cadru
-            legal și calibrare psiholingvistică.
+            Informații despre evaluarea posturilor, conformitatea cu Directiva EU 2023/970
+            și serviciile de dezvoltare organizațională oferite de JobGrade.
           </p>
         </div>
       </header>
@@ -60,6 +65,18 @@ export default async function MediaBooksIndex() {
           </div>
         </section>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/50 py-6 px-6 mt-12">
+        <div className="max-w-4xl mx-auto flex items-center justify-between text-xs text-text-secondary/50">
+          <span className="italic">Evaluăm posturi. Construim echitate.</span>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="hover:text-coral transition-colors">
+              jobgrade.ro
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
@@ -87,12 +104,7 @@ function MediaBookCard({
               {badge.label}
             </span>
           </div>
-          <p className="text-sm text-text-secondary mb-3">{book.subtitle}</p>
-          <div className="flex items-center gap-4 text-xs text-text-secondary/60">
-            <span>{book.completedTasks} contribuții</span>
-            <span>{Math.round(book.totalChars / 1000)}K caractere</span>
-            <span className="uppercase tracking-wider">{book.type}</span>
-          </div>
+          <p className="text-sm text-text-secondary">{book.subtitle}</p>
         </div>
         {isClickable && (
           <span className="text-text-secondary/30 text-lg mt-1">→</span>
