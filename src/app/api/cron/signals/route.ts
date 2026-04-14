@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       // Keyword relevance filter — drop signals that don't match domain keywords
       const keywordFilter = CATEGORY_KEYWORDS[signal.category]
       if (keywordFilter) {
-        const textToCheck = `${signal.title || ""} ${signal.summary || ""}`
+        const textToCheck = `${signal.title || ""} ${signal.rawContent || ""}`
         if (!keywordFilter.test(textToCheck)) {
           stored++
           continue
