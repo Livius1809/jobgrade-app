@@ -57,7 +57,7 @@ export default function AuthLayout({
               <div className="flex items-start gap-3">
                 <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 text-sm font-bold">+</span>
                 <div>
-                  <p className="font-semibold text-slate-900">Și altele, pe măsură ce crești</p>
+                  <p className="font-semibold text-slate-900">Și altele, dacă îți dorești mai mult</p>
                   <p>Evaluarea personalului, structuri salariale, procese interne, cultură organizațională — disponibile progresiv.</p>
                 </div>
               </div>
