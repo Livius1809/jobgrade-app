@@ -21,6 +21,7 @@ const serviceIcons: Record<string, string> = {
   "Cultură organizațională și performanță": "M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z", // cultură/linii
   "Armonizarea proceselor interne și Manualul calității": "M19.4 5.4L18 4l-6 6-6-6L4.6 5.4 10.6 11.4l-6 6L6 18.8l6-6 6 6 1.4-1.4-6-6z", // proces/flux — folosim altceva
   "Management multigenerațional": "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5C15 14.2 10.3 13 8 13zm8 0c-.3 0-.6 0-.9.1 1.1.8 1.9 1.9 1.9 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5z", // generații
+  "Management multigenerațional și echipe mixte om-AI": "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5C15 14.2 10.3 13 8 13zm8 0c-.3 0-.6 0-.9.1 1.1.8 1.9 1.9 1.9 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5z", // generații + AI
   "Conformitate și transparență salarială": "M12 1L3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5zm0 10.9h7c-.5 4-3.3 7.5-7 8.8V12H5V6.3l7-3.1v8.7z", // scut
   "Diagnoză organizațională":   "M19.4 10.4L12 3 4.6 10.4A2 2 0 0 0 4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7c0-.6-.2-1.1-.6-1.6zM12 18c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z", // diagnoză/casă
 }

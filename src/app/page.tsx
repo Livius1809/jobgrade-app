@@ -109,8 +109,8 @@ const sequences3 = [
   {
     id: "procesele",
     text: [
-      `Un proces bun nu se simte. Unul prost se simte în fiecare zi — în întârzieri, în frustrări, în lucruri care \u201Enu se știe de cine depind\u201D.`,
-      "Când procesele reflectă realitatea — nu un ideal desenat în PowerPoint — oamenii nu mai pierd energie pe sistem. O investesc în muncă.",
+      `Un proces bun nu se simte. Unul prost se simte în fiecare zi — în întârzieri, în frustrări, în lucruri care \u201Enu se știe de cine depind\u201D... și demotivează.`,
+      "Când procesele reflectă realitatea — nu un ideal desenat în PowerPoint — oamenii nu mai pierd energie încercând să înțeleagă sistemul. O investesc în muncă.",
     ],
     b2c: {
       evocative: "Succesul se vede. Valoarea se simte. Care pe care?",
@@ -126,11 +126,16 @@ const sequences3 = [
     text: [
       "Ce e corect azi... nu e suficient mâine.",
       "Oamenii cresc. Rolurile se transformă. Contextele se schimbă. Generații diferite aduc limbaje diferite la aceeași masă — și fiecare are dreptate... din locul său.",
+      "Iar acum... la aceeași masă stau nu doar generații diferite, ci și inteligențe diferite. Omul și AI-ul, fiecare cu atuurile sale, trebuie să învețe să lucreze împreună.",
       "Cine nu evoluează... nu rămâne pe loc. Rămâne în urmă — nu față de piață, ci față de sine.",
     ],
+    b2c: {
+      evocative: "Cum lucrezi cu o inteligență care nu obosește... dar nici nu simte?",
+      service: "Eu și ceilalți",
+    },
     b2b: {
-      evocative: "Patru generații în aceeași sală. Același obiectiv. Limbaje diferite.",
-      service: "Management multigenerațional",
+      evocative: "Patru generații și AI... în aceeași sală. Același obiectiv. Limbaje diferite.",
+      service: "Management multigenerațional și echipe mixte om-AI",
     },
   },
 ] as const
