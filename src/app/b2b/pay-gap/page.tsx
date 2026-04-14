@@ -182,7 +182,7 @@ export default function PayGapLanding() {
           </div>
 
           <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed text-center">
-            <p>Prețurile vor fi publicate în curând. Contactați-ne pentru o ofertă personalizată.</p>
+            <p>Tarifare per angajat analizat, fără TVA. Prețul variază în funcție de numărul de angajați și serviciile selectate. Contactați-ne pentru o ofertă personalizată.</p>
           </div>
         </div>
       </section>
@@ -193,18 +193,12 @@ export default function PayGapLanding() {
           <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Resurse
           </h2>
-          <div className="grid md:grid-cols-2 gap-6 mt-14 max-w-2xl mx-auto">
+          <div className="max-w-md mx-auto mt-14">
             <ResourceCard
               icon="⚖️"
               title="Ghid: Analiza decalajului salarial"
               text="Tot ce trebuie să știi: context, proces, ce poți aștepta, cine suntem."
               href="/media-books/pay-gap-analysis"
-            />
-            <ResourceCard
-              icon="🤝"
-              title="Ghid: Evaluarea comună"
-              text="Ce se întâmplă când decalajul depășește 5%. Procesul conform Art. 10."
-              href="/media-books/joint-assessment"
             />
           </div>
         </div>

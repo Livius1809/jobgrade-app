@@ -1,11 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+
+const STORAGE_KEY = "jobgrade_demo_contact"
+
+function loadSaved(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
+  } catch { return {} }
+}
+
+function saveField(name: string, value: string) {
+  try {
+    const saved = loadSaved()
+    saved[name] = value
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+  } catch { /* localStorage indisponibil */ }
+}
 
 export default function DemoForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // Pre-populare din localStorage
+  useEffect(() => {
+    const saved = loadSaved()
+    if (!formRef.current || Object.keys(saved).length === 0) return
+    const form = formRef.current
+    for (const [name, value] of Object.entries(saved)) {
+      const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null
+      if (el && !el.value) el.value = value
+    }
+  }, [])
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    saveField(e.target.name, e.target.value)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -58,7 +90,9 @@ export default function DemoForm() {
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
+      onChange={(e) => handleChange(e as any)}
       className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-left space-y-5"
     >
       {/* ── Persoana de contact ──────────────────── */}
