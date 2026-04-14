@@ -7,6 +7,7 @@ import { PersistentLabels } from "@/components/home/PersistentLabels"
 import { SpiralPath } from "@/components/home/SpiralPath"
 import { ApexVisual } from "@/components/home/ApexVisual"
 import { FloatingCTA } from "@/components/home/FloatingCTA"
+import { ServicesDropdown } from "@/components/home/ServicesDropdown"
 
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -303,6 +304,7 @@ export default function HomePage() {
 
           <nav className="hidden md:flex items-center gap-8">
             <a href="#poveste" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Povestea</a>
+            <ServicesDropdown />
             <a href="#convergence" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">Despre noi</a>
             <Link href="/login" className="text-sm font-medium text-text-warm hover:text-coral transition-colors duration-200">Intră în platformă</Link>
           </nav>
