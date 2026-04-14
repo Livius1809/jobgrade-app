@@ -176,6 +176,16 @@ const sequences4 = [
    SECTION COMPONENTS
    ═══════════════════════════════════════════════════════════════════════ */
 
+// Servicii active la lansare
+const ACTIVE_B2B = new Set([
+  "Evaluarea posturilor",
+  "Structuri salariale echitabile",
+  "Conformitate și transparență salarială",
+])
+const ACTIVE_B2C = new Set([
+  "Profilul tău profesional",
+])
+
 function StorySection({
   text,
   b2c,
@@ -190,7 +200,7 @@ function StorySection({
       {/* Left column — B2C */}
       <div className="flex items-center justify-center min-h-[60px] md:min-h-0 order-2 md:order-1">
         {b2c ? (
-          <ServiceNode side="left" evocative={b2c.evocative} service={b2c.service} delay={200} />
+          <ServiceNode side="left" evocative={b2c.evocative} service={b2c.service} delay={200} active={ACTIVE_B2C.has(b2c.service)} />
         ) : (
           <div className="hidden md:block" />
         )}
@@ -217,7 +227,7 @@ function StorySection({
       {/* Right column — B2B */}
       <div className="flex items-center justify-center min-h-[60px] md:min-h-0 order-3">
         {b2b ? (
-          <ServiceNode side="right" evocative={b2b.evocative} service={b2b.service} delay={400} />
+          <ServiceNode side="right" evocative={b2b.evocative} service={b2b.service} delay={400} active={ACTIVE_B2B.has(b2b.service)} />
         ) : (
           <div className="hidden md:block" />
         )}

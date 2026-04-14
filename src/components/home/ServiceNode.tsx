@@ -34,15 +34,16 @@ interface ServiceNodeProps {
   evocative: string
   service: string
   delay?: number
+  active?: boolean
 }
 
-export function ServiceNode({ side, evocative, service, delay = 0 }: ServiceNodeProps) {
+export function ServiceNode({ side, evocative, service, delay = 0, active = true }: ServiceNodeProps) {
   const isLeft = side === "left"
   const iconPath = getIconPath(service)
 
   return (
     <ScrollReveal delay={delay} direction={isLeft ? "left" : "right"}>
-      <div className={`flex flex-col ${isLeft ? "items-end text-right" : "items-start text-left"}`}>
+      <div className={`flex flex-col ${isLeft ? "items-end text-right" : "items-start text-left"} ${!active ? "opacity-50" : ""}`}>
         {/* Icon or connector dot */}
         {iconPath ? (
           <svg
@@ -71,14 +72,25 @@ export function ServiceNode({ side, evocative, service, delay = 0 }: ServiceNode
         >
           {evocative}
         </p>
-        {/* Service name — anchor */}
-        <p
-          className={`text-[11px] font-semibold uppercase tracking-[0.15em] ${
-            isLeft ? "text-coral/50" : "text-indigo/50"
-          }`}
-        >
-          {service}
-        </p>
+        {/* Service name + badge */}
+        <div className={`flex items-center gap-2 ${isLeft ? "flex-row-reverse" : ""}`}>
+          <p
+            className={`text-[11px] font-semibold uppercase tracking-[0.15em] ${
+              isLeft ? "text-coral/50" : "text-indigo/50"
+            }`}
+          >
+            {service}
+          </p>
+          {!active && (
+            <span
+              className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${
+                isLeft ? "bg-coral/10 text-coral/60" : "bg-indigo/10 text-indigo/60"
+              }`}
+            >
+              în curând
+            </span>
+          )}
+        </div>
       </div>
     </ScrollReveal>
   )
