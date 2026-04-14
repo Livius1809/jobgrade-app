@@ -43,7 +43,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     color: "indigo",
     services: [
       { id: "je", label: "Evaluarea posturilor", href: "/sessions", requiredInputs: ["jobs"], color: "indigo", creditCost: "credite/poziție" },
-      { id: "salary", label: "Structuri salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
+      { id: "salary", label: "Pachete salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
     ],
   },
   {
