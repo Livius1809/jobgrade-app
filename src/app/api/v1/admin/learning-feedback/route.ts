@@ -9,15 +9,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { recordLessonLearned, recordBulkLesson } from "@/lib/agents/learning-loop"
 import type { LessonType } from "@/lib/agents/learning-loop"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
