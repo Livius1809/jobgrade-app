@@ -49,7 +49,7 @@ export function FloatingB2C() {
         >
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
-        <span className="text-sm font-medium">Descoperă-te pe tine</span>
+        <span className="text-sm font-medium">Ce pot să aflu despre mine?</span>
       </button>
 
       {/* CTA B2C — activ */}
@@ -61,7 +61,7 @@ export function FloatingB2C() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
         </svg>
-        Află despre tine
+        Spațiul tău personal
       </Link>
     </div>
   )
