@@ -49,9 +49,9 @@ export default function WelcomePage() {
           <span className="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xs font-bold">3</span>
           <div>
             <p className="text-sm font-semibold text-slate-900">Semnarea contractului</p>
-            <div className="mt-2 space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-slate-500 mt-0.5">3.1</span>
+            <div className="mt-3 space-y-2">
+              <div className="flex items-start">
+                <span className="text-xs font-bold text-amber-600 w-8 shrink-0">3.1</span>
                 <a href="#" className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -59,8 +59,8 @@ export default function WelcomePage() {
                   Descarcă contractul standard (PDF)
                 </a>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-slate-500 mt-0.5">3.2</span>
+              <div className="flex items-start">
+                <span className="text-xs font-bold text-amber-600 w-8 shrink-0">3.2</span>
                 <p className="text-xs text-slate-500">Trimite contractul semnat la <span className="text-slate-700 font-medium">contract@jobgrade.ro</span></p>
               </div>
             </div>

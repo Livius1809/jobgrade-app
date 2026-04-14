@@ -118,30 +118,32 @@ export default function RegisterPage() {
         <div className="mt-8 pt-6 border-t border-slate-100">
           <p className="text-sm font-semibold text-slate-900 mb-4">Pașii pentru activarea contului</p>
           <div className="text-xs text-slate-500 space-y-3">
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-slate-700 mt-0.5">1.</span>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-700 w-8 shrink-0">1.</span>
               <p><a href="/b2b/abonamente" className="text-indigo-600 hover:underline">Vezi planurile disponibile</a> și alege abonamentul potrivit</p>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-slate-700 mt-0.5">2.</span>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-700 w-8 shrink-0">2.</span>
               <p>Înregistrează-te folosind formularul alăturat →</p>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-slate-700 mt-0.5">3.</span>
-              <div>
-                <p>Semnăm contractul de prestări servicii</p>
-                <div className="mt-2 ml-1 space-y-1">
-                  <p className="text-slate-400"><span className="font-bold text-slate-500">3.1</span> Descarcă contractul standard (disponibil după înregistrare)</p>
-                  <p className="text-slate-400"><span className="font-bold text-slate-500">3.2</span> Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
-                </div>
-              </div>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-700 w-8 shrink-0">3.</span>
+              <p>Semnăm contractul de prestări servicii</p>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-slate-700 mt-0.5">4.</span>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-500 w-8 shrink-0">3.1</span>
+              <p className="text-slate-400">Descarcă contractul standard (disponibil după înregistrare)</p>
+            </div>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-500 w-8 shrink-0">3.2</span>
+              <p className="text-slate-400">Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
+            </div>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-700 w-8 shrink-0">4.</span>
               <p>Efectuezi plata abonamentului ales</p>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-slate-700 mt-0.5">5.</span>
+            <div className="flex items-start">
+              <span className="font-bold text-slate-700 w-8 shrink-0">5.</span>
               <p>Contul se activează automat — primești acces la portal și prima oră de consultanță cu un specialist HR</p>
             </div>
           </div>
