@@ -26,8 +26,9 @@ interface Service {
   id: string
   label: string
   href: string
-  requiredInputs: string[]  // ce date trebuie să existe
+  requiredInputs: string[]
   color: string
+  creditCost?: string  // ex: "~5 credite/poziție" sau "—" dacă necalibrat
 }
 
 interface ServiceCategory {
@@ -41,16 +42,16 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Evaluare",
     color: "indigo",
     services: [
-      { id: "je", label: "Evaluarea posturilor", href: "/sessions", requiredInputs: ["jobs"], color: "indigo" },
-      { id: "salary", label: "Structuri salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo" },
+      { id: "je", label: "Evaluarea posturilor", href: "/sessions", requiredInputs: ["jobs"], color: "indigo", creditCost: "credite/poziție" },
+      { id: "salary", label: "Structuri salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
     ],
   },
   {
     name: "Conformitate EU 2023/970",
     color: "violet",
     services: [
-      { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet" },
-      { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet" },
+      { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/angajat" },
+      { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/proiect" },
     ],
   },
   {
@@ -225,9 +226,14 @@ export default async function PortalPage() {
                           </span>
                         )}
                         {available && (
-                          <Link href={svc.href} className="text-[10px] text-indigo-500 hover:underline flex-shrink-0">
-                            Accesează →
-                          </Link>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {svc.creditCost && (
+                              <span className="text-[10px] text-slate-400">{svc.creditCost}</span>
+                            )}
+                            <Link href={svc.href} className="text-[10px] text-indigo-500 hover:underline">
+                              Accesează →
+                            </Link>
+                          </div>
                         )}
                       </div>
                     )
