@@ -19,22 +19,26 @@ const sequences = [
     text: [
       "Totul începe cu un om.",
       "Nu cu un CV. Nu cu o organigramă. Nu cu un salariu.",
-      "Cu cineva care se trezește dimineața și alege — conștient sau nu — cine e azi.",
+      "Cu cineva care se trezește dimineața și alege — conștient sau nu — cine e... azi.",
     ],
     b2c: {
-      evocative: "Cine ești când nu mai trebuie să demonstrezi nimic?",
+      evocative: "Cine ești... când nu mai trebuie să demonstrezi nimic?",
       service: "Drumul către mine",
     },
   },
   {
     id: "rolurile",
     text: [
-      "Apoi omul își asumă un rol.",
-      "Într-o echipă. Într-un proiect. Într-o companie care depinde de el mai mult decât ar recunoaște.",
-      "Rolul nu-l definește — dar îl poate limita sau elibera. Depinde cine l-a gândit și cât de bine se potrivește cu omul din spatele lui.",
+      "Apoi... omul își asumă un rol.",
+      "Într-o echipă. Într-un proiect. Într-o companie care depinde de el... mai mult decât ar recunoaște.",
+      "Rolul nu-l definește — dar îl poate limita sau elibera. Depinde cine l-a gândit... și cât de bine se potrivește cu omul din spatele lui.",
     ],
+    b2c: {
+      evocative: "Cine ești dincolo de rolul pe care ți-l asumi?",
+      service: "Evaluarea personalului",
+    },
     b2b: {
-      evocative: "Fiecare post are o greutate. Întrebarea e dacă o măsori sau o presupui.",
+      evocative: "Fiecare post are o greutate. Întrebarea e... dacă o măsori sau o presupui.",
       service: "Evaluarea posturilor",
     },
   },
@@ -42,9 +46,9 @@ const sequences = [
 
 const breathing1 = {
   lines: [
-    "Până aici, lucrurile par simple.",
+    "Până aici... lucrurile par simple.",
     "Un om. Un rol.",
-    "Dar nimic nu există izolat.",
+    "Dar nimic nu există... izolat.",
   ],
 }
 
@@ -52,8 +56,8 @@ const sequences2 = [
   {
     id: "contextele",
     text: [
-      "Rolurile trăiesc în contexte.",
-      `Într-o companie cu 30 de oameni, salariile se stabilesc \u201Edupă ureche\u201D. La 100, \u201Edupă ureche\u201D devine \u201Epe noroc\u201D. La 300, devine risc. Și riscul are un cost pe care aproape nimeni nu-l calculează — până când un om bun pleacă, iar motivul nu e salariul în sine. E sentimentul că nu e drept.`,
+      "Rolurile trăiesc... în contexte.",
+      `Într-o companie cu 30 de oameni, salariile se stabilesc \u201Edupă ureche\u201D. La 100, \u201Edupă ureche\u201D devine \u201Epe noroc\u201D. La 300... devine risc. Și riscul are un cost pe care aproape nimeni nu-l calculează — până când un om bun pleacă, iar motivul nu e salariul în sine. E sentimentul... că nu e drept.`,
     ],
     b2c: {
       evocative: "Un rol profesional nu se găsește. Se asumă.",
@@ -67,9 +71,9 @@ const sequences2 = [
   {
     id: "echilibrul",
     text: [
-      "Există un moment — rar, dar real — în care omul, rolul și contextul se aliniază.",
-      "Nu e un accident. E rezultatul a ceva construit cu grijă: cineva a înțeles ce poate omul, cineva a gândit rolul cum trebuie, cineva a creat un context în care să poată respira.",
-      "Când se întâmplă asta, nu trebuie să motivezi pe nimeni. Oamenii vin la muncă și lucrurile merg.",
+      "Există un moment — rar, dar real — în care omul, rolul și contextul... se aliniază.",
+      "Nu e un accident. E rezultatul a ceva construit cu grijă: cineva a înțeles ce poate omul, cineva a gândit rolul cum trebuie... cineva a creat un context în care să poată respira.",
+      "Când se întâmplă asta... nu trebuie să motivezi pe nimeni. Oamenii vin la muncă și lucrurile merg.",
     ],
     b2c: {
       evocative: "Relațiile tale vorbesc despre tine mai mult decât crezi.",
@@ -93,9 +97,9 @@ const sequences3 = [
   {
     id: "performanta",
     text: [
-      "Din echilibru vine performanța reală.",
-      "Nu cea storsă din ore suplimentare și presiune. Cea care apare când oamenii știu ce fac, de ce fac și simt că e drept. Performanța care nu are nevoie de monitorizare — pentru că vine din interior.",
-      "Dar performanța reală nu se susține singură. Are nevoie de procese care nu împiedică, de o cultură care nu contrazice ce scrie pe pereți și de o structură care ține pasul cu oamenii ei.",
+      "Din echilibru... vine performanța reală.",
+      "Nu cea storsă din ore suplimentare și presiune. Cea care apare când oamenii știu ce fac, de ce fac... și simt că e drept. Performanța care nu are nevoie de monitorizare — pentru că vine din interior.",
+      "Dar performanța reală nu se susține singură. Are nevoie de procese care nu împiedică... de o cultură care nu contrazice ce scrie pe pereți... și de o structură care ține pasul cu oamenii ei.",
     ],
     b2b: {
       evocative: "Cultura nu e ce scrie pe perete. E ce se întâmplă când nimeni nu se uită.",
@@ -120,9 +124,9 @@ const sequences3 = [
   {
     id: "evolutia",
     text: [
-      "Ce e corect azi nu e suficient mâine.",
-      "Oamenii cresc. Rolurile se transformă. Contextele se schimbă. Generații diferite aduc limbaje diferite la aceeași masă — și fiecare are dreptate din locul său.",
-      "Cine nu evoluează nu rămâne pe loc. Rămâne în urmă — nu față de piață, ci față de sine.",
+      "Ce e corect azi... nu e suficient mâine.",
+      "Oamenii cresc. Rolurile se transformă. Contextele se schimbă. Generații diferite aduc limbaje diferite la aceeași masă — și fiecare are dreptate... din locul său.",
+      "Cine nu evoluează... nu rămâne pe loc. Rămâne în urmă — nu față de piață, ci față de sine.",
     ],
     b2b: {
       evocative: "Patru generații în aceeași sală. Același obiectiv. Limbaje diferite.",
@@ -133,7 +137,7 @@ const sequences3 = [
 
 const breathing3 = {
   lines: [
-    "Dar evoluția nu e un drum solitar.",
+    "Dar evoluția... nu e un drum solitar.",
     "Niciodată nu a fost.",
   ],
 }
@@ -142,7 +146,7 @@ const sequences4 = [
   {
     id: "impreuna",
     text: [
-      "Oamenii cresc împreună. În echipe care se văd. În organizații care se cunosc. În comunități care se susțin.",
+      "Oamenii cresc... împreună. În echipe care se văd. În organizații care se cunosc. În comunități care se susțin.",
       "O companie care își evaluează posturile corect nu face doar conformitate — construiește un loc în care oamenii aleg să rămână. Un om care se descoperă pe sine nu devine doar mai bun la ce face — devine mai prezent în tot ce este.",
       "Lucrurile astea nu se întâmplă separat. Se întâmplă împreună. Se hrănesc reciproc. Omul crește, organizația crește, piața crește — nu prin obligație, ci prin evoluție.",
     ],
@@ -158,8 +162,8 @@ const sequences4 = [
   {
     id: "oglinda",
     text: [
-      "Înainte de orice drum, e un moment de liniște în care te uiți la tine.",
-      "Nu la ce ai realizat. La cine ești.",
+      "Înainte de orice drum... e un moment de liniște în care te uiți la tine.",
+      "Nu la ce ai realizat. La cine... ești.",
     ],
     b2c: {
       evocative: "Înainte de orice răspuns, trebuie o întrebare bună despre tine.",

@@ -16,6 +16,7 @@ const serviceIcons: Record<string, string> = {
   // B2B — structural, profesional
   "Evaluarea posturilor":       "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.9 0 3.5 1.6 3.5 3.5S13.9 13 12 13s-3.5-1.6-3.5-3.5S10.1 6 12 6zm7 13H5v-.8c0-1.3 2.2-2.5 3.5-3 1-.4 2.2-.7 3.5-.7s2.5.2 3.5.7c1.3.5 3.5 1.6 3.5 3z", // evaluare
   "Structuri salariale echitabile": "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 17h-2v-1h2zm0-3h-2V7h2z", // balanță simplificată
+  "Evaluarea personalului": "M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm-5 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 8c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3zm-8 5c-1.3.7-3 1.7-3 3v2h5v-2c0-1.2.5-2.2 1.3-3zm13.7 0c.8.8 1.3 1.8 1.3 3v2h5v-2c0-1.3-1.7-2.3-3-3z", // echipă
   "Evaluarea personalului și armonizarea echipelor de lucru": "M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm-5 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 8c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3zm-8 5c-1.3.7-3 1.7-3 3v2h5v-2c0-1.2.5-2.2 1.3-3zm13.7 0c.8.8 1.3 1.8 1.3 3v2h5v-2c0-1.3-1.7-2.3-3-3z", // echipă
   "Cultură organizațională și performanță": "M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z", // cultură/linii
   "Armonizarea proceselor interne și Manualul calității": "M19.4 5.4L18 4l-6 6-6-6L4.6 5.4 10.6 11.4l-6 6L6 18.8l6-6 6 6 1.4-1.4-6-6z", // proces/flux — folosim altceva

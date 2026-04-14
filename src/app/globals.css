@@ -157,9 +157,10 @@ body {
 .story-section {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
-  gap: 2.5rem;
+  column-gap: 4rem;
+  row-gap: 2rem;
   align-items: center;
-  max-width: 64rem;
+  max-width: 72rem;
   margin: 0 auto;
   padding: 4.5rem 1.5rem;
 }
