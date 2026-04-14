@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { BillingToggle } from "@/components/b2b/BillingToggle"
 
 export const metadata = {
   title: "Abonamente — JobGrade",
@@ -62,94 +63,112 @@ export default function AbonamentePage() {
           <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Alege planul potrivit
           </h2>
-          <p className="text-center text-slate-500 text-sm mb-16 max-w-xl mx-auto">
+          <p className="text-center text-slate-500 text-sm mb-8 max-w-xl mx-auto">
             Trei planuri, diferențiate după volumul de date, resursele de procesare și prețul per credit de consultanță.
           </p>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
-            {/* Esențial */}
-            <div className="rounded-2xl p-6 border-2 border-slate-200">
-              <div className="pt-2">
-                <h3 className="text-lg font-bold text-slate-900">Esențial</h3>
-                <p className="text-xs text-slate-400 mt-1">Pentru organizații mici, la început de drum</p>
-              </div>
-              <div className="mt-5 mb-8">
-                <span className="text-3xl font-extrabold text-slate-900">—</span>
-                <span className="text-sm text-slate-500"> RON/lună</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <FeatureItem text="Acces portal + găzduire date" />
-                <FeatureItem text="Până la 50 poziții distincte" />
-                <FeatureItem text="1h consultanță HR/lună inclusă" />
-                <FeatureItem text="Suport email" />
-                <FeatureItem text="Credite consultanță AI la preț standard" />
-                <FeatureItem text="Rapoarte de bază (evaluare + conformitate)" />
-                <FeatureItem text="Export PDF pentru audit" />
-              </ul>
-              <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">
-                Solicită ofertă
-              </Link>
-            </div>
+          <BillingToggle>
+            {(isAnnual) => (
+              <>
+                <div className="grid md:grid-cols-3 gap-6 items-start">
+                  {/* Esențial */}
+                  <div className="rounded-2xl p-6 border-2 border-slate-200">
+                    <div className="pt-2">
+                      <h3 className="text-lg font-bold text-slate-900">Esențial</h3>
+                      <p className="text-xs text-slate-400 mt-1">Pentru organizații mici, la început de drum</p>
+                    </div>
+                    <div className="mt-5 mb-2">
+                      <span className="text-3xl font-extrabold text-slate-900">—</span>
+                      <span className="text-sm text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
+                    </div>
+                    {isAnnual && (
+                      <p className="text-xs text-emerald-600 mb-6">Echivalent — RON/lună (economisești 20%)</p>
+                    )}
+                    {!isAnnual && <div className="mb-6" />}
+                    <ul className="space-y-3 mb-8">
+                      <FeatureItem text="Acces portal + găzduire date" />
+                      <FeatureItem text="Până la 50 poziții distincte" />
+                      <FeatureItem text="1h consultanță HR/lună inclusă" />
+                      <FeatureItem text="Suport email" />
+                      <FeatureItem text="Credite consultanță AI la preț standard" />
+                      <FeatureItem text="Rapoarte de bază (evaluare + conformitate)" />
+                      <FeatureItem text="Export PDF pentru audit" />
+                    </ul>
+                    <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">
+                      Solicită ofertă
+                    </Link>
+                  </div>
 
-            {/* Professional */}
-            <div className="rounded-2xl p-6 border-2 border-indigo-500 shadow-xl shadow-indigo-100 relative">
-              <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                Recomandat
-              </span>
-              <div className="pt-2">
-                <h3 className="text-lg font-bold text-slate-900">Professional</h3>
-                <p className="text-xs text-slate-400 mt-1">Pentru organizații în creștere, cu nevoi avansate</p>
-              </div>
-              <div className="mt-5 mb-8">
-                <span className="text-3xl font-extrabold text-slate-900">—</span>
-                <span className="text-sm text-slate-500"> RON/lună</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <FeatureItem text="Tot din Esențial, plus:" highlight />
-                <FeatureItem text="Până la 150 poziții distincte" />
-                <FeatureItem text="Import date salariale (payroll)" />
-                <FeatureItem text="Benchmark salarial" />
-                <FeatureItem text="Calendar conformitate" />
-                <FeatureItem text="1 sesiune psiholog acreditat inclusă" />
-                <FeatureItem text="Credite consultanță AI la preț redus" />
-                <FeatureItem text="Suport prioritar + sesiuni video" />
-              </ul>
-              <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-[#E85D43] text-white hover:bg-[#d04e36]">
-                Solicită ofertă
-              </Link>
-            </div>
+                  {/* Professional */}
+                  <div className="rounded-2xl p-6 border-2 border-indigo-500 shadow-xl shadow-indigo-100 relative">
+                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                      Recomandat
+                    </span>
+                    <div className="pt-2">
+                      <h3 className="text-lg font-bold text-slate-900">Professional</h3>
+                      <p className="text-xs text-slate-400 mt-1">Pentru organizații în creștere, cu nevoi avansate</p>
+                    </div>
+                    <div className="mt-5 mb-2">
+                      <span className="text-3xl font-extrabold text-slate-900">—</span>
+                      <span className="text-sm text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
+                    </div>
+                    {isAnnual && (
+                      <p className="text-xs text-emerald-600 mb-6">Echivalent — RON/lună (economisești 20%)</p>
+                    )}
+                    {!isAnnual && <div className="mb-6" />}
+                    <ul className="space-y-3 mb-8">
+                      <FeatureItem text="Tot din Esențial, plus:" highlight />
+                      <FeatureItem text="Până la 150 poziții distincte" />
+                      <FeatureItem text="Import date salariale (payroll)" />
+                      <FeatureItem text="Benchmark salarial" />
+                      <FeatureItem text="Calendar conformitate" />
+                      <FeatureItem text="1 sesiune psiholog acreditat inclusă" />
+                      <FeatureItem text="Credite consultanță AI la preț redus" />
+                      <FeatureItem text="Suport prioritar + sesiuni video" />
+                    </ul>
+                    <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-[#E85D43] text-white hover:bg-[#d04e36]">
+                      Solicită ofertă
+                    </Link>
+                  </div>
 
-            {/* Enterprise */}
-            <div className="rounded-2xl p-6 border-2 border-slate-200">
-              <div className="pt-2">
-                <h3 className="text-lg font-bold text-slate-900">Enterprise</h3>
-                <p className="text-xs text-slate-400 mt-1">Pentru organizații mari, cu cerințe complexe</p>
-              </div>
-              <div className="mt-5 mb-8">
-                <span className="text-3xl font-extrabold text-slate-900">—</span>
-                <span className="text-sm text-slate-500"> RON/lună</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <FeatureItem text="Tot din Professional, plus:" highlight />
-                <FeatureItem text="Poziții distincte nelimitate" />
-                <FeatureItem text="Evaluare comună Art. 10 inclus" />
-                <FeatureItem text="Portal angajați Art. 7" />
-                <FeatureItem text="3 sesiuni psiholog acreditat incluse" />
-                <FeatureItem text="Credite consultanță AI la cel mai mic preț" />
-                <FeatureItem text="Integrare cu sisteme HR existente" />
-                <FeatureItem text="Responsabil de cont dedicat" />
-              </ul>
-              <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">
-                Solicită ofertă
-              </Link>
-            </div>
-          </div>
+                  {/* Enterprise */}
+                  <div className="rounded-2xl p-6 border-2 border-slate-200">
+                    <div className="pt-2">
+                      <h3 className="text-lg font-bold text-slate-900">Enterprise</h3>
+                      <p className="text-xs text-slate-400 mt-1">Pentru organizații mari, cu cerințe complexe</p>
+                    </div>
+                    <div className="mt-5 mb-2">
+                      <span className="text-3xl font-extrabold text-slate-900">—</span>
+                      <span className="text-sm text-slate-500"> RON/{isAnnual ? "an" : "lună"}</span>
+                    </div>
+                    {isAnnual && (
+                      <p className="text-xs text-emerald-600 mb-6">Echivalent — RON/lună (economisești 20%)</p>
+                    )}
+                    {!isAnnual && <div className="mb-6" />}
+                    <ul className="space-y-3 mb-8">
+                      <FeatureItem text="Tot din Professional, plus:" highlight />
+                      <FeatureItem text="Poziții distincte nelimitate" />
+                      <FeatureItem text="Evaluare comună Art. 10 inclus" />
+                      <FeatureItem text="Portal angajați Art. 7" />
+                      <FeatureItem text="3 sesiuni psiholog acreditat incluse" />
+                      <FeatureItem text="Credite consultanță AI la cel mai mic preț" />
+                      <FeatureItem text="Integrare cu sisteme HR existente" />
+                      <FeatureItem text="Responsabil de cont dedicat" />
+                    </ul>
+                    <Link href="/register" className="block text-center py-3 rounded-lg font-semibold text-sm transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">
+                      Solicită ofertă
+                    </Link>
+                  </div>
+                </div>
 
-          <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed text-center">
-            <p>Prețuri fără TVA. Facturare lunară. Fără angajament minim.</p>
-            <p>Serviciile (evaluare posturi, analiză decalaj salarial, evaluare comună) se adaugă separat, cu preț per proiect sau per credit.</p>
-            <p className="text-slate-500 font-medium">Prețurile definitive vor fi publicate în curând. Contactați-ne pentru o ofertă personalizată.</p>
-          </div>
+                <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed text-center">
+                  <p>Prețuri fără TVA. {isAnnual ? "Facturare anuală (plată unică)." : "Facturare lunară."} Fără angajament minim.</p>
+                  <p>Serviciile (evaluare posturi, analiză decalaj salarial, evaluare comună) se adaugă separat, cu preț per proiect sau per credit.</p>
+                  <p className="text-slate-500 font-medium">Prețurile definitive vor fi publicate în curând. Contactați-ne pentru o ofertă personalizată.</p>
+                </div>
+              </>
+            )}
+          </BillingToggle>
         </div>
       </section>
 
