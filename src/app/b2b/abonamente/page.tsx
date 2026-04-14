@@ -59,6 +59,37 @@ export default function AbonamentePage() {
         </div>
       </section>
 
+      {/* ══════════ CUM FUNCȚIONEAZĂ ══════════ */}
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-12">
+            Cum funcționează
+          </h2>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">1</div>
+              <h3 className="text-sm font-bold text-slate-900 mb-2">Te abonezi</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Un singur abonament, același pentru toți. Include accesul la portal, găzduirea datelor, suportul și 1h de consultanță HR pe lună.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">2</div>
+              <h3 className="text-sm font-bold text-slate-900 mb-2">Cumperi credite</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Creditele sunt moneda platformei. Cumperi un pachet, cu cât mai mare, cu atât prețul per credit scade. Creditele nu expiră.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-xl bg-fuchsia-100 text-fuchsia-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">3</div>
+              <h3 className="text-sm font-bold text-slate-900 mb-2">Folosești servicii</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Fiecare serviciu are un cost în credite: evaluarea posturilor, analiza salarială, consultanța AI. Plătești doar ce folosești.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">4</div>
+              <h3 className="text-sm font-bold text-slate-900 mb-2">Crești natural</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Pe măsură ce descoperi noi servicii, consumi mai multe credite. Fără upgrade de plan, fără limite artificiale, fără surprize.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════ ABONAMENT — CARD UNIC ══════════ */}
       <section id="abonament" className="py-24">
         <div className="max-w-2xl mx-auto px-6">
