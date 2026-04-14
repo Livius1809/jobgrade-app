@@ -164,7 +164,7 @@ const sequences4 = [
     text: [
       "Oamenii cresc... împreună. În echipe care se văd. În organizații care se cunosc. În comunități care se susțin.",
       "O companie care își evaluează posturile corect nu face doar conformitate, construiește un loc în care oamenii aleg să rămână. Un om care se descoperă pe sine nu devine doar mai bun la ce face, devine mai prezent în tot ceea ce a ales să fie la un moment dat.",
-      "Lucrurile astea nu se întâmplă separat. Se întâmplă împreună. Se hrănesc reciproc. Omul crește, organizația crește, piața crește, nu din obligație, ci din evoluție.",
+      "Lucrurile astea nu se întâmplă separat. Se întâmplă împreună. Se hrănesc reciproc. Omul crește, organizația crește, piața crește, nu din obligație, ci prin evoluție.",
     ],
     b2c: {
       evocative: "Ce s-ar întâmpla dacă ai construi ceva care te depășește?",

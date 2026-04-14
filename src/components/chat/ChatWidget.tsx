@@ -300,7 +300,7 @@ function ChatWidgetInner() {
     return (
       <button
         onClick={() => setWidgetState("expanded")}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
+        className="fixed bottom-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
         title="Cum vă putem ajuta?"
         aria-label="Deschide conversația cu asistentul"
       >
