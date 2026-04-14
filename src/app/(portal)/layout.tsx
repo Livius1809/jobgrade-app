@@ -17,35 +17,19 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Header — consistent cu homepage ──────────────────── */}
-      <header className="sticky top-0 z-50 header-glass">
-        <div className="flex items-center justify-between px-6 h-16" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image
-              src="/logo.svg"
-              alt="JobGrade"
-              width={32}
-              height={32}
-              className="transition-transform duration-500 group-hover:rotate-45"
-            />
-            <span className="text-lg font-semibold text-indigo-dark">JobGrade</span>
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 h-14" style={{ maxWidth: "72rem", margin: "0 auto" }}>
+          <Link href="/portal">
+            <Image src="/logo.svg" alt="JobGrade" width={130} height={33} className="h-8 w-auto" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
+          <div className="flex items-center gap-4">
             {isOwner && (
-              <Link href="/owner" className="text-sm font-medium text-indigo hover:text-indigo-dark transition-colors duration-200">
+              <Link href="/owner" className="text-xs font-medium text-indigo hover:text-indigo-dark transition-colors">
                 Owner
               </Link>
             )}
-            <Link href="/portal" className="text-sm font-medium text-text-warm hover:text-coral transition-colors duration-200">
-              Portal B2B
-            </Link>
-            <Link href="/" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200">
-              Acasă
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-text-secondary">
+            <span className="text-xs text-text-secondary hidden sm:inline">
               {session.user.name}
             </span>
             <SignOutButton />
@@ -54,13 +38,13 @@ export default async function PortalLayout({
       </header>
 
       {/* ── Content ──────────────────────────────────────────── */}
-      <main className="px-6 py-8" style={{ maxWidth: "56rem", margin: "0 auto" }}>
+      <main className="px-6 py-8" style={{ maxWidth: "72rem", margin: "0 auto" }}>
         {children}
       </main>
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="border-t border-border/50 py-6 px-6">
-        <div className="flex items-center justify-between text-xs text-text-secondary/50" style={{ maxWidth: "56rem", margin: "0 auto" }}>
+        <div className="flex items-center justify-between text-xs text-text-secondary/40" style={{ maxWidth: "72rem", margin: "0 auto" }}>
           <span>JobGrade · Psihobusiness Consulting SRL</span>
           <span className="italic">Evaluăm posturi. Construim echitate.</span>
         </div>
