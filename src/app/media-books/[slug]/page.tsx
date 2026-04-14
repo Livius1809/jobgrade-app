@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import ReactMarkdown from "react-markdown"
 import { getMediaBookBySlug, getMediaBookContent } from "@/lib/media-books"
+import { ExpandableSection } from "@/components/media-books/ExpandableSection"
 
 export const dynamic = "force-dynamic"
 
@@ -16,14 +18,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 /** Split markdown content by ## headings into sections */
-function parseSections(content: string): { title: string; body: string }[] {
+function parseSections(content: string): { title: string; concise: string; extended: string }[] {
   const cleaned = content.replace(/<cite[^>]*>|<\/cite>/g, "")
   const parts = cleaned.split(/^## /m).filter(Boolean)
   return parts.map((part) => {
     const lines = part.split("\n")
     const title = lines[0].replace(/^#+\s*/, "").replace(/\{#\w+\}/g, "").trim()
     const body = lines.slice(1).join("\n").trim()
-    return { title, body }
+    // Split on ---EXTINS--- marker if present
+    const extinsMarker = body.indexOf("---EXTINS---")
+    if (extinsMarker !== -1) {
+      return {
+        title,
+        concise: body.substring(0, extinsMarker).trim(),
+        extended: body.substring(extinsMarker + "---EXTINS---".length).trim(),
+      }
+    }
+    return { title, concise: body, extended: "" }
   })
 }
 
@@ -55,7 +66,7 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
 
   const sections = parseSections(data.content)
   // First section is usually the title block (# heading), skip it if empty
-  const contentSections = sections.filter((s) => s.body.length > 50)
+  const contentSections = sections.filter((s) => s.concise.length > 50)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -69,12 +80,17 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
           }}
         />
         <div className="relative max-w-4xl mx-auto px-6 py-16 sm:py-24">
-          <Link
-            href="/media-books"
-            className="text-sm text-white/60 hover:text-white transition-colors mb-8 inline-block"
-          >
-            ← Toate ghidurile
-          </Link>
+          <div className="flex items-center justify-between mb-8">
+            <Link href="/">
+              <Image src="/logo.svg" alt="JobGrade" width={130} height={33} className="h-8 w-auto brightness-0 invert" />
+            </Link>
+            <Link
+              href="/media-books"
+              className="text-sm text-white/60 hover:text-white transition-colors"
+            >
+              ← Toate ghidurile
+            </Link>
+          </div>
           <div className="mt-4">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest bg-white/10 text-white/80 mb-4">
               {mb.type}
@@ -173,25 +189,29 @@ export default async function MediaBookPage({ params }: { params: Promise<{ slug
 
                     .mb-section > *:last-child { margin-bottom: 0; }
                   `}</style>
-                  <div className="mb-section">
-                    <ReactMarkdown
-                      components={{
-                        h3: ({ children }) => (
-                          <h3 style={{
-                            marginTop: "2.5rem", marginBottom: "1rem",
-                            fontSize: "1.125rem", fontWeight: 700, letterSpacing: "0.01em",
-                            color: "#4F46E5",
-                            paddingLeft: "0.875rem",
-                            borderLeft: "3px solid #4F46E5",
-                          }}>
-                            {children}
-                          </h3>
-                        ),
-                      }}
-                    >
-                      {section.body}
-                    </ReactMarkdown>
-                  </div>
+                  {section.extended ? (
+                    <ExpandableSection concise={section.concise} extended={section.extended} />
+                  ) : (
+                    <div className="mb-section">
+                      <ReactMarkdown
+                        components={{
+                          h3: ({ children }) => (
+                            <h3 style={{
+                              marginTop: "2.5rem", marginBottom: "1rem",
+                              fontSize: "1.125rem", fontWeight: 700, letterSpacing: "0.01em",
+                              color: "#4F46E5",
+                              paddingLeft: "0.875rem",
+                              borderLeft: "3px solid #4F46E5",
+                            }}>
+                              {children}
+                            </h3>
+                          ),
+                        }}
+                      >
+                        {section.concise}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               </div>
 
