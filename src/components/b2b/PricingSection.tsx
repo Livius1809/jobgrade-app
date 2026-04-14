@@ -38,7 +38,7 @@ export function PricingSection() {
                   <Feature text="Suport email + chat" />
                 </div>
                 <div className="space-y-3">
-                  <Feature text="Actualizări legislative automate" />
+                  <Feature text="Actualizări legislația muncii automate" />
                   <Feature text="Export PDF/Excel" />
                   <Feature text="Acces la toate serviciile (cu credite)" />
                   <Feature text="Fără limită de poziții sau angajați" />

@@ -35,7 +35,7 @@ export default function AbonamentePage() {
         <div className="relative max-w-4xl mx-auto px-6 py-20 md:py-28 text-center">
           <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
             Un singur abonament.{" "}
-            <span className="text-indigo-600">Toate serviciile.</span>
+            <span className="text-indigo-600">Include accesul la toate serviciile.</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
             Accesul la portal, găzduirea datelor, suportul și consultanța sunt incluse.
@@ -74,7 +74,7 @@ export default function AbonamentePage() {
             <div className="text-center">
               <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">2</div>
               <h3 className="text-sm font-bold text-slate-900 mb-2">Cumperi credite</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">Creditele sunt moneda platformei. Cumperi un pachet, cu cât mai mare, cu atât prețul per credit scade. Creditele nu expiră.</p>
+              <p className="text-xs text-slate-500 leading-relaxed">Creditele reprezintă moneda platformei. Cumperi un pachet, cu cât mai mare, cu atât prețul per credit scade. Creditele nu expiră.</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 rounded-xl bg-fuchsia-100 text-fuchsia-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">3</div>
@@ -100,7 +100,7 @@ export default function AbonamentePage() {
             Credite
           </h2>
           <p className="text-center text-slate-500 text-sm mb-16 max-w-xl mx-auto">
-            Creditele sunt moneda platformei. Fiecare serviciu are un cost în credite.
+            Creditele reprezintă moneda platformei. Fiecare serviciu are un cost în credite.
             Cumperi pachete de credite — cu cât cumperi mai multe, cu atât prețul per credit scade.
           </p>
 
@@ -188,7 +188,7 @@ export default function AbonamentePage() {
           <div className="space-y-6">
             <FaqItem
               q="Cum funcționează creditele?"
-              a="Creditele sunt moneda platformei. Cumperi un pachet de credite și le folosești pentru orice serviciu: evaluare posturi, analiză salarială, consultanță AI. Cu cât cumperi mai multe, cu atât prețul per credit scade."
+              a="Creditele reprezintă moneda platformei. Cumperi un pachet de credite și le folosești pentru orice serviciu: evaluare posturi, analiză salarială, consultanță AI. Cu cât cumperi mai multe, cu atât prețul per credit scade."
             />
             <FaqItem
               q="Creditele expiră?"
