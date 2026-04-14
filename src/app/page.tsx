@@ -214,8 +214,8 @@ function StorySection({
               key={i}
               className={`leading-relaxed text-justify ${
                 i === 0
-                  ? "text-xl md:text-2xl font-semibold text-indigo-dark mb-5"
-                  : "text-base md:text-lg text-text-warm mb-4"
+                  ? "text-xl md:text-2xl font-semibold text-indigo-dark mb-7"
+                  : "text-base md:text-lg text-text-warm mb-5"
               }`}
             >
               {paragraph}
@@ -350,7 +350,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════════════
            POVESTEA — Secvențele 1-9 cu respirații
          ═══════════════════════════════════════════════════════════ */}
-      <div id="spiral-zone" className="relative flex flex-col gap-10 md:gap-16 py-8">
+      <div id="spiral-zone" className="relative flex flex-col gap-6 md:gap-10 py-8">
         <SpiralPath />
 
         {/* Secv 1: Omul */}

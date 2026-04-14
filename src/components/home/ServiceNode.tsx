@@ -51,14 +51,14 @@ export function ServiceNode({ side, evocative, service, delay = 0, active = true
             height="20"
             viewBox="0 0 24 24"
             fill="currentColor"
-            className={`mb-3 ${isLeft ? "text-coral/40" : "text-indigo/40"}`}
+            className={`mb-4 ${isLeft ? "text-coral/40" : "text-indigo/40"}`}
             style={{ animation: "breatheSlow 4s ease-in-out infinite" }}
           >
             <path d={iconPath} />
           </svg>
         ) : (
           <div
-            className={`w-2.5 h-2.5 rounded-full mb-3 ${
+            className={`w-2.5 h-2.5 rounded-full mb-4 ${
               isLeft ? "bg-coral/60" : "bg-indigo/60"
             }`}
             style={{ animation: "breatheSlow 4s ease-in-out infinite" }}
@@ -66,7 +66,7 @@ export function ServiceNode({ side, evocative, service, delay = 0, active = true
         )}
         {/* Evocative phrase — curiosity */}
         <p
-          className={`text-[15px] italic leading-relaxed mb-2 ${
+          className={`text-[15px] italic leading-relaxed mb-4 ${
             isLeft ? "text-coral-dark" : "text-indigo"
           }`}
         >

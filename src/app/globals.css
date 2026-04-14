@@ -157,18 +157,18 @@ body {
 .story-section {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: center;
   max-width: 64rem;
   margin: 0 auto;
-  padding: 3rem 1.5rem;
+  padding: 4.5rem 1.5rem;
 }
 
 @media (max-width: 768px) {
   .story-section {
     grid-template-columns: 1fr;
-    gap: 1rem;
-    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+    padding: 3rem 1.5rem;
   }
 
   /* Pe mobile, nodurile goale nu ocupă spațiu */
