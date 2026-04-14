@@ -7,42 +7,77 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* ── Header — consistent cu homepage ──────────────────── */}
-      <header className="sticky top-0 z-50 header-glass">
+    <div className="min-h-screen bg-white">
+      {/* ── Header ──────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="flex items-center justify-between px-6 h-16" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image
-              src="/logo.svg"
-              alt="JobGrade"
-              width={32}
-              height={32}
-              className="transition-transform duration-500 group-hover:rotate-45"
-            />
-            <span className="text-lg font-semibold text-indigo-dark">JobGrade</span>
+          <Link href="/">
+            <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
           <Link
             href="/"
-            className="text-sm text-text-secondary hover:text-coral transition-colors duration-200"
+            className="text-sm text-slate-500 hover:text-slate-700 transition-colors duration-200"
           >
             ← Pagina principală
           </Link>
         </div>
       </header>
 
-      {/* ── Content centrat ──────────────────────────────────── */}
-      <main className="flex items-center justify-center px-6 py-16" style={{ minHeight: "calc(100vh - 4rem)" }}>
-        <div className="w-full" style={{ maxWidth: "24rem" }}>
-          {children}
+      {/* ── Layout doi coloane: context + formular ───────────── */}
+      <main className="flex items-center justify-center px-6 py-12" style={{ minHeight: "calc(100vh - 4rem)" }}>
+        <div className="w-full grid md:grid-cols-2 gap-12 items-center" style={{ maxWidth: "56rem" }}>
+
+          {/* Coloana stânga — context */}
+          <div className="hidden md:block">
+            <h1 className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+              Portalul organizației tale
+            </h1>
+            <div className="space-y-5 text-sm text-slate-600 leading-relaxed">
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 text-sm font-bold">1</span>
+                <div>
+                  <p className="font-semibold text-slate-900">Evaluarea posturilor</p>
+                  <p>Ierarhizează posturile pe criterii obiective. Comitet intern, asistență AI, rapoarte conforme cu Directiva EU 2023/970.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600 text-sm font-bold">2</span>
+                <div>
+                  <p className="font-semibold text-slate-900">Analiza decalajului salarial</p>
+                  <p>Identifică diferențele, înțelege cauzele, primește plan de acțiune. Monitorizare continuă cu alertare.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-fuchsia-50 flex items-center justify-center text-fuchsia-600 text-sm font-bold">3</span>
+                <div>
+                  <p className="font-semibold text-slate-900">Evaluarea comună</p>
+                  <p>Proces structurat angajator-angajați conform Art. 10. Dialog fundamentat pe date obiective.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 text-sm font-bold">+</span>
+                <div>
+                  <p className="font-semibold text-slate-900">Și altele, pe măsură ce crești</p>
+                  <p>Evaluarea personalului, structuri salariale, procese interne, cultură organizațională — disponibile progresiv.</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <p className="text-xs text-slate-400">
+                Psihobusiness Consulting SRL &middot; CIF RO15790994
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Conform Directiva EU 2023/970 &middot; GDPR &middot; AI Act Art. 14
+              </p>
+            </div>
+          </div>
+
+          {/* Coloana dreapta — formular */}
+          <div className="w-full" style={{ maxWidth: "24rem", margin: "0 auto" }}>
+            {children}
+          </div>
         </div>
       </main>
-
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="border-t border-border/50 py-6 px-6">
-        <div className="text-center text-xs text-text-secondary/50">
-          <span className="italic">Evaluăm posturi. Construim echitate.</span>
-        </div>
-      </footer>
     </div>
   )
 }

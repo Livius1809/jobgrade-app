@@ -51,8 +51,8 @@ function LoginForm() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Bun venit înapoi</h2>
-      <p className="text-gray-500 mb-8">Intră în contul tău JobGrade</p>
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">Intră în portal</h2>
+      <p className="text-slate-500 mb-8">Contul organizației tale pe JobGrade</p>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
