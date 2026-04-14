@@ -19,9 +19,9 @@ export default function PayGapLanding() {
             <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#problema" className="text-slate-600 hover:text-indigo-600">Problema</a>
-            <a href="#solutia" className="text-slate-600 hover:text-indigo-600">Soluția</a>
-            <a href="#pricing" className="text-slate-600 hover:text-indigo-600">Prețuri</a>
+            <a href="#problema" className="text-slate-600 hover:text-violet-600">Problema</a>
+            <a href="#solutia" className="text-slate-600 hover:text-violet-600">Soluția</a>
+            <a href="#pricing" className="text-slate-600 hover:text-violet-600">Prețuri</a>
             <a href="#demo" className="bg-[#E85D43] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#d04e36] transition-colors">
               Programează demo
             </a>
@@ -31,11 +31,11 @@ export default function PayGapLanding() {
 
       {/* ══════════ S1: HERO ══════════ */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-orange-50/30" />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-indigo-50/30" />
         <div className="relative max-w-4xl mx-auto px-6 py-24 md:py-32 text-center">
           <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
             Știi dacă plătești echitabil?{" "}
-            <span className="text-indigo-600">Acum poți demonstra.</span>
+            <span className="text-violet-600">Acum poți demonstra.</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
             Analiza decalajului salarial transformă întrebarea &ldquo;Există inechitate la noi?&rdquo;
@@ -46,7 +46,7 @@ export default function PayGapLanding() {
             <a href="#demo" className="inline-flex items-center justify-center bg-[#E85D43] text-white px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-[#d04e36] transition-colors shadow-lg shadow-orange-200">
               Programează un demo gratuit
             </a>
-            <a href="#pricing" className="inline-flex items-center justify-center border-2 border-indigo-200 text-indigo-700 px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-indigo-50 transition-colors">
+            <a href="#pricing" className="inline-flex items-center justify-center border-2 border-violet-200 text-violet-700 px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-violet-50 transition-colors">
               Vezi prețurile
             </a>
           </div>
@@ -112,7 +112,7 @@ export default function PayGapLanding() {
       </section>
 
       {/* ══════════ S4: CE NE DIFERENȚIAZĂ ══════════ */}
-      <section className="bg-indigo-50/50 py-20">
+      <section className="bg-violet-50/50 py-20">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-center text-sm font-bold uppercase tracking-widest text-slate-400 mb-12">
             Ce ne diferențiază
@@ -134,7 +134,7 @@ export default function PayGapLanding() {
           <h2 className="text-center text-base font-bold uppercase tracking-widest text-slate-400 mb-4">
             Prețuri transparente
           </h2>
-          <p className="text-center text-indigo-600 font-semibold mt-4 mb-16">
+          <p className="text-center text-violet-600 font-semibold mt-4 mb-16">
             Tarifare per angajat analizat — plătiți doar pentru ce folosiți
           </p>
 
@@ -211,7 +211,7 @@ export default function PayGapLanding() {
       </section>
 
       {/* ══════════ S7: CTA + FORMULAR DEMO ══════════ */}
-      <section id="demo" className="py-20 bg-gradient-to-b from-white to-indigo-50/30">
+      <section id="demo" className="py-20 bg-gradient-to-b from-white to-violet-50/30">
         <div className="max-w-2xl mx-auto px-6 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
             Află unde stai cu echitatea salarială
@@ -257,13 +257,13 @@ function PainCard({ icon, title, text }: { icon: string; title: string; text: st
 function StepCard({ step, title, text, link, linkLabel }: { step: string; title: string; text: string; link?: string; linkLabel?: string }) {
   return (
     <div className="text-center">
-      <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">
+      <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 font-bold text-xl flex items-center justify-center mx-auto mb-4">
         {step}
       </div>
       <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
       <p className="text-slate-500 text-sm leading-relaxed text-justify">{text}</p>
       {link && (
-        <Link href={link} className="inline-block mt-3 text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
+        <Link href={link} className="inline-block mt-3 text-xs text-violet-600 hover:text-violet-800 transition-colors">
           {linkLabel || "Află mai mult →"}
         </Link>
       )}
@@ -273,11 +273,11 @@ function StepCard({ step, title, text, link, linkLabel }: { step: string; title:
 
 function ResourceCard({ icon, title, text, href }: { icon: string; title: string; text: string; href: string }) {
   return (
-    <Link href={href} className="block rounded-xl border border-slate-200 bg-white p-6 hover:border-indigo-300 hover:shadow-md transition-all group">
+    <Link href={href} className="block rounded-xl border border-slate-200 bg-white p-6 hover:border-violet-300 hover:shadow-md transition-all group">
       <span className="text-2xl">{icon}</span>
-      <h3 className="text-base font-bold text-slate-900 mt-3 mb-2 group-hover:text-indigo-600 transition-colors">{title}</h3>
+      <h3 className="text-base font-bold text-slate-900 mt-3 mb-2 group-hover:text-violet-600 transition-colors">{title}</h3>
       <p className="text-slate-500 text-sm leading-relaxed text-justify">{text}</p>
-      <span className="inline-block mt-3 text-xs text-indigo-600 group-hover:translate-x-1 transition-transform">Citește ghidul →</span>
+      <span className="inline-block mt-3 text-xs text-violet-600 group-hover:translate-x-1 transition-transform">Citește ghidul →</span>
     </Link>
   )
 }
@@ -300,10 +300,10 @@ function PricingCard({
 }) {
   return (
     <div className={`rounded-2xl p-6 border-2 ${
-      recommended ? "border-indigo-500 shadow-xl shadow-indigo-100 relative" : "border-slate-200"
+      recommended ? "border-violet-500 shadow-xl shadow-violet-100 relative" : "border-slate-200"
     }`}>
       {recommended && (
-        <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+        <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
           Recomandat
         </span>
       )}
@@ -318,7 +318,7 @@ function PricingCard({
       <ul className="space-y-3 mb-8">
         {features.map((f, i) => (
           <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-            <span className="text-indigo-500 mt-0.5 shrink-0">&#10003;</span>
+            <span className="text-violet-500 mt-0.5 shrink-0">&#10003;</span>
             {f}
           </li>
         ))}
