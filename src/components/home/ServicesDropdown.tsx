@@ -6,6 +6,7 @@ import Link from "next/link"
 const B2B_SERVICES = [
   { name: "Evaluarea posturilor", active: true, href: "/b2b/je" },
   { name: "Analiza decalajului salarial", active: true, href: "/b2b/pay-gap" },
+  { name: "Evaluarea comună", active: true, href: "/b2b/evaluare-comuna" },
   { name: "Structuri salariale echitabile", active: true, href: "/b2b/je" },
   { name: "Evaluarea personalului și armonizarea echipelor", active: false },
   { name: "Diagnoză organizațională", active: false },
