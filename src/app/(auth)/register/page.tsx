@@ -77,7 +77,82 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
+    <div className="w-full grid md:grid-cols-2 gap-12 items-start" style={{ maxWidth: "56rem" }}>
+
+      {/* Coloana stânga — ce primești + cum funcționează */}
+      <div className="hidden md:block">
+        <h1 className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+          Portalul organizației tale
+        </h1>
+        <div className="space-y-5 text-sm text-slate-600 leading-relaxed">
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 text-sm font-bold">1</span>
+            <div>
+              <p className="font-semibold text-slate-900">Evaluarea posturilor</p>
+              <p>Ierarhizează posturile pe criterii obiective. Comitet intern, asistență AI, rapoarte conforme cu Directiva EU 2023/970.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600 text-sm font-bold">2</span>
+            <div>
+              <p className="font-semibold text-slate-900">Analiza decalajului salarial</p>
+              <p>Identifică diferențele, înțelege cauzele, primește plan de acțiune. Monitorizare continuă cu alertare.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-fuchsia-50 flex items-center justify-center text-fuchsia-600 text-sm font-bold">3</span>
+            <div>
+              <p className="font-semibold text-slate-900">Evaluarea comună</p>
+              <p>Proces structurat angajator-angajați conform Art. 10. Dialog fundamentat pe date obiective.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 text-sm font-bold">+</span>
+            <div>
+              <p className="font-semibold text-slate-900">Și altele, dacă îți dorești mai mult</p>
+              <p>Evaluarea personalului, structuri salariale, procese interne, cultură organizațională.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <p className="text-sm font-semibold text-slate-900 mb-4">Pașii pentru activarea contului</p>
+          <div className="text-xs text-slate-500 space-y-3">
+            <div className="flex items-start gap-2">
+              <span className="font-bold text-slate-700 mt-0.5">1.</span>
+              <p>Optează pentru un tip de abonament (vezi planurile disponibile)</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-bold text-slate-700 mt-0.5">2.</span>
+              <div>
+                <p>Semnăm contractul de prestări servicii</p>
+                <p className="text-slate-400 mt-1">2.1 Descarcă contractul standard (disponibil după înregistrare)</p>
+                <p className="text-slate-400">2.2 Trimite contractul semnat la <span className="text-slate-600">contract@jobgrade.ro</span></p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-bold text-slate-700 mt-0.5">3.</span>
+              <p>Efectuezi plata abonamentului ales</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-bold text-slate-700 mt-0.5">4.</span>
+              <p>Contul se activează automat — primești acces la portal și prima oră de consultanță cu un specialist HR</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-400">
+            Psihobusiness Consulting SRL &middot; CIF RO15790994
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Conform Directiva EU 2023/970 &middot; GDPR &middot; AI Act Art. 14
+          </p>
+        </div>
+      </div>
+
+      {/* Coloana dreapta — formular */}
+      <div className="w-full" style={{ maxWidth: "24rem", margin: "0 auto" }}>
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Creează contul organizației</h2>
       <p className="text-slate-500 mb-8">Introdu datele companiei pentru a accesa portalul JobGrade</p>
 
@@ -324,6 +399,7 @@ export default function RegisterPage() {
           Loghează-te
         </Link>
       </p>
+      </div>
     </div>
   )
 }
