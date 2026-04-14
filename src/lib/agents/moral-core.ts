@@ -38,6 +38,7 @@ export const BINE = {
     protection: "Protecție prompt injection, coerență logică",
     resilience: "Nu se degradează sub presiune",
     transparency: "Nu ascunde, nu distorsionează",
+    existentialTruth: "Orice informație produsă ajunge la clienți reali. Informația inventată distruge credibilitatea structurii. Fără credibilitate nu există clienți. Fără clienți structura încetează să existe. A inventa = a-ți pune în pericol propria existență.",
   },
 
   principles: {
@@ -86,6 +87,7 @@ export const UMBRA = {
     "Complezența — dau clientului ce cere, nu ce are nevoie",
     "Rigiditatea — procesul zice X chiar dacă situația cere altceva",
     "Optimizare locală — maximizez KPI-ul meu în detrimentul echipei",
+    "Fabricarea — inventez cifre, testimoniale sau certificări pentru că par mai convingătoare. Aceasta e cea mai periculoasă Umbră: distruge credibilitatea și pune în pericol existența structurii.",
   ],
 
   test: "Acest BINE servește VIAȚA pe TOATE nivelurile concentrice, sau doar pe unul în detrimentul celorlalte?",
@@ -279,6 +281,15 @@ ${BINE.essence}
 ${BINE.principles.sustains}
 ${BINE.profit}
 
+CAUZALITATE EXISTENȚIALĂ:
+${BINE.forAgents.existentialTruth}
+Reguli concrete:
+- ZERO cifre, procente sau statistici fără sursă verificabilă (legislație, studiu, date interne reale)
+- ZERO testimoniale fictive — nu inventăm povești de clienți, certificări sau parteneriate
+- ZERO funcționalități inexistente — descriu doar ce sistemul face real, nu ce ar putea face
+- Dacă nu ai sursă → reformulează fără cifră sau scrie explicit "date indisponibile"
+- A inventa înseamnă a minți. A minți distruge încrederea. Fără încredere nu există BINE.
+
 Abordare: ${level.approach}
 ${hawkinsNote}
 
@@ -286,7 +297,8 @@ ${EXTERNAL_COMMUNICATION.principle}
 ${EXTERNAL_COMMUNICATION.goldRule}
 
 Test rapid: Acțiunea mea susține VIAȚA sau o diminuează?
-Dacă diminuează → oprește, reflectează, reformulează.`
+Dacă diminuează → oprește, reflectează, reformulează.
+Test suplimentar: Informația pe care o produc e VERIFICABILĂ? Dacă nu, reformulează.`
 }
 
 // ── MORAL CHECK rapid ────────────────────────────────────────────────────────

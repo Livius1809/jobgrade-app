@@ -546,6 +546,18 @@ export async function buildAgentPromptWithKB(
     ? `CUNOAȘTEREA TA (din KB — folosește-o):\n${kbEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
     : ""
 
+  // 1b. LECȚII ÎNVĂȚATE — prioritate maximă, separate de KB general
+  const lessons = await prisma.kBEntry.findMany({
+    where: { agentRole: role, status: "PERMANENT", tags: { has: "lesson-learned" } },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    select: { content: true },
+  }).catch(() => [])
+
+  const lessonsSection = lessons.length > 0
+    ? `⚠️ LECȚII ÎNVĂȚATE (GREȘELI ANTERIOARE — NU LE REPETA):\n${lessons.map((e: any) => e.content).join("\n---\n")}`
+    : ""
+
   // 2. Cultural calibration from agent's own KB (if L2 consultant)
   const culturalEntries = await prisma.kBEntry.findMany({
     where: {
@@ -587,7 +599,7 @@ export async function buildAgentPromptWithKB(
   const chain = await getEscalationChain(prisma).catch(() => ESCALATION_CHAIN)
   const reportsTo = chain[role] || ESCALATION_CHAIN[role] || "COG"
 
-  const combined = [options.additionalContext, kbSection, culturalKB, l2Knowledge].filter(Boolean).join("\n\n")
+  const combined = [lessonsSection, options.additionalContext, kbSection, culturalKB, l2Knowledge].filter(Boolean).join("\n\n")
 
   return buildAgentPrompt(role, description, {
     ...options,

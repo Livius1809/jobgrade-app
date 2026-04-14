@@ -573,6 +573,32 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
     return { outcome: "FAILED", subTaskIds }
   }
 
+  // ── QC Gate: verificare pre-COMPLETED ──
+  // Conținut client-facing (media-book, copywriting, outreach) trece prin validare
+  const isClientFacing = task.tags?.some((t: string) =>
+    ["media-book", "copywriting", "outreach-messages", "content-creation", "memorable-experience"].includes(t)
+  )
+
+  if (isClientFacing && payload.result) {
+    const qcIssues = runQualityCheck(payload.result, task.assignedTo)
+    if (qcIssues.length > 0) {
+      await (prisma as any).agentTask.update({
+        where: { id: task.id },
+        data: {
+          status: "BLOCKED",
+          blockerType: "QUALITY_CHECK",
+          blockerDescription: `QC gate a detectat ${qcIssues.length} probleme:\n${qcIssues.join("\n")}`,
+          blockedAt: now,
+          acceptedAt: task.acceptedAt || now,
+          startedAt: task.startedAt || now,
+          result: payload.result,
+          tags: [...(task.tags || []), "qc-blocked"],
+        },
+      })
+      return { outcome: "BLOCKED", subTaskIds }
+    }
+  }
+
   await (prisma as any).agentTask.update({
     where: { id: task.id },
     data: {
@@ -584,6 +610,71 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
     },
   })
   return { outcome: "COMPLETED", subTaskIds }
+}
+
+// ─── QC Gate — verificare automată conținut client-facing ────────────────────
+
+// Lista de certificări/parteneriate aprobate (restul = suspect)
+const APPROVED_CREDENTIALS = [
+  "colegiul psihologilor", "cpr", "psihologia muncii", "transporturilor", "serviciilor",
+  "psihobusiness consulting", "cif ro15790994",
+  "directiva eu 2023/970", "gdpr", "regulamentul (ue) 2016/679",
+  "ai act", "regulamentul (ue) 2024/1689",
+  "legea 53/2003", "codul muncii",
+]
+
+function runQualityCheck(content: string, agentRole: string): string[] {
+  const issues: string[] = []
+  const lower = content.toLowerCase()
+
+  // 1. Cifre/procente fără indicație de sursă
+  // Caută pattern-uri: "73%", "14.1:1", "50.000 EUR" etc. fără "(sursă:" sau "(Art." sau "(Considerentul" în apropiere
+  const numberPatterns = content.match(/\b\d{2,3}[,.]?\d*\s*%|\b\d+[.:]\d+\s*ROI|\b\d{2,3}\.000\s*(EUR|RON)/g)
+  if (numberPatterns) {
+    for (const num of numberPatterns) {
+      const idx = content.indexOf(num)
+      const context = content.substring(Math.max(0, idx - 100), Math.min(content.length, idx + num.length + 100))
+      const hasCitation = /\(surs[aă]|\(Art\.|\(Considerentul|\(conform|\(legislat|\(proiect de lege/i.test(context)
+      if (!hasCitation) {
+        issues.push(`[QC-CIFRĂ] "${num}" fără sursă verificabilă în context`)
+      }
+    }
+  }
+
+  // 2. Certificări/parteneriate suspecte
+  const certPatterns = /ISO \d+|partner\s+(microsoft|google|amazon|oracle)|certificar[ei]\s+\w+|membru\s+fondator|acreditar[ei]\s+\w+/gi
+  const certMatches = content.match(certPatterns)
+  if (certMatches) {
+    for (const cert of certMatches) {
+      const isApproved = APPROVED_CREDENTIALS.some(a => cert.toLowerCase().includes(a))
+      if (!isApproved) {
+        issues.push(`[QC-CERTIFICARE] "${cert}" nu e în lista de credențiale aprobate`)
+      }
+    }
+  }
+
+  // 3. Testimoniale fictive — pattern: "ne-a spus", "a declarat", citat cu ghilimele
+  const testimonialPatterns = /(?:ne-a spus|a declarat|a menționat|ne-a confirmat)[^.]*['""][^'""]{'|"}/gi
+  // Simpler: detect quoted speech patterns
+  const hasQuotedSpeech = /'[A-ZĂÎȘȚÂ][^']{20,}'/g.test(content) || /"[A-ZĂÎȘȚÂ][^"]{20,}"/g.test(content)
+  if (hasQuotedSpeech) {
+    issues.push(`[QC-TESTIMONIAL] Conține citat direct — verifică dacă e real sau fabricat`)
+  }
+
+  // 4. Funcționalități inexistente — pattern-uri specifice
+  const falseFeatures = [
+    /machine learning|ML\s+calibra/i,
+    /benchmark.*timp\s+real/i,
+    /\b47\s+(de\s+)?criterii/i,
+    /200\+\s+implementări/i,
+  ]
+  for (const pattern of falseFeatures) {
+    if (pattern.test(content)) {
+      issues.push(`[QC-FUNCȚIONALITATE] Pattern suspect: ${pattern.source}`)
+    }
+  }
+
+  return issues
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
