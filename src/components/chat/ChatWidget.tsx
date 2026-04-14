@@ -300,14 +300,14 @@ function ChatWidgetInner() {
     return (
       <button
         onClick={() => setWidgetState("expanded")}
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
         title="Cum vă putem ajuta?"
         aria-label="Deschide conversația cu asistentul"
       >
         {/* Chat bubble icon */}
         <svg
-          width="22"
-          height="22"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -317,6 +317,7 @@ function ChatWidgetInner() {
         >
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
+        <span className="text-sm font-medium">Află ce te interesează</span>
       </button>
     )
   }

@@ -19,7 +19,7 @@ const sequences = [
     text: [
       "Totul începe cu un om.",
       "Nu cu un CV. Nu cu o organigramă. Nu cu un salariu.",
-      "Cu cineva care se trezește dimineața și alege — conștient sau nu — cine e... azi.",
+      "Cu cineva care se trezește dimineața și alege, conștient sau nu, cine e... azi.",
     ],
     b2c: {
       evocative: "Cine ești... când nu mai trebuie să demonstrezi nimic?",
@@ -31,7 +31,7 @@ const sequences = [
     text: [
       "Apoi... omul își asumă un rol.",
       "Într-o echipă. Într-un proiect. Într-o companie care depinde de el... mai mult decât ar recunoaște.",
-      "Rolul nu-l definește — dar îl poate limita sau elibera. Depinde cine l-a gândit... și cât de bine se potrivește cu omul din spatele lui.",
+      "Rolul nu-l definește, dar îl poate limita sau elibera. Depinde cine l-a gândit... și cât de bine se potrivește cu omul din spatele lui.",
     ],
     b2c: {
       evocative: "Cine ești dincolo de rolul pe care ți-l asumi?",
@@ -57,22 +57,22 @@ const sequences2 = [
     id: "contextele",
     text: [
       "Rolurile trăiesc... în contexte.",
-      `Într-o companie cu 30 de oameni, salariile se stabilesc \u201Edupă ureche\u201D. La 100, \u201Edupă ureche\u201D devine \u201Epe noroc\u201D. La 300... devine risc. Și riscul are un cost pe care aproape nimeni nu-l calculează — până când un om bun pleacă, iar motivul nu e salariul în sine. E sentimentul... că nu e drept.`,
+      `Într-o companie cu 30 de oameni, salariile se stabilesc \u201Edupă ureche\u201D. La 100, \u201Edupă ureche\u201D devine \u201Ela noroc\u201D. La 300... se transformă într-un risc de care nu suntem conștienți. Și acest risc are un cost ascuns, despre care aflăm doar atunci... când un om bun pleacă, iar motivul nu e salariul în sine. E sentimentul... că nu e drept.`,
     ],
     b2c: {
       evocative: "Un rol profesional nu se găsește. Se asumă.",
       service: "Profilul tău profesional",
     },
     b2b: {
-      evocative: "Când grila salarială e construită corect, oamenii rămân. Nu din loialitate — din echitate.",
+      evocative: "Când grila salarială e construită corect, oamenii rămân. Nu din loialitate, din echitate.",
       service: "Structuri salariale echitabile",
     },
   },
   {
     id: "echilibrul",
     text: [
-      "Există un moment — rar, dar real — în care omul, rolul și contextul... se aliniază.",
-      "Nu e un accident. E rezultatul a ceva construit cu grijă: cineva a înțeles ce poate omul, cineva a gândit rolul cum trebuie... cineva a creat un context în care să poată respira.",
+      "Există un moment, rar, dar real, în care omul, rolul și contextul... se aliniază.",
+      "Nu e un accident. E rezultatul a ceva construit cu grijă: cineva a înțeles ce poate omul, cineva a gândit rolul cum trebuie... cineva a creat un context în care să se poată respira.",
       "Când se întâmplă asta... nu trebuie să motivezi pe nimeni. Oamenii vin la muncă și lucrurile merg.",
     ],
     b2c: {
@@ -97,8 +97,8 @@ const sequences3 = [
   {
     id: "performanta",
     text: [
-      "Din echilibru... vine performanța reală.",
-      "Nu cea storsă din ore suplimentare și presiune. Cea care apare când oamenii știu ce fac, de ce fac... și simt că e drept. Performanța care nu are nevoie de monitorizare — pentru că vine din interior.",
+      "Din echilibru... vine performanța reală. Nu cea stoarsă din ore suplimentare și presiune, ci aceea care apare când oamenii știu ce fac, de ce fac... și simt că e drept.",
+      "Performanța care nu are nevoie de monitorizare, pentru că vine din interior.",
       "Dar performanța reală nu se susține singură. Are nevoie de procese care nu împiedică... de o cultură care nu contrazice ce scrie pe pereți... și de o structură care ține pasul cu oamenii ei.",
     ],
     b2b: {
@@ -109,8 +109,8 @@ const sequences3 = [
   {
     id: "procesele",
     text: [
-      `Un proces bun nu se simte. Unul prost se simte în fiecare zi — în întârzieri, în frustrări, în lucruri care \u201Enu se știe de cine depind\u201D... și demotivează.`,
-      "Când procesele reflectă realitatea — nu un ideal desenat în PowerPoint — oamenii nu mai pierd energie încercând să înțeleagă sistemul. O investesc în muncă.",
+      `Un proces bun nu se simte. Unul prost se simte în fiecare zi, în întârzieri, în frustrări, în lucruri care \u201Enu se știe de cine depind\u201D... și demotivează.`,
+      "Când procesele reflectă realitatea, nu un ideal desenat în PowerPoint, oamenii nu mai pierd energie încercând să înțeleagă sistemul. O investesc în muncă.",
     ],
     b2c: {
       evocative: "Succesul se vede. Valoarea se simte. Care pe care?",
@@ -125,8 +125,8 @@ const sequences3 = [
     id: "evolutia",
     text: [
       "Ce e corect azi... nu e suficient mâine.",
-      "Oamenii cresc. Rolurile se transformă. Contextele se schimbă. Generații diferite aduc limbaje diferite la aceeași masă — și fiecare are dreptate... din locul său.",
-      "Cine nu evoluează... nu rămâne pe loc. Rămâne în urmă — nu față de piață, ci față de sine.",
+      "Oamenii cresc. Rolurile se transformă. Contextele se schimbă. Generații diferite aduc limbaje diferite la aceeași masă, și fiecare are dreptate... din locul său.",
+      "Cine nu evoluează rămâne în urmă nu doar față de piață, ci față de... sine.",
     ],
     b2b: {
       evocative: "Patru generații în aceeași sală. Același obiectiv... Limbaje diferite.",
@@ -137,12 +137,12 @@ const sequences3 = [
     id: "om-ai",
     text: [
       "Iar acum... la aceeași masă stau nu doar generații diferite, ci și inteligențe diferite.",
-      "Omul și AI-ul, fiecare cu atuurile sale... trebuie să învețe să lucreze împreună. Nu unul în locul celuilalt — ci unul prin celălalt.",
-      "Departamente conduse de oameni. Departamente operate de AI. Echipe în care ambele inteligențe colaborează. Structuri noi... pentru o realitate nouă.",
+      "Omul și AI-ul, fiecare cu atuurile sale... trebuie să învețe să lucreze împreună. Nu unul în locul celuilalt, ci unul prin celălalt.",
+      "Departamente conduse de oameni. Departamente operate de AI. Echipe în care ambele inteligențe colaborează. Structuri noi... pentru o realitate nouă, creată împreună.",
     ],
     b2c: {
       evocative: "Cum lucrezi cu o inteligență care nu obosește... dar nici nu simte?",
-      service: "Eu și ceilalți",
+      service: "Profilul tău profesional",
     },
     b2b: {
       evocative: "Structuri noi. Echipe noi. Aceleași valori... dar instrumente diferite.",
@@ -163,8 +163,8 @@ const sequences4 = [
     id: "impreuna",
     text: [
       "Oamenii cresc... împreună. În echipe care se văd. În organizații care se cunosc. În comunități care se susțin.",
-      "O companie care își evaluează posturile corect nu face doar conformitate — construiește un loc în care oamenii aleg să rămână. Un om care se descoperă pe sine nu devine doar mai bun la ce face — devine mai prezent în tot ce este.",
-      "Lucrurile astea nu se întâmplă separat. Se întâmplă împreună. Se hrănesc reciproc. Omul crește, organizația crește, piața crește — nu prin obligație, ci prin evoluție.",
+      "O companie care își evaluează posturile corect nu face doar conformitate, construiește un loc în care oamenii aleg să rămână. Un om care se descoperă pe sine nu devine doar mai bun la ce face, devine mai prezent în tot ceea ce a ales să fie la un moment dat.",
+      "Lucrurile astea nu se întâmplă separat. Se întâmplă împreună. Se hrănesc reciproc. Omul crește, organizația crește, piața crește, nu din obligație, ci din evoluție.",
     ],
     b2c: {
       evocative: "Ce s-ar întâmpla dacă ai construi ceva care te depășește?",
