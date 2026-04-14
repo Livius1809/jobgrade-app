@@ -293,15 +293,8 @@ export default function HomePage() {
          ═══════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 header-glass">
         <div className="px-6 h-16 flex items-center justify-between" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image
-              src="/logo.svg"
-              alt="JobGrade"
-              width={36}
-              height={36}
-              className="transition-transform duration-500 group-hover:rotate-45"
-            />
-            <span className="text-lg font-semibold text-indigo-dark">JobGrade</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -469,15 +462,14 @@ export default function HomePage() {
 
             {/* Col 1 — Logo + Tagline */}
             <div>
-              <div className="flex items-center gap-2.5 mb-4">
+              <div className="mb-4">
                 <Image
                   src="/logo.svg"
                   alt="JobGrade"
-                  width={28}
-                  height={28}
-                  className="brightness-0 invert"
+                  width={130}
+                  height={33}
+                  className="h-8 w-auto brightness-0 invert"
                 />
-                <span className="text-lg font-semibold">JobGrade</span>
               </div>
               <p className="text-sm text-white/60 leading-relaxed mb-4">
                 Începem cu CINE alegi să FII.
