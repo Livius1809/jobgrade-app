@@ -15,11 +15,7 @@ interface DataInput {
   href: string
 }
 
-const DATA_INPUTS: DataInput[] = [
-  { id: "jobs", label: "Fișe de post", description: "Descrierea posturilor din organizație", href: "/jobs" },
-  { id: "jobs_complete", label: "Fișe de post complete", description: "Fișe cu atribuții, responsabilități, cerințe detaliate", href: "/jobs" },
-  { id: "payroll", label: "Stat de salarii", description: "Salariile actuale pe poziții și angajați", href: "/compensation/packages" },
-]
+// DATA_INPUTS sunt acum inline în secțiunea "Inputuri client" + "Date relevante"
 
 /* ── Servicii — ce poate accesa cu datele respective ──────────────── */
 
@@ -80,21 +76,30 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, jobCount, hasPayroll] = await Promise.all([
+  const [credits, tenant, jobCount, payrollCount, completeJobCount] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
-    (prisma as any).payrollEntry.count({ where: { tenantId } }).then((c: number) => c > 0).catch(() => false),
+    (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0) as Promise<number>,
+    prisma.job.count({ where: { tenantId, status: "ACTIVE", responsibilities: { not: null } } }).catch(() => 0),
   ])
 
   const providedInputs = new Set<string>()
   if (jobCount > 0) providedInputs.add("jobs")
-  if (hasPayroll) providedInputs.add("payroll")
+  if (completeJobCount > 0) providedInputs.add("jobs_complete")
+  if (payrollCount > 0) providedInputs.add("payroll")
+
+  const jobsPercent = jobCount === 0 ? 0 : completeJobCount > 0 ? 100 : 60
+  const payrollPercent = payrollCount > 0 ? 100 : 0
 
   return {
     credits,
     companyName: tenant?.name ?? "Organizația ta",
     jobCount,
+    payrollCount: payrollCount as number,
+    completeJobCount,
+    jobsPercent,
+    payrollPercent,
     providedInputs,
   }
 }
@@ -129,43 +134,104 @@ export default async function PortalPage() {
         </div>
       </div>
 
-      {/* ══════════ DATELE TALE ══════════ */}
+      {/* ══════════ DATELE TALE — 2 coloane ══════════ */}
       <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
-          Datele tale
-        </h2>
-        <div className="bg-surface rounded-xl border border-border p-5">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {DATA_INPUTS.map((input) => {
-              const provided = data.providedInputs.has(input.id)
-              return (
-                <Link
-                  key={input.id}
-                  href={input.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
-                    provided
-                      ? "bg-emerald-50 hover:bg-emerald-100"
-                      : "bg-slate-50 hover:bg-slate-100"
-                  }`}
-                >
-                  <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                    provided ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-400"
-                  }`}>
-                    {provided ? "✓" : ""}
-                  </span>
-                  <div className="min-w-0">
-                    <p className={`text-sm font-medium truncate ${provided ? "text-slate-900" : "text-slate-500"}`}>
-                      {input.label}
-                    </p>
-                    <p className="text-[10px] text-slate-400 truncate">{input.description}</p>
-                  </div>
-                </Link>
-              )
-            })}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Stânga — Inputuri client */}
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
+              Inputuri client
+            </h2>
+            <div className="bg-surface rounded-xl border border-border p-5 space-y-5">
+              {/* Fișe de post */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-slate-900">Fișe de post</p>
+                  <span className="text-xs text-slate-400">{data.jobCount} fișe încărcate</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${data.jobsPercent === 100 ? "bg-emerald-500" : data.jobsPercent > 0 ? "bg-amber-400" : "bg-slate-200"}`}
+                    style={{ width: `${data.jobsPercent}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {data.jobsPercent === 100 ? "Complete — gata de procesare" : data.jobsPercent > 0 ? "Încărcate — necesită completare atribuții" : "Nicio fișă încărcată"}
+                </p>
+              </div>
+
+              {/* Stat de salarii */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-slate-900">Stat de salarii</p>
+                  <span className="text-xs text-slate-400">{data.payrollCount} intrări importate</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${data.payrollPercent === 100 ? "bg-emerald-500" : "bg-slate-200"}`}
+                    style={{ width: `${data.payrollPercent}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {data.payrollPercent === 100 ? "Importat — gata de procesare" : "Niciun stat importat"}
+                </p>
+              </div>
+            </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-3">
-            Cu cât introduci mai multe date, cu atât mai multe servicii devin disponibile.
-          </p>
+
+          {/* Dreapta — Date relevante pentru procesare */}
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
+              Date relevante pentru procesare
+            </h2>
+            <div className="bg-surface rounded-xl border border-border p-5 space-y-4">
+              {/* Fișe complete */}
+              <div className={`rounded-lg px-4 py-3 ${data.providedInputs.has("jobs_complete") ? "bg-emerald-50" : "bg-amber-50"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                    data.providedInputs.has("jobs_complete") ? "bg-emerald-500 text-white" : "bg-amber-400 text-white"
+                  }`}>
+                    {data.providedInputs.has("jobs_complete") ? "✓" : "!"}
+                  </span>
+                  <p className="text-sm font-medium text-slate-900">Fișe de post complete</p>
+                </div>
+                {!data.providedInputs.has("jobs_complete") && (
+                  <div className="ml-7">
+                    <p className="text-xs text-slate-500 mb-2">Completează pentru fiecare post:</p>
+                    <ul className="text-[10px] text-slate-400 space-y-0.5 mb-2">
+                      <li>• Atribuții și responsabilități</li>
+                      <li>• Cerințe (educație, experiență)</li>
+                      <li>• Condiții de muncă</li>
+                    </ul>
+                    <Link href="/jobs" className="text-xs text-indigo-600 hover:underline">Completează acum →</Link>
+                  </div>
+                )}
+                {data.providedInputs.has("jobs_complete") && (
+                  <p className="text-xs text-emerald-600 ml-7">Gata de procesare</p>
+                )}
+              </div>
+
+              {/* Date salariale */}
+              <div className={`rounded-lg px-4 py-3 ${data.providedInputs.has("payroll") ? "bg-emerald-50" : "bg-slate-50"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                    data.providedInputs.has("payroll") ? "bg-emerald-500 text-white" : "bg-slate-300 text-slate-500"
+                  }`}>
+                    {data.providedInputs.has("payroll") ? "✓" : ""}
+                  </span>
+                  <p className="text-sm font-medium text-slate-900">Date salariale</p>
+                </div>
+                {data.providedInputs.has("payroll") ? (
+                  <p className="text-xs text-emerald-600 ml-7">Gata de procesare — {data.payrollCount} intrări</p>
+                ) : (
+                  <div className="ml-7">
+                    <p className="text-xs text-slate-400 mb-2">Importă statul de salarii cu: funcție, salariu, gen, normă</p>
+                    <Link href="/compensation/packages" className="text-xs text-indigo-600 hover:underline">Importă acum →</Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
