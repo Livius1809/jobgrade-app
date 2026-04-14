@@ -17,12 +17,7 @@ interface DataInput {
 
 const DATA_INPUTS: DataInput[] = [
   { id: "jobs", label: "Fișe de post", description: "Descrierea posturilor din organizație", href: "/jobs" },
-  { id: "org", label: "Stat de funcții / Organigramă", description: "Structura organizatorică și pozițiile distincte", href: "/company/departments" },
-  { id: "payroll", label: "Date salariale", description: "Salariile actuale pe poziții și angajați", href: "/compensation/packages" },
-  { id: "demographics", label: "Date demografice", description: "Gen, vârstă, vechime, nivel educațional per angajat", href: "/company" },
-  { id: "kpis", label: "Indicatori de performanță", description: "KPI-uri și evaluări de performanță per angajat", href: "/compensation/kpis" },
-  { id: "procedures", label: "Proceduri și fluxuri", description: "Procese interne, manual calitate, proceduri operaționale", href: "/company" },
-  { id: "objectives", label: "Obiective strategice", description: "Misiune, viziune, valori, obiective pe termen mediu-lung", href: "/company" },
+  { id: "payroll", label: "Stat de salarii", description: "Salariile actuale pe poziții și angajați", href: "/compensation/packages" },
 ]
 
 /* ── Servicii — ce poate accesa cu datele respective ──────────────── */
@@ -46,27 +41,27 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Evaluare",
     color: "indigo",
     services: [
-      { id: "je", label: "Evaluarea posturilor", href: "/sessions", requiredInputs: ["jobs", "org"], color: "indigo" },
-      { id: "salary", label: "Structuri salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "org", "payroll"], color: "indigo" },
+      { id: "je", label: "Evaluarea posturilor", href: "/sessions", requiredInputs: ["jobs"], color: "indigo" },
+      { id: "salary", label: "Structuri salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo" },
     ],
   },
   {
     name: "Conformitate EU 2023/970",
     color: "violet",
     services: [
-      { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "org", "payroll", "demographics"], color: "violet" },
-      { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "org", "payroll", "demographics"], color: "violet" },
+      { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet" },
+      { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet" },
     ],
   },
   {
     name: "Dezvoltare organizațională",
     color: "fuchsia",
     services: [
-      { id: "eval-personal", label: "Evaluarea personalului", href: "#", requiredInputs: ["jobs", "org", "kpis", "demographics"], color: "fuchsia" },
-      { id: "diagnosis", label: "Diagnoză organizațională", href: "#", requiredInputs: ["jobs", "org", "procedures"], color: "fuchsia" },
-      { id: "omAI", label: "Managementul structurilor om-AI", href: "#", requiredInputs: ["jobs", "org", "demographics"], color: "fuchsia" },
-      { id: "quality", label: "Procese interne și Manualul calității", href: "#", requiredInputs: ["jobs", "org", "procedures"], color: "fuchsia" },
-      { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs", "org", "payroll", "kpis", "procedures", "objectives"], color: "fuchsia" },
+      { id: "eval-personal", label: "Evaluarea personalului", href: "#", requiredInputs: ["jobs", "payroll"], color: "fuchsia" },
+      { id: "diagnosis", label: "Diagnoză organizațională", href: "#", requiredInputs: ["jobs"], color: "fuchsia" },
+      { id: "omAI", label: "Managementul structurilor om-AI", href: "#", requiredInputs: ["jobs"], color: "fuchsia" },
+      { id: "quality", label: "Procese interne și Manualul calității", href: "#", requiredInputs: ["jobs"], color: "fuchsia" },
+      { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs", "payroll"], color: "fuchsia" },
     ],
   },
   {
@@ -82,25 +77,21 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, jobCount, employeeCount] = await Promise.all([
+  const [credits, tenant, jobCount, hasPayroll] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
-    prisma.employee?.count({ where: { tenantId } }).catch(() => 0) ?? 0,
+    prisma.salaryGrade.count({ where: { tenantId } }).then(c => c > 0).catch(() => false),
   ])
 
-  // Determine which inputs the client has provided
   const providedInputs = new Set<string>()
   if (jobCount > 0) providedInputs.add("jobs")
-  if (jobCount > 0) providedInputs.add("org") // simplifat: dacă are joburi, are și structura
-  // payroll, demographics, kpis, procedures, objectives — de verificat per tabel
-  // TODO: verificare reală pe fiecare tabel
+  if (hasPayroll) providedInputs.add("payroll")
 
   return {
     credits,
     companyName: tenant?.name ?? "Organizația ta",
     jobCount,
-    employeeCount: employeeCount as number,
     providedInputs,
   }
 }
