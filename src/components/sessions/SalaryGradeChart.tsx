@@ -319,7 +319,7 @@ function SituationLegend({ points, grades }: { points: Array<{ score: number; sa
         </div>
       )}
       <p className="text-[9px] text-slate-400 italic pt-1 border-t border-slate-50">
-        Suprapunerea între clase este normală (Pitariu, pag. 187): un angajat experimentat dintr-o clasă inferioară
+        Suprapunerea între clase este normală: un angajat experimentat dintr-o clasă inferioară
         poate avea un salariu mai mare decât un angajat debutant dintr-o clasă superioară.
       </p>
     </div>
