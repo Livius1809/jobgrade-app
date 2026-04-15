@@ -14,135 +14,81 @@ interface GradeData {
   salaryMax: number
 }
 
-interface JobPoint {
-  title: string
+interface SalaryPoint {
   score: number
-  currentSalary: number | null
+  salary: number
+  label: string
 }
 
 interface Props {
   grades: GradeData[]
-  jobs: JobPoint[]
+  salaryPoints: SalaryPoint[]
 }
 
 const GRADE_FILLS = [
-  "rgba(79, 70, 229, 0.12)",
-  "rgba(139, 92, 246, 0.12)",
-  "rgba(217, 70, 239, 0.12)",
-  "rgba(232, 93, 67, 0.12)",
-  "rgba(16, 185, 129, 0.12)",
+  "rgba(79, 70, 229, 0.10)",
+  "rgba(139, 92, 246, 0.10)",
+  "rgba(217, 70, 239, 0.10)",
+  "rgba(232, 93, 67, 0.10)",
+  "rgba(16, 185, 129, 0.10)",
 ]
 const GRADE_STROKES = ["#4F46E5", "#8B5CF6", "#D946EF", "#E85D43", "#10B981"]
-
-/**
- * Alege metoda de normalizare în funcție de dimensiunea eșantionului:
- * N < 10  → 5 clase
- * N < 20  → 7 clase
- * N < 40  → 9 clase
- * N >= 40 → 11 clase
- */
-function chooseQuantiles(n: number): { divisions: number; label: string; prefix: string } {
-  if (n < 10) return { divisions: 5, label: "Cvintile", prefix: "C" }
-  if (n < 20) return { divisions: 7, label: "Septile", prefix: "S" }
-  if (n < 40) return { divisions: 9, label: "Nonile", prefix: "N" }
-  return { divisions: 11, label: "Undecile", prefix: "U" }
-}
-
-/**
- * Calculează granițele de cuantile dintr-un array sortat.
- * Returnează `divisions` valori de graniță.
- */
-function computeBoundaries(sorted: number[], divisions: number): number[] {
-  const boundaries: number[] = []
-  for (let q = 1; q <= divisions; q++) {
-    const idx = Math.min(Math.floor(sorted.length * q / divisions), sorted.length - 1)
-    boundaries.push(sorted[idx])
-  }
-  return boundaries
-}
-
-/**
- * Mapează o valoare pe scară continuă de cuantile (1.0 - divisions).
- */
-function toQuantile(value: number, boundaries: number[]): number {
-  if (value <= boundaries[0]) return 1
-  if (value >= boundaries[boundaries.length - 1]) return boundaries.length
-
-  for (let i = 0; i < boundaries.length - 1; i++) {
-    if (value <= boundaries[i + 1]) {
-      const low = boundaries[i]
-      const high = boundaries[i + 1]
-      if (high === low) return i + 1
-      return (i + 1) + (value - low) / (high - low)
-    }
-  }
-  return boundaries.length
-}
 
 function formatSalary(val: number): string {
   if (val >= 1000) return (val / 1000).toFixed(1).replace(/\.0$/, "") + "K"
   return String(Math.round(val))
 }
 
-export default function SalaryGradeChart({ grades, jobs }: Props) {
-  // Normalizare adaptată la eșantion
-  const normalization = useMemo(() => {
-    const nJobs = jobs.length
-    const scoreQuant = chooseQuantiles(nJobs)
-    const salaryQuant = chooseQuantiles(nJobs)
+export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
+  // Axe — valori reale
+  const xMin = Math.min(...grades.map(g => g.scoreMin)) - 20
+  const xMax = Math.max(...grades.map(g => g.scoreMax)) + 20
 
-    // Scoruri sortate (din joburi evaluate)
-    const scores = [...jobs.map(j => j.score)].sort((a, b) => a - b)
-    const scoreBoundaries = scores.length >= 2
-      ? computeBoundaries(scores, scoreQuant.divisions)
-      : grades.flatMap(g => [g.scoreMin, g.scoreMax]).sort((a, b) => a - b)
-        .filter((v, i, a) => i === 0 || v !== a[i - 1])
-        .length >= 2
-        ? computeBoundaries(
-            grades.flatMap(g => [g.scoreMin, g.scoreMax]).sort((a, b) => a - b),
-            scoreQuant.divisions
-          )
-        : [0]
+  const allSalaryValues = [
+    ...grades.map(g => g.salaryMin),
+    ...grades.map(g => g.salaryMax),
+    ...salaryPoints.map(p => p.salary),
+  ]
+  const yMinRaw = Math.min(...allSalaryValues)
+  const yMaxRaw = Math.max(...allSalaryValues)
+  const yPadding = (yMaxRaw - yMinRaw) * 0.1
+  const yMin = Math.floor((yMinRaw - yPadding) / 100) * 100
+  const yMax = Math.ceil((yMaxRaw + yPadding) / 100) * 100
 
-    // Salarii sortate (din clase + salarii curente reale)
-    const salaryValues = [
-      ...grades.map(g => g.salaryMin),
-      ...grades.map(g => g.salaryMax),
-      ...jobs.filter(j => j.currentSalary && j.currentSalary > 0).map(j => j.currentSalary!),
-    ].sort((a, b) => a - b)
-    const salaryBoundaries = salaryValues.length >= 2
-      ? computeBoundaries(salaryValues, salaryQuant.divisions)
-      : [0]
+  // Ticks pe X: din 50 în 50
+  const xTicks = useMemo(() => {
+    const start = Math.ceil(xMin / 50) * 50
+    const ticks: number[] = []
+    for (let v = start; v <= xMax; v += 50) ticks.push(v)
+    return ticks
+  }, [xMin, xMax])
 
-    return {
-      score: { ...scoreQuant, boundaries: scoreBoundaries },
-      salary: { ...salaryQuant, boundaries: salaryBoundaries },
-    }
-  }, [jobs, grades])
+  // Ticks pe Y: interval dinamic
+  const yTicks = useMemo(() => {
+    const range = yMax - yMin
+    const step = range <= 2000 ? 200 : range <= 5000 ? 500 : 1000
+    const ticks: number[] = []
+    const start = Math.ceil(yMin / step) * step
+    for (let v = start; v <= yMax; v += step) ticks.push(v)
+    return ticks
+  }, [yMin, yMax])
 
-  const scoreDivs = normalization.score.divisions
-  const salaryDivs = normalization.salary.divisions
+  // Valorile de graniță ale claselor — evidențiate pe axe
+  const scoreBreakpoints = useMemo(() =>
+    [...new Set(grades.flatMap(g => [g.scoreMin, g.scoreMax]))].sort((a, b) => a - b),
+  [grades])
+  const salaryBreakpoints = useMemo(() =>
+    [...new Set(grades.flatMap(g => [g.salaryMin, g.salaryMax]))].sort((a, b) => a - b),
+  [grades])
 
-  // Clase normalizate pe ambele axe
-  const normalizedGrades = useMemo(() => {
-    return grades.map(g => ({
-      ...g,
-      qScoreMin: toQuantile(g.scoreMin, normalization.score.boundaries),
-      qScoreMax: toQuantile(g.scoreMax, normalization.score.boundaries),
-      qSalaryMin: toQuantile(g.salaryMin, normalization.salary.boundaries),
-      qSalaryMax: toQuantile(g.salaryMax, normalization.salary.boundaries),
-    }))
-  }, [grades, normalization])
-
-  // Regression pe coordonate normalizate
-  const { regressionData } = useMemo(() => {
-    if (normalizedGrades.length < 2) return { regressionData: [] }
-
-    const points = normalizedGrades.map(g => ({
-      x: (g.qScoreMin + g.qScoreMax) / 2,
-      yMin: g.qSalaryMin,
-      yMax: g.qSalaryMax,
-      yAvg: (g.qSalaryMin + g.qSalaryMax) / 2,
+  // Regression pe clase (3 linii: min, max, mediu)
+  const regressionData = useMemo(() => {
+    if (grades.length < 2) return []
+    const points = grades.map(g => ({
+      x: (g.scoreMin + g.scoreMax) / 2,
+      yMin: g.salaryMin,
+      yMax: g.salaryMax,
+      yAvg: (g.salaryMin + g.salaryMax) / 2,
     }))
     const n = points.length
     const sumX = points.reduce((s, p) => s + p.x, 0)
@@ -161,46 +107,26 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
     const regMax = calc(points.map(p => p.yMax))
     const regAvg = calc(points.map(p => p.yAvg))
 
-    // Punct de intersecție min ↔ max
+    // Punct de intersecție min ↔ max → tăiem spre origine
     const slopeDiff = regMax.slope - regMin.slope
     const intX = Math.abs(slopeDiff) > 0.0001
       ? (regMin.intercept - regMax.intercept) / slopeDiff
       : -Infinity
 
-    const data = Array.from({ length: 31 }, (_, i) => {
-      const x = 0.5 + scoreDivs * (i / 30)
+    return Array.from({ length: 31 }, (_, i) => {
+      const x = xMin + (xMax - xMin) * (i / 30)
       const rMinVal = regMin.intercept + regMin.slope * x
       const rMaxVal = regMax.intercept + regMax.slope * x
       const rAvgVal = regAvg.intercept + regAvg.slope * x
       const visible = x >= intX
       return {
-        qScore: Math.round(x * 100) / 100,
-        regMin: visible ? Math.round(Math.min(rMinVal, rMaxVal) * 10) / 10 : null,
-        regMax: visible ? Math.round(Math.max(rMinVal, rMaxVal) * 10) / 10 : null,
-        regAvg: visible ? Math.round(rAvgVal * 10) / 10 : null,
+        score: Math.round(x),
+        regMin: visible ? Math.round(Math.min(rMinVal, rMaxVal)) : null,
+        regMax: visible ? Math.round(Math.max(rMinVal, rMaxVal)) : null,
+        regAvg: visible ? Math.round(rAvgVal) : null,
       }
     })
-
-    return { regressionData: data }
-  }, [normalizedGrades, scoreDivs])
-
-  // Scatter normalizat
-  const currentData = useMemo(() =>
-    jobs.filter(j => j.currentSalary && j.currentSalary > 0).map(j => ({
-      qScore: toQuantile(j.score, normalization.score.boundaries),
-      qSalary: toQuantile(j.currentSalary!, normalization.salary.boundaries),
-      salary: j.currentSalary!,
-      score: j.score,
-      title: j.title,
-    })),
-  [jobs, normalization])
-
-  // Ticks pe axe
-  const xTicks = Array.from({ length: scoreDivs }, (_, i) => i + 1)
-  const yTicks = Array.from({ length: salaryDivs }, (_, i) => i + 1)
-
-  // Etichete valoare pe Y
-  const salaryLabels = normalization.salary.boundaries
+  }, [grades, xMin, xMax])
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -208,40 +134,56 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
         Corelație evaluare posturi — clase salariale
       </h3>
 
-      <ResponsiveContainer width="100%" height={420}>
+      <ResponsiveContainer width="100%" height={440}>
         <ComposedChart margin={{ top: 10, right: 15, bottom: 50, left: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
           <XAxis
-            dataKey="qScore"
+            dataKey="score"
             type="number"
-            domain={[0.5, scoreDivs + 0.5]}
+            domain={[xMin, xMax]}
             ticks={xTicks}
-            tick={{ fontSize: 9, fill: "#94a3b8" }}
-            tickFormatter={(v) => `${normalization.score.prefix}${v}`}
+            tick={({ x, y, payload }: any) => {
+              const isBreakpoint = scoreBreakpoints.includes(payload.value)
+              return (
+                <text x={x} y={y + 12} textAnchor="middle"
+                  fontSize={isBreakpoint ? 9 : 8}
+                  fontWeight={isBreakpoint ? 700 : 400}
+                  fill={isBreakpoint ? "#4F46E5" : "#94a3b8"}
+                >
+                  {payload.value}
+                </text>
+              )
+            }}
           >
             <Label
-              value={`Evaluare posturi (${normalization.score.label.toLowerCase()})`}
+              value="Punctaj evaluare posturi"
               position="bottom"
-              offset={8}
+              offset={18}
               style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
             />
           </XAxis>
 
           <YAxis
             type="number"
-            domain={[0.5, salaryDivs + 0.5]}
+            domain={[yMin, yMax]}
             ticks={yTicks}
-            tick={{ fontSize: 8, fill: "#94a3b8" }}
-            tickFormatter={(v) => {
-              const idx = v - 1
-              const val = salaryLabels[idx]
-              return val != null ? `${normalization.salary.prefix}${v} (${formatSalary(val)})` : `${normalization.salary.prefix}${v}`
+            tick={({ x, y, payload }: any) => {
+              const isBreakpoint = salaryBreakpoints.includes(payload.value)
+              return (
+                <text x={x - 4} y={y + 3} textAnchor="end"
+                  fontSize={isBreakpoint ? 9 : 8}
+                  fontWeight={isBreakpoint ? 700 : 400}
+                  fill={isBreakpoint ? "#4F46E5" : "#94a3b8"}
+                >
+                  {formatSalary(payload.value)}
+                </text>
+              )
             }}
-            width={72}
+            width={50}
           >
             <Label
-              value={`Evaluare salarii (${normalization.salary.label.toLowerCase()})`}
+              value="Salariu (RON)"
               angle={-90}
               position="insideLeft"
               offset={-15}
@@ -249,14 +191,14 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
             />
           </YAxis>
 
-          {/* Clase salariale — aceeași lățime pe X, variabilă pe Y */}
-          {normalizedGrades.map((g, i) => (
+          {/* Clase salariale — dreptunghiuri */}
+          {grades.map((g, i) => (
             <ReferenceArea
               key={g.name}
-              x1={g.qScoreMin}
-              x2={g.qScoreMax}
-              y1={g.qSalaryMin}
-              y2={g.qSalaryMax}
+              x1={g.scoreMin}
+              x2={g.scoreMax}
+              y1={g.salaryMin}
+              y2={g.salaryMax}
               fill={GRADE_FILLS[i % GRADE_FILLS.length]}
               stroke={GRADE_STROKES[i % GRADE_STROKES.length]}
               strokeWidth={1.5}
@@ -268,6 +210,20 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
               }}
             />
           ))}
+
+          {/* Toate salariile individuale — puncte mici */}
+          {salaryPoints.length > 0 && (
+            <Scatter
+              data={salaryPoints}
+              dataKey="salary"
+              fill="#334155"
+              stroke="#fff"
+              strokeWidth={1}
+              name="Salarii individuale"
+              shape="circle"
+              r={3}
+            />
+          )}
 
           {/* Tendință salariu minim */}
           <Line
@@ -303,28 +259,15 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
             connectNulls
           />
 
-          {/* Salarii curente */}
-          {currentData.length > 0 && (
-            <Scatter
-              data={currentData}
-              dataKey="qSalary"
-              fill="#E85D43"
-              stroke="#fff"
-              strokeWidth={1.5}
-              name="Salariu curent"
-              shape="circle"
-            />
-          )}
-
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null
               const d = payload[0]?.payload
               if (!d) return null
-              if (d.title) {
+              if (d.label) {
                 return (
                   <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2.5 text-[10px]">
-                    <p className="font-bold text-slate-900 mb-1">{d.title}</p>
+                    <p className="font-bold text-slate-900 mb-1">{d.label}</p>
                     <p className="text-slate-500">Punctaj: {d.score}</p>
                     <p className="text-slate-600">Salariu: {d.salary?.toLocaleString()} RON</p>
                   </div>
@@ -332,9 +275,10 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
               }
               return (
                 <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2 text-[10px]">
-                  {d.regMin != null && <p className="text-red-500">Tendință min: {normalization.salary.prefix}{d.regMin}</p>}
-                  {d.regAvg != null && <p className="text-emerald-600">Tendință mediu: {normalization.salary.prefix}{d.regAvg}</p>}
-                  {d.regMax != null && <p className="text-indigo-600">Tendință max: {normalization.salary.prefix}{d.regMax}</p>}
+                  <p className="text-slate-500">Punctaj: {d.score}</p>
+                  {d.regMin != null && <p className="text-red-500">Tendință min: {d.regMin.toLocaleString()} RON</p>}
+                  {d.regAvg != null && <p className="text-emerald-600">Tendință mediu: {d.regAvg.toLocaleString()} RON</p>}
+                  {d.regMax != null && <p className="text-indigo-600">Tendință max: {d.regMax.toLocaleString()} RON</p>}
                 </div>
               )
             }}

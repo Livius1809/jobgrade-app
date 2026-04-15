@@ -459,11 +459,11 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
       {grades.length > 0 && (
         <SalaryGradeChart
           grades={grades}
-          jobs={scoredJobs.map(j => ({
-            title: j.jobTitle,
-            score: j.total,
-            currentSalary: j.avgSalary ?? null,
-          }))}
+          salaryPoints={scoredJobs.flatMap(j =>
+            (j.employees || [])
+              .filter(e => e.salary > 0)
+              .map(e => ({ score: j.total, salary: e.salary, label: `${e.name} — ${j.jobTitle}` }))
+          )}
         />
       )}
 
