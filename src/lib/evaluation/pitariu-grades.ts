@@ -86,32 +86,22 @@ export function autoDetectClassCount(scores: number[]): ClassDetection {
   const maxGap = Math.max(...gaps)
   const hasNaturalClusters = maxGap > avgGap * 2.5
 
-  // Baza: proporțional cu CV, scalat 3-11
-  let base: number
-  if (cv < 0.10) {
-    base = 3 // Scoruri foarte concentrate
-  } else if (cv < 0.20) {
-    base = 5
+  // Sugestia = minimul intervalului recomandat pentru nivelul de dispersie
+  // Clientul poate crește de acolo dacă dorește mai multă granularitate
+  let suggested: number
+  if (cv < 0.15) {
+    suggested = 3  // Dispersie redusă: interval 3-5, pornim de la 3
   } else if (cv < 0.30) {
-    base = 7
-  } else if (cv < 0.40) {
-    base = 9
+    suggested = 5  // Dispersie moderată: interval 5-7, pornim de la 5
   } else {
-    base = 11
-  }
-
-  // Ajustare: dacă sunt clustere naturale, +2
-  if (hasNaturalClusters && base < 11) {
-    base += 2
+    suggested = 7  // Dispersie mare: interval 7-11, pornim de la 7
   }
 
   // Limită: nu mai multe clase decât posturi unice
   const maxClasses = Math.min(11, Math.max(3, n - 1))
   const minClasses = 3
 
-  // Forțare impar
-  let suggested = Math.min(base, maxClasses)
-  if (suggested % 2 === 0) suggested = Math.max(minClasses, suggested - 1)
+  suggested = Math.min(suggested, maxClasses)
 
   const reason = cv < 0.15
     ? "scoruri concentrate (CV=" + (cv * 100).toFixed(0) + "%)"
