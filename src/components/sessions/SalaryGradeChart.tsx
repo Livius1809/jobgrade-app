@@ -8,6 +8,7 @@ import {
 import {
   type ScorePoint,
   type PitariuGrade,
+  type ClassDetection,
   buildPitariuGrades,
   normalizeScoreX,
   buildRegressionLines,
@@ -160,60 +161,57 @@ export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numCl
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
+      <div className="mb-4">
+        <div className="flex items-start justify-between">
           <h3 className="text-sm font-bold text-slate-900 mb-1">
             Corelație evaluare posturi — clase salariale
           </h3>
-          <p className="text-[10px] text-slate-400">
-            Clase formate prin progresie geometrică (Pitariu, Fig. 2.6)
-            {classDetection && (
-              <span className="ml-1">— {classDetection.reason}</span>
-            )}
-          </p>
+
+          {/* Selector nr. clase */}
+          {classDetection && !numClassesProp && (
+            <div className="flex items-center gap-2 shrink-0">
+              <label className="text-[10px] text-slate-500 font-medium">Clase:</label>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    const current = effectiveClassCount ?? classDetection.suggested
+                    const next = current - 1
+                    if (next >= 3) setUserClassCount(next)
+                  }}
+                  disabled={(effectiveClassCount ?? classDetection.suggested) <= 3}
+                  className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
+                >
+                  −
+                </button>
+                <span className="text-sm font-bold text-indigo-600 w-6 text-center tabular-nums">
+                  {effectiveClassCount ?? classDetection.suggested}
+                </span>
+                <button
+                  onClick={() => {
+                    const current = effectiveClassCount ?? classDetection.suggested
+                    const next = current + 1
+                    if (next <= 11) setUserClassCount(next)
+                  }}
+                  disabled={(effectiveClassCount ?? classDetection.suggested) >= 11}
+                  className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
+                >
+                  +
+                </button>
+              </div>
+              {userClassCount !== null && userClassCount !== classDetection.suggested && (
+                <button
+                  onClick={() => setUserClassCount(null)}
+                  className="text-[9px] text-slate-400 hover:text-indigo-500 underline"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+        )}
         </div>
 
-        {/* Selector nr. clase */}
-        {classDetection && !numClassesProp && (
-          <div className="flex items-center gap-2 shrink-0">
-            <label className="text-[10px] text-slate-500 font-medium">Clase:</label>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => {
-                  const current = effectiveClassCount ?? classDetection.suggested
-                  const next = current - 1
-                  if (next >= 3) setUserClassCount(next)
-                }}
-                disabled={(effectiveClassCount ?? classDetection.suggested) <= 3}
-                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
-              >
-                −
-              </button>
-              <span className="text-sm font-bold text-indigo-600 w-6 text-center tabular-nums">
-                {effectiveClassCount ?? classDetection.suggested}
-              </span>
-              <button
-                onClick={() => {
-                  const current = effectiveClassCount ?? classDetection.suggested
-                  const next = current + 1
-                  if (next <= 11) setUserClassCount(next)
-                }}
-                disabled={(effectiveClassCount ?? classDetection.suggested) >= 11}
-                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
-              >
-                +
-              </button>
-            </div>
-            {userClassCount !== null && userClassCount !== classDetection.suggested && (
-              <button
-                onClick={() => setUserClassCount(null)}
-                className="text-[9px] text-slate-400 hover:text-indigo-500 underline"
-              >
-                reset
-              </button>
-            )}
-          </div>
-        )}
+        {/* Ghid dispersie — arată clientului unde se află */}
+        {classDetection && <DispersionGuide detection={classDetection} currentClasses={effectiveClassCount ?? classDetection.suggested} />}
       </div>
 
       <ResponsiveContainer width="100%" height={440}>
@@ -481,6 +479,89 @@ function SituationLegend({ points, grades }: { points: Array<{ score: number; sa
       <p className="text-[9px] text-slate-400 italic pt-1 border-t border-slate-50">
         Suprapunerea între clase este normală (Pitariu, pag. 187): un angajat experimentat dintr-o clasă inferioară
         poate avea un salariu mai mare decât un angajat debutant dintr-o clasă superioară.
+      </p>
+    </div>
+  )
+}
+
+// --- Ghid dispersie: arată clientului nivelul său și recomandarea ---
+
+const DISPERSION_LEVELS = [
+  {
+    id: "low",
+    label: "Dispersie redusă",
+    cvRange: "sub 15%",
+    cvMax: 15,
+    classes: "3 – 5",
+    color: "emerald",
+    bgActive: "bg-emerald-50 border-emerald-300",
+    bgInactive: "bg-slate-50/50 border-slate-200",
+    dot: "bg-emerald-500",
+    description: "Scorurile de evaluare sunt concentrate. Posturile au complexitate similară. Un număr mic de clase este suficient pentru a diferenția nivelurile salariale.",
+  },
+  {
+    id: "medium",
+    label: "Dispersie moderată",
+    cvRange: "15% – 30%",
+    cvMax: 30,
+    classes: "5 – 7",
+    color: "amber",
+    bgActive: "bg-amber-50 border-amber-300",
+    bgInactive: "bg-slate-50/50 border-slate-200",
+    dot: "bg-amber-500",
+    description: "Scorurile sunt distribuite echilibrat. Există diferențe clare între posturi, dar fără extreme. Se recomandă un număr moderat de clase pentru a reflecta diversitatea posturilor.",
+  },
+  {
+    id: "high",
+    label: "Dispersie mare",
+    cvRange: "peste 30%",
+    cvMax: Infinity,
+    classes: "7 – 11",
+    color: "red",
+    bgActive: "bg-red-50 border-red-300",
+    bgInactive: "bg-slate-50/50 border-slate-200",
+    dot: "bg-red-500",
+    description: "Scorurile variază semnificativ. Organizația are posturi cu complexitate foarte diferită. Un număr mai mare de clase permite o structură salarială mai nuanțată și mai echitabilă.",
+  },
+] as const
+
+function DispersionGuide({ detection, currentClasses }: { detection: ClassDetection; currentClasses: number }) {
+  const activeLevel = detection.cvPercent < 15 ? "low" : detection.cvPercent < 30 ? "medium" : "high"
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex gap-2">
+        {DISPERSION_LEVELS.map(level => {
+          const isActive = level.id === activeLevel
+          return (
+            <div
+              key={level.id}
+              className={`flex-1 rounded-lg border px-3 py-2 transition-all ${
+                isActive ? level.bgActive + " shadow-sm" : level.bgInactive + " opacity-60"
+              }`}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`w-2 h-2 rounded-full ${level.dot} ${isActive ? "ring-2 ring-offset-1 ring-" + level.color + "-300" : ""}`} />
+                <span className={`text-[10px] font-bold ${isActive ? "text-slate-800" : "text-slate-500"}`}>
+                  {level.label}
+                </span>
+              </div>
+              <div className="text-[9px] text-slate-500 leading-snug">
+                <span className="font-medium">CV {level.cvRange}</span>
+                <span className="mx-1">·</span>
+                <span>{level.classes} clase recomandate</span>
+              </div>
+              {isActive && (
+                <p className="text-[9px] text-slate-600 mt-1.5 leading-relaxed">
+                  {level.description}
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-[9px] text-slate-400 text-right">
+        Organizația dvs.: CV = {detection.cvPercent}% · {currentClasses} clase selectate · sugestie: {detection.suggested}
       </p>
     </div>
   )

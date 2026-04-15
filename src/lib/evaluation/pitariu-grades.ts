@@ -58,16 +58,20 @@ const SALARY_OVERLAP_PCT = 0.15
  *
  * Returnează și sugestia + plaja validă pentru UI.
  */
-export function autoDetectClassCount(scores: number[]): {
+export interface ClassDetection {
   suggested: number
   min: number
   max: number
+  cv: number       // coeficient de variație (0-1)
+  cvPercent: number // cv * 100, rotunjit
   reason: string
-} {
+}
+
+export function autoDetectClassCount(scores: number[]): ClassDetection {
   const uniqueScores = [...new Set(scores)].sort((a, b) => a - b)
   const n = uniqueScores.length
 
-  if (n < 3) return { suggested: 3, min: 3, max: 3, reason: "date insuficiente" }
+  if (n < 3) return { suggested: 3, min: 3, max: 3, cv: 0, cvPercent: 0, reason: "date insuficiente" }
 
   // Coeficient de variație
   const mean = scores.reduce((s, v) => s + v, 0) / scores.length
@@ -119,6 +123,8 @@ export function autoDetectClassCount(scores: number[]): {
     suggested,
     min: minClasses,
     max: maxClasses % 2 === 0 ? maxClasses - 1 : maxClasses,
+    cv,
+    cvPercent: Math.round(cv * 100),
     reason,
   }
 }
