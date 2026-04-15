@@ -36,16 +36,16 @@ const GRADE_STROKES = ["#4F46E5", "#8B5CF6", "#D946EF", "#E85D43", "#10B981"]
 
 /**
  * Alege metoda de normalizare în funcție de dimensiunea eșantionului:
- * N < 8  → tertile (3)
- * N < 16 → cuartile (4)
- * N < 30 → cvintile (5)
- * N >= 30 → decile (10)
+ * N < 10  → 5 clase
+ * N < 20  → 7 clase
+ * N < 40  → 9 clase
+ * N >= 40 → 11 clase
  */
 function chooseQuantiles(n: number): { divisions: number; label: string; prefix: string } {
-  if (n < 8)  return { divisions: 3, label: "Tertile", prefix: "T" }
-  if (n < 16) return { divisions: 4, label: "Cuartile", prefix: "Q" }
-  if (n < 30) return { divisions: 5, label: "Cvintile", prefix: "Cv" }
-  return { divisions: 10, label: "Decile", prefix: "D" }
+  if (n < 10) return { divisions: 5, label: "Cvintile", prefix: "C" }
+  if (n < 20) return { divisions: 7, label: "Septile", prefix: "S" }
+  if (n < 40) return { divisions: 9, label: "Nonile", prefix: "N" }
+  return { divisions: 11, label: "Undecile", prefix: "U" }
 }
 
 /**
