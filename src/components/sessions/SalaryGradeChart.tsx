@@ -39,11 +39,33 @@ function formatSalary(val: number): string {
   return String(Math.round(val))
 }
 
-export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
-  // Axe — valori reale
-  const xMin = Math.min(...grades.map(g => g.scoreMin)) - 20
-  const xMax = Math.max(...grades.map(g => g.scoreMax)) + 20
+/**
+ * Mapează un scor brut pe axa X normalizată.
+ * Fiecare clasă ocupă exact 1 unitate: clasa 0 → [0,1], clasa 1 → [1,2] etc.
+ * Scorul e interpolat liniar în interiorul clasei.
+ */
+function scoreToNormX(score: number, grades: { scoreMin: number; scoreMax: number }[]): number {
+  for (let i = 0; i < grades.length; i++) {
+    const g = grades[i]
+    if (score >= g.scoreMin && score <= g.scoreMax) {
+      const range = g.scoreMax - g.scoreMin
+      const frac = range > 0 ? (score - g.scoreMin) / range : 0.5
+      return i + frac
+    }
+  }
+  // Sub prima clasă
+  if (score < grades[0].scoreMin) {
+    return (score - grades[0].scoreMin) / (grades[0].scoreMax - grades[0].scoreMin)
+  }
+  // Peste ultima clasă
+  const last = grades[grades.length - 1]
+  return grades.length - 1 + (score - last.scoreMin) / (last.scoreMax - last.scoreMin)
+}
 
+export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
+  const nGrades = grades.length
+
+  // Y-axis: valori salariale reale
   const allSalaryValues = [
     ...grades.map(g => g.salaryMin),
     ...grades.map(g => g.salaryMax),
@@ -55,15 +77,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
   const yMin = Math.floor((yMinRaw - yPadding) / 100) * 100
   const yMax = Math.ceil((yMaxRaw + yPadding) / 100) * 100
 
-  // Ticks pe X: din 50 în 50
-  const xTicks = useMemo(() => {
-    const start = Math.ceil(xMin / 50) * 50
-    const ticks: number[] = []
-    for (let v = start; v <= xMax; v += 50) ticks.push(v)
-    return ticks
-  }, [xMin, xMax])
-
-  // Ticks pe Y: interval dinamic
+  // Y ticks dinamice
   const yTicks = useMemo(() => {
     const range = yMax - yMin
     const step = range <= 2000 ? 200 : range <= 5000 ? 500 : 1000
@@ -73,19 +87,36 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
     return ticks
   }, [yMin, yMax])
 
-  // Valorile de graniță ale claselor — evidențiate pe axe
-  const scoreBreakpoints = useMemo(() =>
-    [...new Set(grades.flatMap(g => [g.scoreMin, g.scoreMax]))].sort((a, b) => a - b),
-  [grades])
+  // Granițe salariale ale claselor — bold pe Y
   const salaryBreakpoints = useMemo(() =>
     [...new Set(grades.flatMap(g => [g.salaryMin, g.salaryMax]))].sort((a, b) => a - b),
   [grades])
 
-  // Regression pe clase (3 linii: min, max, mediu)
+  // X ticks: la granițele claselor (0, 1, 2, ..., N) cu valori de punctaj reale
+  const xTickValues = useMemo(() => {
+    const ticks: { pos: number; label: string }[] = []
+    for (let i = 0; i < nGrades; i++) {
+      if (i === 0 || grades[i].scoreMin !== grades[i - 1].scoreMax) {
+        ticks.push({ pos: i, label: String(grades[i].scoreMin) })
+      }
+      ticks.push({ pos: i + 1, label: String(grades[i].scoreMax) })
+    }
+    return ticks
+  }, [grades, nGrades])
+
+  // Puncte salariale normalizate pe X
+  const normalizedPoints = useMemo(() =>
+    salaryPoints.map(p => ({
+      ...p,
+      normX: scoreToNormX(p.score, grades),
+    })),
+  [salaryPoints, grades])
+
+  // Regression pe clase normalizate
   const regressionData = useMemo(() => {
-    if (grades.length < 2) return []
-    const points = grades.map(g => ({
-      x: (g.scoreMin + g.scoreMax) / 2,
+    if (nGrades < 2) return []
+    const points = grades.map((g, i) => ({
+      x: i + 0.5, // centrul clasei normalizate
       yMin: g.salaryMin,
       yMax: g.salaryMax,
       yAvg: (g.salaryMin + g.salaryMax) / 2,
@@ -107,26 +138,26 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
     const regMax = calc(points.map(p => p.yMax))
     const regAvg = calc(points.map(p => p.yAvg))
 
-    // Punct de intersecție min ↔ max → tăiem spre origine
+    // Intersecție min ↔ max → tăiem spre origine
     const slopeDiff = regMax.slope - regMin.slope
     const intX = Math.abs(slopeDiff) > 0.0001
       ? (regMin.intercept - regMax.intercept) / slopeDiff
       : -Infinity
 
     return Array.from({ length: 31 }, (_, i) => {
-      const x = xMin + (xMax - xMin) * (i / 30)
+      const x = -0.2 + (nGrades + 0.4) * (i / 30)
       const rMinVal = regMin.intercept + regMin.slope * x
       const rMaxVal = regMax.intercept + regMax.slope * x
       const rAvgVal = regAvg.intercept + regAvg.slope * x
       const visible = x >= intX
       return {
-        score: Math.round(x),
+        normX: Math.round(x * 100) / 100,
         regMin: visible ? Math.round(Math.min(rMinVal, rMaxVal)) : null,
         regMax: visible ? Math.round(Math.max(rMinVal, rMaxVal)) : null,
         regAvg: visible ? Math.round(rAvgVal) : null,
       }
     })
-  }, [grades, xMin, xMax])
+  }, [grades, nGrades])
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -138,20 +169,19 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
         <ComposedChart margin={{ top: 10, right: 15, bottom: 50, left: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
+          {/* X: clase normalizate, etichete = punctaje reale */}
           <XAxis
-            dataKey="score"
+            dataKey="normX"
             type="number"
-            domain={[xMin, xMax]}
-            ticks={xTicks}
+            domain={[-0.3, nGrades + 0.3]}
+            ticks={xTickValues.map(t => t.pos)}
             tick={({ x, y, payload }: any) => {
-              const isBreakpoint = scoreBreakpoints.includes(payload.value)
+              const tickInfo = xTickValues.find(t => t.pos === payload.value)
               return (
-                <text x={x} y={y + 12} textAnchor="middle"
-                  fontSize={isBreakpoint ? 9 : 8}
-                  fontWeight={isBreakpoint ? 700 : 400}
-                  fill={isBreakpoint ? "#4F46E5" : "#94a3b8"}
+                <text x={x} y={y + 14} textAnchor="middle"
+                  fontSize={9} fontWeight={700} fill="#4F46E5"
                 >
-                  {payload.value}
+                  {tickInfo?.label ?? ""}
                 </text>
               )
             }}
@@ -159,11 +189,12 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             <Label
               value="Punctaj evaluare posturi"
               position="bottom"
-              offset={18}
+              offset={20}
               style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
             />
           </XAxis>
 
+          {/* Y: valori salariale reale */}
           <YAxis
             type="number"
             domain={[yMin, yMax]}
@@ -191,12 +222,12 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           </YAxis>
 
-          {/* Clase salariale — dreptunghiuri */}
+          {/* Clase salariale — aceeași lățime pe X, variabilă pe Y */}
           {grades.map((g, i) => (
             <ReferenceArea
               key={g.name}
-              x1={g.scoreMin}
-              x2={g.scoreMax}
+              x1={i}
+              x2={i + 1}
               y1={g.salaryMin}
               y2={g.salaryMax}
               fill={GRADE_FILLS[i % GRADE_FILLS.length]}
@@ -211,10 +242,10 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           ))}
 
-          {/* Toate salariile individuale — puncte mici */}
-          {salaryPoints.length > 0 && (
+          {/* Salarii individuale — puncte mici */}
+          {normalizedPoints.length > 0 && (
             <Scatter
-              data={salaryPoints}
+              data={normalizedPoints}
               dataKey="salary"
               fill="#334155"
               stroke="#fff"
@@ -275,7 +306,6 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
               }
               return (
                 <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2 text-[10px]">
-                  <p className="text-slate-500">Punctaj: {d.score}</p>
                   {d.regMin != null && <p className="text-red-500">Tendință min: {d.regMin.toLocaleString()} RON</p>}
                   {d.regAvg != null && <p className="text-emerald-600">Tendință mediu: {d.regAvg.toLocaleString()} RON</p>}
                   {d.regMax != null && <p className="text-indigo-600">Tendință max: {d.regMax.toLocaleString()} RON</p>}
