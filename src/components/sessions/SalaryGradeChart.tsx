@@ -5,6 +5,13 @@ import {
   ComposedChart, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceArea, Line, Scatter, CartesianGrid, Legend, Label,
 } from "recharts"
+import {
+  type ScorePoint,
+  type PitariuGrade,
+  buildPitariuGrades,
+  normalizeScoreX,
+  buildRegressionLines,
+} from "@/lib/evaluation/pitariu-grades"
 
 interface GradeData {
   name: string
@@ -14,7 +21,7 @@ interface GradeData {
   salaryMax: number
 }
 
-interface SalaryPoint {
+interface SalaryPointInput {
   score: number
   salary: number
   label: string
@@ -22,7 +29,11 @@ interface SalaryPoint {
 
 interface Props {
   grades: GradeData[]
-  salaryPoints: SalaryPoint[]
+  salaryPoints: SalaryPointInput[]
+  /** Nr. clase forțat (opțional — altfel auto-detect din nr. posturi) */
+  numClasses?: number
+  /** Dacă true, folosește gradele primite din DB fără recalculare Pitariu */
+  useDbGrades?: boolean
 }
 
 const GRADE_FILLS = [
@@ -39,33 +50,43 @@ function formatSalary(val: number): string {
   return String(Math.round(val))
 }
 
-/**
- * Mapează un scor pe X normalizat: fiecare clasă = 1 unitate.
- */
-function scoreToNormX(score: number, grades: GradeData[]): number {
-  for (let i = 0; i < grades.length; i++) {
-    if (score >= grades[i].scoreMin && score <= grades[i].scoreMax) {
-      const range = grades[i].scoreMax - grades[i].scoreMin
-      return i + (range > 0 ? (score - grades[i].scoreMin) / range : 0.5)
+export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numClasses, useDbGrades }: Props) {
+  // --- Algoritm Pitariu: formează clasele normalizate din date reale ---
+  const pitariuGrades = useMemo(() => {
+    if (useDbGrades || salaryPoints.length < 2) return null
+
+    const scorePoints: ScorePoint[] = salaryPoints.map(p => ({
+      score: p.score,
+      salary: p.salary,
+      label: p.label,
+    }))
+
+    const computed = buildPitariuGrades(scorePoints, numClasses)
+    return computed.length > 0 ? computed : null
+  }, [salaryPoints, numClasses, useDbGrades])
+
+  // Folosește clasele Pitariu dacă disponibile, altfel DB
+  const activeGrades: GradeData[] = useMemo(() => {
+    if (pitariuGrades) {
+      return pitariuGrades.map(g => ({
+        name: g.name,
+        scoreMin: g.scoreMin,
+        scoreMax: g.scoreMax,
+        salaryMin: g.salaryMin,
+        salaryMax: g.salaryMax,
+      }))
     }
-  }
-  if (score < grades[0].scoreMin) {
-    const range = grades[0].scoreMax - grades[0].scoreMin
-    return range > 0 ? (score - grades[0].scoreMin) / range : 0
-  }
-  const last = grades[grades.length - 1]
-  const range = last.scoreMax - last.scoreMin
-  return grades.length - 1 + (range > 0 ? (score - last.scoreMin) / range : 1)
-}
+    return dbGrades
+  }, [pitariuGrades, dbGrades])
 
-export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
-  const nGrades = grades.length
+  const nGrades = activeGrades.length
+  if (nGrades === 0) return null
 
-  // Y: salariu real (RON) — exact ca Pitariu
+  // --- Y: salariu real (RON) — exact ca Pitariu Fig. 2.6 ---
   const allSalaryValues = [
-    ...grades.map(g => g.salaryMin),
-    ...grades.map(g => g.salaryMax),
-    ...salaryPoints.map(p => p.salary),
+    ...activeGrades.map(g => g.salaryMin),
+    ...activeGrades.map(g => g.salaryMax),
+    ...salaryPoints.map(p => p.salary).filter(s => s > 0),
   ]
   const yMinRaw = Math.min(...allSalaryValues)
   const yMaxRaw = Math.max(...allSalaryValues)
@@ -84,87 +105,64 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
 
   // Granițe salariale — bold pe Y
   const salaryBreakpoints = useMemo(() =>
-    [...new Set(grades.flatMap(g => [g.salaryMin, g.salaryMax]))].sort((a, b) => a - b),
-  [grades])
+    [...new Set(activeGrades.flatMap(g => [g.salaryMin, g.salaryMax]))].sort((a, b) => a - b),
+  [activeGrades])
 
-  // X ticks: granițele claselor cu valorile de punctaj
+  // X ticks: granițele claselor cu valorile de punctaj reale
   const xTickValues = useMemo(() => {
     const ticks: { pos: number; label: string }[] = []
     for (let i = 0; i < nGrades; i++) {
-      if (i === 0 || grades[i].scoreMin !== grades[i - 1].scoreMax) {
-        ticks.push({ pos: i, label: String(grades[i].scoreMin) })
+      if (i === 0 || activeGrades[i].scoreMin !== activeGrades[i - 1].scoreMax) {
+        ticks.push({ pos: i, label: String(activeGrades[i].scoreMin) })
       }
-      ticks.push({ pos: i + 1, label: String(grades[i].scoreMax) })
+      ticks.push({ pos: i + 1, label: String(activeGrades[i].scoreMax) })
     }
     return ticks
-  }, [grades, nGrades])
+  }, [activeGrades, nGrades])
 
-  // Puncte normalizate pe X, salariu real pe Y
-  const normalizedPoints = useMemo(() =>
-    salaryPoints.map(p => ({
-      ...p,
-      normX: scoreToNormX(p.score, grades),
-    })),
-  [salaryPoints, grades])
-
-  // Regression pe clase normalizate X, salariu real Y
-  const regressionData = useMemo(() => {
-    if (nGrades < 2) return []
-    const points = grades.map((g, i) => ({
-      x: i + 0.5,
-      yMin: g.salaryMin,
-      yMax: g.salaryMax,
-      yAvg: (g.salaryMin + g.salaryMax) / 2,
+  // Puncte normalizate pe X (Pitariu: fiecare clasă = 1 unitate vizuală)
+  const normalizedPoints = useMemo(() => {
+    const gradesForNorm: PitariuGrade[] = activeGrades.map((g, i) => ({
+      ...g,
+      order: i + 1,
+      scoreMid: (g.scoreMin + g.scoreMax) / 2,
+      salaryMid: (g.salaryMin + g.salaryMax) / 2,
     }))
-    const n = points.length
-    const sumX = points.reduce((s, p) => s + p.x, 0)
-    const sumXX = points.reduce((s, p) => s + p.x * p.x, 0)
 
-    const calc = (values: number[]) => {
-      const sumY = values.reduce((s, v) => s + v, 0)
-      const sumXY = points.reduce((s, p, i) => s + p.x * values[i], 0)
-      const denom = n * sumXX - sumX * sumX
-      if (Math.abs(denom) < 0.001) return { slope: 0, intercept: sumY / n }
-      const slope = (n * sumXY - sumX * sumY) / denom
-      const intercept = (sumY - slope * sumX) / n
-      return { slope, intercept }
-    }
-    const regMin = calc(points.map(p => p.yMin))
-    const regMax = calc(points.map(p => p.yMax))
-    const regAvg = calc(points.map(p => p.yAvg))
+    return salaryPoints
+      .filter(p => p.salary > 0)
+      .map(p => ({
+        ...p,
+        normX: normalizeScoreX(p.score, gradesForNorm),
+      }))
+  }, [salaryPoints, activeGrades])
 
-    // Intersecție min ↔ max → tăiem spre origine
-    const slopeDiff = regMax.slope - regMin.slope
-    const intX = Math.abs(slopeDiff) > 0.0001
-      ? (regMin.intercept - regMax.intercept) / slopeDiff
-      : -Infinity
-
-    return Array.from({ length: 31 }, (_, i) => {
-      const x = -0.3 + (nGrades + 0.6) * (i / 30)
-      const rMinVal = regMin.intercept + regMin.slope * x
-      const rMaxVal = regMax.intercept + regMax.slope * x
-      const rAvgVal = regAvg.intercept + regAvg.slope * x
-      const visible = x >= intX
-      return {
-        normX: Math.round(x * 100) / 100,
-        regMin: visible ? Math.round(Math.min(rMinVal, rMaxVal)) : null,
-        regMax: visible ? Math.round(Math.max(rMinVal, rMaxVal)) : null,
-        regAvg: visible ? Math.round(rAvgVal) : null,
-      }
-    })
-  }, [grades, nGrades])
+  // Linii de regresie Pitariu (min, max, punct de mijloc)
+  const regressionData = useMemo(() => {
+    const gradesForReg: PitariuGrade[] = activeGrades.map((g, i) => ({
+      ...g,
+      order: i + 1,
+      scoreMid: (g.scoreMin + g.scoreMax) / 2,
+      salaryMid: (g.salaryMin + g.salaryMax) / 2,
+    }))
+    return buildRegressionLines(gradesForReg)
+  }, [activeGrades])
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <h3 className="text-sm font-bold text-slate-900 mb-4">
+      <h3 className="text-sm font-bold text-slate-900 mb-1">
         Corelație evaluare posturi — clase salariale
       </h3>
+      <p className="text-[10px] text-slate-400 mb-4">
+        Clase formate prin progresie geometrică (Pitariu, Fig. 2.6)
+        {pitariuGrades && ` — ${nGrades} clase, raport 1.15`}
+      </p>
 
       <ResponsiveContainer width="100%" height={440}>
         <ComposedChart margin={{ top: 10, right: 15, bottom: 50, left: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
-          {/* X: clase normalizate (egale), etichete = punctaje reale */}
+          {/* X: clase normalizate (egale vizual), etichete = punctaje reale */}
           <XAxis
             dataKey="normX"
             type="number"
@@ -217,8 +215,8 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           </YAxis>
 
-          {/* Clase salariale — aceeași lățime pe X, înălțime variabilă pe Y, suprapuse */}
-          {grades.map((g, i) => (
+          {/* Clase salariale — lățime egală pe X, înălțime variabilă pe Y, suprapuse */}
+          {activeGrades.map((g, i) => (
             <ReferenceArea
               key={g.name}
               x1={i}
@@ -230,14 +228,14 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
               strokeWidth={1.5}
               strokeOpacity={0.7}
               label={{
-                value: g.name.replace("Clasă ", "C").replace("Grad ", "C").split(" — ")[0],
+                value: g.name.replace("Clasă ", "C"),
                 position: "insideTop",
                 style: { fontSize: 9, fill: GRADE_STROKES[i % GRADE_STROKES.length], fontWeight: 700 },
               }}
             />
           ))}
 
-          {/* Salarii individuale */}
+          {/* Salarii individuale — scatter */}
           {normalizedPoints.length > 0 && (
             <Scatter
               data={normalizedPoints}
@@ -251,37 +249,37 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           )}
 
-          {/* Tendință salariu minim */}
+          {/* Tendință salariu minim (Evaluare minimă — Pitariu) */}
           <Line
             data={regressionData}
             dataKey="regMin"
             stroke="#E85D43"
             strokeWidth={2}
             dot={false}
-            name="Tendință sal. min."
+            name="Evaluare min."
             connectNulls
           />
 
-          {/* Tendință salariu maxim */}
+          {/* Tendință salariu maxim (Evaluare maximă — Pitariu) */}
           <Line
             data={regressionData}
             dataKey="regMax"
             stroke="#4F46E5"
             strokeWidth={2}
             dot={false}
-            name="Tendință sal. max."
+            name="Evaluare max."
             connectNulls
           />
 
-          {/* Tendință salariu mediu (punctat) */}
+          {/* Punct de mijloc (media — Pitariu) */}
           <Line
             data={regressionData}
-            dataKey="regAvg"
+            dataKey="regMid"
             stroke="#10B981"
             strokeWidth={2}
             strokeDasharray="6 4"
             dot={false}
-            name="Tendință sal. mediu"
+            name="Punct de mijloc"
             connectNulls
           />
 
@@ -301,9 +299,9 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
               }
               return (
                 <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2 text-[10px]">
-                  {d.regMin != null && <p className="text-red-500">Tendință min: {d.regMin.toLocaleString()} RON</p>}
-                  {d.regAvg != null && <p className="text-emerald-600">Tendință mediu: {d.regAvg.toLocaleString()} RON</p>}
-                  {d.regMax != null && <p className="text-indigo-600">Tendință max: {d.regMax.toLocaleString()} RON</p>}
+                  {d.regMin != null && <p className="text-red-500">Evaluare min.: {d.regMin.toLocaleString()} RON</p>}
+                  {d.regMid != null && <p className="text-emerald-600">Punct de mijloc: {d.regMid.toLocaleString()} RON</p>}
+                  {d.regMax != null && <p className="text-indigo-600">Evaluare max.: {d.regMax.toLocaleString()} RON</p>}
                 </div>
               )
             }}
