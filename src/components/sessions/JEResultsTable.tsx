@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
+import dynamic from "next/dynamic"
+
+const SalaryGradeChart = dynamic(() => import("./SalaryGradeChart"), { ssr: false })
 
 interface CriterionInfo {
   id: string
@@ -273,6 +276,22 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           </tbody>
         </table>
       </div>
+
+      {/* Grafic corelație punctaj — clase salariale */}
+      {grades.length > 0 && (
+        <SalaryGradeChart
+          grades={grades}
+          jobs={scoredJobs.map(j => ({
+            title: j.jobTitle,
+            score: j.total,
+            salary: j.avgSalary ?? null,
+            letter: Object.values(j.criterionScores)[0]?.letter || "?",
+          }))}
+          benchmarkJobs={scoredJobs
+            .filter(j => j.benchmark)
+            .map(j => ({ score: j.total, benchmarkMedian: j.benchmark!.median }))}
+        />
+      )}
 
       {/* Jurnal modificări */}
       {changeLog.length > 0 && (
