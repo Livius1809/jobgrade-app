@@ -44,6 +44,7 @@ model Tenant {
   clientMemories        ClientMemory[]
   payrollEntries        PayrollEntry[]
   payrollImportBatches  PayrollImportBatch[]
+  revenueEntries        RevenueEntry[]
 
   @@map("tenants")
 }
@@ -717,6 +718,60 @@ model CreditTransaction {
 
   @@index([tenantId, createdAt])
   @@map("credit_transactions")
+}
+
+// ─────────────────────────────────────────
+// BUGET OPERAȚIONAL
+// ─────────────────────────────────────────
+
+model BudgetLine {
+  id         String         @id @default(cuid())
+  businessId String
+  category   BudgetCategory
+  month      DateTime       // primul zi a lunii (ex: 2026-07-01)
+  planned    Decimal        @default(0)
+  actual     Decimal        @default(0)
+  notes      String?
+  approvedBy String?        // userId care a aprobat
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([businessId, category, month])
+  @@index([businessId, month])
+  @@map("budget_lines")
+}
+
+model RevenueEntry {
+  id             String        @id @default(cuid())
+  tenantId       String
+  type           RevenueType
+  amount         Decimal
+  currency       String        @default("RON")
+  description    String?
+  stripePaymentId String?      // legătură cu Stripe
+  periodMonth    DateTime      // luna la care se referă
+  createdAt      DateTime      @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, periodMonth])
+  @@map("revenue_entries")
+}
+
+enum BudgetCategory {
+  INFRA          // Vercel, Neon, domenii
+  API_AI         // Claude API (Haiku/Sonnet)
+  MARKETING      // Campanii, materiale
+  PERSONAL       // Psihologi, DPO, colaboratori
+  REVENUE        // Venituri (planned vs actual)
+  DIVERSE        // Contingency, neprevăzut
+}
+
+enum RevenueType {
+  SUBSCRIPTION   // Abonament lunar/anual
+  CREDITS        // Achiziție pachete credite
+  SERVICE        // Plată per serviciu/proiect
+  REFUND         // Rambursare
 }
 
 // ─────────────────────────────────────────

@@ -73,6 +73,9 @@ Disfuncții OPEN: ${disfOpen}
 Signals pending: ${signalsPending}
 IMPORTANT: Aceste date sunt LIVE din DB, nu din KB static. Folosește-le ca sursă de adevăr.
 
+BUGET OPERAȚIONAL:
+${await getBudgetSummary()}
+
 ACȚIUNI OPERAȚIONALE DISPONIBILE (doar COG/COA/COCSA):
 Dacă decizi că un parametru operațional trebuie ajustat, include în output:
   ACTION: SET_CONFIG key=SIGNAL_FILTER_LEVEL value=critical reason="prea multe semnale irelevante"
@@ -83,12 +86,47 @@ Acțiunile sunt executate AUTOMAT după completarea task-ului. NU poți opri exe
 NOTIFICĂRI OWNER: Poți trimite mesaje direct Owner-ului care vor apărea pe dashboard-ul său:
   ACTION: NOTIFY_OWNER title="Subiectul mesajului" body="Conținutul complet al mesajului"
 Folosește pentru: rapoarte, propuneri care necesită aprobare, alerte importante, întrebări strategice.
+BUGET: Poți actualiza cheltuielile reale pe categorii:
+  ACTION: ADJUST_BUDGET category=API_AI month=2026-07 actual=1500 reason="consum Claude API luna iulie"
+Categorii valide: INFRA, API_AI, MARKETING, PERSONAL, REVENUE, DIVERSE.
 ═══════════════════════════════════════════════════════════════════════════════
 `
   } catch {
     return "\n[System status unavailable — DB query failed]\n"
   }
 }
+async function getBudgetSummary(): Promise<string> {
+  try {
+    const now = new Date()
+    const year = now.getFullYear()
+    const startDate = new Date(year, 0, 1)
+    const endDate = new Date(year + 1, 0, 1)
+
+    const lines = await (prisma as any).budgetLine.findMany({
+      where: { businessId: "biz_jobgrade", month: { gte: startDate, lt: endDate } },
+      orderBy: [{ month: "asc" }],
+    })
+
+    if (lines.length === 0) return "Nicio linie bugetară definită pentru " + year + ". Propune un buget Owner-ului."
+
+    let totalPlanned = 0, totalActual = 0
+    const byCat: Record<string, { p: number; a: number }> = {}
+    for (const l of lines) {
+      const p = Number(l.planned), a = Number(l.actual)
+      totalPlanned += p; totalActual += a
+      if (!byCat[l.category]) byCat[l.category] = { p: 0, a: 0 }
+      byCat[l.category].p += p; byCat[l.category].a += a
+    }
+
+    const variance = totalPlanned > 0 ? Math.round((totalActual - totalPlanned) / totalPlanned * 100) : 0
+    const catLines = Object.entries(byCat).map(([c, v]) => `  ${c}: planificat ${v.p} RON, realizat ${v.a} RON`).join("\n")
+
+    return `Buget ${year}: planificat ${totalPlanned} RON, realizat ${totalActual} RON, variance ${variance}%\n${catLines}`
+  } catch {
+    return "Buget: date indisponibile"
+  }
+}
+
 const MAX_SUB_TASKS = 10
 
 // Mapping pentru blocker types returnate de LLM → enum BlockerType valid în DB
@@ -640,6 +678,9 @@ const ACTION_PATTERN = /ACTION:\s*SET_CONFIG\s+key=(\S+)\s+value=(\S+)(?:\s+reas
 // Pattern: ACTION: NOTIFY_OWNER title="Titlul" body="Mesajul complet"
 const NOTIFY_PATTERN = /ACTION:\s*NOTIFY_OWNER\s+title="([^"]+)"\s+body="([^"]+)"/g
 
+// Pattern: ACTION: ADJUST_BUDGET category=API_AI month=2026-07 actual=1500 reason="consum real Claude API"
+const BUDGET_PATTERN = /ACTION:\s*ADJUST_BUDGET\s+category=(\S+)\s+month=(\S+)\s+actual=(\d+)(?:\s+reason="([^"]*)")?/g
+
 // Allowlist — aceleași chei ca în adjust-config endpoint
 const ALLOWED_CONFIG_KEYS = new Set([
   "SIGNAL_FILTER_LEVEL",
@@ -683,6 +724,41 @@ async function executeOperationalActions(result: string, agentRole: string): Pro
       console.log(`[ACTION] ${agentRole} SET_CONFIG ${key}=${value} reason="${reason || ""}"`)
     } catch (e: any) {
       actions.push(`[FAILED] ${key}=${value} — ${e.message}`)
+    }
+  }
+
+  // ADJUST_BUDGET actions
+  let budgetMatch: RegExpExecArray | null
+  while ((budgetMatch = BUDGET_PATTERN.exec(result)) !== null) {
+    const [, category, monthStr, actualStr, reason] = budgetMatch
+    const validCategories = ["INFRA", "API_AI", "MARKETING", "PERSONAL", "REVENUE", "DIVERSE"]
+    if (!validCategories.includes(category)) {
+      actions.push(`[REJECTED] ADJUST_BUDGET ${category} — categorie invalidă`)
+      continue
+    }
+    try {
+      const monthDate = new Date(monthStr + "-01")
+      await (prisma as any).budgetLine.upsert({
+        where: {
+          businessId_category_month: {
+            businessId: "biz_jobgrade",
+            category,
+            month: monthDate,
+          },
+        },
+        update: { actual: parseInt(actualStr), notes: reason || null },
+        create: {
+          businessId: "biz_jobgrade",
+          category,
+          month: monthDate,
+          actual: parseInt(actualStr),
+          notes: reason || null,
+        },
+      })
+      actions.push(`[EXECUTED] ADJUST_BUDGET ${category} ${monthStr} actual=${actualStr}`)
+      console.log(`[ACTION] ${agentRole} ADJUST_BUDGET ${category} ${monthStr}=${actualStr} reason="${reason || ""}"`)
+    } catch (e: any) {
+      actions.push(`[FAILED] ADJUST_BUDGET — ${e.message}`)
     }
   }
 
