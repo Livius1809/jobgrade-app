@@ -2,7 +2,20 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "regions": ["fra1"],
-  "crons": [],
+  "crons": [
+    {
+      "path": "/api/cron/executor",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/signals",
+      "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron/retry",
+      "schedule": "0 */4 * * *"
+    }
+  ],
   "headers": [],
   "rewrites": [],
   "redirects": []

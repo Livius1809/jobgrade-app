@@ -41,7 +41,8 @@ const FILTER_TIERS: Record<string, Set<string>> = {
 // Keyword filter per category — signals must contain at least one keyword to generate a task
 // Prevents irrelevant signals from consuming API credit (e.g. "film reviews" in LEGAL_REG)
 const CATEGORY_KEYWORDS: Record<string, RegExp> = {
-  LEGAL_REG: /munc[aăi]|salar|transparen[tț]|discrimin|egal|remunera|angajat|angajator|HR|resurse umane|directiv[aă]|grading|evaluar|post|funct|competen[tț]|GDPR|AI Act|dreptul muncii|codul muncii|concedier|demiter|contract de munc|SSM|securitate.*munc/i,
+  LEGAL_REG: /munc[aăi]|salar|transparen[tț][aă].*salari|discrimin.*salar|egal.*remunera|angajat.*drepturi|codul muncii|directiva.*2023.970|pay.*gap|grading.*salar|evaluar.*post|SSM|securitate.*munc|GDPR.*angajat|AI Act.*munc/i,
+  COMPETITIVE: /jobgrade|evaluar.*post|grading|clasific.*post|salar.*transparen|hay group|mercer|korn ferry|towers watson|compensat|benefici.*angaj/i,
 }
 
 async function getActiveCategories(): Promise<Set<string>> {
@@ -57,6 +58,14 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  // Guard: doar L-V 08:00-18:00 EET
+  const now = new Date()
+  const eetHour = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getHours()
+  const eetDay = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getDay()
+  if (eetDay === 0 || eetDay === 6 || eetHour < 8 || eetHour >= 18) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "Outside business hours (L-V 08-18 EET)" })
   }
 
   const activeCategories = await getActiveCategories()
@@ -118,7 +127,7 @@ export async function GET(request: NextRequest) {
           assignedTo: role,
           assignedBy: "COSO",
           status: "ASSIGNED",
-          priority: signal.category === "LEGAL_REG" ? "CRITICAL" : "HIGH",
+          priority: "HIGH", // Semnale externe = max HIGH (nu CRITICAL — economie Sonnet)
           taskType: "INVESTIGATION",
           businessId: "biz_jobgrade",
           objectiveId: objective?.id || null,

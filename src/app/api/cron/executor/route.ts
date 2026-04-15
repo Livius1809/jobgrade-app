@@ -26,6 +26,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  // Guard: doar L-V 08:00-18:00 EET
+  const now = new Date()
+  const eetHour = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getHours()
+  const eetDay = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getDay()
+  if (eetDay === 0 || eetDay === 6 || eetHour < 8 || eetHour >= 18) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "Outside business hours (L-V 08-18 EET)" })
+  }
+
   // Kill-switch: check DB config first, env var fallback
   let executorEnabled = process.env.EXECUTOR_CRON_ENABLED === "true"
   try {

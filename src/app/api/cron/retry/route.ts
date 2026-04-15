@@ -36,6 +36,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, reason: "EXECUTOR_CRON_ENABLED kill-switch" })
   }
 
+  // Guard: doar L-V 08:00-18:00 EET
+  const nowDate = new Date()
+  const eetHour = new Date(nowDate.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getHours()
+  const eetDay = new Date(nowDate.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getDay()
+  if (eetDay === 0 || eetDay === 6 || eetHour < 8 || eetHour >= 18) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "Outside business hours (L-V 08-18 EET)" })
+  }
+
   const now = new Date()
   const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000)
 
