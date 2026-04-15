@@ -131,10 +131,9 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId,
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Ierarhia posturilor</h2>
+          <h2 className="text-lg font-bold text-slate-900">Ierarhizarea posturilor</h2>
           <p className="text-sm text-slate-500">
-            Scor total = suma punctajelor subfactorilor pe cele 6 criterii (max 560 pct).
-            {canEdit && " Ajustați nivelul per criteriu dacă e cazul."}
+            {canEdit ? "Ajustați nivelul per criteriu dacă e cazul." : ""}
           </p>
         </div>
         {canEdit && (
@@ -195,12 +194,12 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId,
                         <select
                           value={job.selectedSubfactors[crit.id] || ""}
                           onChange={(e) => handleLetterChange(job.jobId, crit.id, e.target.value)}
-                          className="w-14 text-center text-sm font-bold bg-transparent border border-slate-200 rounded px-1 py-1 hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 cursor-pointer"
+                          className="w-full max-w-[200px] text-xs font-medium bg-transparent border border-slate-200 rounded px-1.5 py-1 hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 cursor-pointer"
                           title={`${crit.name}: nivel ${score?.letter}`}
                         >
                           {crit.subfactors.map(sf => (
                             <option key={sf.id} value={sf.id}>
-                              {sf.code}
+                              {sf.code} — {sf.description}
                             </option>
                           ))}
                         </select>
