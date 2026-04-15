@@ -75,6 +75,11 @@ export default async function SessionResultsPage({
   const salaryGrades = await prisma.salaryGrade.findMany({
     where: { sessionId: id },
     orderBy: { order: "asc" },
+    include: {
+      steps: {
+        orderBy: { step: "asc" },
+      },
+    },
   })
 
   const gradesData = salaryGrades.map(g => ({
@@ -83,6 +88,12 @@ export default async function SessionResultsPage({
     scoreMax: g.scoreMax,
     salaryMin: g.salaryMin ?? 0,
     salaryMax: g.salaryMax ?? 0,
+    steps: g.steps.map(s => ({
+      step: s.step,
+      name: s.name,
+      salary: Number(s.salary),
+      criteria: s.criteria,
+    })),
   }))
 
   // Real salaries from PayrollEntry (H8 only)

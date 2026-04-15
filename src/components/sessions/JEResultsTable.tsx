@@ -18,12 +18,20 @@ interface CriterionInfo {
   }>
 }
 
+interface SalaryStep {
+  step: number
+  name: string
+  salary: number
+  criteria: string | null
+}
+
 interface SalaryGrade {
   name: string
   scoreMin: number
   scoreMax: number
   salaryMin: number
   salaryMax: number
+  steps?: SalaryStep[]
 }
 
 interface BenchmarkData {
@@ -291,6 +299,62 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             .filter(j => j.benchmark)
             .map(j => ({ score: j.total, benchmarkMedian: j.benchmark!.median }))}
         />
+      )}
+
+      {/* Clase salariale și trepte */}
+      {grades.some(g => g.steps && g.steps.length > 0) && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte (gradații)</h3>
+          <p className="text-xs text-slate-500">
+            Fiecare clasă salarială conține mai multe trepte. Avansarea între trepte se face pe baza vechimii sau a evaluării performanței.
+            Când un angajat atinge treapta superioară a clasei, departamentul HR trebuie să elaboreze un plan de carieră.
+          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {grades.filter(g => g.steps && g.steps.length > 0).map((g, i) => {
+              const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-coral", "border-l-emerald-500"]
+              const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
+              // Pozițiile încadrate în acest grad
+              const jobsInGrade = scoredJobs.filter(j => j.total >= g.scoreMin && j.total <= g.scoreMax)
+
+              return (
+                <div key={g.name} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
+                  <p className="text-xs font-bold text-slate-900 mb-1">{g.name}</p>
+                  <p className="text-[10px] text-slate-400 mb-3">Punctaj: {g.scoreMin}–{g.scoreMax}</p>
+
+                  {/* Trepte */}
+                  <div className="space-y-1.5">
+                    {g.steps!.map(s => (
+                      <div key={s.step} className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded bg-white border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{s.step}</span>
+                          <span className="text-slate-700">{s.name}</span>
+                        </div>
+                        <span className="font-semibold text-slate-900">{Number(s.salary).toLocaleString()} RON</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Criterii avansare */}
+                  {g.steps![0]?.criteria && (
+                    <div className="mt-3 pt-2 border-t border-slate-200/50">
+                      <p className="text-[9px] text-slate-400 italic">{g.steps![g.steps!.length - 1]?.criteria}</p>
+                    </div>
+                  )}
+
+                  {/* Posturi încadrate */}
+                  {jobsInGrade.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200/50">
+                      <p className="text-[9px] text-slate-400 mb-1">Posturi încadrate:</p>
+                      {jobsInGrade.map(j => (
+                        <p key={j.jobId} className="text-[10px] text-slate-600">• {j.jobTitle} ({j.total} pct)</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {/* Jurnal modificări */}

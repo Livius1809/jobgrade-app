@@ -477,8 +477,25 @@ model SalaryGrade {
   jobResults            JobResult[]
   employeeSalaryRecords EmployeeSalaryRecord[]
   employeeRequests      EmployeeRequest[]
+  steps                 SalaryStep[]
 
   @@map("salary_grades")
+}
+
+model SalaryStep {
+  id            String   @id @default(cuid())
+  salaryGradeId String
+  step          Int
+  name          String
+  salary        Decimal
+  criteria      String?
+  createdAt     DateTime @default(now())
+
+  grade SalaryGrade @relation(fields: [salaryGradeId], references: [id], onDelete: Cascade)
+
+  @@unique([salaryGradeId, step])
+  @@index([salaryGradeId, step])
+  @@map("salary_steps")
 }
 
 // ─────────────────────────────────────────
