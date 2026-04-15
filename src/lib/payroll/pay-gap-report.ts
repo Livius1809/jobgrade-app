@@ -60,32 +60,58 @@ export interface JointAssessmentFlag {
   motiv: string
 }
 
+// Categorie de lucrători = funcție + normă (mere cu mere)
+export interface WorkerCategory {
+  functie: string
+  norma: string
+  numarFemei: number
+  numarBarbati: number
+  medieFemei: number
+  medieBarbati: number
+  medianaFemei: number
+  medianaBarbati: number
+  gapMedieProcent: number      // Art. 9(1)(a)(f)
+  gapMedianaProcent: number    // Art. 9(1)(c)
+  gapComponenteFixeProcent: number    // Art. 9(1)(b)
+  gapComponenteVariabileProcent: number // Art. 9(1)(d)
+  necesitaEvaluareComuna: boolean      // gap > 5% → Art. 10
+  kAnonymity: boolean          // true dacă ambele grupuri >= 5
+  comparabil: boolean          // true dacă ambele genuri prezente
+}
+
+// Categorie segregată = doar un gen
+export interface SegregatedCategory {
+  functie: string
+  norma: string
+  genPresent: "FEMALE" | "MALE"
+  numar: number
+  medieSalariu: number
+}
+
 export interface PayGapReport {
   tenantId: string
   generatedAt: string
   totalAngajati: number
   totalFemei: number
   totalBarbati: number
+  totalCategorii: number
+  categoriiComparabile: number
+  categoriiSegregrate: number
+  categoriiFlagArt10: number
 
-  // Art. 9(1)(a) — gap overall
-  gapOverall: GenderGapStats
+  // Art. 9(1)(a-d, f, g) — per categorie de lucrători (funcție + normă)
+  categoriiLucratori: WorkerCategory[]
 
-  // Art. 9(1)(b-c) — gap pe componente
-  gapComponenteFixe: ComponentGapStats
-  gapComponenteVariabile: ComponentGapStats
+  // Categorii segregate (un singur gen)
+  categoriiSegregate: SegregatedCategory[]
 
-  // Art. 9(1)(d) — distribuție cuartile
+  // Art. 9(1)(e) — distribuție cuartile
   distributieQuartile: QuartileDistribution[]
-
-  // Detaliere per categorie
-  perJobFamily: CategoryGap[]
-  perDepartament: CategoryGap[]
-  perNivelIerarhic: CategoryGap[]
 
   // Art. 10 — semnalizări pentru evaluare comună
   semnalizariEvaluareComuna: JointAssessmentFlag[]
 
-  // Sumar
+  // Recomandări
   recomandari: string[]
 }
 
@@ -215,17 +241,13 @@ export async function generatePayGapReport(
       totalAngajati: 0,
       totalFemei: 0,
       totalBarbati: 0,
-      gapOverall: {
-        medieFemei: 0, medieBarbati: 0, gapMedieProcent: 0,
-        medianaFemei: 0, medianaBarbati: 0, gapMedianaProcent: 0,
-        numarFemei: 0, numarBarbati: 0,
-      },
-      gapComponenteFixe: { categorie: "Componente fixe", medieFemei: 0, medieBarbati: 0, gapProcent: 0 },
-      gapComponenteVariabile: { categorie: "Componente variabile", medieFemei: 0, medieBarbati: 0, gapProcent: 0 },
+      totalCategorii: 0,
+      categoriiComparabile: 0,
+      categoriiSegregrate: 0,
+      categoriiFlagArt10: 0,
+      categoriiLucratori: [],
+      categoriiSegregate: [],
       distributieQuartile: [],
-      perJobFamily: [],
-      perDepartament: [],
-      perNivelIerarhic: [],
       semnalizariEvaluareComuna: [],
       recomandari: [
         "Nu există date suficiente pentru generarea raportului. Importați datele salariale cu gender specificat.",
@@ -233,139 +255,133 @@ export async function generatePayGapReport(
     }
   }
 
-  // 2. Separă pe genuri
+  // 2. Grupare per categorie de lucrători (funcție + normă = mere cu mere)
+  const groups = new Map<string, any[]>()
+  for (const e of entries) {
+    const key = `${e.jobFamily || "Necunoscut"}|${e.workSchedule || "H8"}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(e)
+  }
+
   const fEntries = entries.filter((e: any) => e.gender === "FEMALE")
   const mEntries = entries.filter((e: any) => e.gender === "MALE")
 
-  const fGross = fEntries.map((e: any) => Number(e.totalMonthlyGross))
-  const mGross = mEntries.map((e: any) => Number(e.totalMonthlyGross))
+  // 3. Analiză per categorie de lucrători
+  const categoriiLucratori: WorkerCategory[] = []
+  const categoriiSegregate: SegregatedCategory[] = []
+  const semnalizariEvaluareComuna: JointAssessmentFlag[] = []
 
-  // 3. Gap overall (Art. 9(1)(a))
-  const gapOverall = calcGenderStats(fGross, mGross)
+  for (const [key, group] of groups.entries()) {
+    const [functie, norma] = key.split("|")
+    const fem = group.filter((e: any) => e.gender === "FEMALE")
+    const masc = group.filter((e: any) => e.gender === "MALE")
 
-  // 4. Gap componente fixe (Art. 9(1)(b))
-  const fFixed = fEntries.map((e: any) => Number(e.baseSalary) + Number(e.fixedAllowances))
-  const mFixed = mEntries.map((e: any) => Number(e.baseSalary) + Number(e.fixedAllowances))
-  const gapComponenteFixe: ComponentGapStats = {
-    categorie: "Componente fixe (salariu bază + sporuri fixe)",
-    medieFemei: round2(calcMedie(fFixed)),
-    medieBarbati: round2(calcMedie(mFixed)),
-    gapProcent: calcGapProcent(calcMedie(fFixed), calcMedie(mFixed)),
+    if (fem.length === 0 || masc.length === 0) {
+      categoriiSegregate.push({
+        functie,
+        norma,
+        genPresent: fem.length > 0 ? "FEMALE" : "MALE",
+        numar: group.length,
+        medieSalariu: round2(calcMedie(group.map((e: any) => Number(e.totalMonthlyGross)))),
+      })
+      continue
+    }
+
+    const fGross = fem.map((e: any) => Number(e.totalMonthlyGross))
+    const mGross = masc.map((e: any) => Number(e.totalMonthlyGross))
+    const fFixed = fem.map((e: any) => Number(e.baseSalary) + Number(e.fixedAllowances))
+    const mFixed = masc.map((e: any) => Number(e.baseSalary) + Number(e.fixedAllowances))
+    const fVar = fem.map((e: any) => (Number(e.annualBonuses) + Number(e.annualCommissions)) / 12)
+    const mVar = masc.map((e: any) => (Number(e.annualBonuses) + Number(e.annualCommissions)) / 12)
+
+    const gapMedie = calcGapProcent(calcMedie(fGross), calcMedie(mGross))
+    const gapMediana = calcGapProcent(calcMediana(fGross), calcMediana(mGross))
+    const gapFixe = calcGapProcent(calcMedie(fFixed), calcMedie(mFixed))
+    const gapVar = calcGapProcent(calcMedie(fVar), calcMedie(mVar))
+    const necesitaArt10 = Math.abs(gapMedie) > 5
+
+    categoriiLucratori.push({
+      functie,
+      norma,
+      numarFemei: fem.length,
+      numarBarbati: masc.length,
+      medieFemei: round2(calcMedie(fGross)),
+      medieBarbati: round2(calcMedie(mGross)),
+      medianaFemei: round2(calcMediana(fGross)),
+      medianaBarbati: round2(calcMediana(mGross)),
+      gapMedieProcent: gapMedie,
+      gapMedianaProcent: gapMediana,
+      gapComponenteFixeProcent: gapFixe,
+      gapComponenteVariabileProcent: gapVar,
+      necesitaEvaluareComuna: necesitaArt10,
+      kAnonymity: fem.length >= 5 && masc.length >= 5,
+      comparabil: true,
+    })
+
+    if (necesitaArt10) {
+      semnalizariEvaluareComuna.push({
+        categorie: `${functie} (${norma})`,
+        tipCategorie: "JOB_FAMILY",
+        gapProcent: gapMedie,
+        motiv: `Categoria „${functie}" cu norma ${norma} are decalaj de ${gapMedie}% (F: ${fem.length}, M: ${masc.length}). Conform Art. 10, se impune evaluare comună.`,
+      })
+    }
   }
 
-  // 5. Gap componente variabile (Art. 9(1)(c))
-  const fVar = fEntries.map((e: any) => (Number(e.annualBonuses) + Number(e.annualCommissions)) / 12)
-  const mVar = mEntries.map((e: any) => (Number(e.annualBonuses) + Number(e.annualCommissions)) / 12)
-  const gapComponenteVariabile: ComponentGapStats = {
-    categorie: "Componente variabile (bonusuri + comisioane, lunar)",
-    medieFemei: round2(calcMedie(fVar)),
-    medieBarbati: round2(calcMedie(mVar)),
-    gapProcent: calcGapProcent(calcMedie(fVar), calcMedie(mVar)),
-  }
+  // Sortare: cele cu gap mai mare primele
+  categoriiLucratori.sort((a, b) => Math.abs(b.gapMedieProcent) - Math.abs(a.gapMedieProcent))
 
-  // 6. Distribuție cuartile (Art. 9(1)(d))
-  const distributieQuartile: QuartileDistribution[] = []
-  for (let q = 1; q <= 4; q++) {
-    const inQ = entries.filter((e: any) => e.salaryQuartile === q)
+  // 4. Distribuție cuartile (Art. 9(1)(e))
+  const allGross = entries.map((e: any) => Number(e.totalMonthlyGross)).sort((a: number, b: number) => a - b)
+  const q1Threshold = allGross[Math.floor(allGross.length * 0.25)] || 0
+  const q2Threshold = allGross[Math.floor(allGross.length * 0.5)] || 0
+  const q3Threshold = allGross[Math.floor(allGross.length * 0.75)] || 0
+
+  const distributieQuartile: QuartileDistribution[] = [1, 2, 3, 4].map(q => {
+    const inQ = entries.filter((e: any) => {
+      const g = Number(e.totalMonthlyGross)
+      if (q === 1) return g <= q1Threshold
+      if (q === 2) return g > q1Threshold && g <= q2Threshold
+      if (q === 3) return g > q2Threshold && g <= q3Threshold
+      return g > q3Threshold
+    })
     const numF = inQ.filter((e: any) => e.gender === "FEMALE").length
     const numM = inQ.filter((e: any) => e.gender === "MALE").length
     const total = numF + numM
-    distributieQuartile.push({
+    return {
       cuartila: q,
       totalAngajati: total,
       numarFemei: numF,
       numarBarbati: numM,
       procentFemei: total > 0 ? round2((numF / total) * 100) : 0,
       procentBarbati: total > 0 ? round2((numM / total) * 100) : 0,
-    })
-  }
+    }
+  })
 
-  // 7. Gap per categorie
-  const perJobFamily = calcCategoryGaps(entries, "jobFamily")
-  const perDepartament = calcCategoryGaps(entries, "department")
-  const perNivelIerarhic = calcCategoryGaps(entries, "hierarchyLevel")
-
-  // 8. Semnalizări Art. 10 — categorii cu gap > 5%
-  const semnalizariEvaluareComuna: JointAssessmentFlag[] = []
-
-  if (Math.abs(gapOverall.gapMedieProcent) > 5) {
-    semnalizariEvaluareComuna.push({
-      categorie: "Overall",
-      tipCategorie: "OVERALL",
-      gapProcent: gapOverall.gapMedieProcent,
-      motiv: `Diferența medie globală de remunerație între genuri este ${gapOverall.gapMedieProcent}% (prag Art. 10: 5%). Se impune evaluare comună cu reprezentanții salariaților.`,
-    })
-  }
-
-  for (const cat of perJobFamily.filter(c => Math.abs(c.gapProcent) > 5)) {
-    semnalizariEvaluareComuna.push({
-      categorie: cat.categorie,
-      tipCategorie: "JOB_FAMILY",
-      gapProcent: cat.gapProcent,
-      motiv: `Familia de posturi „${cat.categorie}" are gap de ${cat.gapProcent}% (F: ${cat.numarFemei}, M: ${cat.numarBarbati}).`,
-    })
-  }
-
-  for (const cat of perDepartament.filter(c => Math.abs(c.gapProcent) > 5)) {
-    semnalizariEvaluareComuna.push({
-      categorie: cat.categorie,
-      tipCategorie: "DEPARTAMENT",
-      gapProcent: cat.gapProcent,
-      motiv: `Departamentul „${cat.categorie}" are gap de ${cat.gapProcent}% (F: ${cat.numarFemei}, M: ${cat.numarBarbati}).`,
-    })
-  }
-
-  for (const cat of perNivelIerarhic.filter(c => Math.abs(c.gapProcent) > 5)) {
-    semnalizariEvaluareComuna.push({
-      categorie: cat.categorie,
-      tipCategorie: "NIVEL_IERARHIC",
-      gapProcent: cat.gapProcent,
-      motiv: `Nivelul ierarhic „${cat.categorie}" are gap de ${cat.gapProcent}% (F: ${cat.numarFemei}, M: ${cat.numarBarbati}).`,
-    })
-  }
-
-  // 9. Recomandări
+  // 5. Recomandări
   const recomandari: string[] = []
-
-  if (Math.abs(gapOverall.gapMedieProcent) > 15) {
-    recomandari.push(
-      `Gap salarial mediu de gen: ${gapOverall.gapMedieProcent}% — nivel critic. Se impune plan de acțiune imediat conform Art. 10 și raportare ITM.`
-    )
-  } else if (Math.abs(gapOverall.gapMedieProcent) > 5) {
-    recomandari.push(
-      `Gap salarial mediu de gen: ${gapOverall.gapMedieProcent}% — depășește pragul de 5%. Inițiați evaluarea comună cu reprezentanții salariaților (Art. 10).`
-    )
-  } else {
-    recomandari.push(
-      `Gap salarial mediu de gen: ${gapOverall.gapMedieProcent}% — în limita acceptabilă (< 5%). Monitorizați periodic.`
-    )
-  }
 
   if (semnalizariEvaluareComuna.length > 0) {
     recomandari.push(
-      `${semnalizariEvaluareComuna.length} categorie/categorii necesită evaluare comună (Art. 10) datorită gap-ului > 5%.`
+      `${semnalizariEvaluareComuna.length} categorie/categorii de lucrători necesită evaluare comună (Art. 10) datorită decalajului > 5%.`
+    )
+  } else if (categoriiLucratori.length > 0) {
+    recomandari.push("Nicio categorie de lucrători comparabilă nu depășește pragul de 5%. Monitorizați periodic.")
+  }
+
+  if (categoriiSegregate.length > 0) {
+    recomandari.push(
+      `${categoriiSegregate.length} categorie/categorii au un singur gen prezent (segregare ocupațională). Analiza decalajului nu este posibilă pentru aceste categorii.`
     )
   }
 
-  // Verificare concentrare genuri în cuartile
-  const q1 = distributieQuartile.find(q => q.cuartila === 1)
-  const q4 = distributieQuartile.find(q => q.cuartila === 4)
-  if (q1 && q1.procentFemei > 70) {
-    recomandari.push(
-      `Concentrare disproporționată de femei în cuartila inferioară (${q1.procentFemei}%). Analizați cauzele structurale.`
-    )
+  const q1Data = distributieQuartile.find(q => q.cuartila === 1)
+  const q4Data = distributieQuartile.find(q => q.cuartila === 4)
+  if (q1Data && q1Data.procentFemei > 70) {
+    recomandari.push(`Concentrare disproporționată de femei în cuartila inferioară (${q1Data.procentFemei}%).`)
   }
-  if (q4 && q4.procentBarbati > 80) {
-    recomandari.push(
-      `Concentrare disproporționată de bărbați în cuartila superioară (${q4.procentBarbati}%). Verificați egalitatea de acces la pozițiile de top.`
-    )
-  }
-
-  const deptCritice = perDepartament.filter(d => Math.abs(d.gapProcent) > 10)
-  if (deptCritice.length > 0) {
-    recomandari.push(
-      `Departamente cu gap > 10%: ${deptCritice.map(d => `${d.categorie} (${d.gapProcent}%)`).join(", ")}. Prioritizați revizuirea.`
-    )
+  if (q4Data && q4Data.procentBarbati > 80) {
+    recomandari.push(`Concentrare disproporționată de bărbați în cuartila superioară (${q4Data.procentBarbati}%).`)
   }
 
   return {
@@ -374,13 +390,13 @@ export async function generatePayGapReport(
     totalAngajati: entries.length,
     totalFemei: fEntries.length,
     totalBarbati: mEntries.length,
-    gapOverall,
-    gapComponenteFixe,
-    gapComponenteVariabile,
+    totalCategorii: categoriiLucratori.length + categoriiSegregate.length,
+    categoriiComparabile: categoriiLucratori.length,
+    categoriiSegregrate: categoriiSegregate.length,
+    categoriiFlagArt10: semnalizariEvaluareComuna.length,
+    categoriiLucratori,
+    categoriiSegregate,
     distributieQuartile,
-    perJobFamily,
-    perDepartament,
-    perNivelIerarhic,
     semnalizariEvaluareComuna,
     recomandari,
   }

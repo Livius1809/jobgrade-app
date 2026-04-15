@@ -480,17 +480,9 @@ export async function reEvaluateGap(
   const tipCategorie = data.tipCategorie
   const categorie = data.categorie
 
-  if (tipCategorie === "OVERALL") {
-    gapNou = raport.gapOverall.gapMedieProcent
-  } else if (tipCategorie === "JOB_FAMILY") {
-    const found = raport.perJobFamily.find((c) => c.categorie === categorie)
-    gapNou = found?.gapProcent ?? 0
-  } else if (tipCategorie === "DEPARTAMENT") {
-    const found = raport.perDepartament.find((c) => c.categorie === categorie)
-    gapNou = found?.gapProcent ?? 0
-  } else if (tipCategorie === "NIVEL_IERARHIC") {
-    const found = raport.perNivelIerarhic.find((c) => c.categorie === categorie)
-    gapNou = found?.gapProcent ?? 0
+  if (tipCategorie === "JOB_FAMILY" || tipCategorie === "OVERALL") {
+    const found = raport.categoriiLucratori.find((c) => `${c.functie} (${c.norma})` === categorie || c.functie === categorie)
+    gapNou = found?.gapMedieProcent ?? 0
   }
 
   data.gapActual = gapNou
