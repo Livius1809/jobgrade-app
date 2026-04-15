@@ -316,9 +316,19 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
               return (
                 <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/30">
                   <td className="px-1 py-1.5 text-[9px] text-slate-400">{rank + 1}</td>
-                  <td className="px-1 py-1.5" style={{maxWidth:"120px"}}>
-                    <p className="text-[9px] text-slate-700 leading-tight">{job.jobTitle}</p>
-                    {job.department && <p className="text-[7px] text-slate-400 leading-tight">{job.department}</p>}
+                  <td className="px-1 py-1.5" style={{maxWidth:"140px"}}>
+                    {(() => {
+                      const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
+                      const mainTitle = match?.[1]?.trim() || job.jobTitle
+                      const detail = match?.[2]?.trim()
+                      return (
+                        <>
+                          <p className="text-[9px] text-slate-700 leading-tight">{mainTitle}</p>
+                          {detail && <p className="text-[7px] text-slate-400 leading-tight">{detail}</p>}
+                          {job.department && <p className="text-[7px] text-slate-400 leading-tight italic">{job.department}</p>}
+                        </>
+                      )
+                    })()}
                   </td>
                   <td className="px-1 py-1.5 text-right text-[9px] text-slate-500">{job.total}</td>
                   {criteria.map(crit => {
