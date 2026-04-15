@@ -96,10 +96,10 @@ export default async function SessionResultsPage({
     })),
   }))
 
-  // Real salaries from PayrollEntry (H8 only)
+  // Real salaries from PayrollEntry (H8 only) — cu nume pentru raport nominal
   const payrollEntries = await (prisma as any).payrollEntry.findMany({
     where: { tenantId, workSchedule: "H8" },
-    select: { jobTitle: true, baseSalary: true },
+    select: { jobTitle: true, baseSalary: true, jobCode: true },
   }).catch(() => [])
 
   // Benchmarks
@@ -132,6 +132,14 @@ export default async function SessionResultsPage({
       p75: Number(bm.salaryP75),
     } : undefined
 
+    // Employees nominali per post (pentru raportul detaliat)
+    const employeesForJob = (payrollEntries as any[])
+      .filter((p: any) => p.jobTitle === sj.job.title)
+      .map((p: any) => ({
+        name: `Marca ${p.jobCode}`,
+        salary: Number(p.baseSalary),
+      }))
+
     return {
       jobId: sj.job.id,
       jobTitle: sj.job.title,
@@ -139,6 +147,7 @@ export default async function SessionResultsPage({
       selectedSubfactors,
       avgSalary,
       benchmark,
+      employees: employeesForJob,
     }
   })
 

@@ -40,13 +40,21 @@ interface BenchmarkData {
   p75: number
 }
 
+interface EmployeeDetail {
+  name: string
+  salary: number
+  step?: SalaryStep
+  adjustmentFlag?: "UP" | "DOWN" | "OK"
+}
+
 interface JobResult {
   jobId: string
   jobTitle: string
   department: string
   selectedSubfactors: Record<string, string>
-  avgSalary?: number       // salariul real mediu (normă completă)
-  benchmark?: BenchmarkData // benchmark piață
+  avgSalary?: number
+  benchmark?: BenchmarkData
+  employees?: EmployeeDetail[]
 }
 
 interface Props {
@@ -359,6 +367,37 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                     <div className="mt-2 pt-2 border-t border-slate-200/50">
                       <p className="text-[9px] text-slate-400 mb-1">Posturi încadrate:</p>
                       {jobsInGrade.map(j => {
+                        // Show employees if available
+                        if (j.employees && j.employees.length > 0 && g.steps && g.steps.length > 0) {
+                          return j.employees.map((emp, ei) => {
+                            const empStep = findStep(emp.salary, g.steps!)
+                            // Check if between steps
+                            let flag: "UP" | "DOWN" | "OK" = "OK"
+                            if (empStep && g.steps!.length > 1) {
+                              const exactMatch = g.steps!.some(s => Number(s.salary) === emp.salary)
+                              if (!exactMatch) flag = "UP" // between steps → suggest adjustment
+                            }
+                            return (
+                              <div key={`${j.jobId}-${ei}`} className="flex items-center justify-between text-[10px] py-0.5">
+                                <span className="text-slate-600">
+                                  {emp.name} — <span className="italic text-slate-400">{j.jobTitle}</span>
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {empStep && <span className="text-violet-600 font-semibold">T{empStep.step}</span>}
+                                  <span className="text-slate-500">{emp.salary.toLocaleString()} RON</span>
+                                  {flag !== "OK" && (
+                                    <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${
+                                      flag === "UP" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                                    }`}>
+                                      ↕ ajustare
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })
+                        }
+                        // Fallback: show job average
                         const jStep = g.steps ? findStep(j.avgSalary, g.steps) : undefined
                         return (
                           <p key={j.jobId} className="text-[10px] text-slate-600">
@@ -401,10 +440,10 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
       {/* Grade salariale */}
       <div className="bg-slate-50 rounded-lg p-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-          Interpretare scoruri → Grade salariale
+          Interpretare scoruri
         </h3>
         <p className="text-xs text-slate-500 mb-2">
-          Scorul total determină gradul salarial al poziției. Gradele sunt intervale de punctaj asociate cu intervale salariale orientative.
+          Scorul total determină încadrarea în clasele și treptele salariale. Fiecare clasă conține mai multe trepte (gradații), iar angajatul avansează între trepte pe baza vechimii sau a evaluării performanței.
           Fiecare modificare a nivelului per criteriu este înregistrată automat în jurnalul de audit.
         </p>
       </div>

@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import {
   ComposedChart, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  ReferenceArea, Line, CartesianGrid, Legend,
+  ReferenceArea, ReferenceLine, Line, CartesianGrid, Legend,
 } from "recharts"
 
 interface GradeData {
@@ -145,6 +145,34 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
               }}
             />
           ))}
+
+          {/* Grade boundary lines on X axis */}
+          {grades.map((g, i) => (
+            <ReferenceLine
+              key={`boundary-${i}`}
+              x={g.scoreMax}
+              stroke="#94a3b8"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              label={i < grades.length - 1 ? {
+                value: String(g.scoreMax),
+                position: "bottom",
+                style: { fontSize: 9, fill: "#94a3b8", fontWeight: 600 },
+              } : undefined}
+            />
+          ))}
+          {/* First boundary (start of class 1) */}
+          <ReferenceLine
+            x={grades[0]?.scoreMin}
+            stroke="#94a3b8"
+            strokeWidth={1}
+            strokeDasharray="4 4"
+            label={{
+              value: String(grades[0]?.scoreMin),
+              position: "bottom",
+              style: { fontSize: 9, fill: "#94a3b8", fontWeight: 600 },
+            }}
+          />
 
           {/* Regression line MIN */}
           <Line
