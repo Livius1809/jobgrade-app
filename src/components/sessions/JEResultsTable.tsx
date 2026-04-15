@@ -254,7 +254,67 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
         ))}
       </div>
 
-      {/* Tabel */}
+      {/* Tabel centralizat evaluare — litere editabile per poziție */}
+      <div className="bg-white rounded-xl border border-indigo-200 overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-indigo-50/50 border-b border-indigo-200">
+            <tr>
+              <th className="px-2 py-2 text-[8px] text-indigo-500 text-left w-6">#</th>
+              <th className="px-2 py-2 text-[8px] text-indigo-500 text-left">Poziție</th>
+              <th className="px-2 py-2 text-[8px] text-indigo-500 text-right w-8">Scor</th>
+              {criteria.map((c, i) => (
+                <th key={c.id} className="px-1 py-2 text-[8px] text-indigo-400 text-center w-6" title={c.name}>
+                  {CRITERIA_SHORT[i]}
+                </th>
+              ))}
+              <th className="px-2 py-2 text-[8px] text-indigo-400 text-center">Clasă</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scoredJobs.map((job, rank) => {
+              const grade = findGrade(job.total, grades)
+              const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
+              const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
+              const mainTitle = match?.[1]?.trim() || job.jobTitle
+              const detail = match?.[2]?.trim()
+
+              return (
+                <tr key={job.jobId} className="border-b border-indigo-50 hover:bg-indigo-50/30">
+                  <td className="px-2 py-1.5 text-[9px] text-slate-400">{rank + 1}</td>
+                  <td className="px-2 py-1.5">
+                    <p className="text-[9px] text-slate-700">{mainTitle}</p>
+                    {detail && <p className="text-[7px] text-slate-400">{detail}</p>}
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-[9px] text-indigo-600 font-semibold">{job.total}</td>
+                  {criteria.map(crit => {
+                    const score = job.criterionScores[crit.id]
+                    return (
+                      <td key={crit.id} className="px-0.5 py-1.5 text-center">
+                        {canEdit ? (
+                          <CriterionDropdown
+                            currentSfId={job.selectedSubfactors[crit.id] || ""}
+                            currentLetter={score?.letter || "—"}
+                            criterionName={crit.name}
+                            subfactors={crit.subfactors}
+                            onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
+                          />
+                        ) : (
+                          <span className="text-slate-600 text-[9px]">{score?.letter || "—"}</span>
+                        )}
+                      </td>
+                    )
+                  })}
+                  <td className="px-2 py-1.5 text-center">
+                    <span className="text-[9px] font-semibold text-indigo-600">{gradeNum}</span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Tabel detaliat salarii — per angajat */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -334,24 +394,12 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                     </td>
                     {/* Scor — only on first */}
                     <td className="px-1 py-1 text-right text-[8px] text-slate-500">{isFirstOfJob ? job.total : ""}</td>
-                    {/* Criterii — only on first */}
+                    {/* Criterii — read-only, doar pe primul rând */}
                     {criteria.map(crit => {
                       const score = job.criterionScores[crit.id]
                       return (
                         <td key={crit.id} className="px-0.5 py-1 text-center">
-                          {isFirstOfJob ? (
-                            canEdit ? (
-                              <CriterionDropdown
-                                currentSfId={job.selectedSubfactors[crit.id] || ""}
-                                currentLetter={score?.letter || "—"}
-                                criterionName={crit.name}
-                                subfactors={crit.subfactors}
-                                onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
-                              />
-                            ) : (
-                              <span className="text-slate-600 text-[8px]">{score?.letter || "—"}</span>
-                            )
-                          ) : null}
+                          {isFirstOfJob ? <span className="text-slate-500 text-[7px]">{score?.letter || "—"}</span> : null}
                         </td>
                       )
                     })}
