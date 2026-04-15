@@ -80,6 +80,9 @@ Dacă decizi că un parametru operațional trebuie ajustat, include în output:
   ACTION: SET_CONFIG key=PROACTIVE_CYCLE_INTERVAL value=30 reason="interval mai mare pentru economie"
 Valori valide: SIGNAL_FILTER_LEVEL (critical/focused/broad/full), EXECUTOR_BATCH_SIZE (1-10), PROACTIVE_CYCLE_INTERVAL (5-120 min).
 Acțiunile sunt executate AUTOMAT după completarea task-ului. NU poți opri executorul (doar Owner).
+NOTIFICĂRI OWNER: Poți trimite mesaje direct Owner-ului care vor apărea pe dashboard-ul său:
+  ACTION: NOTIFY_OWNER title="Subiectul mesajului" body="Conținutul complet al mesajului"
+Folosește pentru: rapoarte, propuneri care necesită aprobare, alerte importante, întrebări strategice.
 ═══════════════════════════════════════════════════════════════════════════════
 `
   } catch {
@@ -634,6 +637,9 @@ const OPERATIONAL_ROLES = new Set(["COG", "COA", "COCSA"])
 // Pattern: ACTION: SET_CONFIG key=SIGNAL_FILTER_LEVEL value=critical reason="prea multe semnale irelevante"
 const ACTION_PATTERN = /ACTION:\s*SET_CONFIG\s+key=(\S+)\s+value=(\S+)(?:\s+reason="([^"]*)")?/g
 
+// Pattern: ACTION: NOTIFY_OWNER title="Titlul" body="Mesajul complet"
+const NOTIFY_PATTERN = /ACTION:\s*NOTIFY_OWNER\s+title="([^"]+)"\s+body="([^"]+)"/g
+
 // Allowlist — aceleași chei ca în adjust-config endpoint
 const ALLOWED_CONFIG_KEYS = new Set([
   "SIGNAL_FILTER_LEVEL",
@@ -677,6 +683,34 @@ async function executeOperationalActions(result: string, agentRole: string): Pro
       console.log(`[ACTION] ${agentRole} SET_CONFIG ${key}=${value} reason="${reason || ""}"`)
     } catch (e: any) {
       actions.push(`[FAILED] ${key}=${value} — ${e.message}`)
+    }
+  }
+
+  // NOTIFY_OWNER actions
+  let notifyMatch: RegExpExecArray | null
+  while ((notifyMatch = NOTIFY_PATTERN.exec(result)) !== null) {
+    const [, title, body] = notifyMatch
+    try {
+      // Find Owner user
+      const owner = await (prisma as any).user.findFirst({
+        where: { role: { in: ["OWNER", "SUPER_ADMIN"] } },
+        select: { id: true },
+      })
+      if (owner) {
+        await (prisma as any).notification.create({
+          data: {
+            userId: owner.id,
+            type: "COG_MESSAGE",
+            title: `[${agentRole}] ${title}`,
+            body,
+            read: false,
+          },
+        })
+        actions.push(`[NOTIFIED] Owner: ${title}`)
+        console.log(`[ACTION] ${agentRole} NOTIFY_OWNER: ${title}`)
+      }
+    } catch (e: any) {
+      actions.push(`[NOTIFY_FAILED] ${title} — ${e.message}`)
     }
   }
 

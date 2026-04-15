@@ -4,6 +4,7 @@ import Link from "next/link"
 import CogChat from "@/components/chat/CogChat"
 import LayerCardInteractive from "./LayerCardInteractive"
 import OrganismPulse from "./OrganismPulse"
+import OwnerInbox from "@/components/owner/OwnerInbox"
 import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
 import DecisionButtons from "./DecisionButtons"
 import PilotToggle from "@/components/owner/PilotToggle"
@@ -329,6 +330,9 @@ export default async function OwnerDashboard() {
           </div>
         ) : (
           <>
+            {/* ══════════ INBOX — mesaje de la structură ══════════ */}
+            <OwnerInbox />
+
             {/* ══════════ ORGANISM PULSE (meta-panel peste straturi) ══════════ */}
             <OrganismPulse
               verdict={data.vitalSigns.verdict}
