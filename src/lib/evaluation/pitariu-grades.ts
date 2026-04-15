@@ -150,28 +150,47 @@ export function buildPitariuGrades(
   const n = numClasses ?? detection.suggested
   const r = GEOMETRIC_RATIO
 
-  // --- Pas 1: Granițe de clasă pe scoruri (progresie geometrică) ---
-  // Suma seriei geometrice: S = w1 * (r^n - 1) / (r - 1)
-  // => w1 = totalRange * (r - 1) / (r^n - 1)
-  const rPowN = Math.pow(r, n)
-  const firstWidth = totalRange * (r - 1) / (rPowN - 1)
-
-  const boundaries: number[] = [minScore]
-  for (let i = 0; i < n; i++) {
-    const width = firstWidth * Math.pow(r, i)
-    boundaries.push(Math.round(boundaries[i] + width))
+  // --- Pas 1: Granițe de clasă pe scoruri — INTERVALE EGALE ---
+  // X e normalizat vizual (fiecare clasă = 1 unitate),
+  // deci clasele au lățime egală pe axa punctajelor.
+  const classWidth = totalRange / n
+  const boundaries: number[] = []
+  for (let i = 0; i <= n; i++) {
+    boundaries.push(Math.round(minScore + classWidth * i))
   }
-  // Corectare capăt: ultima graniță = scorul maxim
+  // Corectare capete exacte
+  boundaries[0] = minScore
   boundaries[n] = maxScore
 
-  // --- Pas 2: Regresie liniară scor→salariu (pe toate punctele) ---
+  // --- Pas 2: Regresie liniară scor→salariu (pe toate punctele cu salariu) ---
   const withSalary = validPoints.filter(p => p.salary > 0)
   const reg = linearRegression(
     withSalary.map(p => p.score),
     withSalary.map(p => p.salary),
   )
 
-  // --- Pas 3: Construire clase cu salariu min/max ---
+  // --- Pas 3: Înălțimea dreptunghiurilor crește geometric (factor 1.15) ---
+  // Pitariu Fig 2.6: progresie geometrică pe VERTICALĂ (interval salarial).
+  // Clasa 1 are cea mai mică înălțime, clasa n cea mai mare.
+  //
+  // Calculăm înălțimea de bază (h1) astfel încât dreptunghiurile
+  // să acopere corect variația reală a salariilor.
+  //
+  // Salariul de pe linia de regresie la mijlocul fiecărei clase = centrul dreptunghiului.
+  // Înălțimea clasei i = h1 * r^(i-1)
+
+  // Estimăm h1 din dispersia reală a salariilor
+  const salaryValues = withSalary.map(p => p.salary)
+  const salaryRange = salaryValues.length > 1
+    ? Math.max(...salaryValues) - Math.min(...salaryValues)
+    : Math.abs(reg.slope * totalRange) // fallback din pantă
+
+  // Suma seriei geometrice a înălțimilor: S = h1 * (r^n - 1) / (r - 1)
+  // Vrem ca suma vizuală să acopere ~80% din variația reală
+  const rPowN = Math.pow(r, n)
+  const h1 = (salaryRange * 0.8 * (r - 1)) / (rPowN - 1) / n * 2
+
+  // --- Pas 4: Construire clase cu monotonie garantată ---
   const grades: PitariuGrade[] = []
 
   for (let i = 0; i < n; i++) {
@@ -179,30 +198,33 @@ export function buildPitariuGrades(
     const scoreMax = boundaries[i + 1]
     const scoreMid = (scoreMin + scoreMax) / 2
 
-    // Salarii din punctele care cad în această clasă
-    const classPoints = withSalary.filter(p => p.score >= scoreMin && p.score <= scoreMax)
-    const classSalaries = classPoints.map(p => p.salary)
+    // Centrul dreptunghiului = salariul de pe linia de regresie
+    const regCenter = reg.slope * scoreMid + reg.intercept
 
-    let salaryMin: number
-    let salaryMax: number
+    // Înălțimea clasei i crește geometric
+    const height = h1 * Math.pow(r, i)
+    const halfH = height / 2
 
-    if (classSalaries.length >= 2) {
-      // Date reale suficiente
-      salaryMin = Math.min(...classSalaries)
-      salaryMax = Math.max(...classSalaries)
-    } else if (classSalaries.length === 1) {
-      // Un singur punct — construim interval simetric pe baza regresiei
-      const regVal = reg.slope * scoreMid + reg.intercept
-      const spread = Math.abs(regVal) * 0.15
-      salaryMin = Math.min(classSalaries[0], regVal - spread)
-      salaryMax = Math.max(classSalaries[0], regVal + spread)
-    } else {
-      // Clasă fără date — interpolare din regresie
-      const regVal = reg.slope * scoreMid + reg.intercept
-      const spread = Math.abs(regVal) * 0.15
-      salaryMin = Math.max(0, regVal - spread)
-      salaryMax = regVal + spread
+    let salaryMin = regCenter - halfH
+    let salaryMax = regCenter + halfH
+
+    // Monotonie: salaryMin și salaryMax cresc obligatoriu față de clasa anterioară
+    if (i > 0) {
+      const prev = grades[i - 1]
+      // Minim curent >= minim anterior (crește)
+      if (salaryMin < prev.salaryMin) {
+        salaryMin = prev.salaryMin + height * 0.05
+      }
+      // Maxim curent >= maxim anterior (crește)
+      if (salaryMax <= prev.salaryMax) {
+        salaryMax = prev.salaryMax + height * 0.1
+        // Ajustăm minimul proporțional
+        salaryMin = salaryMax - height
+      }
     }
+
+    // Suprapunere naturală Pitariu: maxim clasă i > minim clasă i
+    // (se întâmplă automat dacă centrele sunt suficient de apropiate)
 
     grades.push({
       name: `Clasă ${i + 1}`,
@@ -210,33 +232,28 @@ export function buildPitariuGrades(
       scoreMin,
       scoreMax,
       scoreMid,
-      salaryMin: Math.round(salaryMin),
+      salaryMin: Math.round(Math.max(0, salaryMin)),
       salaryMax: Math.round(salaryMax),
       salaryMid: Math.round((salaryMin + salaryMax) / 2),
     })
   }
 
-  // --- Pas 4: Aplicare suprapunere salarială între clase adiacente ---
-  // Pitariu Fig. 2.6: clasele se suprapun — maxim clasă i > minim clasă i+1
+  // --- Pas 5: Suprapunere între clase adiacente ---
+  // Pitariu Fig. 2.6: maxim clasa i > minim clasa i+1
+  // Verificăm și forțăm dacă nu există natural
   for (let i = 0; i < grades.length - 1; i++) {
     const current = grades[i]
     const next = grades[i + 1]
-    const overlapAmount = (current.salaryMax - current.salaryMin) * SALARY_OVERLAP_PCT
 
-    // Extinde maximul clasei curente în sus
-    // și minimul clasei următoare în jos
     if (current.salaryMax < next.salaryMin) {
-      // Nu se suprapun natural — forțăm suprapunere
+      // Forțăm suprapunere: extinde ambele spre zona de contact
       const gap = next.salaryMin - current.salaryMax
-      current.salaryMax += Math.round(gap / 2 + overlapAmount)
-      next.salaryMin -= Math.round(gap / 2 + overlapAmount)
+      const overlap = (current.salaryMax - current.salaryMin) * SALARY_OVERLAP_PCT
+      current.salaryMax += Math.round(gap / 2 + overlap)
+      next.salaryMin -= Math.round(gap / 2 + overlap)
+      current.salaryMid = Math.round((current.salaryMin + current.salaryMax) / 2)
+      next.salaryMid = Math.round((next.salaryMin + next.salaryMax) / 2)
     }
-    // Dacă deja se suprapun natural, lăsăm așa (e corect Pitariu)
-  }
-
-  // Recalculează mediile după ajustarea suprapunerilor
-  for (const g of grades) {
-    g.salaryMid = Math.round((g.salaryMin + g.salaryMax) / 2)
   }
 
   return grades
