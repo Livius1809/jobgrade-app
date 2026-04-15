@@ -181,23 +181,25 @@ export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numCl
               <button
                 onClick={() => {
                   const current = effectiveClassCount ?? classDetection.suggested
-                  if (current - 2 >= classDetection.min) setUserClassCount(current - 2)
+                  const next = current - 1
+                  if (next >= 3) setUserClassCount(next)
                 }}
-                disabled={(effectiveClassCount ?? classDetection.suggested) <= classDetection.min}
-                className="w-5 h-5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-600 flex items-center justify-center"
+                disabled={(effectiveClassCount ?? classDetection.suggested) <= 3}
+                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
               >
                 −
               </button>
-              <span className="text-xs font-bold text-indigo-600 w-5 text-center">
+              <span className="text-sm font-bold text-indigo-600 w-6 text-center tabular-nums">
                 {effectiveClassCount ?? classDetection.suggested}
               </span>
               <button
                 onClick={() => {
                   const current = effectiveClassCount ?? classDetection.suggested
-                  if (current + 2 <= classDetection.max) setUserClassCount(current + 2)
+                  const next = current + 1
+                  if (next <= 11) setUserClassCount(next)
                 }}
-                disabled={(effectiveClassCount ?? classDetection.suggested) >= classDetection.max}
-                className="w-5 h-5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-600 flex items-center justify-center"
+                disabled={(effectiveClassCount ?? classDetection.suggested) >= 11}
+                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
               >
                 +
               </button>
@@ -370,6 +372,116 @@ export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numCl
           />
         </ComposedChart>
       </ResponsiveContainer>
+
+      {/* Analiză situații angajați față de clase */}
+      <SituationLegend points={normalizedPoints} grades={activeGrades} />
+    </div>
+  )
+}
+
+// --- Componentă internă: explicații situații angajați ---
+
+function SituationLegend({ points, grades }: { points: Array<{ score: number; salary: number; label: string; normX: number }>; grades: GradeData[] }) {
+  const analysis = useMemo(() => {
+    if (grades.length === 0 || points.length === 0) return null
+
+    const below: string[] = []    // sub minim clasă
+    const above: string[] = []    // peste maxim clasă
+    const overAll: string[] = []  // peste TOATE clasele (peste max ultima clasă)
+    const underAll: string[] = [] // sub TOATE clasele (sub min prima clasă)
+
+    const lastGrade = grades[grades.length - 1]
+    const firstGrade = grades[0]
+
+    for (const p of points) {
+      if (p.salary <= 0) continue
+      // Găsește clasa pe baza scorului
+      const gradeIdx = grades.findIndex((g, i) =>
+        p.score >= g.scoreMin && (i === grades.length - 1 || p.score < grades[i + 1].scoreMin)
+      )
+      const grade = gradeIdx >= 0 ? grades[gradeIdx] : null
+
+      if (p.salary > lastGrade.salaryMax) {
+        overAll.push(p.label)
+      } else if (p.salary < firstGrade.salaryMin) {
+        underAll.push(p.label)
+      } else if (grade) {
+        if (p.salary < grade.salaryMin) below.push(p.label)
+        else if (p.salary > grade.salaryMax) above.push(p.label)
+      }
+    }
+
+    const hasIssues = below.length > 0 || above.length > 0 || overAll.length > 0 || underAll.length > 0
+    return { below, above, overAll, underAll, hasIssues }
+  }, [points, grades])
+
+  if (!analysis?.hasIssues) return null
+
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-4 space-y-3">
+      <h4 className="text-[11px] font-bold text-slate-700">Interpretare situație curentă</h4>
+
+      {analysis.underAll.length > 0 && (
+        <div className="flex gap-2 items-start">
+          <span className="shrink-0 w-2 h-2 rounded-full bg-red-500 mt-1" />
+          <div className="text-[10px] text-slate-600">
+            <span className="font-semibold text-red-600">Sub toate clasele salariale</span>
+            <span className="text-slate-400"> ({analysis.underAll.length})</span>
+            <p className="text-slate-500 mt-0.5">
+              Salariul este sub minimul primei clase. Se recomanda o creștere salarială pentru alinierea la structura de salarizare.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {analysis.below.length > 0 && (
+        <div className="flex gap-2 items-start">
+          <span className="shrink-0 w-2 h-2 rounded-full bg-amber-500 mt-1" />
+          <div className="text-[10px] text-slate-600">
+            <span className="font-semibold text-amber-600">Sub minimul clasei proprii</span>
+            <span className="text-slate-400"> ({analysis.below.length})</span>
+            <p className="text-slate-500 mt-0.5">
+              Angajatul este evaluat conform clasei sale, dar salariul actual este sub limita inferioară.
+              Se recomandă o creștere salarială treptată pentru aducerea în interiorul clasei corespunzătoare.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {analysis.above.length > 0 && (
+        <div className="flex gap-2 items-start">
+          <span className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1" />
+          <div className="text-[10px] text-slate-600">
+            <span className="font-semibold text-blue-600">Peste maximul clasei proprii</span>
+            <span className="text-slate-400"> ({analysis.above.length})</span>
+            <p className="text-slate-500 mt-0.5">
+              Salariul depășește limita clasei de evaluare. Conform Pitariu, acest lucru poate indica:
+              un angajat cu experiență valoroasă care a avansat salarial dar nu și ca nivel de responsabilitate,
+              sau o oportunitate de promovare pe o poziție de complexitate superioară.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {analysis.overAll.length > 0 && (
+        <div className="flex gap-2 items-start">
+          <span className="shrink-0 w-2 h-2 rounded-full bg-purple-500 mt-1" />
+          <div className="text-[10px] text-slate-600">
+            <span className="font-semibold text-purple-600">Peste toate clasele salariale</span>
+            <span className="text-slate-400"> ({analysis.overAll.length})</span>
+            <p className="text-slate-500 mt-0.5">
+              Salariul depășește structura salarială a organizației.
+              Se recomandă evaluarea oportunității de redefinire a poziției (fișă de post actualizată,
+              responsabilități suplimentare) sau revizuirea structurii salariale la nivelul claselor superioare.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <p className="text-[9px] text-slate-400 italic pt-1 border-t border-slate-50">
+        Suprapunerea între clase este normală (Pitariu, pag. 187): un angajat experimentat dintr-o clasă inferioară
+        poate avea un salariu mai mare decât un angajat debutant dintr-o clasă superioară.
+      </p>
     </div>
   )
 }
