@@ -97,11 +97,13 @@ export function autoDetectClassCount(scores: number[]): ClassDetection {
     suggested = 7  // Dispersie mare: interval 7-11, pornim de la 7
   }
 
-  // Limită: nu mai multe clase decât posturi unice
-  const maxClasses = Math.min(11, Math.max(3, n - 1))
+  // Limită: cel puțin 2 scoruri unice per clasă (orientativ)
+  // Dar nu blocăm — clientul poate avea 5 posturi și 7 clase dacă dorește
+  const softMax = Math.min(11, Math.max(3, n))
   const minClasses = 3
 
-  suggested = Math.min(suggested, maxClasses)
+  // Sugestia se limitează soft, dar selectorul merge până la 11
+  suggested = Math.min(suggested, softMax)
 
   const reason = cv < 0.15
     ? "scoruri concentrate (CV=" + (cv * 100).toFixed(0) + "%)"
@@ -112,7 +114,7 @@ export function autoDetectClassCount(scores: number[]): ClassDetection {
   return {
     suggested,
     min: minClasses,
-    max: maxClasses % 2 === 0 ? maxClasses - 1 : maxClasses,
+    max: 11,
     cv,
     cvPercent: Math.round(cv * 100),
     reason,
