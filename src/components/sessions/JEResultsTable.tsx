@@ -464,9 +464,6 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             score: j.total,
             currentSalary: j.avgSalary ?? null,
           }))}
-          allSalariesFromStat={scoredJobs.flatMap(j =>
-            j.employees ? j.employees.filter(e => e.salary > 0).map(e => e.salary) : j.avgSalary ? [j.avgSalary] : []
-          )}
         />
       )}
 
