@@ -67,6 +67,13 @@ const LEGAL_CRITERIA = [
 
 const CRITERIA_SHORT = ["Educ.", "Com.", "Rez.pb.", "Decizii", "Impact", "Condiții"]
 
+function findStep(salary: number | undefined, steps: SalaryStep[]): SalaryStep | undefined {
+  if (!salary || steps.length === 0) return undefined
+  // Găsește treapta cea mai apropiată (<=salary)
+  const sorted = [...steps].sort((a, b) => b.salary - a.salary)
+  return sorted.find(s => salary >= s.salary) || steps[0]
+}
+
 function findGrade(total: number, grades: SalaryGrade[]): SalaryGrade | undefined {
   return grades.find(g => total >= g.scoreMin && total <= g.scoreMax)
 }
@@ -221,8 +228,9 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                 </th>
               ))}
               <th className="text-right px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Salariu</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Grad</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Min–Max grad</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Clasă</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Treaptă</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Min–Max clasă</th>
               <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Benchmark</th>
               <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">vs. piață</th>
             </tr>
@@ -230,6 +238,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           <tbody>
             {scoredJobs.map((job, rank) => {
               const grade = findGrade(job.total, grades)
+              const step = grade?.steps ? findStep(job.avgSalary, grade.steps) : undefined
               const flag = salaryFlag(job.avgSalary, job.benchmark)
               return (
                 <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/50">
@@ -263,7 +272,14 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                   <td className="px-3 py-3 text-center">
                     {grade ? (
                       <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {grade.name.split(" — ")[0]}
+                        {grade.name.replace("Grad", "Clasa")}
+                      </span>
+                    ) : <span className="text-xs text-slate-400">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {step ? (
+                      <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        T{step.step}{job.avgSalary ? ` (${job.avgSalary.toLocaleString()})` : ""}
                       </span>
                     ) : <span className="text-xs text-slate-400">—</span>}
                   </td>
@@ -301,7 +317,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
       {/* Clase salariale și trepte */}
       {grades.some(g => g.steps && g.steps.length > 0) && (
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte (gradații)</h3>
+          <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte</h3>
           <p className="text-xs text-slate-500">
             Fiecare clasă salarială conține mai multe trepte. Avansarea între trepte se face pe baza vechimii sau a evaluării performanței.
             Când un angajat atinge treapta superioară a clasei, departamentul HR trebuie să elaboreze un plan de carieră.
@@ -315,7 +331,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
 
               return (
                 <div key={g.name} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
-                  <p className="text-xs font-bold text-slate-900 mb-1">{g.name}</p>
+                  <p className="text-xs font-bold text-slate-900 mb-1">{g.name.replace("Grad", "Clasa")}</p>
                   <p className="text-[10px] text-slate-400 mb-3">Punctaj: {g.scoreMin}–{g.scoreMax}</p>
 
                   {/* Trepte */}
@@ -342,9 +358,16 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                   {jobsInGrade.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-200/50">
                       <p className="text-[9px] text-slate-400 mb-1">Posturi încadrate:</p>
-                      {jobsInGrade.map(j => (
-                        <p key={j.jobId} className="text-[10px] text-slate-600">• {j.jobTitle} ({j.total} pct)</p>
-                      ))}
+                      {jobsInGrade.map(j => {
+                        const jStep = g.steps ? findStep(j.avgSalary, g.steps) : undefined
+                        return (
+                          <p key={j.jobId} className="text-[10px] text-slate-600">
+                            • {j.jobTitle}
+                            {jStep ? <span className="text-violet-600 font-semibold ml-1">T{jStep.step}</span> : null}
+                            {j.avgSalary ? <span className="text-slate-400 ml-1">({j.avgSalary.toLocaleString()} RON)</span> : null}
+                          </p>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
