@@ -665,18 +665,10 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
 
       {/* Grafic situația adaptată — apare doar dacă există ajustări */}
       {Object.keys(salaryAdjustments).length > 0 && activeGrades.length > 0 && (
-        <SalaryGradeChart
-          grades={activeGrades}
-          salaryPoints={scoredJobs.flatMap(j =>
-            (j.employees || [])
-              .filter(e => e.salary > 0)
-              .map((e, ei) => {
-                const adjKey = `${j.jobId}-${ei}`
-                const salary = salaryAdjustments[adjKey] ?? e.salary
-                return { score: j.total, salary, label: `${e.name} — ${j.jobTitle}` }
-              })
-          )}
-          title="Situația adaptată — corelația dintre scorurile de la evaluarea posturilor de lucru și salariile propuse"
+        <AdaptedChart
+          scoredJobs={scoredJobs}
+          salaryAdjustments={salaryAdjustments}
+          effectiveClassCount={effectiveClassCount}
         />
       )}
 
@@ -840,5 +832,49 @@ function CriterionDropdown({
         </>
       )}
     </div>
+  )
+}
+
+// --- Grafic situația adaptată: recalculează clasele pe Y din salariile propuse ---
+
+function AdaptedChart({ scoredJobs, salaryAdjustments, effectiveClassCount }: {
+  scoredJobs: Array<{ jobId: string; jobTitle: string; total: number; employees?: Array<{ name: string; salary: number }> }>
+  salaryAdjustments: Record<string, number>
+  effectiveClassCount: number
+}) {
+  const adaptedPoints = useMemo(() =>
+    scoredJobs.flatMap(j =>
+      (j.employees || [])
+        .filter(e => e.salary > 0)
+        .map((e, ei) => {
+          const adjKey = `${j.jobId}-${ei}`
+          const salary = salaryAdjustments[adjKey] ?? e.salary
+          return { score: j.total, salary, label: `${e.name} — ${j.jobTitle}` }
+        })
+    ), [scoredJobs, salaryAdjustments])
+
+  const adaptedGrades = useMemo(() => {
+    if (adaptedPoints.length < 2) return []
+    return buildPitariuGrades(adaptedPoints, effectiveClassCount)
+  }, [adaptedPoints, effectiveClassCount])
+
+  const gradesData = useMemo(() =>
+    adaptedGrades.map(g => ({
+      name: g.name,
+      scoreMin: g.scoreMin,
+      scoreMax: g.scoreMax,
+      salaryMin: g.salaryMin,
+      salaryMax: g.salaryMax,
+    })),
+  [adaptedGrades])
+
+  if (gradesData.length === 0) return null
+
+  return (
+    <SalaryGradeChart
+      grades={gradesData}
+      salaryPoints={adaptedPoints}
+      title="Situația adaptată — corelația dintre scorurile de la evaluarea posturilor de lucru și salariile propuse"
+    />
   )
 }
