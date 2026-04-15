@@ -93,26 +93,28 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
       </h3>
 
       <ResponsiveContainer width="100%" height={450}>
-        <ComposedChart margin={{ top: 15, right: 25, bottom: 35, left: 25 }}>
+        <ComposedChart margin={{ top: 15, right: 20, bottom: 45, left: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
           <XAxis
             dataKey="score"
             type="number"
             domain={[xMin, xMax]}
-            tick={{ fontSize: 10, fill: "#94a3b8" }}
+            tick={{ fontSize: 9, fill: "#94a3b8" }}
+            tickCount={8}
           >
-            <Label value="Evaluare posturi de lucru" position="bottom" offset={15} style={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} />
+            <Label value="Evaluare posturi de lucru" position="bottom" offset={12} style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }} />
           </XAxis>
 
           <YAxis
             type="number"
             domain={[yMin, yMax]}
             ticks={decileTicks}
-            tick={{ fontSize: 9, fill: "#94a3b8" }}
+            tick={{ fontSize: 8, fill: "#94a3b8" }}
             tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(v)}
+            width={45}
           >
-            <Label value="Evaluare salarii" angle={-90} position="insideLeft" offset={-10} style={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} />
+            <Label value="Evaluare salarii (decile)" angle={-90} position="insideLeft" offset={-5} style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }} />
           </YAxis>
 
           {/* Grade rectangles */}
@@ -140,19 +142,12 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
             <ReferenceLine
               key={`b-${i}`}
               x={g.scoreMax}
-              stroke="#cbd5e1"
+              stroke={GRADE_STROKES[i % GRADE_STROKES.length]}
               strokeWidth={1}
-              strokeDasharray="4 4"
-              label={i < grades.length - 1 ? {
-                value: String(g.scoreMax),
-                position: "bottom",
-                style: { fontSize: 8, fill: "#94a3b8" },
-              } : undefined}
+              strokeDasharray="4 3"
+              strokeOpacity={0.4}
             />
           ))}
-          <ReferenceLine x={grades[0]?.scoreMin} stroke="#cbd5e1" strokeWidth={1} strokeDasharray="4 4"
-            label={{ value: String(grades[0]?.scoreMin), position: "bottom", style: { fontSize: 8, fill: "#94a3b8" } }}
-          />
 
           {/* Regression MIN — with label on curve */}
           <Line data={regressionData} dataKey="regMin" stroke="#E85D43" strokeWidth={2.5} dot={false} name="Tendință sal. min." connectNulls />
@@ -191,8 +186,9 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
           />
 
           <Legend
-            wrapperStyle={{ fontSize: 10, paddingTop: 10 }}
-            iconType="circle"
+            wrapperStyle={{ fontSize: 9, paddingTop: 15 }}
+            iconType="line"
+            iconSize={10}
           />
         </ComposedChart>
       </ResponsiveContainer>

@@ -260,40 +260,35 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           <thead>
             {/* Group headers */}
             <tr className="border-b border-slate-200 bg-slate-50">
-              <th colSpan={3 + criteria.length} className="px-2 py-1.5 text-[9px] font-medium text-slate-400 text-left uppercase">Evaluare</th>
-              <th colSpan={3} className="px-2 py-1.5 text-[9px] font-bold text-coral text-center uppercase border-l border-slate-200">Situația curentă</th>
-              <th className="px-2 py-1.5 text-[9px] text-slate-400 text-center border-l border-slate-200">Δ</th>
-              <th colSpan={3} className="px-2 py-1.5 text-[9px] font-bold text-emerald-600 text-center uppercase border-l border-slate-200">Situația adaptată</th>
-              <th className="px-2 py-1.5 text-[9px] text-slate-400 text-center border-l border-slate-200">Δ</th>
+              <th colSpan={3 + criteria.length} className="px-1 py-1 text-[8px] font-medium text-slate-400 text-left uppercase">Evaluare</th>
+              <th colSpan={6} className="px-1 py-1 text-[8px] font-bold text-coral text-center uppercase border-l border-slate-200">Situația curentă</th>
+              <th className="px-1 py-1 text-[8px] text-slate-300 text-center border-l border-slate-200">Δ</th>
+              <th colSpan={3} className="px-1 py-1 text-[8px] font-bold text-emerald-600 text-center uppercase border-l border-slate-200">Situația adaptată</th>
+              <th className="px-1 py-1 text-[8px] text-slate-300 text-center border-l border-slate-200">Δ</th>
             </tr>
-            {/* Column headers */}
+            {/* Column headers — rotite 180° */}
             <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-2 py-2 text-[9px] text-slate-400 text-left w-6">#</th>
-              <th className="px-2 py-2 text-[9px] text-slate-400 text-left">Poziție</th>
-              <th className="px-2 py-2 text-[9px] text-slate-400 text-right">Scor</th>
+              <th className="px-1 py-2 text-[8px] text-slate-400 text-left w-5">#</th>
+              <th className="px-1 py-2 text-[8px] text-slate-400 text-left" style={{maxWidth:"120px"}}>Poziție</th>
+              <th className="px-1 py-2 text-[8px] text-slate-400 text-right w-8">Scor</th>
               {criteria.map((c, i) => (
-                <th key={c.id} className="px-1 py-2 text-[9px] text-slate-400 text-center w-7" title={c.name}>
+                <th key={c.id} className="px-0.5 py-2 text-[8px] text-slate-400 text-center w-5" title={c.name}>
                   {CRITERIA_SHORT[i]}
                 </th>
               ))}
               {/* Situația curentă */}
-              <th className="px-2 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
-                <span>Salariu</span><br/><span className="text-[7px]">RON</span>
-              </th>
-              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Clasă</th>
-              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Treaptă</th>
-              <th className="px-1 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
-                <span className="text-[7px]">vs.bench</span>
-              </th>
+              <th className="px-1 py-1 text-[7px] text-slate-400 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Sal.RON</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Cls</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Tr</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Min</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Max</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Bench</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Δ%</th>
               {/* Situația adaptată */}
-              <th className="px-2 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
-                <span>Salariu</span><br/><span className="text-[7px]">RON</span>
-              </th>
-              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Clasă</th>
-              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Treaptă</th>
-              <th className="px-1 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
-                <span className="text-[7px]">vs.bench</span>
-              </th>
+              <th className="px-1 py-1 text-[7px] text-emerald-500 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Sal.RON</th>
+              <th className="px-0.5 py-1 text-[7px] text-emerald-500 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Cls</th>
+              <th className="px-0.5 py-1 text-[7px] text-emerald-500 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Tr</th>
+              <th className="px-0.5 py-1 text-[7px] text-emerald-500 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Δ%</th>
             </tr>
           </thead>
           <tbody>
@@ -319,17 +314,17 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
               const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
 
               return (
-                <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/30 text-[10px]">
-                  <td className="px-2 py-2 text-slate-400">{rank + 1}</td>
-                  <td className="px-2 py-2">
-                    <p className="text-[10px] font-medium text-slate-700">{job.jobTitle}</p>
-                    {job.department && <p className="text-[8px] text-slate-400">{job.department}</p>}
+                <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/30">
+                  <td className="px-1 py-1.5 text-[9px] text-slate-400">{rank + 1}</td>
+                  <td className="px-1 py-1.5" style={{maxWidth:"120px"}}>
+                    <p className="text-[9px] text-slate-700 leading-tight">{job.jobTitle}</p>
+                    {job.department && <p className="text-[7px] text-slate-400 leading-tight">{job.department}</p>}
                   </td>
-                  <td className="px-2 py-2 text-right text-slate-600">{job.total}</td>
+                  <td className="px-1 py-1.5 text-right text-[9px] text-slate-500">{job.total}</td>
                   {criteria.map(crit => {
                     const score = job.criterionScores[crit.id]
                     return (
-                      <td key={crit.id} className="px-1 py-2 text-center">
+                      <td key={crit.id} className="px-0.5 py-1.5 text-center">
                         {canEdit ? (
                           <CriterionDropdown
                             currentSfId={job.selectedSubfactors[crit.id] || ""}
@@ -339,48 +334,51 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                             onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
                           />
                         ) : (
-                          <span className="text-slate-600 text-[10px]">{score?.letter || "—"}</span>
+                          <span className="text-slate-600 text-[8px]">{score?.letter || "—"}</span>
                         )}
                       </td>
                     )
                   })}
-                  {/* Situația curentă */}
-                  <td className="px-2 py-2 text-right text-slate-600 border-l border-slate-100">
+                  {/* Situația curentă — Sal, Cls, Tr, Min, Max, Bench, Δ */}
+                  <td className={`px-1 py-1.5 text-right text-[9px] border-l border-slate-100 ${
+                    stepCurrent && stepCurrent.status !== "OK" ? "outline outline-1 outline-amber-300" : ""
+                  } text-slate-600`}>
                     {job.avgSalary ? job.avgSalary.toLocaleString() : "—"}
                   </td>
-                  <td className="px-1 py-2 text-center text-slate-600">{gradeNum}</td>
-                  <td className="px-1 py-2 text-center">
+                  <td className="px-0.5 py-1.5 text-center text-[9px] text-slate-500">{gradeNum}</td>
+                  <td className="px-0.5 py-1.5 text-center">
                     {stepCurrent ? (
-                      <span className={`text-[9px] font-semibold ${
+                      <span className={`text-[8px] font-semibold ${
                         stepCurrent.status === "OK" ? "text-emerald-600" :
                         stepCurrent.status === "BELOW" ? "text-red-600" :
                         stepCurrent.status === "ABOVE" ? "text-amber-600" : "text-violet-600"
                       }`}>
                         {stepCurrent.step.step}{stepCurrent.status !== "OK" ? (stepCurrent.status === "BELOW" ? "↓" : stepCurrent.status === "ABOVE" ? "↑" : "↕") : ""}
                       </span>
-                    ) : "—"}
+                    ) : <span className="text-[8px] text-slate-300">—</span>}
                   </td>
-                  <td className="px-1 py-2 text-center border-l border-slate-100">
-                    <span className={`text-[9px] font-bold ${flagCurrent.color}`}>{flagCurrent.label}</span>
+                  <td className="px-0.5 py-1.5 text-center text-[8px] text-slate-400">{grade ? grade.salaryMin.toLocaleString() : "—"}</td>
+                  <td className="px-0.5 py-1.5 text-center text-[8px] text-slate-400">{grade ? grade.salaryMax.toLocaleString() : "—"}</td>
+                  <td className="px-0.5 py-1.5 text-center text-[8px] text-indigo-400">{job.benchmark ? job.benchmark.median.toLocaleString() : "—"}</td>
+                  <td className="px-0.5 py-1.5 text-center border-l border-slate-100">
+                    <span className={`text-[8px] font-bold ${flagCurrent.color}`}>{flagCurrent.label}</span>
                   </td>
-                  {/* Situația adaptată */}
-                  <td className={`px-2 py-2 text-right border-l border-slate-100 ${adjustedAvg ? "text-emerald-700 font-semibold" : "text-slate-300"}`}>
+                  {/* Situația adaptată — Sal, Cls, Tr, Δ */}
+                  <td className={`px-1 py-1.5 text-right text-[9px] border-l border-slate-100 ${adjustedAvg ? "text-emerald-700 font-semibold" : "text-slate-300"}`}>
                     {adjustedAvg ? adjustedAvg.toLocaleString() : "—"}
                   </td>
-                  <td className="px-1 py-2 text-center text-slate-500">{adjustedAvg ? gradeNum : "—"}</td>
-                  <td className="px-1 py-2 text-center">
+                  <td className="px-0.5 py-1.5 text-center text-[9px] text-slate-400">{adjustedAvg ? gradeNum : "—"}</td>
+                  <td className="px-0.5 py-1.5 text-center">
                     {stepAdj ? (
-                      <span className={`text-[9px] font-semibold ${
-                        stepAdj.status === "OK" ? "text-emerald-600" : "text-violet-600"
-                      }`}>
+                      <span className={`text-[8px] font-semibold ${stepAdj.status === "OK" ? "text-emerald-600" : "text-violet-600"}`}>
                         {stepAdj.step.step}{stepAdj.status !== "OK" ? "↕" : ""}
                       </span>
-                    ) : "—"}
+                    ) : <span className="text-[8px] text-slate-300">—</span>}
                   </td>
-                  <td className="px-1 py-2 text-center border-l border-slate-100">
+                  <td className="px-0.5 py-1.5 text-center border-l border-slate-100">
                     {flagAdj ? (
-                      <span className={`text-[9px] font-bold ${flagAdj.color}`}>{flagAdj.label}</span>
-                    ) : "—"}
+                      <span className={`text-[8px] font-bold ${flagAdj.color}`}>{flagAdj.label}</span>
+                    ) : <span className="text-[8px] text-slate-300">—</span>}
                   </td>
                 </tr>
               )
@@ -660,8 +658,8 @@ function CriterionDropdown({
       <button
         ref={btnRef}
         onClick={handleOpen}
-        className={`px-2.5 py-1 rounded text-sm font-bold border transition-all cursor-pointer ${
-          open ? "border-indigo-500 bg-indigo-100 text-indigo-700 ring-4 ring-indigo-200 shadow-lg relative z-50" : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
+        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-all cursor-pointer ${
+          open ? "border-indigo-500 bg-indigo-100 text-indigo-700 ring-3 ring-indigo-200 shadow-lg relative z-50" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
         }`}
       >
         {currentLetter}
