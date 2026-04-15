@@ -75,11 +75,22 @@ const LEGAL_CRITERIA = [
 
 const CRITERIA_SHORT = ["Educ.", "Com.", "Rez.pb.", "Decizii", "Impact", "Condiții"]
 
-function findStep(salary: number | undefined, steps: SalaryStep[]): SalaryStep | undefined {
+function findStep(salary: number | undefined, steps: SalaryStep[]): { step: SalaryStep; status: "OK" | "BETWEEN" | "BELOW" | "ABOVE" } | undefined {
   if (!salary || steps.length === 0) return undefined
-  // Găsește treapta cea mai apropiată (<=salary)
-  const sorted = [...steps].sort((a, b) => b.salary - a.salary)
-  return sorted.find(s => salary >= s.salary) || steps[0]
+  const sorted = [...steps].sort((a, b) => a.salary - b.salary)
+  const minStep = sorted[0]
+  const maxStep = sorted[sorted.length - 1]
+
+  if (salary < minStep.salary) return { step: minStep, status: "BELOW" }
+  if (salary > maxStep.salary) return { step: maxStep, status: "ABOVE" }
+
+  // Exact match
+  const exact = sorted.find(s => Number(s.salary) === salary)
+  if (exact) return { step: exact, status: "OK" }
+
+  // Between steps — find the lower one
+  const lower = [...sorted].reverse().find(s => salary >= Number(s.salary))
+  return lower ? { step: lower, status: "BETWEEN" } : { step: minStep, status: "BETWEEN" }
 }
 
 function findGrade(total: number, grades: SalaryGrade[]): SalaryGrade | undefined {
@@ -246,7 +257,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           <tbody>
             {scoredJobs.map((job, rank) => {
               const grade = findGrade(job.total, grades)
-              const step = grade?.steps ? findStep(job.avgSalary, grade.steps) : undefined
+              const stepResult = grade?.steps ? findStep(job.avgSalary, grade.steps) : undefined
               const flag = salaryFlag(job.avgSalary, job.benchmark)
               return (
                 <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/50">
@@ -285,9 +296,15 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                     ) : <span className="text-xs text-slate-400">—</span>}
                   </td>
                   <td className="px-3 py-3 text-center">
-                    {step ? (
-                      <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        T{step.step}{job.avgSalary ? ` (${job.avgSalary.toLocaleString()})` : ""}
+                    {stepResult ? (
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                        stepResult.status === "OK" ? "text-emerald-700 bg-emerald-50" :
+                        stepResult.status === "BELOW" ? "text-red-700 bg-red-50" :
+                        stepResult.status === "ABOVE" ? "text-amber-700 bg-amber-50" :
+                        "text-violet-700 bg-violet-50"
+                      }`}>
+                        T{stepResult.step.step}
+                        {stepResult.status === "BETWEEN" ? " ↕" : stepResult.status === "BELOW" ? " ↓" : stepResult.status === "ABOVE" ? " ↑" : ""}
                       </span>
                     ) : <span className="text-xs text-slate-400">—</span>}
                   </td>
@@ -327,8 +344,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte</h3>
           <p className="text-xs text-slate-500">
-            Fiecare clasă salarială conține mai multe trepte. Avansarea între trepte se face pe baza vechimii sau a evaluării performanței.
-            Când un angajat atinge treapta superioară a clasei, departamentul HR trebuie să elaboreze un plan de carieră.
+            Fiecare clasă salarială conține mai multe trepte de salarizare. Avansarea între trepte se va face corelat cu evoluția profesională a angajatului aflat în poziția analizată luând în calcul parametri măsurabili cum ar fi nivelul de performanță, vechimea, nivelul de instruire etc. Dacă un angajat se află pe ultima treaptă a clasei de salarizare în care este încadrat, se recomandă elaborarea unui Plan de carieră în vederea retenției acestuia.
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {grades.filter(g => g.steps && g.steps.length > 0).map((g, i) => {
@@ -370,26 +386,25 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                         // Show employees if available
                         if (j.employees && j.employees.length > 0 && g.steps && g.steps.length > 0) {
                           return j.employees.map((emp, ei) => {
-                            const empStep = findStep(emp.salary, g.steps!)
-                            // Check if between steps
-                            let flag: "UP" | "DOWN" | "OK" = "OK"
-                            if (empStep && g.steps!.length > 1) {
-                              const exactMatch = g.steps!.some(s => Number(s.salary) === emp.salary)
-                              if (!exactMatch) flag = "UP" // between steps → suggest adjustment
-                            }
+                            const empResult = findStep(emp.salary, g.steps!)
+                            const statusLabel = empResult?.status === "BELOW" ? "↓ sub clasă" :
+                              empResult?.status === "ABOVE" ? "↑ peste clasă" :
+                              empResult?.status === "BETWEEN" ? "↕ între trepte" : ""
+                            const statusColor = empResult?.status === "BELOW" ? "bg-red-100 text-red-700" :
+                              empResult?.status === "ABOVE" ? "bg-amber-100 text-amber-700" :
+                              empResult?.status === "BETWEEN" ? "bg-violet-100 text-violet-700" : ""
+
                             return (
                               <div key={`${j.jobId}-${ei}`} className="flex items-center justify-between text-[10px] py-0.5">
                                 <span className="text-slate-600">
                                   {emp.name} — <span className="italic text-slate-400">{j.jobTitle}</span>
                                 </span>
                                 <div className="flex items-center gap-1.5">
-                                  {empStep && <span className="text-violet-600 font-semibold">T{empStep.step}</span>}
+                                  {empResult && <span className="text-violet-600 font-semibold">T{empResult.step.step}</span>}
                                   <span className="text-slate-500">{emp.salary.toLocaleString()} RON</span>
-                                  {flag !== "OK" && (
-                                    <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${
-                                      flag === "UP" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
-                                    }`}>
-                                      ↕ ajustare
+                                  {statusLabel && (
+                                    <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${statusColor}`}>
+                                      {statusLabel}
                                     </span>
                                   )}
                                 </div>
@@ -398,11 +413,11 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                           })
                         }
                         // Fallback: show job average
-                        const jStep = g.steps ? findStep(j.avgSalary, g.steps) : undefined
+                        const jStepResult = g.steps ? findStep(j.avgSalary, g.steps) : undefined
                         return (
                           <p key={j.jobId} className="text-[10px] text-slate-600">
                             • {j.jobTitle}
-                            {jStep ? <span className="text-violet-600 font-semibold ml-1">T{jStep.step}</span> : null}
+                            {jStepResult ? <span className="text-violet-600 font-semibold ml-1">T{jStepResult.step.step}</span> : null}
                             {j.avgSalary ? <span className="text-slate-400 ml-1">({j.avgSalary.toLocaleString()} RON)</span> : null}
                           </p>
                         )
