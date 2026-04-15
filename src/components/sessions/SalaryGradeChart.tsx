@@ -39,16 +39,14 @@ const GRADE_STROKES = [
 ]
 
 export default function SalaryGradeChart({ grades, jobs }: Props) {
-  // Add overlap between adjacent grades (20% overlap)
+  // Grades: X axis = punctaj fix per clasă (fără overlap pe orizontală)
+  // Y axis = salarii cu suprapunere între clase adiacente
   const overlappedGrades = useMemo(() => {
-    return grades.map((g, i) => {
-      const overlap = Math.round((g.scoreMax - g.scoreMin) * 0.15)
-      return {
-        ...g,
-        displayMin: i > 0 ? g.scoreMin - overlap : g.scoreMin,
-        displayMax: i < grades.length - 1 ? g.scoreMax + overlap : g.scoreMax,
-      }
-    })
+    return grades.map(g => ({
+      ...g,
+      displayMin: g.scoreMin,
+      displayMax: g.scoreMax,
+    }))
   }, [grades])
 
   // Linear regression for min and max salary curves
@@ -102,7 +100,7 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
         Corelație punctaj evaluare — clase salariale
       </h3>
       <p className="text-[10px] text-slate-400 mb-6">
-        Dreptunghiurile reprezintă clasele salariale (cu suprapunere între clase adiacente).
+        Fiecare clasă salarială are un interval de punctaj fix. Intervalele salariale se pot suprapune între clase adiacente.
         Curbele arată tendința salariului minim și maxim în funcție de punctaj.
       </p>
 
