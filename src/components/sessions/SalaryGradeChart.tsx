@@ -139,7 +139,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             <Label
               value="Punctaj evaluare posturi"
               position="bottom"
-              offset={35}
+              offset={18}
               style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
             />
           </XAxis>
@@ -233,7 +233,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             }}
           />
 
-          <Legend wrapperStyle={{ fontSize: 9, paddingTop: 18 }} iconType="line" iconSize={10} />
+          <Legend wrapperStyle={{ fontSize: 9, paddingTop: 35 }} iconType="line" iconSize={10} />
         </ComposedChart>
       </ResponsiveContainer>
 
