@@ -73,7 +73,7 @@ const LEGAL_CRITERIA = [
   { name: "Condiții de muncă", criteriaIds: [] as string[], color: "slate" },
 ]
 
-const CRITERIA_SHORT = ["Educ.", "Com.", "Rez.pb.", "Decizii", "Impact", "Condiții"]
+const CRITERIA_SHORT = ["E", "C", "R", "D", "I", "CL"]
 
 function findStep(salary: number | undefined, steps: SalaryStep[]): { step: SalaryStep; status: "OK" | "BETWEEN" | "BELOW" | "ABOVE" } | undefined {
   if (!salary || steps.length === 0) return undefined
@@ -312,7 +312,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                   <td className="px-3 py-3 text-center">
                     {grade ? (
                       <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {grade.name.replace("Grad", "Clasa")}
+                        {grade.name.replace("Grad ", "C").split(" — ")[0]}
                       </span>
                     ) : <span className="text-xs text-slate-400">—</span>}
                   </td>
@@ -351,12 +351,27 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
       {grades.length > 0 && (
         <SalaryGradeChart
           grades={grades}
-          jobs={scoredJobs.map(j => ({
-            title: j.jobTitle,
-            score: j.total,
-            salary: j.avgSalary ?? null,
-            letter: Object.values(j.criterionScores)[0]?.letter || "?",
-          }))}
+          jobs={scoredJobs.map(j => {
+            // Calculate adjusted average from salaryAdjustments
+            let adjustedAvg: number | null = null
+            if (j.employees && j.employees.length > 0) {
+              const adjSalaries = j.employees.map((emp, ei) => {
+                const key = `${j.jobId}-${ei}`
+                return salaryAdjustments[key] ?? emp.salary
+              })
+              const hasAdjustments = j.employees.some((_, ei) => salaryAdjustments[`${j.jobId}-${ei}`] !== undefined)
+              if (hasAdjustments) {
+                adjustedAvg = Math.round(adjSalaries.reduce((s, v) => s + v, 0) / adjSalaries.length)
+              }
+            }
+            return {
+              title: j.jobTitle,
+              score: j.total,
+              currentSalary: j.avgSalary ?? null,
+              adjustedSalary: adjustedAvg,
+              benchmarkSalary: j.benchmark?.median ?? null,
+            }
+          })}
         />
       )}
 
