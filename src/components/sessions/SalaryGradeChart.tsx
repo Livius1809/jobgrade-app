@@ -23,7 +23,6 @@ interface JobPoint {
 interface Props {
   grades: GradeData[]
   jobs: JobPoint[]
-  allSalariesFromStat?: number[]
 }
 
 const GRADE_FILLS = [
@@ -41,12 +40,17 @@ function formatSalary(val: number): string {
 }
 
 export default function SalaryGradeChart({ grades, jobs }: Props) {
-  // Regression pe salarii directe
-  const { regressionData, intersectionX } = useMemo(() => {
-    if (grades.length < 2) return { regressionData: [], intersectionX: -Infinity }
+  const nGrades = grades.length
 
-    const points = grades.map(g => ({
-      x: (g.scoreMin + g.scoreMax) / 2,
+  // Fiecare clasă ocupă exact 1 unitate pe X (1, 2, 3...)
+  // Y = salariu direct (RON) — clasele se suprapun pe verticală
+
+  // Regression: 3 linii (min, max, mediu) pe clase indexate
+  const { regressionData, intersectionX } = useMemo(() => {
+    if (nGrades < 2) return { regressionData: [], intersectionX: -Infinity }
+
+    const points = grades.map((g, i) => ({
+      x: i + 1, // clasă indexată 1..N
       yMin: g.salaryMin,
       yMax: g.salaryMax,
       yAvg: (g.salaryMin + g.salaryMax) / 2,
@@ -74,20 +78,15 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
       ? (regMin.intercept - regMax.intercept) / slopeDiff
       : -Infinity
 
-    const xStart = Math.min(...grades.map(g => g.scoreMin))
-    const xEnd = Math.max(...grades.map(g => g.scoreMax))
-    const padding = (xEnd - xStart) * 0.05
-
+    // Generăm puncte de la 0.5 la N+0.5
     const data = Array.from({ length: 31 }, (_, i) => {
-      const x = (xStart - padding) + (xEnd - xStart + 2 * padding) * (i / 30)
+      const x = 0.5 + (nGrades) * (i / 30)
       const rMinVal = regMin.intercept + regMin.slope * x
       const rMaxVal = regMax.intercept + regMax.slope * x
       const rAvgVal = regAvg.intercept + regAvg.slope * x
-
-      // Tăiem vizibilitatea sub punctul de intersecție (spre origine)
       const visible = x >= intX
       return {
-        score: Math.round(x),
+        classIdx: Math.round(x * 10) / 10,
         regMin: visible ? Math.round(Math.min(rMinVal, rMaxVal)) : null,
         regMax: visible ? Math.round(Math.max(rMinVal, rMaxVal)) : null,
         regAvg: visible ? Math.round(rAvgVal) : null,
@@ -95,21 +94,24 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
     })
 
     return { regressionData: data, intersectionX: intX }
-  }, [grades])
+  }, [grades, nGrades])
 
-  // Scatter — salarii curente
+  // Scatter: mapează fiecare job la clasa sa (index pe X)
   const currentData = useMemo(() =>
-    jobs.filter(j => j.currentSalary && j.currentSalary > 0).map(j => ({
-      score: j.score,
-      salary: j.currentSalary!,
-      title: j.title,
-    })),
-  [jobs])
+    jobs.filter(j => j.currentSalary && j.currentSalary > 0).map(j => {
+      // Găsim clasa în care se încadrează scorul
+      const gradeIdx = grades.findIndex(g => j.score >= g.scoreMin && j.score <= g.scoreMax)
+      const classX = gradeIdx >= 0 ? gradeIdx + 1 : null
+      return classX ? {
+        classIdx: classX + (Math.random() * 0.4 - 0.2), // ușor jitter pentru lizibilitate
+        salary: j.currentSalary!,
+        title: j.title,
+        score: j.score,
+      } : null
+    }).filter(Boolean) as { classIdx: number; salary: number; title: string; score: number }[],
+  [jobs, grades])
 
-  // Axes
-  const xMin = Math.min(...grades.map(g => g.scoreMin)) - 20
-  const xMax = Math.max(...grades.map(g => g.scoreMax)) + 20
-
+  // Y domain
   const allSalaryValues = [
     ...grades.map(g => g.salaryMin),
     ...grades.map(g => g.salaryMax),
@@ -129,14 +131,18 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
           <XAxis
-            dataKey="score"
+            dataKey="classIdx"
             type="number"
-            domain={[xMin, xMax]}
+            domain={[0.5, nGrades + 0.5]}
+            ticks={grades.map((_, i) => i + 1)}
             tick={{ fontSize: 9, fill: "#94a3b8" }}
-            tickCount={8}
+            tickFormatter={(v) => {
+              const g = grades[v - 1]
+              return g ? g.name.replace("Clasă ", "C").replace("Grad ", "C").split(" — ")[0] : ""
+            }}
           >
             <Label
-              value="Evaluare posturi de lucru (punctaj)"
+              value="Clase salariale (evaluare posturi)"
               position="bottom"
               offset={8}
               style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
@@ -159,12 +165,12 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
             />
           </YAxis>
 
-          {/* Clase salariale — dreptunghiuri */}
+          {/* Clase salariale — dreptunghiuri egale pe X, variabile pe Y */}
           {grades.map((g, i) => (
             <ReferenceArea
               key={g.name}
-              x1={g.scoreMin}
-              x2={g.scoreMax}
+              x1={i + 0.6}
+              x2={i + 1.4}
               y1={g.salaryMin}
               y2={g.salaryMax}
               fill={GRADE_FILLS[i % GRADE_FILLS.length]}
@@ -172,9 +178,9 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
               strokeWidth={1.5}
               strokeOpacity={0.7}
               label={{
-                value: g.name.replace("Clasă ", "C").replace("Grad ", "C").split(" — ")[0],
-                position: "insideTop",
-                style: { fontSize: 9, fill: GRADE_STROKES[i % GRADE_STROKES.length], fontWeight: 700 },
+                value: `${g.scoreMin}–${g.scoreMax} pct`,
+                position: "insideBottom",
+                style: { fontSize: 8, fill: GRADE_STROKES[i % GRADE_STROKES.length], fontWeight: 500 },
               }}
             />
           ))}
@@ -242,7 +248,6 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
               }
               return (
                 <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2 text-[10px]">
-                  <p className="text-slate-500">Punctaj: {d.score}</p>
                   {d.regMin != null && <p className="text-red-500">Tendință min: {d.regMin.toLocaleString()} RON</p>}
                   {d.regAvg != null && <p className="text-emerald-600">Tendință mediu: {d.regAvg.toLocaleString()} RON</p>}
                   {d.regMax != null && <p className="text-indigo-600">Tendință max: {d.regMax.toLocaleString()} RON</p>}
