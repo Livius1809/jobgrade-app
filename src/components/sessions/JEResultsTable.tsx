@@ -114,6 +114,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
   const [jobs, setJobs] = useState(initialJobs)
   const [saving, setSaving] = useState(false)
   const [validated, setValidated] = useState(false)
+  const [salaryAdjustments, setSalaryAdjustments] = useState<Record<string, number>>({}) // "jobId-empIndex" → new salary
 
   // Build lookup: subfactorId → points, code
   const sfLookup = useMemo(() => {
@@ -146,6 +147,26 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
       return { ...job, criterionScores, total }
     }).sort((a, b) => b.total - a.total)
   }, [jobs, criteria, sfLookup])
+
+  // Budget impact calculation
+  const budgetImpact = useMemo(() => {
+    let totalCurrent = 0
+    let totalProposed = 0
+    let adjustmentCount = 0
+
+    for (const [key, newSalary] of Object.entries(salaryAdjustments)) {
+      const [jobId, empIdx] = key.split("-")
+      const job = initialJobs.find(j => j.jobId === jobId)
+      const emp = job?.employees?.[parseInt(empIdx)]
+      if (emp) {
+        totalCurrent += emp.salary
+        totalProposed += newSalary
+        adjustmentCount++
+      }
+    }
+
+    return { totalCurrent, totalProposed, diff: totalProposed - totalCurrent, count: adjustmentCount }
+  }, [salaryAdjustments, initialJobs])
 
   const [changeLog, setChangeLog] = useState<Array<{
     timestamp: string; jobTitle: string; criterion: string; from: string; to: string
@@ -386,28 +407,84 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                         // Show employees if available
                         if (j.employees && j.employees.length > 0 && g.steps && g.steps.length > 0) {
                           return j.employees.map((emp, ei) => {
-                            const empResult = findStep(emp.salary, g.steps!)
+                            const adjKey = `${j.jobId}-${ei}`
+                            const adjustedSalary = salaryAdjustments[adjKey]
+                            const displaySalary = adjustedSalary ?? emp.salary
+                            const empResult = findStep(displaySalary, g.steps!)
+                            const isAdjusted = adjustedSalary !== undefined
+
                             const statusLabel = empResult?.status === "BELOW" ? "↓ sub clasă" :
                               empResult?.status === "ABOVE" ? "↑ peste clasă" :
                               empResult?.status === "BETWEEN" ? "↕ între trepte" : ""
-                            const statusColor = empResult?.status === "BELOW" ? "bg-red-100 text-red-700" :
-                              empResult?.status === "ABOVE" ? "bg-amber-100 text-amber-700" :
-                              empResult?.status === "BETWEEN" ? "bg-violet-100 text-violet-700" : ""
+
+                            // Find adjacent steps for action buttons
+                            const sortedSteps = [...g.steps!].sort((a, b) => a.salary - b.salary)
+                            const currentStepIdx = empResult ? sortedSteps.findIndex(s => s.step === empResult.step.step) : -1
+                            const lowerStep = currentStepIdx >= 0 ? sortedSteps[currentStepIdx] : undefined
+                            const upperStep = currentStepIdx >= 0 && currentStepIdx < sortedSteps.length - 1 ? sortedSteps[currentStepIdx + 1] : undefined
+
+                            // Benchmark adjustment
+                            const benchmarkMedian = j.benchmark?.median
 
                             return (
-                              <div key={`${j.jobId}-${ei}`} className="flex items-center justify-between text-[10px] py-0.5">
-                                <span className="text-slate-600">
-                                  {emp.name} — <span className="italic text-slate-400">{j.jobTitle}</span>
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                  {empResult && <span className="text-violet-600 font-semibold">T{empResult.step.step}</span>}
-                                  <span className="text-slate-500">{emp.salary.toLocaleString()} RON</span>
-                                  {statusLabel && (
-                                    <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${statusColor}`}>
-                                      {statusLabel}
-                                    </span>
-                                  )}
+                              <div key={adjKey} className={`py-1.5 ${isAdjusted ? "bg-emerald-50/50 rounded px-1 -mx-1" : ""}`}>
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className="text-slate-600">
+                                    {emp.name} — <span className="italic text-slate-400">{j.jobTitle}</span>
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    {empResult && <span className="text-violet-600 font-semibold">T{empResult.step.step}</span>}
+                                    <span className={`${isAdjusted ? "line-through text-slate-300" : "text-slate-500"}`}>{emp.salary.toLocaleString()}</span>
+                                    {isAdjusted && <span className="font-bold text-emerald-700">{adjustedSalary.toLocaleString()} RON</span>}
+                                    {!isAdjusted && <span className="text-slate-400">RON</span>}
+                                  </div>
                                 </div>
+
+                                {/* Action buttons — only when not OK */}
+                                {canEdit && empResult?.status !== "OK" && !isAdjusted && (
+                                  <div className="flex items-center gap-1.5 mt-1 ml-4">
+                                    {lowerStep && empResult?.status !== "BELOW" && (
+                                      <button
+                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(lowerStep.salary) }))}
+                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+                                      >
+                                        → T{lowerStep.step} ({Number(lowerStep.salary).toLocaleString()})
+                                      </button>
+                                    )}
+                                    {upperStep && (
+                                      <button
+                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(upperStep.salary) }))}
+                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 cursor-pointer"
+                                      >
+                                        → T{upperStep.step} ({Number(upperStep.salary).toLocaleString()})
+                                      </button>
+                                    )}
+                                    {benchmarkMedian && (
+                                      <button
+                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: benchmarkMedian }))}
+                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 cursor-pointer"
+                                      >
+                                        → Benchmark ({benchmarkMedian.toLocaleString()})
+                                      </button>
+                                    )}
+                                    {empResult?.status === "BELOW" && lowerStep && (
+                                      <button
+                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(sortedSteps[0].salary) }))}
+                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer"
+                                      >
+                                        → T1 min clasă ({Number(sortedSteps[0].salary).toLocaleString()})
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                                {isAdjusted && (
+                                  <button
+                                    onClick={() => setSalaryAdjustments(prev => { const n = { ...prev }; delete n[adjKey]; return n })}
+                                    className="text-[8px] text-slate-400 hover:text-red-500 ml-4 mt-0.5 cursor-pointer"
+                                  >
+                                    ✕ Anulează ajustarea
+                                  </button>
+                                )}
                               </div>
                             )
                           })
@@ -427,6 +504,45 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Impact bugetar */}
+      {budgetImpact.count > 0 && (
+        <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-5">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-700 mb-3">
+            Simulare impact bugetar ({budgetImpact.count} ajustări propuse)
+          </h3>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-[10px] text-slate-500 mb-1">Buget curent (selectați)</p>
+              <p className="text-lg font-bold text-slate-900">{budgetImpact.totalCurrent.toLocaleString()} RON</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 mb-1">Buget propus</p>
+              <p className="text-lg font-bold text-indigo-700">{budgetImpact.totalProposed.toLocaleString()} RON</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 mb-1">Diferență lunară</p>
+              <p className={`text-lg font-bold ${budgetImpact.diff > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                {budgetImpact.diff > 0 ? "+" : ""}{budgetImpact.diff.toLocaleString()} RON
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-indigo-200/50 flex items-center justify-between">
+            <p className="text-[10px] text-indigo-600">
+              Impact anual estimat: <span className="font-bold">{budgetImpact.diff > 0 ? "+" : ""}{(budgetImpact.diff * 12).toLocaleString()} RON</span>
+            </p>
+            <button
+              className="text-[10px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg cursor-pointer"
+              onClick={() => {
+                // TODO: export stat actualizat
+                alert(`Statul actualizat cu ${budgetImpact.count} ajustări va fi exportat. Impact lunar: ${budgetImpact.diff > 0 ? "+" : ""}${budgetImpact.diff.toLocaleString()} RON`)
+              }}
+            >
+              Exportă stat actualizat
+            </button>
           </div>
         </div>
       )}
