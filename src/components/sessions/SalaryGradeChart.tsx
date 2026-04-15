@@ -23,6 +23,7 @@ interface JobPoint {
 interface Props {
   grades: GradeData[]
   jobs: JobPoint[]
+  allSalariesFromStat?: number[]  // toate salariile din stat pentru calcul decile
 }
 
 const GRADE_FILLS = [
@@ -34,14 +35,48 @@ const GRADE_FILLS = [
 ]
 const GRADE_STROKES = ["#4F46E5", "#8B5CF6", "#D946EF", "#E85D43", "#10B981"]
 
-export default function SalaryGradeChart({ grades, jobs }: Props) {
-  // Regression lines
+// Transformă salariu absolut → decilă (1-10)
+function salaryToDecile(salary: number, decileBoundaries: number[]): number {
+  for (let i = 0; i < decileBoundaries.length; i++) {
+    if (salary <= decileBoundaries[i]) return i + 1
+  }
+  return 10
+}
+
+export default function SalaryGradeChart({ grades, jobs, allSalariesFromStat }: Props) {
+  // Calculează decilele din salariile reale din stat
+  const decileData = useMemo(() => {
+    const salaries = allSalariesFromStat && allSalariesFromStat.length > 0
+      ? [...allSalariesFromStat].sort((a, b) => a - b)
+      : [...grades.map(g => g.salaryMin), ...grades.map(g => g.salaryMax)].sort((a, b) => a - b)
+
+    const boundaries: number[] = []
+    const labels: { decile: number; value: number }[] = []
+
+    for (let d = 1; d <= 10; d++) {
+      const idx = Math.min(Math.floor(salaries.length * d / 10), salaries.length - 1)
+      boundaries.push(salaries[idx])
+      labels.push({ decile: d, value: salaries[idx] })
+    }
+
+    return { boundaries, labels, min: salaries[0], max: salaries[salaries.length - 1] }
+  }, [allSalariesFromStat, grades])
+  // Clase normalizate pe decile
+  const normalizedGrades = useMemo(() => {
+    return grades.map(g => ({
+      ...g,
+      decileMin: salaryToDecile(g.salaryMin, decileData.boundaries),
+      decileMax: salaryToDecile(g.salaryMax, decileData.boundaries),
+    }))
+  }, [grades, decileData])
+
+  // Regression pe decile
   const regressionData = useMemo(() => {
-    if (grades.length < 2) return []
-    const points = grades.map(g => ({
+    if (normalizedGrades.length < 2) return []
+    const points = normalizedGrades.map(g => ({
       x: (g.scoreMin + g.scoreMax) / 2,
-      yMin: g.salaryMin,
-      yMax: g.salaryMax,
+      yMin: g.decileMin,
+      yMax: g.decileMax,
     }))
     const n = points.length
     const sumX = points.reduce((s, p) => s + p.x, 0)
@@ -63,28 +98,25 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
       const x = xStart + (xEnd - xStart) * (i / 30)
       return {
         score: Math.round(x),
-        regMin: Math.round(regMin.intercept + regMin.slope * x),
-        regMax: Math.round(regMax.intercept + regMax.slope * x),
+        regMin: Math.round((regMin.intercept + regMin.slope * x) * 10) / 10,
+        regMax: Math.round((regMax.intercept + regMax.slope * x) * 10) / 10,
       }
     })
-  }, [grades])
+  }, [normalizedGrades, grades])
 
-  // Scatter datasets
+  // Scatter pe decile
   const currentData = useMemo(() =>
-    jobs.filter(j => j.currentSalary).map(j => ({ score: j.score, salary: j.currentSalary!, title: j.title })),
-  [jobs])
+    jobs.filter(j => j.currentSalary).map(j => ({
+      score: j.score,
+      decile: salaryToDecile(j.currentSalary!, decileData.boundaries),
+      salary: j.currentSalary!,
+      title: j.title,
+    })),
+  [jobs, decileData])
 
   // Axes
-  const allSalaries = [...grades.map(g => g.salaryMin), ...grades.map(g => g.salaryMax),
-    ...currentData.map(d => d.salary)]
-  const yMin = Math.min(...allSalaries) * 0.7
-  const yMax = Math.max(...allSalaries) * 1.15
   const xMin = Math.min(...grades.map(g => g.scoreMin)) - 20
   const xMax = Math.max(...grades.map(g => g.scoreMax)) + 20
-
-  // Decile ticks on Y
-  const yRange = yMax - yMin
-  const decileTicks = Array.from({ length: 11 }, (_, i) => Math.round(yMin + yRange * (i / 10)))
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -108,23 +140,26 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
 
           <YAxis
             type="number"
-            domain={[yMin, yMax]}
-            ticks={decileTicks}
-            tick={{ fontSize: 8, fill: "#94a3b8" }}
-            tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(v)}
-            width={45}
+            domain={[0.5, 10.5]}
+            ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+            tick={{ fontSize: 9, fill: "#94a3b8" }}
+            tickFormatter={(v) => {
+              const label = decileData.labels.find(l => l.decile === v)
+              return label ? `D${v} (${label.value >= 1000 ? (label.value / 1000).toFixed(1) + "K" : label.value})` : `D${v}`
+            }}
+            width={70}
           >
-            <Label value="Evaluare salarii (decile)" angle={-90} position="insideLeft" offset={-5} style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }} />
+            <Label value="Evaluare salarii (decile)" angle={-90} position="insideLeft" offset={-15} style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }} />
           </YAxis>
 
-          {/* Grade rectangles */}
-          {grades.map((g, i) => (
+          {/* Grade rectangles — pe decile */}
+          {normalizedGrades.map((g, i) => (
             <ReferenceArea
               key={g.name}
               x1={g.scoreMin}
               x2={g.scoreMax}
-              y1={g.salaryMin}
-              y2={g.salaryMax}
+              y1={g.decileMin - 0.4}
+              y2={g.decileMax + 0.4}
               fill={GRADE_FILLS[i % GRADE_FILLS.length]}
               stroke={GRADE_STROKES[i % GRADE_STROKES.length]}
               strokeWidth={2}
@@ -155,9 +190,9 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
           {/* Regression MAX — with label on curve */}
           <Line data={regressionData} dataKey="regMax" stroke="#4F46E5" strokeWidth={2.5} dot={false} name="Tendință sal. max." connectNulls />
 
-          {/* a) Salarii curente — cercuri coral */}
+          {/* Salarii curente pe decile */}
           {currentData.length > 0 && (
-            <Scatter data={currentData} dataKey="salary" fill="#E85D43" stroke="#fff" strokeWidth={1.5} name="Salariu curent" shape="circle" />
+            <Scatter data={currentData} dataKey="decile" fill="#E85D43" stroke="#fff" strokeWidth={1.5} name="Salariu curent" shape="circle" />
           )}
 
 
@@ -170,7 +205,7 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
                 return (
                   <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2.5 text-[10px]">
                     <p className="font-bold text-slate-900 mb-1">{d.title}</p>
-                    <p className="text-slate-500">Punctaj: {d.score}</p>
+                    <p className="text-slate-500">Punctaj: {d.score} | Decila: {d.decile}</p>
                     <p className="text-slate-600">Salariu: {d.salary?.toLocaleString()} RON</p>
                   </div>
                 )
@@ -178,8 +213,8 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
               return (
                 <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2 text-[10px]">
                   <p className="text-slate-500">Punctaj: {d.score}</p>
-                  {d.regMin != null && <p className="text-red-500">Min: {d.regMin.toLocaleString()} RON</p>}
-                  {d.regMax != null && <p className="text-indigo-600">Max: {d.regMax.toLocaleString()} RON</p>}
+                  {d.regMin != null && <p className="text-red-500">Tendință min: D{d.regMin}</p>}
+                  {d.regMax != null && <p className="text-indigo-600">Tendință max: D{d.regMax}</p>}
                 </div>
               )
             }}
