@@ -260,7 +260,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           <thead>
             {/* Group headers */}
             <tr className="border-b border-slate-200 bg-slate-50">
-              <th colSpan={3 + criteria.length} className="px-1 py-1 text-[8px] font-medium text-slate-400 text-left uppercase">Evaluare</th>
+              <th colSpan={4 + criteria.length} className="px-1 py-1 text-[8px] font-medium text-slate-400 text-left uppercase">Evaluare</th>
               <th colSpan={6} className="px-1 py-1 text-[8px] font-bold text-coral text-center uppercase border-l border-slate-200">Situația curentă</th>
               <th className="px-1 py-1 text-[8px] text-slate-300 text-center border-l border-slate-200">Δ</th>
               <th colSpan={3} className="px-1 py-1 text-[8px] font-bold text-emerald-600 text-center uppercase border-l border-slate-200">Situația adaptată</th>
@@ -269,7 +269,8 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             {/* Column headers — rotite 180° */}
             <tr className="border-b border-slate-200 bg-slate-50">
               <th className="px-1 py-2 text-[8px] text-slate-400 text-left w-5">#</th>
-              <th className="px-1 py-2 text-[8px] text-slate-400 text-left" style={{maxWidth:"120px"}}>Poziție</th>
+              <th className="px-1 py-2 text-[8px] text-slate-400 text-left w-10">Ang.</th>
+              <th className="px-1 py-2 text-[8px] text-slate-400 text-left" style={{maxWidth:"100px"}}>Poziție</th>
               <th className="px-1 py-2 text-[8px] text-slate-400 text-right w-8">Scor</th>
               {criteria.map((c, i) => (
                 <th key={c.id} className="px-0.5 py-2 text-[8px] text-slate-400 text-center w-5" title={c.name}>
@@ -292,106 +293,112 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             </tr>
           </thead>
           <tbody>
-            {scoredJobs.map((job, rank) => {
+            {scoredJobs.flatMap((job, jobIdx) => {
               const grade = findGrade(job.total, grades)
-              const stepCurrent = grade?.steps ? findStep(job.avgSalary, grade.steps) : undefined
-              const flagCurrent = salaryFlag(job.avgSalary, job.benchmark)
-
-              // Adjusted salary
-              let adjustedAvg: number | undefined
-              if (job.employees && job.employees.length > 0) {
-                const adjSals = job.employees.map((emp, ei) => {
-                  const key = `${job.jobId}-${ei}`
-                  return salaryAdjustments[key] ?? emp.salary
-                })
-                const hasAdj = job.employees.some((_, ei) => salaryAdjustments[`${job.jobId}-${ei}`] !== undefined)
-                if (hasAdj) adjustedAvg = Math.round(adjSals.reduce((s, v) => s + v, 0) / adjSals.length)
-              }
-
-              const stepAdj = grade?.steps && adjustedAvg ? findStep(adjustedAvg, grade.steps) : undefined
-              const flagAdj = adjustedAvg ? salaryFlag(adjustedAvg, job.benchmark) : undefined
-
               const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
+              const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
+              const mainTitle = match?.[1]?.trim() || job.jobTitle
+              const detail = match?.[2]?.trim()
 
-              return (
-                <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/30">
-                  <td className="px-1 py-1.5 text-[9px] text-slate-400">{rank + 1}</td>
-                  <td className="px-1 py-1.5" style={{maxWidth:"140px"}}>
-                    {(() => {
-                      const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
-                      const mainTitle = match?.[1]?.trim() || job.jobTitle
-                      const detail = match?.[2]?.trim()
-                      return (
+              // If no employees, show one row with avg
+              const employees = job.employees && job.employees.length > 0
+                ? job.employees
+                : [{ name: "—", salary: job.avgSalary || 0 }]
+
+              return employees.map((emp, empIdx) => {
+                const isFirstOfJob = empIdx === 0
+                const adjKey = `${job.jobId}-${empIdx}`
+                const adjustedSalary = salaryAdjustments[adjKey]
+                const displaySalary = adjustedSalary ?? emp.salary
+
+                const stepCurrent = grade?.steps ? findStep(emp.salary, grade.steps) : undefined
+                const flagCurrent = salaryFlag(emp.salary, job.benchmark)
+
+                const stepAdj = grade?.steps && adjustedSalary ? findStep(adjustedSalary, grade.steps) : undefined
+                const flagAdj = adjustedSalary ? salaryFlag(adjustedSalary, job.benchmark) : undefined
+
+                return (
+                  <tr key={`${job.jobId}-${empIdx}`} className={`hover:bg-slate-50/30 ${isFirstOfJob ? "border-t border-slate-200" : "border-t border-slate-50"}`}>
+                    {/* # — only on first row of job */}
+                    <td className="px-1 py-1 text-[8px] text-slate-400">{isFirstOfJob ? jobIdx + 1 : ""}</td>
+                    {/* Angajat */}
+                    <td className="px-1 py-1 text-[8px] text-slate-500 w-10">{emp.name}</td>
+                    {/* Poziție — only on first row */}
+                    <td className="px-1 py-1" style={{maxWidth:"100px"}}>
+                      {isFirstOfJob ? (
                         <>
-                          <p className="text-[9px] text-slate-700 leading-tight">{mainTitle}</p>
+                          <p className="text-[8px] text-slate-700 leading-tight">{mainTitle}</p>
                           {detail && <p className="text-[7px] text-slate-400 leading-tight">{detail}</p>}
-                          {job.department && <p className="text-[7px] text-slate-400 leading-tight italic">{job.department}</p>}
                         </>
+                      ) : null}
+                    </td>
+                    {/* Scor — only on first */}
+                    <td className="px-1 py-1 text-right text-[8px] text-slate-500">{isFirstOfJob ? job.total : ""}</td>
+                    {/* Criterii — only on first */}
+                    {criteria.map(crit => {
+                      const score = job.criterionScores[crit.id]
+                      return (
+                        <td key={crit.id} className="px-0.5 py-1 text-center">
+                          {isFirstOfJob ? (
+                            canEdit ? (
+                              <CriterionDropdown
+                                currentSfId={job.selectedSubfactors[crit.id] || ""}
+                                currentLetter={score?.letter || "—"}
+                                criterionName={crit.name}
+                                subfactors={crit.subfactors}
+                                onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
+                              />
+                            ) : (
+                              <span className="text-slate-600 text-[8px]">{score?.letter || "—"}</span>
+                            )
+                          ) : null}
+                        </td>
                       )
-                    })()}
-                  </td>
-                  <td className="px-1 py-1.5 text-right text-[9px] text-slate-500">{job.total}</td>
-                  {criteria.map(crit => {
-                    const score = job.criterionScores[crit.id]
-                    return (
-                      <td key={crit.id} className="px-0.5 py-1.5 text-center">
-                        {canEdit ? (
-                          <CriterionDropdown
-                            currentSfId={job.selectedSubfactors[crit.id] || ""}
-                            currentLetter={score?.letter || "—"}
-                            criterionName={crit.name}
-                            subfactors={crit.subfactors}
-                            onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
-                          />
-                        ) : (
-                          <span className="text-slate-600 text-[8px]">{score?.letter || "—"}</span>
-                        )}
-                      </td>
-                    )
-                  })}
-                  {/* Situația curentă — Sal, Cls, Tr, Min, Max, Bench, Δ */}
-                  <td className={`px-1 py-1.5 text-right text-[9px] border-l border-slate-100 ${
-                    stepCurrent && stepCurrent.status !== "OK" ? "outline outline-1 outline-amber-300" : ""
-                  } text-slate-600`}>
-                    {job.avgSalary ? job.avgSalary.toLocaleString() : "—"}
-                  </td>
-                  <td className="px-0.5 py-1.5 text-center text-[9px] text-slate-500">{gradeNum}</td>
-                  <td className="px-0.5 py-1.5 text-center">
-                    {stepCurrent ? (
-                      <span className={`text-[8px] font-semibold ${
-                        stepCurrent.status === "OK" ? "text-emerald-600" :
-                        stepCurrent.status === "BELOW" ? "text-red-600" :
-                        stepCurrent.status === "ABOVE" ? "text-amber-600" : "text-violet-600"
-                      }`}>
-                        {stepCurrent.step.step}{stepCurrent.status !== "OK" ? (stepCurrent.status === "BELOW" ? "↓" : stepCurrent.status === "ABOVE" ? "↑" : "↕") : ""}
-                      </span>
-                    ) : <span className="text-[8px] text-slate-300">—</span>}
-                  </td>
-                  <td className="px-0.5 py-1.5 text-center text-[8px] text-slate-400">{grade ? grade.salaryMin.toLocaleString() : "—"}</td>
-                  <td className="px-0.5 py-1.5 text-center text-[8px] text-slate-400">{grade ? grade.salaryMax.toLocaleString() : "—"}</td>
-                  <td className="px-0.5 py-1.5 text-center text-[8px] text-indigo-400">{job.benchmark ? job.benchmark.median.toLocaleString() : "—"}</td>
-                  <td className="px-0.5 py-1.5 text-center border-l border-slate-100">
-                    <span className={`text-[8px] font-bold ${flagCurrent.color}`}>{flagCurrent.label}</span>
-                  </td>
-                  {/* Situația adaptată — Sal, Cls, Tr, Δ */}
-                  <td className={`px-1 py-1.5 text-right text-[9px] border-l border-slate-100 ${adjustedAvg ? "text-emerald-700 font-semibold" : "text-slate-300"}`}>
-                    {adjustedAvg ? adjustedAvg.toLocaleString() : "—"}
-                  </td>
-                  <td className="px-0.5 py-1.5 text-center text-[9px] text-slate-400">{adjustedAvg ? gradeNum : "—"}</td>
-                  <td className="px-0.5 py-1.5 text-center">
-                    {stepAdj ? (
-                      <span className={`text-[8px] font-semibold ${stepAdj.status === "OK" ? "text-emerald-600" : "text-violet-600"}`}>
-                        {stepAdj.step.step}{stepAdj.status !== "OK" ? "↕" : ""}
-                      </span>
-                    ) : <span className="text-[8px] text-slate-300">—</span>}
-                  </td>
-                  <td className="px-0.5 py-1.5 text-center border-l border-slate-100">
-                    {flagAdj ? (
-                      <span className={`text-[8px] font-bold ${flagAdj.color}`}>{flagAdj.label}</span>
-                    ) : <span className="text-[8px] text-slate-300">—</span>}
-                  </td>
-                </tr>
-              )
+                    })}
+                    {/* Situația curentă — per angajat */}
+                    <td className={`px-1 py-1 text-right text-[8px] border-l border-slate-100 ${
+                      stepCurrent && stepCurrent.status !== "OK" ? "bg-amber-50" : ""
+                    } text-slate-600`}>
+                      {emp.salary ? emp.salary.toLocaleString() : "—"}
+                    </td>
+                    <td className="px-0.5 py-1 text-center text-[8px] text-slate-500">{isFirstOfJob ? gradeNum : ""}</td>
+                    <td className="px-0.5 py-1 text-center">
+                      {stepCurrent ? (
+                        <span className={`text-[7px] font-semibold ${
+                          stepCurrent.status === "OK" ? "text-emerald-600" :
+                          stepCurrent.status === "BELOW" ? "text-red-600" :
+                          stepCurrent.status === "ABOVE" ? "text-amber-600" : "text-violet-600"
+                        }`}>
+                          {stepCurrent.step.step}{stepCurrent.status !== "OK" ? (stepCurrent.status === "BELOW" ? "↓" : stepCurrent.status === "ABOVE" ? "↑" : "↕") : ""}
+                        </span>
+                      ) : <span className="text-[7px] text-slate-300">—</span>}
+                    </td>
+                    <td className="px-0.5 py-1 text-center text-[7px] text-slate-400">{isFirstOfJob && grade ? grade.salaryMin.toLocaleString() : ""}</td>
+                    <td className="px-0.5 py-1 text-center text-[7px] text-slate-400">{isFirstOfJob && grade ? grade.salaryMax.toLocaleString() : ""}</td>
+                    <td className="px-0.5 py-1 text-center text-[7px] text-indigo-400">{isFirstOfJob && job.benchmark ? job.benchmark.median.toLocaleString() : ""}</td>
+                    <td className="px-0.5 py-1 text-center border-l border-slate-100">
+                      <span className={`text-[7px] font-bold ${flagCurrent.color}`}>{flagCurrent.label}</span>
+                    </td>
+                    {/* Situația adaptată */}
+                    <td className={`px-1 py-1 text-right text-[8px] border-l border-slate-100 ${adjustedSalary ? "text-emerald-700 font-semibold" : "text-slate-300"}`}>
+                      {adjustedSalary ? adjustedSalary.toLocaleString() : "—"}
+                    </td>
+                    <td className="px-0.5 py-1 text-center text-[8px] text-slate-400">{adjustedSalary && isFirstOfJob ? gradeNum : ""}</td>
+                    <td className="px-0.5 py-1 text-center">
+                      {stepAdj ? (
+                        <span className={`text-[7px] font-semibold ${stepAdj.status === "OK" ? "text-emerald-600" : "text-violet-600"}`}>
+                          {stepAdj.step.step}{stepAdj.status !== "OK" ? "↕" : ""}
+                        </span>
+                      ) : <span className="text-[7px] text-slate-300">—</span>}
+                    </td>
+                    <td className="px-0.5 py-1 text-center border-l border-slate-100">
+                      {flagAdj ? (
+                        <span className={`text-[7px] font-bold ${flagAdj.color}`}>{flagAdj.label}</span>
+                      ) : <span className="text-[7px] text-slate-300">—</span>}
+                    </td>
+                  </tr>
+                )
+              })
             })}
           </tbody>
         </table>
