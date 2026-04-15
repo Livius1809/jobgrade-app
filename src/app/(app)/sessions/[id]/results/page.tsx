@@ -100,10 +100,11 @@ export default async function SessionResultsPage({
         <h1 className="text-2xl font-bold text-slate-900">
           Rezultate: {evalSession.name}
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Scor final = suma punctajelor subfactorilor selectați pe cele 6 criterii.
-          {isOwnerOrAdmin && " Puteți ajusta nivelul per criteriu și valida raportul final."}
-        </p>
+        {isOwnerOrAdmin && (
+          <p className="text-sm text-slate-500 mt-1">
+            Puteți ajusta nivelul per criteriu și valida raportul final.
+          </p>
+        )}
       </div>
 
       {jobsData.length === 0 ? (
