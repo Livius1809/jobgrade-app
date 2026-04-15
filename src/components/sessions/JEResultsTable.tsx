@@ -568,16 +568,6 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
         </div>
       )}
 
-      {/* Grade salariale */}
-      <div className="bg-slate-50 rounded-lg p-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-          Interpretare scoruri
-        </h3>
-        <p className="text-xs text-slate-500 mb-2">
-          Scorul total determină încadrarea în clasele și treptele salariale. Fiecare clasă conține mai multe trepte (gradații), iar angajatul avansează între trepte pe baza vechimii sau a evaluării performanței.
-          Fiecare modificare a nivelului per criteriu este înregistrată automat în jurnalul de audit.
-        </p>
-      </div>
     </div>
   )
 }
@@ -625,7 +615,7 @@ function CriterionDropdown({
 
           {/* Dropdown panel — anchored to table width */}
           <div className="absolute z-50 mt-1 right-0 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
-            style={{ width: "min(500px, 90vw)", maxHeight: "320px" }}
+            style={{ width: "min(600px, 90vw)", maxHeight: "360px" }}
           >
             <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-100">
               <p className="text-xs font-bold text-indigo-700">{criterionName}</p>
