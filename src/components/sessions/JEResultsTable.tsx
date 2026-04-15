@@ -2,8 +2,15 @@
 
 import { useState, useMemo, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
+import {
+  buildPitariuGrades,
+  autoDetectClassCount,
+  type ClassDetection,
+  type ScorePoint,
+} from "@/lib/evaluation/pitariu-grades"
 
 const SalaryGradeChart = dynamic(() => import("./SalaryGradeChart"), { ssr: false })
+const ClassCountSelector = dynamic(() => import("./ClassCountSelector"), { ssr: false })
 
 interface CriterionInfo {
   id: string
@@ -148,6 +155,54 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
     }).sort((a, b) => b.total - a.total)
   }, [jobs, criteria, sfLookup])
 
+  // --- Pitariu: clase salariale din dispersia datelor reale ---
+  const salaryPoints = useMemo(() =>
+    scoredJobs.flatMap(j =>
+      (j.employees || [])
+        .filter(e => e.salary > 0)
+        .map(e => ({ score: j.total, salary: e.salary, label: `${e.name} — ${j.jobTitle}` }))
+    ), [scoredJobs])
+
+  const hasSalaryData = salaryPoints.length >= 2
+
+  const classDetection = useMemo<ClassDetection | null>(() => {
+    if (!hasSalaryData) return null
+    return autoDetectClassCount(salaryPoints.map(p => p.score))
+  }, [salaryPoints, hasSalaryData])
+
+  const [userClassCount, setUserClassCount] = useState<number | null>(null)
+  const effectiveClassCount = userClassCount ?? classDetection?.suggested ?? 5
+
+  const pitariuGrades = useMemo(() => {
+    if (!hasSalaryData) return null
+    const computed = buildPitariuGrades(salaryPoints, effectiveClassCount)
+    return computed.length > 0 ? computed : null
+  }, [salaryPoints, effectiveClassCount, hasSalaryData])
+
+  const activeGrades: SalaryGrade[] = useMemo(() => {
+    if (pitariuGrades) {
+      return pitariuGrades.map(g => ({
+        name: g.name,
+        scoreMin: g.scoreMin,
+        scoreMax: g.scoreMax,
+        salaryMin: g.salaryMin,
+        salaryMax: g.salaryMax,
+      }))
+    }
+    return grades
+  }, [pitariuGrades, grades])
+
+  // Hybrid: moștenește steps de la DB grades prin overlap de scor
+  const activeGradesWithSteps: SalaryGrade[] = useMemo(() => {
+    if (!pitariuGrades) return grades
+    return activeGrades.map(ag => {
+      const dbMatch = grades.find(dbg =>
+        Math.max(ag.scoreMin, dbg.scoreMin) < Math.min(ag.scoreMax, dbg.scoreMax)
+      )
+      return { ...ag, steps: dbMatch?.steps }
+    })
+  }, [activeGrades, grades, pitariuGrades])
+
   // Budget impact calculation
   const budgetImpact = useMemo(() => {
     let totalCurrent = 0
@@ -267,13 +322,11 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                   {CRITERIA_SHORT[i]}
                 </th>
               ))}
-              <th className="px-2 py-2 text-[8px] text-indigo-400 text-center">Clasă</th>
+              {/* Coloana Clasă apare doar în Secțiunea B (structura salarială) */}
             </tr>
           </thead>
           <tbody>
             {scoredJobs.map((job, rank) => {
-              const grade = findGrade(job.total, grades)
-              const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
               const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
               const mainTitle = match?.[1]?.trim() || job.jobTitle
               const detail = match?.[2]?.trim()
@@ -304,15 +357,41 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                       </td>
                     )
                   })}
-                  <td className="px-2 py-1.5 text-center">
-                    <span className="text-[9px] font-semibold text-indigo-600">{gradeNum}</span>
-                  </td>
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECȚIUNEA B: Structura salarială — apare doar cu date din stat
+         ═══════════════════════════════════════════════════════════════════ */}
+
+      {!hasSalaryData ? (
+        <div className="bg-slate-50 rounded-xl border border-dashed border-slate-300 p-8 text-center">
+          <p className="text-sm text-slate-500">Pentru a vedea structura salarială, importați statul de salarii.</p>
+          <p className="text-xs text-slate-400 mt-1">Clasele salariale se calculează automat din dispersia salariilor reale.</p>
+        </div>
+      ) : (
+        <>
+        {/* Selector clase + ghid dispersie */}
+        {classDetection && (
+          <ClassCountSelector
+            classDetection={classDetection}
+            effectiveClassCount={effectiveClassCount}
+            userClassCount={userClassCount}
+            onClassCountChange={setUserClassCount}
+          />
+        )}
+
+        {/* Grafic Pitariu */}
+        {activeGrades.length > 0 && (
+          <SalaryGradeChart
+            grades={activeGrades}
+            salaryPoints={salaryPoints}
+          />
+        )}
 
       {/* Tabel detaliat salarii — per angajat */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
@@ -356,7 +435,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           </thead>
           <tbody>
             {scoredJobs.flatMap((job, jobIdx) => {
-              const grade = findGrade(job.total, grades)
+              const grade = findGrade(job.total, activeGrades)
               const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
               const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
               const mainTitle = match?.[1]?.trim() || job.jobTitle
@@ -455,27 +534,15 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
         </table>
       </div>
 
-      {/* Grafic corelație punctaj — clase salariale */}
-      {grades.length > 0 && (
-        <SalaryGradeChart
-          grades={grades}
-          salaryPoints={scoredJobs.flatMap(j =>
-            (j.employees || [])
-              .filter(e => e.salary > 0)
-              .map(e => ({ score: j.total, salary: e.salary, label: `${e.name} — ${j.jobTitle}` }))
-          )}
-        />
-      )}
-
       {/* Clase salariale și trepte */}
-      {grades.some(g => g.steps && g.steps.length > 0) && (
+      {activeGradesWithSteps.some(g => g.steps && g.steps.length > 0) && (
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte</h3>
           <p className="text-xs text-slate-500">
             Fiecare clasă salarială conține mai multe trepte de salarizare. Avansarea între trepte se va face corelat cu evoluția profesională a angajatului aflat în poziția analizată luând în calcul parametri măsurabili cum ar fi nivelul de performanță, vechimea, nivelul de instruire etc. Dacă un angajat se află pe ultima treaptă a clasei de salarizare în care este încadrat, se recomandă elaborarea unui Plan de carieră în vederea retenției acestuia.
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {grades.filter(g => g.steps && g.steps.length > 0).map((g, i) => {
+            {activeGradesWithSteps.filter(g => g.steps && g.steps.length > 0).map((g, i) => {
               const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-coral", "border-l-emerald-500"]
               const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
               // Pozițiile încadrate în acest grad
@@ -619,6 +686,9 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             })}
           </div>
         </div>
+      )}
+
+      </>
       )}
 
       {/* Impact bugetar */}
