@@ -321,10 +321,11 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             {/* Group headers */}
             <tr className="border-b border-slate-200 bg-slate-50">
               <th colSpan={4 + criteria.length} className="px-1 py-1 text-[8px] font-medium text-slate-400 text-left uppercase">Evaluare</th>
-              <th colSpan={6} className="px-1 py-1 text-[8px] font-bold text-coral text-center uppercase border-l border-slate-200">Situația curentă</th>
+              <th colSpan={3} className="px-1 py-1 text-[8px] font-bold text-coral text-center uppercase border-l border-slate-200">Situația curentă</th>
               <th className="px-1 py-1 text-[8px] text-slate-300 text-center border-l border-slate-200">Δ</th>
               <th colSpan={3} className="px-1 py-1 text-[8px] font-bold text-emerald-600 text-center uppercase border-l border-slate-200">Situația adaptată</th>
               <th className="px-1 py-1 text-[8px] text-slate-300 text-center border-l border-slate-200">Δ</th>
+              <th colSpan={3} className="px-1 py-1 text-[8px] font-medium text-slate-400 text-center uppercase border-l border-slate-200">Referință</th>
             </tr>
             {/* Column headers — rotite 180° */}
             <tr className="border-b border-slate-200 bg-slate-50">
@@ -341,15 +342,16 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
               <th className="px-1 py-1 text-[7px] text-slate-400 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Sal.RON</th>
               <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Cls</th>
               <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Tr</th>
-              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Min</th>
-              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Max</th>
-              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Bench</th>
               <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Δ%</th>
               {/* Situația adaptată */}
               <th className="px-1 py-1 text-[7px] text-emerald-500 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Sal.RON</th>
               <th className="px-0.5 py-1 text-[7px] text-emerald-500 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Cls</th>
               <th className="px-0.5 py-1 text-[7px] text-emerald-500 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Tr</th>
               <th className="px-0.5 py-1 text-[7px] text-emerald-500 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Δ%</th>
+              {/* Referință */}
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center border-l border-slate-200 h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Sal.minim</th>
+              <th className="px-0.5 py-1 text-[7px] text-slate-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Sal.maxim</th>
+              <th className="px-0.5 py-1 text-[7px] text-indigo-400 text-center h-14" style={{writingMode:"vertical-lr",transform:"rotate(180deg)"}}>Benchmark</th>
             </tr>
           </thead>
           <tbody>
@@ -421,9 +423,6 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                         </span>
                       ) : <span className="text-[7px] text-slate-300">—</span>}
                     </td>
-                    <td className="px-0.5 py-1 text-center text-[7px] text-slate-400">{isFirstOfJob && grade ? grade.salaryMin.toLocaleString() : ""}</td>
-                    <td className="px-0.5 py-1 text-center text-[7px] text-slate-400">{isFirstOfJob && grade ? grade.salaryMax.toLocaleString() : ""}</td>
-                    <td className="px-0.5 py-1 text-center text-[7px] text-indigo-400">{isFirstOfJob && job.benchmark ? job.benchmark.median.toLocaleString() : ""}</td>
                     <td className="px-0.5 py-1 text-center border-l border-slate-100">
                       <span className={`text-[7px] font-bold ${flagCurrent.color}`}>{flagCurrent.label}</span>
                     </td>
@@ -444,6 +443,10 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                         <span className={`text-[7px] font-bold ${flagAdj.color}`}>{flagAdj.label}</span>
                       ) : <span className="text-[7px] text-slate-300">—</span>}
                     </td>
+                    {/* Referință — Min, Max, Benchmark (doar pe primul rând) */}
+                    <td className="px-0.5 py-1 text-center text-[7px] text-slate-400 border-l border-slate-100">{isFirstOfJob && grade ? grade.salaryMin.toLocaleString() : ""}</td>
+                    <td className="px-0.5 py-1 text-center text-[7px] text-slate-400">{isFirstOfJob && grade ? grade.salaryMax.toLocaleString() : ""}</td>
+                    <td className="px-0.5 py-1 text-center text-[7px] text-indigo-400">{isFirstOfJob && job.benchmark ? job.benchmark.median.toLocaleString() : ""}</td>
                   </tr>
                 )
               })
