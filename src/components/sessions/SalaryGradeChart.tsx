@@ -28,6 +28,7 @@ interface SalaryPointInput {
 interface Props {
   grades: GradeData[]
   salaryPoints: SalaryPointInput[]
+  title?: string
 }
 
 const GRADE_FILLS = [
@@ -44,7 +45,7 @@ function formatSalary(val: number): string {
   return String(Math.round(val))
 }
 
-export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
+export default function SalaryGradeChart({ grades, salaryPoints, title }: Props) {
   const nGrades = grades.length
   if (nGrades === 0) return null
 
@@ -113,7 +114,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
       <h3 className="text-xs font-bold text-slate-900 mb-4">
-        Situația actuală — corelația dintre scorurile de la evaluarea posturilor de lucru și salariile din statul de salarii
+        {title ?? "Situația actuală — corelația dintre scorurile de la evaluarea posturilor de lucru și salariile din statul de salarii"}
       </h3>
 
       <ResponsiveContainer width="100%" height={440}>

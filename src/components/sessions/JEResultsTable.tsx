@@ -663,6 +663,23 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
         </table>
       </div>
 
+      {/* Grafic situația adaptată — apare doar dacă există ajustări */}
+      {Object.keys(salaryAdjustments).length > 0 && activeGrades.length > 0 && (
+        <SalaryGradeChart
+          grades={activeGrades}
+          salaryPoints={scoredJobs.flatMap(j =>
+            (j.employees || [])
+              .filter(e => e.salary > 0)
+              .map((e, ei) => {
+                const adjKey = `${j.jobId}-${ei}`
+                const salary = salaryAdjustments[adjKey] ?? e.salary
+                return { score: j.total, salary, label: `${e.name} — ${j.jobTitle}` }
+              })
+          )}
+          title="Situația adaptată — corelația dintre scorurile de la evaluarea posturilor de lucru și salariile propuse"
+        />
+      )}
+
       </>
       )}
 
