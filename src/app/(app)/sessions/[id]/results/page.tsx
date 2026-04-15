@@ -108,6 +108,11 @@ export default async function SessionResultsPage({
     select: { jobTitle: true, salaryP25: true, salaryMedian: true, salaryP75: true },
   }).catch(() => [])
 
+  // Normalizare titlu pentru match fuzzy (lowercase, fără paranteze, trim)
+  const normalizeTitle = (t: string) =>
+    t.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-zăâîșț0-9 ]/gi, "").replace(/\s+/g, " ").trim()
+
+  let jbCounter = 1
   const jobsData = sessionJobs.map(sj => {
     const selectedSubfactors: Record<string, string> = {}
     for (const assignment of sj.assignments) {
@@ -116,29 +121,39 @@ export default async function SessionResultsPage({
       }
     }
 
-    // Average real salary for this job title
-    const salaries = (payrollEntries as any[])
-      .filter((p: any) => p.jobTitle === sj.job.title)
-      .map((p: any) => Number(p.baseSalary))
+    const normalizedJobTitle = normalizeTitle(sj.job.title)
+
+    // Match fuzzy: payroll entries cu titlu normalizat
+    const matchingEntries = (payrollEntries as any[])
+      .filter((p: any) => normalizeTitle(p.jobTitle) === normalizedJobTitle)
+
+    const salaries = matchingEntries.map((p: any) => Number(p.baseSalary))
     const avgSalary = salaries.length > 0
       ? Math.round(salaries.reduce((s: number, v: number) => s + v, 0) / salaries.length)
       : undefined
 
-    // Benchmark for this job
-    const bm = (benchmarks as any[]).find((b: any) => b.jobTitle === sj.job.title)
+    // Benchmark fuzzy match
+    const bm = (benchmarks as any[]).find((b: any) =>
+      normalizeTitle(b.jobTitle) === normalizedJobTitle
+    )
     const benchmark = bm ? {
       p25: Number(bm.salaryP25),
       median: Number(bm.salaryMedian),
       p75: Number(bm.salaryP75),
     } : undefined
 
-    // Employees nominali per post (pentru raportul detaliat)
-    const employeesForJob = (payrollEntries as any[])
-      .filter((p: any) => p.jobTitle === sj.job.title)
-      .map((p: any) => ({
+    // Employees nominali per post
+    let employeesForJob: { name: string; salary: number }[]
+    if (matchingEntries.length > 0) {
+      employeesForJob = matchingEntries.map((p: any) => ({
         name: `Marca ${p.jobCode}`,
         salary: Number(p.baseSalary),
       }))
+    } else {
+      // Fără match în stat — generăm marcă JBxxx cu salariu 0
+      const code = `JB${String(jbCounter++).padStart(3, "0")}`
+      employeesForJob = [{ name: `Marca ${code}`, salary: 0 }]
+    }
 
     return {
       jobId: sj.job.id,
