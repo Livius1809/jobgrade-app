@@ -71,10 +71,17 @@ export async function autoEvaluateJob(jobId: string): Promise<EvaluationResult[]
 
 IMPORTANT:
 - Evaluezi POSTUL (cerințele poziției), nu o persoană
-- Citește CONȚINUTUL fișei, nu te baza pe TITLUL funcției
+- Citește CONȚINUTUL fișei, nu te baza doar pe TITLUL funcției
 - Un "Manager de magazin" poate fi operațional (nivel B-C la Impact), nu strategic
 - Criteriul "Impact asupra afacerii" diferențiază clar nivelul operațional de cel strategic
 - Alege nivelul care corespunde cel mai bine cerințelor REALE din fișă
+- ATENȚIE la calificativele din titlu sau paranteze: "studii medii", "studii superioare", "specialist", "rezident" etc.
+  Acestea sunt indicatori direcți pentru criteriile de evaluare:
+  * "studii medii" → Educație/Experiență: nivel C-D
+  * "studii superioare" → Educație/Experiență: nivel E-G
+  * "rezident" → experiență limitată, nivel mai scăzut pe Decizie și Impact
+  * "specialist" → experiență confirmată, nivel mai ridicat
+  Compară aceste calificative cu descrierile subfactorilor și scorează corespunzător
 
 FIȘA POSTULUI:
 ${jobDescription}
