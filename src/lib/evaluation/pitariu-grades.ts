@@ -44,12 +44,83 @@ const GEOMETRIC_RATIO = 1.15
 const SALARY_OVERLAP_PCT = 0.15
 
 /**
- * Determină automat numărul de clase pe baza numărului de posturi.
- * Regula empirică HR: sqrt(n) clase, limitat la 3-11.
+ * Determină automat numărul de clase pe baza DISPERSIEI scorurilor.
+ *
+ * Pitariu (pag. 186): "distribuția grupărilor să permită o departajare
+ * în funcție de gradul lor de dificultate, dar să nu fie prea mare"
+ *
+ * Logica:
+ * - Coeficientul de variație (CV) al scorurilor indică cât de răspândite sunt
+ * - CV mic (scoruri concentrate) → mai puține clase (3-5)
+ * - CV mare (scoruri dispersate) → mai multe clase (7-11)
+ * - Nr. posturi influențează: nu poți avea mai multe clase decât posturi distincte
+ * - Rezultat impar (conveniență: clasă de mijloc clară)
+ *
+ * Returnează și sugestia + plaja validă pentru UI.
  */
-export function autoDetectClassCount(jobCount: number): number {
-  const raw = Math.round(Math.sqrt(jobCount))
-  return Math.max(3, Math.min(11, raw % 2 === 0 ? raw + 1 : raw)) // impar, 3-11
+export function autoDetectClassCount(scores: number[]): {
+  suggested: number
+  min: number
+  max: number
+  reason: string
+} {
+  const uniqueScores = [...new Set(scores)].sort((a, b) => a - b)
+  const n = uniqueScores.length
+
+  if (n < 3) return { suggested: 3, min: 3, max: 3, reason: "date insuficiente" }
+
+  // Coeficient de variație
+  const mean = scores.reduce((s, v) => s + v, 0) / scores.length
+  const variance = scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length
+  const stdDev = Math.sqrt(variance)
+  const cv = mean > 0 ? stdDev / mean : 0
+
+  // Plaja scorurilor vs. gap-uri naturale
+  const range = uniqueScores[n - 1] - uniqueScores[0]
+  const avgGap = range / (n - 1)
+  const gaps = uniqueScores.slice(1).map((v, i) => v - uniqueScores[i])
+  const maxGap = Math.max(...gaps)
+  const hasNaturalClusters = maxGap > avgGap * 2.5
+
+  // Baza: proporțional cu CV, scalat 3-11
+  let base: number
+  if (cv < 0.10) {
+    base = 3 // Scoruri foarte concentrate
+  } else if (cv < 0.20) {
+    base = 5
+  } else if (cv < 0.30) {
+    base = 7
+  } else if (cv < 0.40) {
+    base = 9
+  } else {
+    base = 11
+  }
+
+  // Ajustare: dacă sunt clustere naturale, +2
+  if (hasNaturalClusters && base < 11) {
+    base += 2
+  }
+
+  // Limită: nu mai multe clase decât posturi unice
+  const maxClasses = Math.min(11, Math.max(3, n - 1))
+  const minClasses = 3
+
+  // Forțare impar
+  let suggested = Math.min(base, maxClasses)
+  if (suggested % 2 === 0) suggested = Math.max(minClasses, suggested - 1)
+
+  const reason = cv < 0.15
+    ? "scoruri concentrate (CV=" + (cv * 100).toFixed(0) + "%)"
+    : cv < 0.30
+      ? "dispersie moderată (CV=" + (cv * 100).toFixed(0) + "%)"
+      : "dispersie mare (CV=" + (cv * 100).toFixed(0) + "%)"
+
+  return {
+    suggested,
+    min: minClasses,
+    max: maxClasses % 2 === 0 ? maxClasses - 1 : maxClasses,
+    reason,
+  }
 }
 
 /**
@@ -75,7 +146,8 @@ export function buildPitariuGrades(
 
   if (totalRange <= 0) return []
 
-  const n = numClasses ?? autoDetectClassCount(validPoints.length)
+  const detection = autoDetectClassCount(validPoints.map(p => p.score))
+  const n = numClasses ?? detection.suggested
   const r = GEOMETRIC_RATIO
 
   // --- Pas 1: Granițe de clasă pe scoruri (progresie geometrică) ---

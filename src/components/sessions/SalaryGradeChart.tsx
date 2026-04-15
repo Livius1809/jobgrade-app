@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   ComposedChart, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceArea, Line, Scatter, CartesianGrid, Legend, Label,
@@ -11,6 +11,7 @@ import {
   buildPitariuGrades,
   normalizeScoreX,
   buildRegressionLines,
+  autoDetectClassCount,
 } from "@/lib/evaluation/pitariu-grades"
 
 interface GradeData {
@@ -50,7 +51,16 @@ function formatSalary(val: number): string {
   return String(Math.round(val))
 }
 
-export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numClasses, useDbGrades }: Props) {
+export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numClasses: numClassesProp, useDbGrades }: Props) {
+  // Auto-detectare nr. clase pe baza dispersiei scorurilor
+  const classDetection = useMemo(() => {
+    if (useDbGrades || salaryPoints.length < 2) return null
+    return autoDetectClassCount(salaryPoints.map(p => p.score))
+  }, [salaryPoints, useDbGrades])
+
+  const [userClassCount, setUserClassCount] = useState<number | null>(null)
+  const effectiveClassCount = numClassesProp ?? userClassCount ?? classDetection?.suggested
+
   // --- Algoritm Pitariu: formează clasele normalizate din date reale ---
   const pitariuGrades = useMemo(() => {
     if (useDbGrades || salaryPoints.length < 2) return null
@@ -61,9 +71,9 @@ export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numCl
       label: p.label,
     }))
 
-    const computed = buildPitariuGrades(scorePoints, numClasses)
+    const computed = buildPitariuGrades(scorePoints, effectiveClassCount)
     return computed.length > 0 ? computed : null
-  }, [salaryPoints, numClasses, useDbGrades])
+  }, [salaryPoints, effectiveClassCount, useDbGrades])
 
   // Folosește clasele Pitariu dacă disponibile, altfel DB
   const activeGrades: GradeData[] = useMemo(() => {
@@ -150,13 +160,59 @@ export default function SalaryGradeChart({ grades: dbGrades, salaryPoints, numCl
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <h3 className="text-sm font-bold text-slate-900 mb-1">
-        Corelație evaluare posturi — clase salariale
-      </h3>
-      <p className="text-[10px] text-slate-400 mb-4">
-        Clase formate prin progresie geometrică (Pitariu, Fig. 2.6)
-        {pitariuGrades && ` — ${nGrades} clase, raport 1.15`}
-      </p>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 mb-1">
+            Corelație evaluare posturi — clase salariale
+          </h3>
+          <p className="text-[10px] text-slate-400">
+            Clase formate prin progresie geometrică (Pitariu, Fig. 2.6)
+            {classDetection && (
+              <span className="ml-1">— {classDetection.reason}</span>
+            )}
+          </p>
+        </div>
+
+        {/* Selector nr. clase */}
+        {classDetection && !numClassesProp && (
+          <div className="flex items-center gap-2 shrink-0">
+            <label className="text-[10px] text-slate-500 font-medium">Clase:</label>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  const current = effectiveClassCount ?? classDetection.suggested
+                  if (current - 2 >= classDetection.min) setUserClassCount(current - 2)
+                }}
+                disabled={(effectiveClassCount ?? classDetection.suggested) <= classDetection.min}
+                className="w-5 h-5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-600 flex items-center justify-center"
+              >
+                −
+              </button>
+              <span className="text-xs font-bold text-indigo-600 w-5 text-center">
+                {effectiveClassCount ?? classDetection.suggested}
+              </span>
+              <button
+                onClick={() => {
+                  const current = effectiveClassCount ?? classDetection.suggested
+                  if (current + 2 <= classDetection.max) setUserClassCount(current + 2)
+                }}
+                disabled={(effectiveClassCount ?? classDetection.suggested) >= classDetection.max}
+                className="w-5 h-5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-600 flex items-center justify-center"
+              >
+                +
+              </button>
+            </div>
+            {userClassCount !== null && userClassCount !== classDetection.suggested && (
+              <button
+                onClick={() => setUserClassCount(null)}
+                className="text-[9px] text-slate-400 hover:text-indigo-500 underline"
+              >
+                reset
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       <ResponsiveContainer width="100%" height={440}>
         <ComposedChart margin={{ top: 10, right: 15, bottom: 50, left: 30 }}>
