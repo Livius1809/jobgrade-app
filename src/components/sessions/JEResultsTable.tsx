@@ -164,7 +164,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId,
 
       {/* Tabel */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase w-8">#</th>
@@ -189,12 +189,12 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId,
                 {criteria.map(crit => {
                   const score = job.criterionScores[crit.id]
                   return (
-                    <td key={crit.id} className="px-3 py-3 text-center">
+                    <td key={crit.id} className="px-2 py-3 text-center max-w-[120px]">
                       {canEdit ? (
                         <select
                           value={job.selectedSubfactors[crit.id] || ""}
                           onChange={(e) => handleLetterChange(job.jobId, crit.id, e.target.value)}
-                          className="w-full max-w-[200px] text-xs font-medium bg-transparent border border-slate-200 rounded px-1.5 py-1 hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 cursor-pointer"
+                          className="w-full text-xs font-medium bg-transparent border border-slate-200 rounded px-1.5 py-1 hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 cursor-pointer truncate"
                           title={`${crit.name}: nivel ${score?.letter}`}
                         >
                           {crit.subfactors.map(sf => (
