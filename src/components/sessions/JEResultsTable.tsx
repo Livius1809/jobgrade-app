@@ -196,16 +196,16 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId,
                           value={job.selectedSubfactors[crit.id] || ""}
                           onChange={(e) => handleLetterChange(job.jobId, crit.id, e.target.value)}
                           className="w-14 text-center text-sm font-bold bg-transparent border border-slate-200 rounded px-1 py-1 hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 cursor-pointer"
-                          title={`${crit.name}: ${score?.letter} (${score?.points} pct)`}
+                          title={`${crit.name}: nivel ${score?.letter}`}
                         >
                           {crit.subfactors.map(sf => (
                             <option key={sf.id} value={sf.id}>
-                              {sf.code} ({sf.points})
+                              {sf.code}
                             </option>
                           ))}
                         </select>
                       ) : (
-                        <span className="font-bold text-slate-700" title={`${score?.points} pct`}>
+                        <span className="font-bold text-slate-700">
                           {score?.letter || "—"}
                         </span>
                       )}
