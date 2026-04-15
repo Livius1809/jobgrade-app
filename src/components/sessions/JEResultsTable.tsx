@@ -610,8 +610,8 @@ function CriterionDropdown({
 
       {open && (
         <>
-          {/* Fade overlay */}
-          <div className="fixed inset-0 bg-black/10 z-40" onClick={() => setOpen(false)} />
+          {/* Fade overlay — nu blochează scroll */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
           {/* Dropdown panel — anchored to table width */}
           <div className="absolute z-50 mt-1 right-0 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
