@@ -40,32 +40,28 @@ function formatSalary(val: number): string {
 }
 
 /**
- * Mapează un scor brut pe axa X normalizată.
- * Fiecare clasă ocupă exact 1 unitate: clasa 0 → [0,1], clasa 1 → [1,2] etc.
- * Scorul e interpolat liniar în interiorul clasei.
+ * Mapează un scor pe X normalizat: fiecare clasă = 1 unitate.
  */
-function scoreToNormX(score: number, grades: { scoreMin: number; scoreMax: number }[]): number {
+function scoreToNormX(score: number, grades: GradeData[]): number {
   for (let i = 0; i < grades.length; i++) {
-    const g = grades[i]
-    if (score >= g.scoreMin && score <= g.scoreMax) {
-      const range = g.scoreMax - g.scoreMin
-      const frac = range > 0 ? (score - g.scoreMin) / range : 0.5
-      return i + frac
+    if (score >= grades[i].scoreMin && score <= grades[i].scoreMax) {
+      const range = grades[i].scoreMax - grades[i].scoreMin
+      return i + (range > 0 ? (score - grades[i].scoreMin) / range : 0.5)
     }
   }
-  // Sub prima clasă
   if (score < grades[0].scoreMin) {
-    return (score - grades[0].scoreMin) / (grades[0].scoreMax - grades[0].scoreMin)
+    const range = grades[0].scoreMax - grades[0].scoreMin
+    return range > 0 ? (score - grades[0].scoreMin) / range : 0
   }
-  // Peste ultima clasă
   const last = grades[grades.length - 1]
-  return grades.length - 1 + (score - last.scoreMin) / (last.scoreMax - last.scoreMin)
+  const range = last.scoreMax - last.scoreMin
+  return grades.length - 1 + (range > 0 ? (score - last.scoreMin) / range : 1)
 }
 
 export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
   const nGrades = grades.length
 
-  // Y-axis: valori salariale reale
+  // Y: salariu real (RON) — exact ca Pitariu
   const allSalaryValues = [
     ...grades.map(g => g.salaryMin),
     ...grades.map(g => g.salaryMax),
@@ -73,26 +69,25 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
   ]
   const yMinRaw = Math.min(...allSalaryValues)
   const yMaxRaw = Math.max(...allSalaryValues)
-  const yPadding = (yMaxRaw - yMinRaw) * 0.1
+  const yPadding = (yMaxRaw - yMinRaw) * 0.1 || 500
   const yMin = Math.floor((yMinRaw - yPadding) / 100) * 100
   const yMax = Math.ceil((yMaxRaw + yPadding) / 100) * 100
 
-  // Y ticks dinamice
+  // Y ticks
   const yTicks = useMemo(() => {
     const range = yMax - yMin
     const step = range <= 2000 ? 200 : range <= 5000 ? 500 : 1000
     const ticks: number[] = []
-    const start = Math.ceil(yMin / step) * step
-    for (let v = start; v <= yMax; v += step) ticks.push(v)
+    for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) ticks.push(v)
     return ticks
   }, [yMin, yMax])
 
-  // Granițe salariale ale claselor — bold pe Y
+  // Granițe salariale — bold pe Y
   const salaryBreakpoints = useMemo(() =>
     [...new Set(grades.flatMap(g => [g.salaryMin, g.salaryMax]))].sort((a, b) => a - b),
   [grades])
 
-  // X ticks: la granițele claselor (0, 1, 2, ..., N) cu valori de punctaj reale
+  // X ticks: granițele claselor cu valorile de punctaj
   const xTickValues = useMemo(() => {
     const ticks: { pos: number; label: string }[] = []
     for (let i = 0; i < nGrades; i++) {
@@ -104,7 +99,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
     return ticks
   }, [grades, nGrades])
 
-  // Puncte salariale normalizate pe X
+  // Puncte normalizate pe X, salariu real pe Y
   const normalizedPoints = useMemo(() =>
     salaryPoints.map(p => ({
       ...p,
@@ -112,11 +107,11 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
     })),
   [salaryPoints, grades])
 
-  // Regression pe clase normalizate
+  // Regression pe clase normalizate X, salariu real Y
   const regressionData = useMemo(() => {
     if (nGrades < 2) return []
     const points = grades.map((g, i) => ({
-      x: i + 0.5, // centrul clasei normalizate
+      x: i + 0.5,
       yMin: g.salaryMin,
       yMax: g.salaryMax,
       yAvg: (g.salaryMin + g.salaryMax) / 2,
@@ -145,7 +140,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
       : -Infinity
 
     return Array.from({ length: 31 }, (_, i) => {
-      const x = -0.2 + (nGrades + 0.4) * (i / 30)
+      const x = -0.3 + (nGrades + 0.6) * (i / 30)
       const rMinVal = regMin.intercept + regMin.slope * x
       const rMaxVal = regMax.intercept + regMax.slope * x
       const rAvgVal = regAvg.intercept + regAvg.slope * x
@@ -169,7 +164,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
         <ComposedChart margin={{ top: 10, right: 15, bottom: 50, left: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
-          {/* X: clase normalizate, etichete = punctaje reale */}
+          {/* X: clase normalizate (egale), etichete = punctaje reale */}
           <XAxis
             dataKey="normX"
             type="number"
@@ -194,7 +189,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           </XAxis>
 
-          {/* Y: valori salariale reale */}
+          {/* Y: salariu real (RON), granițe clase bold */}
           <YAxis
             type="number"
             domain={[yMin, yMax]}
@@ -222,7 +217,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           </YAxis>
 
-          {/* Clase salariale — aceeași lățime pe X, variabilă pe Y */}
+          {/* Clase salariale — aceeași lățime pe X, înălțime variabilă pe Y, suprapuse */}
           {grades.map((g, i) => (
             <ReferenceArea
               key={g.name}
@@ -242,7 +237,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             />
           ))}
 
-          {/* Salarii individuale — puncte mici */}
+          {/* Salarii individuale */}
           {normalizedPoints.length > 0 && (
             <Scatter
               data={normalizedPoints}
