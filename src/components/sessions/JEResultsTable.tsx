@@ -393,6 +393,129 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           />
         )}
 
+        {/* Clase salariale și trepte — detaliere naturală a graficului */}
+        {activeGradesWithSteps.some(g => g.steps && g.steps.length > 0) && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte</h3>
+            <p className="text-xs text-slate-500">
+              Fiecare clasă salarială conține mai multe trepte de salarizare. Avansarea între trepte se va face corelat cu evoluția profesională a angajatului aflat în poziția analizată luând în calcul parametri măsurabili cum ar fi nivelul de performanță, vechimea, nivelul de instruire etc. Dacă un angajat se află pe ultima treaptă a clasei de salarizare în care este încadrat, se recomandă elaborarea unui Plan de carieră în vederea retenției acestuia.
+            </p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeGradesWithSteps.filter(g => g.steps && g.steps.length > 0).map((g, i) => {
+                const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-coral", "border-l-emerald-500"]
+                const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
+                const jobsInGrade = scoredJobs.filter(j => j.total >= g.scoreMin && j.total <= g.scoreMax)
+
+                return (
+                  <div key={g.name} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
+                    <p className="text-xs font-bold text-slate-900 mb-1">{g.name.replace("Grad", "Clasa")}</p>
+                    <p className="text-[10px] text-slate-400 mb-3">Punctaj: {g.scoreMin}–{g.scoreMax}</p>
+
+                    <div className="space-y-1.5">
+                      {g.steps!.map(s => (
+                        <div key={s.step} className="flex items-center justify-between text-[10px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-4 h-4 rounded bg-white border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{s.step}</span>
+                            <span className="text-slate-700">{s.name}</span>
+                          </div>
+                          <span className="font-semibold text-slate-900">{Number(s.salary).toLocaleString()} RON</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {g.steps![0]?.criteria && (
+                      <div className="mt-3 pt-2 border-t border-slate-200/50">
+                        <p className="text-[9px] text-slate-400 italic">{g.steps![g.steps!.length - 1]?.criteria}</p>
+                      </div>
+                    )}
+
+                    {jobsInGrade.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-200/50">
+                        <p className="text-[9px] text-slate-400 mb-1">Posturi încadrate:</p>
+                        {jobsInGrade.map(j => {
+                          if (j.employees && j.employees.length > 0 && g.steps && g.steps.length > 0) {
+                            return j.employees.map((emp, ei) => {
+                              const adjKey = `${j.jobId}-${ei}`
+                              const adjustedSalary = salaryAdjustments[adjKey]
+                              const displaySalary = adjustedSalary ?? emp.salary
+                              const empResult = findStep(displaySalary, g.steps!)
+                              const isAdjusted = adjustedSalary !== undefined
+                              const sortedSteps = [...g.steps!].sort((a, b) => a.salary - b.salary)
+                              const currentStepIdx = empResult ? sortedSteps.findIndex(s => s.step === empResult.step.step) : -1
+                              const lowerStep = currentStepIdx >= 0 ? sortedSteps[currentStepIdx] : undefined
+                              const upperStep = currentStepIdx >= 0 && currentStepIdx < sortedSteps.length - 1 ? sortedSteps[currentStepIdx + 1] : undefined
+                              const benchmarkMedian = j.benchmark?.median
+
+                              return (
+                                <div key={adjKey} className={`py-1.5 ${isAdjusted ? "bg-emerald-50/50 rounded px-1 -mx-1" : ""}`}>
+                                  <div className="flex items-center justify-between text-[10px]">
+                                    <span className="text-slate-600">
+                                      {emp.name} — <span className="italic text-slate-400">{j.jobTitle}</span>
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      {empResult && <span className="text-violet-600 font-semibold">T{empResult.step.step}</span>}
+                                      {emp.salary > 0 ? (
+                                        <>
+                                          <span className={`${isAdjusted ? "line-through text-slate-300" : "text-slate-500"}`}>{emp.salary.toLocaleString()}</span>
+                                          {isAdjusted && <span className="font-bold text-emerald-700">{adjustedSalary.toLocaleString()} RON</span>}
+                                          {!isAdjusted && <span className="text-slate-400">RON</span>}
+                                        </>
+                                      ) : (
+                                        <span className="text-slate-300 italic">fără date salariale</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {canEdit && emp.salary > 0 && empResult?.status !== "OK" && !isAdjusted && (
+                                    <div className="flex items-center gap-1.5 mt-1 ml-4">
+                                      {lowerStep && empResult?.status !== "BELOW" && (
+                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(lowerStep.salary) }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">
+                                          → T{lowerStep.step} ({Number(lowerStep.salary).toLocaleString()})
+                                        </button>
+                                      )}
+                                      {upperStep && (
+                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(upperStep.salary) }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 cursor-pointer">
+                                          → T{upperStep.step} ({Number(upperStep.salary).toLocaleString()})
+                                        </button>
+                                      )}
+                                      {benchmarkMedian && (
+                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: benchmarkMedian }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 cursor-pointer">
+                                          → Benchmark ({benchmarkMedian.toLocaleString()})
+                                        </button>
+                                      )}
+                                      {empResult?.status === "BELOW" && lowerStep && (
+                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(sortedSteps[0].salary) }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer">
+                                          → T1 min clasă ({Number(sortedSteps[0].salary).toLocaleString()})
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  {isAdjusted && (
+                                    <button onClick={() => setSalaryAdjustments(prev => { const n = { ...prev }; delete n[adjKey]; return n })} className="text-[8px] text-slate-400 hover:text-red-500 ml-4 mt-0.5 cursor-pointer">
+                                      ✕ Anulează ajustarea
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })
+                          }
+                          const jStepResult = g.steps ? findStep(j.avgSalary, g.steps) : undefined
+                          return (
+                            <p key={j.jobId} className="text-[10px] text-slate-600">
+                              • {j.jobTitle}
+                              {jStepResult ? <span className="text-violet-600 font-semibold ml-1">T{jStepResult.step.step}</span> : null}
+                              {j.avgSalary ? <span className="text-slate-400 ml-1">({j.avgSalary.toLocaleString()} RON)</span> : null}
+                            </p>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
       {/* Tabel detaliat salarii — per angajat */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
         <table className="w-full">
@@ -533,160 +656,6 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           </tbody>
         </table>
       </div>
-
-      {/* Clase salariale și trepte */}
-      {activeGradesWithSteps.some(g => g.steps && g.steps.length > 0) && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-bold text-slate-900">Clase salariale și trepte</h3>
-          <p className="text-xs text-slate-500">
-            Fiecare clasă salarială conține mai multe trepte de salarizare. Avansarea între trepte se va face corelat cu evoluția profesională a angajatului aflat în poziția analizată luând în calcul parametri măsurabili cum ar fi nivelul de performanță, vechimea, nivelul de instruire etc. Dacă un angajat se află pe ultima treaptă a clasei de salarizare în care este încadrat, se recomandă elaborarea unui Plan de carieră în vederea retenției acestuia.
-          </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeGradesWithSteps.filter(g => g.steps && g.steps.length > 0).map((g, i) => {
-              const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-coral", "border-l-emerald-500"]
-              const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
-              // Pozițiile încadrate în acest grad
-              const jobsInGrade = scoredJobs.filter(j => j.total >= g.scoreMin && j.total <= g.scoreMax)
-
-              return (
-                <div key={g.name} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
-                  <p className="text-xs font-bold text-slate-900 mb-1">{g.name.replace("Grad", "Clasa")}</p>
-                  <p className="text-[10px] text-slate-400 mb-3">Punctaj: {g.scoreMin}–{g.scoreMax}</p>
-
-                  {/* Trepte */}
-                  <div className="space-y-1.5">
-                    {g.steps!.map(s => (
-                      <div key={s.step} className="flex items-center justify-between text-[10px]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded bg-white border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{s.step}</span>
-                          <span className="text-slate-700">{s.name}</span>
-                        </div>
-                        <span className="font-semibold text-slate-900">{Number(s.salary).toLocaleString()} RON</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Criterii avansare */}
-                  {g.steps![0]?.criteria && (
-                    <div className="mt-3 pt-2 border-t border-slate-200/50">
-                      <p className="text-[9px] text-slate-400 italic">{g.steps![g.steps!.length - 1]?.criteria}</p>
-                    </div>
-                  )}
-
-                  {/* Posturi încadrate */}
-                  {jobsInGrade.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-200/50">
-                      <p className="text-[9px] text-slate-400 mb-1">Posturi încadrate:</p>
-                      {jobsInGrade.map(j => {
-                        // Show employees if available
-                        if (j.employees && j.employees.length > 0 && g.steps && g.steps.length > 0) {
-                          return j.employees.map((emp, ei) => {
-                            const adjKey = `${j.jobId}-${ei}`
-                            const adjustedSalary = salaryAdjustments[adjKey]
-                            const displaySalary = adjustedSalary ?? emp.salary
-                            const empResult = findStep(displaySalary, g.steps!)
-                            const isAdjusted = adjustedSalary !== undefined
-
-                            const statusLabel = empResult?.status === "BELOW" ? "↓ sub clasă" :
-                              empResult?.status === "ABOVE" ? "↑ peste clasă" :
-                              empResult?.status === "BETWEEN" ? "↕ între trepte" : ""
-
-                            // Find adjacent steps for action buttons
-                            const sortedSteps = [...g.steps!].sort((a, b) => a.salary - b.salary)
-                            const currentStepIdx = empResult ? sortedSteps.findIndex(s => s.step === empResult.step.step) : -1
-                            const lowerStep = currentStepIdx >= 0 ? sortedSteps[currentStepIdx] : undefined
-                            const upperStep = currentStepIdx >= 0 && currentStepIdx < sortedSteps.length - 1 ? sortedSteps[currentStepIdx + 1] : undefined
-
-                            // Benchmark adjustment
-                            const benchmarkMedian = j.benchmark?.median
-
-                            return (
-                              <div key={adjKey} className={`py-1.5 ${isAdjusted ? "bg-emerald-50/50 rounded px-1 -mx-1" : ""}`}>
-                                <div className="flex items-center justify-between text-[10px]">
-                                  <span className="text-slate-600">
-                                    {emp.name} — <span className="italic text-slate-400">{j.jobTitle}</span>
-                                  </span>
-                                  <div className="flex items-center gap-1.5">
-                                    {empResult && <span className="text-violet-600 font-semibold">T{empResult.step.step}</span>}
-                                    {emp.salary > 0 ? (
-                                      <>
-                                        <span className={`${isAdjusted ? "line-through text-slate-300" : "text-slate-500"}`}>{emp.salary.toLocaleString()}</span>
-                                        {isAdjusted && <span className="font-bold text-emerald-700">{adjustedSalary.toLocaleString()} RON</span>}
-                                        {!isAdjusted && <span className="text-slate-400">RON</span>}
-                                      </>
-                                    ) : (
-                                      <span className="text-slate-300 italic">fără date salariale</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Action buttons — only when not OK and has salary data */}
-                                {canEdit && emp.salary > 0 && empResult?.status !== "OK" && !isAdjusted && (
-                                  <div className="flex items-center gap-1.5 mt-1 ml-4">
-                                    {lowerStep && empResult?.status !== "BELOW" && (
-                                      <button
-                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(lowerStep.salary) }))}
-                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
-                                      >
-                                        → T{lowerStep.step} ({Number(lowerStep.salary).toLocaleString()})
-                                      </button>
-                                    )}
-                                    {upperStep && (
-                                      <button
-                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(upperStep.salary) }))}
-                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 cursor-pointer"
-                                      >
-                                        → T{upperStep.step} ({Number(upperStep.salary).toLocaleString()})
-                                      </button>
-                                    )}
-                                    {benchmarkMedian && (
-                                      <button
-                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: benchmarkMedian }))}
-                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 cursor-pointer"
-                                      >
-                                        → Benchmark ({benchmarkMedian.toLocaleString()})
-                                      </button>
-                                    )}
-                                    {empResult?.status === "BELOW" && lowerStep && (
-                                      <button
-                                        onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(sortedSteps[0].salary) }))}
-                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer"
-                                      >
-                                        → T1 min clasă ({Number(sortedSteps[0].salary).toLocaleString()})
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                                {isAdjusted && (
-                                  <button
-                                    onClick={() => setSalaryAdjustments(prev => { const n = { ...prev }; delete n[adjKey]; return n })}
-                                    className="text-[8px] text-slate-400 hover:text-red-500 ml-4 mt-0.5 cursor-pointer"
-                                  >
-                                    ✕ Anulează ajustarea
-                                  </button>
-                                )}
-                              </div>
-                            )
-                          })
-                        }
-                        // Fallback: show job average
-                        const jStepResult = g.steps ? findStep(j.avgSalary, g.steps) : undefined
-                        return (
-                          <p key={j.jobId} className="text-[10px] text-slate-600">
-                            • {j.jobTitle}
-                            {jStepResult ? <span className="text-violet-600 font-semibold ml-1">T{jStepResult.step.step}</span> : null}
-                            {j.avgSalary ? <span className="text-slate-400 ml-1">({j.avgSalary.toLocaleString()} RON)</span> : null}
-                          </p>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       </>
       )}
