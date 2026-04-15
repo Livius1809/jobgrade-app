@@ -15,16 +15,33 @@ interface CriterionInfo {
   }>
 }
 
+interface SalaryGrade {
+  name: string
+  scoreMin: number
+  scoreMax: number
+  salaryMin: number
+  salaryMax: number
+}
+
+interface BenchmarkData {
+  p25: number
+  median: number
+  p75: number
+}
+
 interface JobResult {
   jobId: string
   jobTitle: string
   department: string
-  selectedSubfactors: Record<string, string> // criterionId → subfactorId
+  selectedSubfactors: Record<string, string>
+  avgSalary?: number       // salariul real mediu (normă completă)
+  benchmark?: BenchmarkData // benchmark piață
 }
 
 interface Props {
   criteria: CriterionInfo[]
   jobs: JobResult[]
+  grades: SalaryGrade[]
   sessionId: string
   canEdit: boolean
 }
@@ -39,7 +56,24 @@ const LEGAL_CRITERIA = [
 
 const CRITERIA_SHORT = ["Educ.", "Com.", "Rez.pb.", "Decizii", "Impact", "Condiții"]
 
-export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId, canEdit }: Props) {
+function findGrade(total: number, grades: SalaryGrade[]): SalaryGrade | undefined {
+  return grades.find(g => total >= g.scoreMin && total <= g.scoreMax)
+}
+
+function salaryFlag(avgSalary: number | undefined, benchmark: BenchmarkData | undefined): { label: string; color: string } {
+  if (!avgSalary || !benchmark) return { label: "—", color: "text-slate-400" }
+  if (avgSalary < benchmark.p25) {
+    const pct = Math.round((benchmark.p25 - avgSalary) / benchmark.p25 * 100)
+    return { label: `-${pct}%`, color: "text-red-600 bg-red-50" }
+  }
+  if (avgSalary <= benchmark.p75) {
+    return { label: "în piață", color: "text-emerald-600 bg-emerald-50" }
+  }
+  const pct = Math.round((avgSalary - benchmark.p75) / benchmark.p75 * 100)
+  return { label: `+${pct}%`, color: "text-amber-600 bg-amber-50" }
+}
+
+export default function JEResultsTable({ criteria, jobs: initialJobs, grades, sessionId, canEdit }: Props) {
   const [jobs, setJobs] = useState(initialJobs)
   const [saving, setSaving] = useState(false)
   const [validated, setValidated] = useState(false)
@@ -167,47 +201,75 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, sessionId,
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase w-8">#</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase">Poziție</th>
-              <th className="text-right px-4 py-3 text-xs font-bold text-indigo-600 uppercase">Scor</th>
+              <th className="text-left px-3 py-3 text-[10px] font-medium text-slate-500 uppercase w-8">#</th>
+              <th className="text-left px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Poziție</th>
+              <th className="text-right px-3 py-3 text-[10px] font-bold text-indigo-600 uppercase">Scor</th>
               {criteria.map((c, i) => (
-                <th key={c.id} className="text-center px-3 py-3 text-xs font-medium text-slate-500 uppercase" title={c.name}>
+                <th key={c.id} className="text-center px-2 py-3 text-[10px] font-medium text-slate-500 uppercase" title={c.name}>
                   {CRITERIA_SHORT[i] || c.name.substring(0, 6)}
                 </th>
               ))}
+              <th className="text-right px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Salariu</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Grad</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Min–Max grad</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Benchmark</th>
+              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">vs. piață</th>
             </tr>
           </thead>
           <tbody>
-            {scoredJobs.map((job, rank) => (
-              <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/50">
-                <td className="px-4 py-3 text-slate-400 font-medium">{rank + 1}</td>
-                <td className="px-4 py-3">
-                  <p className="font-medium text-slate-900">{job.jobTitle}</p>
-                  {job.department && <p className="text-xs text-slate-400">{job.department}</p>}
-                </td>
-                <td className="px-4 py-3 text-right font-bold text-indigo-600">{job.total}</td>
-                {criteria.map(crit => {
-                  const score = job.criterionScores[crit.id]
-                  return (
-                    <td key={crit.id} className="px-2 py-3 text-center">
-                      {canEdit ? (
-                        <CriterionDropdown
-                          currentSfId={job.selectedSubfactors[crit.id] || ""}
-                          currentLetter={score?.letter || "—"}
-                          criterionName={crit.name}
-                          subfactors={crit.subfactors}
-                          onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
-                        />
-                      ) : (
-                        <span className="font-bold text-slate-700">
-                          {score?.letter || "—"}
-                        </span>
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
+            {scoredJobs.map((job, rank) => {
+              const grade = findGrade(job.total, grades)
+              const flag = salaryFlag(job.avgSalary, job.benchmark)
+              return (
+                <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/50">
+                  <td className="px-3 py-3 text-slate-400 font-medium text-xs">{rank + 1}</td>
+                  <td className="px-3 py-3">
+                    <p className="font-medium text-slate-900 text-sm">{job.jobTitle}</p>
+                    {job.department && <p className="text-[10px] text-slate-400">{job.department}</p>}
+                  </td>
+                  <td className="px-3 py-3 text-right font-bold text-indigo-600 text-sm">{job.total}</td>
+                  {criteria.map(crit => {
+                    const score = job.criterionScores[crit.id]
+                    return (
+                      <td key={crit.id} className="px-2 py-3 text-center">
+                        {canEdit ? (
+                          <CriterionDropdown
+                            currentSfId={job.selectedSubfactors[crit.id] || ""}
+                            currentLetter={score?.letter || "—"}
+                            criterionName={crit.name}
+                            subfactors={crit.subfactors}
+                            onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
+                          />
+                        ) : (
+                          <span className="font-bold text-slate-700 text-xs">{score?.letter || "—"}</span>
+                        )}
+                      </td>
+                    )
+                  })}
+                  <td className="px-3 py-3 text-right text-xs font-medium text-slate-700">
+                    {job.avgSalary ? `${job.avgSalary.toLocaleString()} RON` : "—"}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {grade ? (
+                      <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {grade.name.split(" — ")[0]}
+                      </span>
+                    ) : <span className="text-xs text-slate-400">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-center text-[10px] text-slate-500 whitespace-nowrap">
+                    {grade ? `${grade.salaryMin.toLocaleString()}–${grade.salaryMax.toLocaleString()}` : "—"}
+                  </td>
+                  <td className="px-3 py-3 text-center text-[10px] text-slate-500 whitespace-nowrap">
+                    {job.benchmark ? `${job.benchmark.median.toLocaleString()} RON` : "—"}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flag.color}`}>
+                      {flag.label}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

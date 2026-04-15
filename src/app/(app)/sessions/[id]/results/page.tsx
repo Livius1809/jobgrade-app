@@ -71,8 +71,33 @@ export default async function SessionResultsPage({
     })),
   }))
 
+  // Salary grades for this session
+  const salaryGrades = await prisma.salaryGrade.findMany({
+    where: { sessionId: id },
+    orderBy: { order: "asc" },
+  })
+
+  const gradesData = salaryGrades.map(g => ({
+    name: g.name,
+    scoreMin: g.scoreMin,
+    scoreMax: g.scoreMax,
+    salaryMin: g.salaryMin ?? 0,
+    salaryMax: g.salaryMax ?? 0,
+  }))
+
+  // Real salaries from PayrollEntry (H8 only)
+  const payrollEntries = await (prisma as any).payrollEntry.findMany({
+    where: { tenantId, workSchedule: "H8" },
+    select: { jobTitle: true, baseSalary: true },
+  }).catch(() => [])
+
+  // Benchmarks
+  const benchmarks = await (prisma as any).salaryBenchmark.findMany({
+    where: { isActive: true },
+    select: { jobTitle: true, salaryP25: true, salaryMedian: true, salaryP75: true },
+  }).catch(() => [])
+
   const jobsData = sessionJobs.map(sj => {
-    // Get the latest evaluation per criterion (from any assignment)
     const selectedSubfactors: Record<string, string> = {}
     for (const assignment of sj.assignments) {
       for (const ev of assignment.evaluations) {
@@ -80,11 +105,29 @@ export default async function SessionResultsPage({
       }
     }
 
+    // Average real salary for this job title
+    const salaries = (payrollEntries as any[])
+      .filter((p: any) => p.jobTitle === sj.job.title)
+      .map((p: any) => Number(p.baseSalary))
+    const avgSalary = salaries.length > 0
+      ? Math.round(salaries.reduce((s: number, v: number) => s + v, 0) / salaries.length)
+      : undefined
+
+    // Benchmark for this job
+    const bm = (benchmarks as any[]).find((b: any) => b.jobTitle === sj.job.title)
+    const benchmark = bm ? {
+      p25: Number(bm.salaryP25),
+      median: Number(bm.salaryMedian),
+      p75: Number(bm.salaryP75),
+    } : undefined
+
     return {
       jobId: sj.job.id,
       jobTitle: sj.job.title,
       department: sj.job.department?.name || "",
       selectedSubfactors,
+      avgSalary,
+      benchmark,
     }
   })
 
@@ -115,6 +158,7 @@ export default async function SessionResultsPage({
         <JEResultsTable
           criteria={criteriaData}
           jobs={jobsData}
+          grades={gradesData}
           sessionId={id}
           canEdit={isOwnerOrAdmin}
         />
