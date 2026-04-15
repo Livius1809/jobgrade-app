@@ -107,7 +107,13 @@ async function getBudgetSummary(): Promise<string> {
       orderBy: [{ month: "asc" }],
     })
 
-    if (lines.length === 0) return "Nicio linie bugetară definită pentru " + year + ". Propune un buget Owner-ului."
+    if (lines.length === 0) return "Nicio linie bugetară definită pentru " + year + ". Propune un buget Owner-ului prin ACTION: NOTIFY_OWNER."
+
+    // Revenue tracking
+    const revenueCount = await (prisma as any).revenueEntry.count().catch(() => 0)
+    const revenueTotal = revenueCount > 0
+      ? await (prisma as any).revenueEntry.aggregate({ _sum: { amount: true } }).then((r: any) => Number(r._sum?.amount || 0)).catch(() => 0)
+      : 0
 
     let totalPlanned = 0, totalActual = 0
     const byCat: Record<string, { p: number; a: number }> = {}
@@ -121,7 +127,10 @@ async function getBudgetSummary(): Promise<string> {
     const variance = totalPlanned > 0 ? Math.round((totalActual - totalPlanned) / totalPlanned * 100) : 0
     const catLines = Object.entries(byCat).map(([c, v]) => `  ${c}: planificat ${v.p} RON, realizat ${v.a} RON`).join("\n")
 
-    return `Buget ${year}: planificat ${totalPlanned} RON, realizat ${totalActual} RON, variance ${variance}%\n${catLines}`
+    const revenueInfo = revenueTotal > 0 ? `\nVenituri totale: ${revenueTotal} RON (${revenueCount} tranzacții)` : ""
+    const alert = Math.abs(variance) > 10 ? `\n⚠️ ALERTĂ: Variance ${variance}% depășește pragul de 10%! Notifică Owner-ul.` : ""
+
+    return `Buget ${year}: planificat ${totalPlanned} RON, realizat ${totalActual} RON, variance ${variance}%\n${catLines}${revenueInfo}${alert}`
   } catch {
     return "Buget: date indisponibile"
   }

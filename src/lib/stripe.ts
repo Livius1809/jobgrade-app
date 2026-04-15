@@ -21,30 +21,49 @@ export const stripe = new Proxy({} as Stripe, {
   },
 })
 
+// ── Abonament (subscription lunar/anual) ──
+export const SUBSCRIPTION = {
+  id: "subscription",
+  label: "Abonament JobGrade",
+  description: "Acces portal, găzduire date, suport, 1h consultanță/lună",
+  monthlyPriceId: process.env.STRIPE_PRICE_SUBSCRIPTION_MONTHLY || "",
+  annualPriceId: process.env.STRIPE_PRICE_SUBSCRIPTION_ANNUAL || "",
+  // Prețuri de calibrat — placeholder
+  monthlyPrice: 0,
+  annualPrice: 0,
+  currency: "RON",
+}
+
+// ── Pachete credite (one-time payment) ──
 export const CREDIT_PACKAGES = [
   {
-    id: "credits_50",
-    credits: 50,
-    price: 29,
+    id: "credits_start",
+    credits: 0,    // de calibrat
+    price: 0,      // de calibrat
     currency: "RON",
-    label: "Starter",
-    priceId: process.env.STRIPE_PRICE_50_CREDITS!,
+    label: "Pachet Start",
+    description: "Pentru primele evaluări și rapoarte",
+    priceId: process.env.STRIPE_PRICE_CREDITS_START || "",
   },
   {
-    id: "credits_150",
-    credits: 150,
-    price: 79,
+    id: "credits_business",
+    credits: 0,    // de calibrat
+    price: 0,      // de calibrat
     currency: "RON",
-    label: "Business",
-    priceId: process.env.STRIPE_PRICE_150_CREDITS!,
+    label: "Pachet Business",
+    description: "Pentru utilizare regulată",
+    priceId: process.env.STRIPE_PRICE_CREDITS_BUSINESS || "",
     popular: true,
+    discount: "10%",
   },
   {
-    id: "credits_500",
-    credits: 500,
-    price: 229,
+    id: "credits_enterprise",
+    credits: 0,    // de calibrat
+    price: 0,      // de calibrat
     currency: "RON",
-    label: "Enterprise",
-    priceId: process.env.STRIPE_PRICE_500_CREDITS!,
+    label: "Pachet Enterprise",
+    description: "Pentru organizații cu volum mare",
+    priceId: process.env.STRIPE_PRICE_CREDITS_ENTERPRISE || "",
+    discount: "20%",
   },
 ] as const

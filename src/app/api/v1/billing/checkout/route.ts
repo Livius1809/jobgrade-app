@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { stripe, CREDIT_PACKAGES } from "@/lib/stripe"
+import { stripe, CREDIT_PACKAGES, SUBSCRIPTION } from "@/lib/stripe"
 import { getAppUrl } from "@/lib/get-app-url"
 
 const schema = z.object({
-  packageId: z.enum(["credits_50", "credits_150", "credits_500"]),
+  type: z.enum(["credits", "subscription"]),
+  packageId: z.string().optional(),
+  billing: z.enum(["monthly", "annual"]).optional(),
 })
-
-const APP_URL = getAppUrl()
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,24 +21,18 @@ export async function POST(req: NextRequest) {
     const tenantId = session.user.tenantId
     const body = await req.json()
     const data = schema.parse(body)
+    const APP_URL = getAppUrl()
 
-    const pkg = CREDIT_PACKAGES.find((p) => p.id === data.packageId)
-    if (!pkg) {
-      return NextResponse.json({ message: "Pachet invalid." }, { status: 400 })
-    }
-
-    // Get or create Stripe customer for this tenant
+    // Get or create Stripe customer
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { name: true, stripeCustomerId: true },
     })
-
     if (!tenant) {
       return NextResponse.json({ message: "Tenant negăsit." }, { status: 404 })
     }
 
     let customerId = tenant.stripeCustomerId
-
     if (!customerId) {
       const customer = await stripe.customers.create({
         name: tenant.name,
@@ -46,27 +40,51 @@ export async function POST(req: NextRequest) {
         metadata: { tenantId },
       })
       customerId = customer.id
-
       await prisma.tenant.update({
         where: { id: tenantId },
         data: { stripeCustomerId: customerId },
       })
     }
 
+    // ── Subscription checkout ──
+    if (data.type === "subscription") {
+      const priceId = data.billing === "annual"
+        ? SUBSCRIPTION.annualPriceId
+        : SUBSCRIPTION.monthlyPriceId
+
+      if (!priceId) {
+        return NextResponse.json({ message: "Prețul abonamentului nu este configurat." }, { status: 400 })
+      }
+
+      const checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "subscription",
+        success_url: `${APP_URL}/settings/billing?success=subscription`,
+        cancel_url: `${APP_URL}/settings/billing?canceled=1`,
+        metadata: { tenantId, type: "subscription", billing: data.billing || "monthly" },
+      })
+
+      return NextResponse.json({ url: checkoutSession.url })
+    }
+
+    // ── Credits checkout ──
+    const pkg = CREDIT_PACKAGES.find((p) => p.id === data.packageId)
+    if (!pkg || !pkg.priceId) {
+      return NextResponse.json({ message: "Pachet invalid sau neconfigurat." }, { status: 400 })
+    }
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price: pkg.priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: pkg.priceId, quantity: 1 }],
       mode: "payment",
-      success_url: `${APP_URL}/settings/billing?success=1&credits=${pkg.credits}`,
+      success_url: `${APP_URL}/settings/billing?success=credits&amount=${pkg.credits}`,
       cancel_url: `${APP_URL}/settings/billing?canceled=1`,
       metadata: {
         tenantId,
+        type: "credits",
         packageId: pkg.id,
         credits: String(pkg.credits),
       },
@@ -75,10 +93,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: "Date invalide.", errors: error.issues },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: "Date invalide.", errors: error.issues }, { status: 400 })
     }
     console.error("[BILLING CHECKOUT]", error)
     return NextResponse.json({ message: "Eroare la creare sesiune plată." }, { status: 500 })
