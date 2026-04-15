@@ -564,7 +564,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
           </thead>
           <tbody>
             {scoredJobs.flatMap((job, jobIdx) => {
-              const grade = findGrade(job.total, activeGrades)
+              const grade = findGrade(job.total, activeGradesWithSteps)
               const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
               const match = job.jobTitle.match(/^([^(]+?)(?:\s*\((.+)\))?$/)
               const mainTitle = match?.[1]?.trim() || job.jobTitle
