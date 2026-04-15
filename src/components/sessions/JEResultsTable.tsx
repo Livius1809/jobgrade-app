@@ -465,7 +465,7 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             currentSalary: j.avgSalary ?? null,
           }))}
           allSalariesFromStat={scoredJobs.flatMap(j =>
-            j.employees ? j.employees.map(e => e.salary) : j.avgSalary ? [j.avgSalary] : []
+            j.employees ? j.employees.filter(e => e.salary > 0).map(e => e.salary) : j.avgSalary ? [j.avgSalary] : []
           )}
         />
       )}
@@ -544,14 +544,20 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                                   </span>
                                   <div className="flex items-center gap-1.5">
                                     {empResult && <span className="text-violet-600 font-semibold">T{empResult.step.step}</span>}
-                                    <span className={`${isAdjusted ? "line-through text-slate-300" : "text-slate-500"}`}>{emp.salary.toLocaleString()}</span>
-                                    {isAdjusted && <span className="font-bold text-emerald-700">{adjustedSalary.toLocaleString()} RON</span>}
-                                    {!isAdjusted && <span className="text-slate-400">RON</span>}
+                                    {emp.salary > 0 ? (
+                                      <>
+                                        <span className={`${isAdjusted ? "line-through text-slate-300" : "text-slate-500"}`}>{emp.salary.toLocaleString()}</span>
+                                        {isAdjusted && <span className="font-bold text-emerald-700">{adjustedSalary.toLocaleString()} RON</span>}
+                                        {!isAdjusted && <span className="text-slate-400">RON</span>}
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-300 italic">fără date salariale</span>
+                                    )}
                                   </div>
                                 </div>
 
-                                {/* Action buttons — only when not OK */}
-                                {canEdit && empResult?.status !== "OK" && !isAdjusted && (
+                                {/* Action buttons — only when not OK and has salary data */}
+                                {canEdit && emp.salary > 0 && empResult?.status !== "OK" && !isAdjusted && (
                                   <div className="flex items-center gap-1.5 mt-1 ml-4">
                                     {lowerStep && empResult?.status !== "BELOW" && (
                                       <button
