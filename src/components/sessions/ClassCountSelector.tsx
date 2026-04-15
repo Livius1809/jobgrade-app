@@ -54,7 +54,7 @@ export default function ClassCountSelector({ classDetection, effectiveClassCount
         <div>
           <h3 className="text-sm font-bold text-slate-900">Structura salarială</h3>
           <p className="text-[10px] text-slate-400 mt-0.5">
-            Clase formate prin progresie geometrică (Pitariu, Fig. 2.6) pe baza dispersiei salariilor din statul dvs.
+            Clase formate pe baza dispersiei salariilor din statul dvs.
           </p>
         </div>
 

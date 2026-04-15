@@ -112,12 +112,12 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <h3 className="text-sm font-bold text-slate-900 mb-4">
-        Corelație evaluare posturi — clase salariale
+      <h3 className="text-xs font-bold text-slate-900 mb-4">
+        Situația actuală — corelația dintre scorurile de la evaluarea posturilor de lucru și salariile din statul de salarii
       </h3>
 
       <ResponsiveContainer width="100%" height={440}>
-        <ComposedChart margin={{ top: 10, right: 15, bottom: 50, left: 30 }}>
+        <ComposedChart margin={{ top: 10, right: 15, bottom: 65, left: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
 
           <XAxis
@@ -139,7 +139,7 @@ export default function SalaryGradeChart({ grades, salaryPoints }: Props) {
             <Label
               value="Punctaj evaluare posturi"
               position="bottom"
-              offset={20}
+              offset={35}
               style={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
             />
           </XAxis>
