@@ -619,8 +619,8 @@ function CriterionDropdown({
       <button
         ref={btnRef}
         onClick={handleOpen}
-        className={`px-2.5 py-1 rounded text-sm font-bold border transition-colors cursor-pointer ${
-          open ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
+        className={`px-2.5 py-1 rounded text-sm font-bold border transition-all cursor-pointer ${
+          open ? "border-indigo-500 bg-indigo-100 text-indigo-700 ring-4 ring-indigo-200 shadow-lg relative z-50" : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
         }`}
       >
         {currentLetter}
@@ -631,10 +631,11 @@ function CriterionDropdown({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          {/* Fade background */}
+          <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity" onClick={() => setOpen(false)} />
           <div
             id="criterion-dropdown-panel"
-            className="fixed z-50 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
+            className="fixed z-50 bg-white rounded-xl shadow-2xl border-[3px] border-indigo-500 overflow-hidden"
             style={{ top: pos.top, left: pos.left, width: "min(600px, 90vw)", maxHeight: "300px" }}
           >
             <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-100">
