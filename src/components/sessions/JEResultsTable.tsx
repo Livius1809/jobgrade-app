@@ -295,9 +295,6 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             salary: j.avgSalary ?? null,
             letter: Object.values(j.criterionScores)[0]?.letter || "?",
           }))}
-          benchmarkJobs={scoredJobs
-            .filter(j => j.benchmark)
-            .map(j => ({ score: j.total, benchmarkMedian: j.benchmark!.median }))}
         />
       )}
 
