@@ -41,13 +41,15 @@ function formatSalary(val: number): string {
 }
 
 export default function SalaryGradeChart({ grades, jobs }: Props) {
-  // Regression pe salarii directe (nu decile)
-  const regressionData = useMemo(() => {
-    if (grades.length < 2) return []
+  // Regression pe salarii directe
+  const { regressionData, intersectionX } = useMemo(() => {
+    if (grades.length < 2) return { regressionData: [], intersectionX: -Infinity }
+
     const points = grades.map(g => ({
       x: (g.scoreMin + g.scoreMax) / 2,
       yMin: g.salaryMin,
       yMax: g.salaryMax,
+      yAvg: (g.salaryMin + g.salaryMax) / 2,
     }))
     const n = points.length
     const sumX = points.reduce((s, p) => s + p.x, 0)
@@ -64,20 +66,35 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
     }
     const regMin = calc(points.map(p => p.yMin))
     const regMax = calc(points.map(p => p.yMax))
+    const regAvg = calc(points.map(p => p.yAvg))
+
+    // Punct de intersecție min ↔ max
+    const slopeDiff = regMax.slope - regMin.slope
+    const intX = Math.abs(slopeDiff) > 0.0001
+      ? (regMin.intercept - regMax.intercept) / slopeDiff
+      : -Infinity
 
     const xStart = Math.min(...grades.map(g => g.scoreMin))
     const xEnd = Math.max(...grades.map(g => g.scoreMax))
     const padding = (xEnd - xStart) * 0.05
-    return Array.from({ length: 21 }, (_, i) => {
-      const x = (xStart - padding) + (xEnd - xStart + 2 * padding) * (i / 20)
+
+    const data = Array.from({ length: 31 }, (_, i) => {
+      const x = (xStart - padding) + (xEnd - xStart + 2 * padding) * (i / 30)
       const rMinVal = regMin.intercept + regMin.slope * x
       const rMaxVal = regMax.intercept + regMax.slope * x
+      const rAvgVal = regAvg.intercept + regAvg.slope * x
+
+      // Tăiem vizibilitatea sub punctul de intersecție (spre origine)
+      const visible = x >= intX
       return {
         score: Math.round(x),
-        regMin: Math.round(Math.min(rMinVal, rMaxVal)),
-        regMax: Math.round(Math.max(rMinVal, rMaxVal)),
+        regMin: visible ? Math.round(Math.min(rMinVal, rMaxVal)) : null,
+        regMax: visible ? Math.round(Math.max(rMinVal, rMaxVal)) : null,
+        regAvg: visible ? Math.round(rAvgVal) : null,
       }
     })
+
+    return { regressionData: data, intersectionX: intX }
   }, [grades])
 
   // Scatter — salarii curente
@@ -184,6 +201,18 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
             connectNulls
           />
 
+          {/* Tendință salariu mediu (punctat) */}
+          <Line
+            data={regressionData}
+            dataKey="regAvg"
+            stroke="#10B981"
+            strokeWidth={2}
+            strokeDasharray="6 4"
+            dot={false}
+            name="Tendință sal. mediu"
+            connectNulls
+          />
+
           {/* Salarii curente */}
           {currentData.length > 0 && (
             <Scatter
@@ -215,6 +244,7 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
                 <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-2 text-[10px]">
                   <p className="text-slate-500">Punctaj: {d.score}</p>
                   {d.regMin != null && <p className="text-red-500">Tendință min: {d.regMin.toLocaleString()} RON</p>}
+                  {d.regAvg != null && <p className="text-emerald-600">Tendință mediu: {d.regAvg.toLocaleString()} RON</p>}
                   {d.regMax != null && <p className="text-indigo-600">Tendință max: {d.regMax.toLocaleString()} RON</p>}
                 </div>
               )
