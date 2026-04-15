@@ -112,6 +112,8 @@ export default async function SessionResultsPage({
   const normalizeTitle = (t: string) =>
     t.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-zăâîșț0-9 ]/gi, "").replace(/\s+/g, " ").trim()
 
+  // Prefix unic per sesiune pentru mărcile generate (primele 4 caractere din ID sesiune)
+  const jbPrefix = id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase()
   let jbCounter = 1
   const jobsData = sessionJobs.map(sj => {
     const selectedSubfactors: Record<string, string> = {}
@@ -151,7 +153,7 @@ export default async function SessionResultsPage({
       }))
     } else {
       // Fără match în stat — generăm marcă JBxxx cu salariu 0
-      const code = `JB${String(jbCounter++).padStart(3, "0")}`
+      const code = `JB-${jbPrefix}-${String(jbCounter++).padStart(3, "0")}`
       employeesForJob = [{ name: `Marca ${code}`, salary: 0 }]
     }
 
