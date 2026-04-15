@@ -441,10 +441,8 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                               const empResult = findStep(displaySalary, g.steps!)
                               const isAdjusted = adjustedSalary !== undefined
                               const sortedSteps = [...g.steps!].sort((a, b) => a.salary - b.salary)
-                              const currentStepIdx = empResult ? sortedSteps.findIndex(s => s.step === empResult.step.step) : -1
-                              const lowerStep = currentStepIdx >= 0 ? sortedSteps[currentStepIdx] : undefined
-                              const upperStep = currentStepIdx >= 0 && currentStepIdx < sortedSteps.length - 1 ? sortedSteps[currentStepIdx + 1] : undefined
                               const benchmarkMedian = j.benchmark?.median
+                              const currentSalary = adjustedSalary ?? emp.salary
 
                               return (
                                 <div key={adjKey} className={`py-1.5 ${isAdjusted ? "bg-emerald-50/50 rounded px-1 -mx-1" : ""}`}>
@@ -465,26 +463,34 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                                       )}
                                     </div>
                                   </div>
-                                  {canEdit && emp.salary > 0 && empResult?.status !== "OK" && !isAdjusted && (
-                                    <div className="flex items-center gap-1.5 mt-1 ml-4">
-                                      {lowerStep && empResult?.status !== "BELOW" && (
-                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(lowerStep.salary) }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">
-                                          → T{lowerStep.step} ({Number(lowerStep.salary).toLocaleString()})
-                                        </button>
-                                      )}
-                                      {upperStep && (
-                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(upperStep.salary) }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 cursor-pointer">
-                                          → T{upperStep.step} ({Number(upperStep.salary).toLocaleString()})
-                                        </button>
-                                      )}
-                                      {benchmarkMedian && (
-                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: benchmarkMedian }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 cursor-pointer">
-                                          → Benchmark ({benchmarkMedian.toLocaleString()})
-                                        </button>
-                                      )}
-                                      {empResult?.status === "BELOW" && lowerStep && (
-                                        <button onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: Number(sortedSteps[0].salary) }))} className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer">
-                                          → T1 min clasă ({Number(sortedSteps[0].salary).toLocaleString()})
+                                  {/* Toate treptele din clasă + benchmark */}
+                                  {canEdit && emp.salary > 0 && !isAdjusted && (
+                                    <div className="flex flex-wrap items-center gap-1 mt-1 ml-4">
+                                      {sortedSteps
+                                        .filter(s => Number(s.salary) !== currentSalary)
+                                        .map(s => {
+                                          const stepSalary = Number(s.salary)
+                                          const isAbove = stepSalary > currentSalary
+                                          return (
+                                            <button
+                                              key={s.step}
+                                              onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: stepSalary }))}
+                                              className={`text-[8px] font-medium px-1.5 py-0.5 rounded cursor-pointer ${
+                                                isAbove
+                                                  ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                                                  : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                                              }`}
+                                            >
+                                              T{s.step} ({stepSalary.toLocaleString()})
+                                            </button>
+                                          )
+                                        })}
+                                      {benchmarkMedian && benchmarkMedian !== currentSalary && (
+                                        <button
+                                          onClick={() => setSalaryAdjustments(prev => ({ ...prev, [adjKey]: benchmarkMedian }))}
+                                          className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                                        >
+                                          Benchmark ({benchmarkMedian.toLocaleString()})
                                         </button>
                                       )}
                                     </div>
