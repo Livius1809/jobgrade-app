@@ -584,20 +584,41 @@ function CriterionDropdown({
   onChange: (sfId: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        const panel = document.getElementById("criterion-dropdown-panel")
+        if (panel && !panel.contains(e.target as Node)) setOpen(false)
+      }
     }
     if (open) document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
 
+  function handleOpen() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const panelWidth = Math.min(600, window.innerWidth * 0.9)
+      let left = rect.left
+      // Keep panel within viewport
+      if (left + panelWidth > window.innerWidth - 10) left = window.innerWidth - panelWidth - 10
+      if (left < 10) left = 10
+      // Open upward if button is in lower half of viewport
+      const midScreen = window.innerHeight / 2
+      const top = rect.top > midScreen ? rect.top - 310 : rect.bottom + 4
+      setPos({ top, left })
+    }
+    setOpen(!open)
+  }
+
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="inline-block">
       <button
-        onClick={() => setOpen(!open)}
+        ref={btnRef}
+        onClick={handleOpen}
         className={`px-2.5 py-1 rounded text-sm font-bold border transition-colors cursor-pointer ${
           open ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300"
         }`}
@@ -610,17 +631,16 @@ function CriterionDropdown({
 
       {open && (
         <>
-          {/* Fade overlay — nu blochează scroll */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-
-          {/* Dropdown panel — anchored to table width */}
-          <div className="absolute z-50 mt-1 right-0 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
-            style={{ width: "min(600px, 90vw)", maxHeight: "360px" }}
+          <div
+            id="criterion-dropdown-panel"
+            className="fixed z-50 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
+            style={{ top: pos.top, left: pos.left, width: "min(600px, 90vw)", maxHeight: "300px" }}
           >
             <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-100">
               <p className="text-xs font-bold text-indigo-700">{criterionName}</p>
             </div>
-            <div className="overflow-y-auto" style={{ maxHeight: "270px" }}>
+            <div className="overflow-y-auto" style={{ maxHeight: "250px" }}>
               {subfactors.map(sf => (
                 <button
                   key={sf.id}
