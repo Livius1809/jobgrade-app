@@ -256,42 +256,80 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
 
       {/* Tabel */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="text-left px-3 py-3 text-[10px] font-medium text-slate-500 uppercase w-8">#</th>
-              <th className="text-left px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Poziție</th>
-              <th className="text-right px-3 py-3 text-[10px] font-bold text-indigo-600 uppercase">Scor</th>
+        <table className="w-full">
+          <thead>
+            {/* Group headers */}
+            <tr className="border-b border-slate-200 bg-slate-50">
+              <th colSpan={3 + criteria.length} className="px-2 py-1.5 text-[9px] font-medium text-slate-400 text-left uppercase">Evaluare</th>
+              <th colSpan={3} className="px-2 py-1.5 text-[9px] font-bold text-coral text-center uppercase border-l border-slate-200">Situația curentă</th>
+              <th className="px-2 py-1.5 text-[9px] text-slate-400 text-center border-l border-slate-200">Δ</th>
+              <th colSpan={3} className="px-2 py-1.5 text-[9px] font-bold text-emerald-600 text-center uppercase border-l border-slate-200">Situația adaptată</th>
+              <th className="px-2 py-1.5 text-[9px] text-slate-400 text-center border-l border-slate-200">Δ</th>
+            </tr>
+            {/* Column headers */}
+            <tr className="border-b border-slate-200 bg-slate-50">
+              <th className="px-2 py-2 text-[9px] text-slate-400 text-left w-6">#</th>
+              <th className="px-2 py-2 text-[9px] text-slate-400 text-left">Poziție</th>
+              <th className="px-2 py-2 text-[9px] text-slate-400 text-right">Scor</th>
               {criteria.map((c, i) => (
-                <th key={c.id} className="text-center px-2 py-3 text-[10px] font-medium text-slate-500 uppercase" title={c.name}>
-                  {CRITERIA_SHORT[i] || c.name.substring(0, 6)}
+                <th key={c.id} className="px-1 py-2 text-[9px] text-slate-400 text-center w-7" title={c.name}>
+                  {CRITERIA_SHORT[i]}
                 </th>
               ))}
-              <th className="text-right px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Salariu</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Clasă</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Treaptă</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Min–Max clasă</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">Benchmark</th>
-              <th className="text-center px-3 py-3 text-[10px] font-medium text-slate-500 uppercase">vs. piață</th>
+              {/* Situația curentă */}
+              <th className="px-2 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
+                <span>Salariu</span><br/><span className="text-[7px]">RON</span>
+              </th>
+              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Clasă</th>
+              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Treaptă</th>
+              <th className="px-1 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
+                <span className="text-[7px]">vs.bench</span>
+              </th>
+              {/* Situația adaptată */}
+              <th className="px-2 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
+                <span>Salariu</span><br/><span className="text-[7px]">RON</span>
+              </th>
+              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Clasă</th>
+              <th className="px-1 py-2 text-[9px] text-slate-400 text-center" style={{writingMode:"vertical-lr"}}>Treaptă</th>
+              <th className="px-1 py-2 text-[9px] text-slate-400 text-center border-l border-slate-200" style={{writingMode:"vertical-lr"}}>
+                <span className="text-[7px]">vs.bench</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {scoredJobs.map((job, rank) => {
               const grade = findGrade(job.total, grades)
-              const stepResult = grade?.steps ? findStep(job.avgSalary, grade.steps) : undefined
-              const flag = salaryFlag(job.avgSalary, job.benchmark)
+              const stepCurrent = grade?.steps ? findStep(job.avgSalary, grade.steps) : undefined
+              const flagCurrent = salaryFlag(job.avgSalary, job.benchmark)
+
+              // Adjusted salary
+              let adjustedAvg: number | undefined
+              if (job.employees && job.employees.length > 0) {
+                const adjSals = job.employees.map((emp, ei) => {
+                  const key = `${job.jobId}-${ei}`
+                  return salaryAdjustments[key] ?? emp.salary
+                })
+                const hasAdj = job.employees.some((_, ei) => salaryAdjustments[`${job.jobId}-${ei}`] !== undefined)
+                if (hasAdj) adjustedAvg = Math.round(adjSals.reduce((s, v) => s + v, 0) / adjSals.length)
+              }
+
+              const stepAdj = grade?.steps && adjustedAvg ? findStep(adjustedAvg, grade.steps) : undefined
+              const flagAdj = adjustedAvg ? salaryFlag(adjustedAvg, job.benchmark) : undefined
+
+              const gradeNum = grade ? grade.name.replace("Grad ", "").split(" ")[0] : "—"
+
               return (
-                <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/50">
-                  <td className="px-3 py-3 text-slate-400 font-medium text-xs">{rank + 1}</td>
-                  <td className="px-3 py-3">
-                    <p className="font-medium text-slate-900 text-sm">{job.jobTitle}</p>
-                    {job.department && <p className="text-[10px] text-slate-400">{job.department}</p>}
+                <tr key={job.jobId} className="border-b border-slate-100 hover:bg-slate-50/30 text-[10px]">
+                  <td className="px-2 py-2 text-slate-400">{rank + 1}</td>
+                  <td className="px-2 py-2">
+                    <p className="text-[10px] font-medium text-slate-700">{job.jobTitle}</p>
+                    {job.department && <p className="text-[8px] text-slate-400">{job.department}</p>}
                   </td>
-                  <td className="px-3 py-3 text-right font-bold text-indigo-600 text-sm">{job.total}</td>
+                  <td className="px-2 py-2 text-right text-slate-600">{job.total}</td>
                   {criteria.map(crit => {
                     const score = job.criterionScores[crit.id]
                     return (
-                      <td key={crit.id} className="px-2 py-3 text-center">
+                      <td key={crit.id} className="px-1 py-2 text-center">
                         {canEdit ? (
                           <CriterionDropdown
                             currentSfId={job.selectedSubfactors[crit.id] || ""}
@@ -301,44 +339,48 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
                             onChange={(sfId) => handleLetterChange(job.jobId, crit.id, sfId)}
                           />
                         ) : (
-                          <span className="font-bold text-slate-700 text-xs">{score?.letter || "—"}</span>
+                          <span className="text-slate-600 text-[10px]">{score?.letter || "—"}</span>
                         )}
                       </td>
                     )
                   })}
-                  <td className="px-3 py-3 text-right text-xs font-medium text-slate-700">
-                    {job.avgSalary ? `${job.avgSalary.toLocaleString()} RON` : "—"}
+                  {/* Situația curentă */}
+                  <td className="px-2 py-2 text-right text-slate-600 border-l border-slate-100">
+                    {job.avgSalary ? job.avgSalary.toLocaleString() : "—"}
                   </td>
-                  <td className="px-3 py-3 text-center">
-                    {grade ? (
-                      <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {grade.name.replace("Grad ", "C").split(" — ")[0]}
-                      </span>
-                    ) : <span className="text-xs text-slate-400">—</span>}
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    {stepResult ? (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                        stepResult.status === "OK" ? "text-emerald-700 bg-emerald-50" :
-                        stepResult.status === "BELOW" ? "text-red-700 bg-red-50" :
-                        stepResult.status === "ABOVE" ? "text-amber-700 bg-amber-50" :
-                        "text-violet-700 bg-violet-50"
+                  <td className="px-1 py-2 text-center text-slate-600">{gradeNum}</td>
+                  <td className="px-1 py-2 text-center">
+                    {stepCurrent ? (
+                      <span className={`text-[9px] font-semibold ${
+                        stepCurrent.status === "OK" ? "text-emerald-600" :
+                        stepCurrent.status === "BELOW" ? "text-red-600" :
+                        stepCurrent.status === "ABOVE" ? "text-amber-600" : "text-violet-600"
                       }`}>
-                        T{stepResult.step.step}
-                        {stepResult.status === "BETWEEN" ? " ↕" : stepResult.status === "BELOW" ? " ↓" : stepResult.status === "ABOVE" ? " ↑" : ""}
+                        {stepCurrent.step.step}{stepCurrent.status !== "OK" ? (stepCurrent.status === "BELOW" ? "↓" : stepCurrent.status === "ABOVE" ? "↑" : "↕") : ""}
                       </span>
-                    ) : <span className="text-xs text-slate-400">—</span>}
+                    ) : "—"}
                   </td>
-                  <td className="px-3 py-3 text-center text-[10px] text-slate-500 whitespace-nowrap">
-                    {grade ? `${grade.salaryMin.toLocaleString()}–${grade.salaryMax.toLocaleString()}` : "—"}
+                  <td className="px-1 py-2 text-center border-l border-slate-100">
+                    <span className={`text-[9px] font-bold ${flagCurrent.color}`}>{flagCurrent.label}</span>
                   </td>
-                  <td className="px-3 py-3 text-center text-[10px] text-slate-500 whitespace-nowrap">
-                    {job.benchmark ? `${job.benchmark.median.toLocaleString()} RON` : "—"}
+                  {/* Situația adaptată */}
+                  <td className={`px-2 py-2 text-right border-l border-slate-100 ${adjustedAvg ? "text-emerald-700 font-semibold" : "text-slate-300"}`}>
+                    {adjustedAvg ? adjustedAvg.toLocaleString() : "—"}
                   </td>
-                  <td className="px-3 py-3 text-center">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flag.color}`}>
-                      {flag.label}
-                    </span>
+                  <td className="px-1 py-2 text-center text-slate-500">{adjustedAvg ? gradeNum : "—"}</td>
+                  <td className="px-1 py-2 text-center">
+                    {stepAdj ? (
+                      <span className={`text-[9px] font-semibold ${
+                        stepAdj.status === "OK" ? "text-emerald-600" : "text-violet-600"
+                      }`}>
+                        {stepAdj.step.step}{stepAdj.status !== "OK" ? "↕" : ""}
+                      </span>
+                    ) : "—"}
+                  </td>
+                  <td className="px-1 py-2 text-center border-l border-slate-100">
+                    {flagAdj ? (
+                      <span className={`text-[9px] font-bold ${flagAdj.color}`}>{flagAdj.label}</span>
+                    ) : "—"}
                   </td>
                 </tr>
               )
@@ -351,27 +393,11 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
       {grades.length > 0 && (
         <SalaryGradeChart
           grades={grades}
-          jobs={scoredJobs.map(j => {
-            // Calculate adjusted average from salaryAdjustments
-            let adjustedAvg: number | null = null
-            if (j.employees && j.employees.length > 0) {
-              const adjSalaries = j.employees.map((emp, ei) => {
-                const key = `${j.jobId}-${ei}`
-                return salaryAdjustments[key] ?? emp.salary
-              })
-              const hasAdjustments = j.employees.some((_, ei) => salaryAdjustments[`${j.jobId}-${ei}`] !== undefined)
-              if (hasAdjustments) {
-                adjustedAvg = Math.round(adjSalaries.reduce((s, v) => s + v, 0) / adjSalaries.length)
-              }
-            }
-            return {
-              title: j.jobTitle,
-              score: j.total,
-              currentSalary: j.avgSalary ?? null,
-              adjustedSalary: adjustedAvg,
-              benchmarkSalary: j.benchmark?.median ?? null,
-            }
-          })}
+          jobs={scoredJobs.map(j => ({
+            title: j.jobTitle,
+            score: j.total,
+            currentSalary: j.avgSalary ?? null,
+          }))}
         />
       )}
 

@@ -17,9 +17,7 @@ interface GradeData {
 interface JobPoint {
   title: string
   score: number
-  currentSalary: number | null     // a) salariu curent din stat
-  adjustedSalary?: number | null   // c) salariu după ajustare
-  benchmarkSalary?: number | null  // d) benchmark piață
+  currentSalary: number | null
 }
 
 interface Props {
@@ -76,17 +74,9 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
     jobs.filter(j => j.currentSalary).map(j => ({ score: j.score, salary: j.currentSalary!, title: j.title })),
   [jobs])
 
-  const adjustedData = useMemo(() =>
-    jobs.filter(j => j.adjustedSalary && j.adjustedSalary !== j.currentSalary).map(j => ({ score: j.score, salary: j.adjustedSalary!, title: j.title })),
-  [jobs])
-
-  const benchmarkData = useMemo(() =>
-    jobs.filter(j => j.benchmarkSalary).map(j => ({ score: j.score, salary: j.benchmarkSalary!, title: j.title })),
-  [jobs])
-
   // Axes
   const allSalaries = [...grades.map(g => g.salaryMin), ...grades.map(g => g.salaryMax),
-    ...currentData.map(d => d.salary), ...benchmarkData.map(d => d.salary)]
+    ...currentData.map(d => d.salary)]
   const yMin = Math.min(...allSalaries) * 0.7
   const yMax = Math.max(...allSalaries) * 1.15
   const xMin = Math.min(...grades.map(g => g.scoreMin)) - 20
@@ -175,15 +165,6 @@ export default function SalaryGradeChart({ grades, jobs }: Props) {
             <Scatter data={currentData} dataKey="salary" fill="#E85D43" stroke="#fff" strokeWidth={1.5} name="Salariu curent" shape="circle" />
           )}
 
-          {/* c) Salarii ajustate — cercuri verzi */}
-          {adjustedData.length > 0 && (
-            <Scatter data={adjustedData} dataKey="salary" fill="#10B981" stroke="#fff" strokeWidth={1.5} name="Salariu ajustat" shape="circle" />
-          )}
-
-          {/* d) Benchmark — diamante gri */}
-          {benchmarkData.length > 0 && (
-            <Scatter data={benchmarkData} dataKey="salary" fill="#6366F1" stroke="#fff" strokeWidth={1.5} name="Benchmark piață" shape="diamond" />
-          )}
 
           <Tooltip
             content={({ active, payload }) => {
