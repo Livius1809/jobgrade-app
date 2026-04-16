@@ -146,19 +146,13 @@ export default function TermsPage() {
           (ex. pentru B2B: fișe de post, stat de funcții; pentru B2C:
           completarea profilului prin Profiler) și de soldul de credite.
         </p>
-        <p className="text-text-warm leading-relaxed mb-6">
-          Lista serviciilor active poate evolua. Modificările semnificative
-          sunt comunicate cu minim 30 de zile înainte. Disponibilitatea
-          unui serviciu pentru un Client poate depinde de datele furnizate
-          (ex. fișe de post, stat de funcții) și de soldul de credite.
-        </p>
 
         <H id="cont" n={4}>Cont și autentificare</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>Crearea contului este gratuită; utilizarea serviciilor poate necesita abonament și/sau credite</li>
           <li>Pentru B2C, contul folosește un <strong>pseudonim ales de utilizator</strong> — identitatea reală nu e accesibilă agenților AI și e stocată separat (privacy by design, două straturi)</li>
           <li>Pentru B2B, contul are un administrator (de obicei HR Director) care poate invita alți utilizatori cu roluri specifice</li>
-          <li>Clientul este responsabil pentru securitatea credențialelor (parolă, sesiuni active)</li>
+          <li>Clientul este responsabil pentru securitatea datelor de identificare (parolă, sesiuni active)</li>
           <li>Clientul notifică imediat Compania în caz de utilizare neautorizată a contului (<a href="mailto:contact@jobgrade.ro" className="text-indigo hover:underline">contact@jobgrade.ro</a>)</li>
           <li>Compania poate suspenda contul în caz de breșă de securitate suspectată sau neplată</li>
           <li>Clienții B2C pot șterge contul în orice moment din setări — perioadă de grație 30 zile, apoi ștergere definitivă</li>
@@ -170,7 +164,7 @@ export default function TermsPage() {
           <li><strong>Credite suplimentare:</strong> achiziționate la cerere, fără expirare cât timp contul e activ</li>
           <li><strong>Modalitate plată:</strong> card (procesat de Stripe), conform termenilor lor PCI-DSS</li>
           <li><strong>Facturare:</strong> automată, lunară, prin email cu PDF</li>
-          <li><strong>TVA:</strong> aplicat conform legislației RO (Psihobusiness e plătitor TVA, CIF RO15790994)</li>
+          <li><strong>TVA:</strong> aplicat conform legislației RO (Psihobusiness Consulting SRL este plătitoare de TVA, CIF RO15790994)</li>
           <li><strong>Rambursări:</strong> creditele neutilizate pot fi rambursate la încetare, proporțional, în termen de 30 zile</li>
           <li><strong>Întârzieri plată:</strong> după 15 zile, accesul la servicii poate fi suspendat; după 60 zile, contul poate fi închis</li>
         </ul>
@@ -203,15 +197,15 @@ export default function TermsPage() {
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>AI-ul propune; deciziile finale aparțin Clientului</li>
           <li>Niciun raport sau evaluare AI nu se folosește singură pentru decizii cu impact asupra angajaților fără validare umană (conformă Art. 22 GDPR și Art. 14 AI Act)</li>
-          <li>Compania nu garantează acuratețea absolută a output-ului AI; Clientul are responsabilitatea de validare</li>
-          <li>Anthropic nu antrenează modele pe datele Clientului (confirmat contractual)</li>
+          <li>Compania nu garantează acuratețea absolută a rezultatelor AI; Clientul are responsabilitatea de validare</li>
+          <li>Modelele AI Anthropic nu sunt antrenate utilizând datele Clientului (confirmat contractual)</li>
         </ul>
 
         <H id="proprietate" n={9}>Proprietate intelectuală</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li><strong>Platforma JobGrade</strong> (cod, design, metodologii proprii) — proprietatea Companiei</li>
           <li><strong>Conținutul Clientului</strong> (fișe, salarii, evaluări) — proprietatea Clientului</li>
-          <li><strong>Rapoartele generate</strong> sunt proprietatea Clientului, dar pot fi utilizate de Companie în formă agregată și anonimizată pentru îmbunătățirea serviciilor și statistici sectoriale</li>
+          <li><strong>Rapoartele generate</strong> sunt proprietatea Clientului, dar pot fi utilizate de Companie în formă agregată și anonimizată pentru îmbunătățirea serviciilor și statisticilor sectoriale</li>
           <li>Marca <strong>JobGrade</strong> este înregistrată; folosirea ei externă necesită acord scris</li>
         </ul>
 
@@ -220,12 +214,12 @@ export default function TermsPage() {
           <p className="text-sm text-amber-900 leading-relaxed">
             Compania răspunde pentru daune directe cauzate de neîndeplinirea
             culpabilă a obligațiilor sale, în limita sumei plătite de Client
-            în ultimele 12 luni înainte de eveniment.
+            în ultimele 12 luni înaintea producerii evenimentului.
           </p>
         </div>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>Compania nu răspunde pentru daune indirecte, de imagine, profit nerealizat sau pierderi de date cauzate de Client</li>
-          <li>Nu răspunde pentru consecințele utilizării incorecte a platformei sau a output-urilor AI fără validare umană</li>
+          <li>Nu răspunde pentru consecințele utilizării incorecte a platformei sau a rezultatelor AI fără validare umană</li>
           <li>Nu răspunde pentru indisponibilități cauzate de furnizori terți sau forță majoră (lista sub-procesatorilor e disponibilă în Politica de confidențialitate)</li>
         </ul>
 
