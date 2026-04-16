@@ -63,6 +63,15 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     ],
   },
   {
+    name: "Recrutare și perioadă de inducție",
+    color: "sky",
+    services: [
+      { id: "recruit-design", label: "Proiectarea procesului de recrutare", href: "/recruitment/design", requiredInputs: ["company_identity", "jobs"], color: "sky", creditCost: "credite/proiect" },
+      { id: "recruit-manage", label: "Gestionarea procesului de recrutare", href: "/recruitment", requiredInputs: ["jobs"], color: "sky", creditCost: "credite/candidat" },
+      { id: "induction-manual", label: "Manualul noului angajat", href: "/recruitment/induction", requiredInputs: ["jobs_complete", "company_identity"], color: "sky", creditCost: "credite/manual" },
+    ],
+  },
+  {
     name: "Conformitate EU 2023/970",
     color: "violet",
     services: [
@@ -460,6 +469,7 @@ export default async function PortalPage() {
             const colorMap: Record<string, string> = {
               emerald: "border-l-emerald-500",
               indigo: "border-l-indigo-500",
+              sky: "border-l-sky-500",
               violet: "border-l-violet-500",
               fuchsia: "border-l-fuchsia-500",
               slate: "border-l-slate-300",
@@ -467,6 +477,7 @@ export default async function PortalPage() {
             const textColorMap: Record<string, string> = {
               emerald: "text-emerald-600",
               indigo: "text-indigo-600",
+              sky: "text-sky-600",
               violet: "text-violet-600",
               fuchsia: "text-fuchsia-600",
               slate: "text-slate-500",
@@ -474,6 +485,7 @@ export default async function PortalPage() {
             const bgMap: Record<string, string> = {
               emerald: "bg-emerald-50/50",
               indigo: "bg-indigo-50/50",
+              sky: "bg-sky-50/50",
               violet: "bg-violet-50/50",
               fuchsia: "bg-fuchsia-50/50",
               slate: "bg-slate-50/50",
