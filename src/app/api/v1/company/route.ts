@@ -72,7 +72,13 @@ export async function PUT(req: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("[COMPANY PUT]", error)
-    return NextResponse.json({ message: "Eroare internă." }, { status: 500 })
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("[COMPANY PUT]", errMsg, error)
+    return NextResponse.json(
+      {
+        message: `Eroare internă: ${errMsg.slice(0, 200)}`,
+      },
+      { status: 500 }
+    )
   }
 }
