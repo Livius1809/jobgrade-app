@@ -22,6 +22,7 @@ const INPUT_LABELS: Record<string, string> = {
   jobs_complete: "Fișe de post complete",
   payroll: "Stat de salarii",
   internal_docs: "Documente interne companie",
+  "org-chart": "Organigramă declarată",
   kpis: "Obiective și KPI per post",
   "salary-packages-input": "Pachete salariale extinse",
   "evaluation-committee": "Comitet de evaluare",
@@ -134,7 +135,8 @@ const INPUT_LIBRARY: InputDef[] = [
   { id: "payroll", group: "B", label: "Stat de funcții", weight: 3, href: "/compensation/packages" },
   { id: "jobs", group: "B", label: "Fișe de post (atribuții, cerințe, responsabilități)", weight: 3, href: "/jobs" },
   { id: "demographics", group: "B", label: "Date demografice angajați (gen, vârstă, vechime)", weight: 3, href: "/employees", comingSoon: true },
-  // C. Sisteme operaționale (4 × pondere 2)
+  // C. Sisteme operaționale (5 × pondere 2)
+  { id: "org-chart", group: "C", label: "Organigramă declarată (top + subordonări)", weight: 2, href: "/company/structure", comingSoon: true },
   { id: "kpis", group: "C", label: "Obiective și indicatori de performanță (per post)", weight: 2, href: "/performance", comingSoon: true },
   { id: "salary-packages-input", group: "C", label: "Pachete salariale extinse (compensații + beneficii non-monetare)", weight: 2, href: "/compensation/packages" },
   { id: "evaluation-committee", group: "C", label: "Comitet de evaluare (membri + roluri)", weight: 2, href: "/sessions", comingSoon: true },
@@ -782,27 +784,35 @@ function OrgOverviewSection({
           return (
           <div className="bg-surface rounded-xl border border-border p-5">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold text-slate-900">Organigramă</p>
+              <p className="text-sm font-semibold text-slate-900">Inventar posturi</p>
               <span className="text-[10px] text-slate-400">{headerLabel}</span>
             </div>
             <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1">
               <p className="text-[10px] text-amber-800 leading-snug">
-                <strong>Departamentele</strong> sunt entități organizaționale
-                (Vânzări, Producție, Financiar, Administrativ etc.).{" "}
-                <strong>Locațiile</strong> sunt puncte de lucru fizice — pot fi
-                sau nu puncte de lucru juridice cu CUI distinct.
+                Vedere preliminară din statul de funcții — gruparea pe departamente
+                și locații reflectă ce a fost încărcat, NU o organigramă reală
+                (lipsesc relațiile de subordonare, rolurile de coordonare,
+                top-ul ierarhic).
               </p>
               <p className="text-[10px] text-amber-800 leading-snug">
-                Dacă o locație nu are CUI propriu, aparține de un departament
-                (ex: cele 15 magazine aparțin departamentului „Vânzări").
+                <strong>Departamentele</strong> sunt entități organizaționale
+                (Vânzări, Producție etc.); <strong>locațiile</strong> sunt puncte
+                de lucru fizice (pot avea sau nu CUI propriu — dacă nu, aparțin
+                de un departament).
               </p>
               {looksLikeLocations && (
                 <p className="text-[10px] text-coral-dark leading-snug pt-1 border-t border-amber-200">
                   ⚠ Pare că aceste înregistrări sunt locații (același prefix repetat)
                   — recomandat să le grupați sub un departament real în statul de
-                  salarii.
+                  funcții.
                 </p>
               )}
+              <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
+                💡 Pentru o <strong>organigramă reală</strong> (cu subordonări,
+                manageri, niveluri ierarhice precise) și pentru servicii precum
+                Diagnoză organizațională sau Dezvoltare resurse umane, va trebui
+                declarată separat — modul în pregătire.
+              </p>
             </div>
 
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
@@ -879,14 +889,17 @@ function OrgOverviewSection({
                   </div>
                   <div className="space-y-2 mb-3">
                     {topGaps.map((c, i) => {
+                      const absGap = Math.abs(c.diffPercent)
                       const tone =
-                        Math.abs(c.diffPercent) >= 15 ? "danger" :
-                        Math.abs(c.diffPercent) >= 10 ? "warn" : "moderate"
+                        absGap >= 15 ? "danger" :
+                        absGap >= 10 ? "warn" : "moderate"
                       const bg = tone === "danger" ? "bg-coral/10 border-coral/30" :
                                  tone === "warn" ? "bg-amber-50 border-amber-200" :
                                  "bg-slate-50 border-slate-200"
                       const text = tone === "danger" ? "text-coral-dark" :
                                    tone === "warn" ? "text-amber-700" : "text-slate-700"
+                      // Direcție explicită — fără „+/-" care ar putea fi interpretat ca avantaj/dezavantaj
+                      const direction = c.diffPercent > 0 ? "♂ > ♀" : "♀ > ♂"
                       return (
                         <div key={i} className={`rounded-lg border p-3 ${bg}`}>
                           <div className="flex items-start justify-between gap-2 mb-1">
@@ -900,10 +913,10 @@ function OrgOverviewSection({
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p className={`text-lg font-bold leading-none ${text}`}>
-                                {c.diffPercent > 0 ? "+" : ""}{c.diffPercent}%
+                                {absGap}%
                               </p>
                               <p className="text-[10px] text-slate-500 mt-0.5">
-                                {c.diffAbs > 0 ? "+" : ""}{fmt(c.diffAbs)} RON
+                                {direction} · {fmt(Math.abs(c.diffAbs))} RON
                               </p>
                             </div>
                           </div>
@@ -914,6 +927,30 @@ function OrgOverviewSection({
                         </div>
                       )
                     })}
+                  </div>
+
+                  {/* Bloc decizie informată — acționabilitate */}
+                  <div className="rounded-lg bg-indigo-50/60 border border-indigo-200 p-3 mb-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 mb-1.5">
+                      🔍 Decizie informată
+                    </p>
+                    <p className="text-[11px] text-slate-700 leading-snug mb-2">
+                      Decalajul de gen pe o categorie nu indică automat
+                      discriminare. Verificați posibile cauze legitime înainte
+                      de a acționa:
+                    </p>
+                    <ul className="text-[10px] text-slate-600 space-y-0.5 list-disc pl-4 mb-2">
+                      <li>vechime medie diferită pe gen pentru aceeași poziție</li>
+                      <li>calificări/certificări extra deținute</li>
+                      <li>rezultate evaluare performanță anterioare</li>
+                      <li>responsabilități adiționale neformalizate</li>
+                    </ul>
+                    <p className="text-[10px] text-slate-700 leading-snug">
+                      Dacă diferența <strong>NU</strong> e justificabilă →
+                      plan de aliniere salarială. Dacă <strong>e</strong>{" "}
+                      justificabilă → documentați excepția pentru audit ITM /
+                      ANSPDCP.
+                    </p>
                   </div>
                   {payGapByCategory.filter(c => Math.abs(c.diffPercent) >= 5).length > 5 && (
                     <p className="text-[10px] text-slate-400 italic text-center mb-2">
