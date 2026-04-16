@@ -3346,6 +3346,7 @@ model ServiceUsageLog {
   tenantId            String
   userId              String?
   serviceCode         String   // ID serviciu (ex: "je-evaluate", "consultant-hr-chat")
+  executionVariant    String   @default("AUTO") // "AUTO" | "HYBRID_AI_MEDIATED" | "HYBRID_HUMAN_MEDIATED"
   executionId         String?  // ID execuție (sesiune chat, raport, etc.)
   operationType       String?  // mapare la AIOperationTier (dacă e operație AI)
 
@@ -3380,20 +3381,25 @@ model ServicePricing {
   serviceCode        String   // "je-evaluate", "pay-gap-report", "consultant-hr-chat", etc.
   serviceName        String
   serviceType        String   // "REPORT" | "ASSISTANCE" | "PROCESS"
+  // Variantă execuție — același serviciu poate avea 1-3 variante cu cost și
+  // preț distinct (AUTO, HYBRID_AI_MEDIATED, HYBRID_HUMAN_MEDIATED).
+  // Folosit de servicii de tip evaluare (JE, evaluare comună, mediere decalaj).
+  executionVariant   String   @default("AUTO") // "AUTO" | "HYBRID_AI_MEDIATED" | "HYBRID_HUMAN_MEDIATED"
   unitMeasure        String   // "rulare", "minut", "intrebare", "sesiune"
   costInCredits      Decimal  @db.Decimal(10, 4) // preț în credite per unitate
   marginMultiplier   Decimal? @db.Decimal(5, 2)  // factor multiplicare cost intern → preț (informativ)
   chatTier           String?  // "FAMILIARIZARE" | "CONSULTANTA" (doar pentru ASSISTANCE)
-  isFreeTier         Boolean  @default(false)    // ex: primele N minute familiarizare gratuit
-  freeTierLimit      Int?                        // limita gratuit (minute, întrebări, etc.)
-  freeTierUnit       String?                     // "minutes_per_month", "questions_per_session"
+  isFreeTier         Boolean  @default(false)
+  freeTierLimit      Int?
+  freeTierUnit       String?
   effectiveFrom      DateTime @default(now())
   notes              String?  @db.Text
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  @@unique([serviceCode, chatTier, effectiveFrom])
+  @@unique([serviceCode, executionVariant, chatTier, effectiveFrom])
   @@index([serviceCode])
+  @@index([serviceCode, executionVariant])
   @@map("service_pricing")
 }
 

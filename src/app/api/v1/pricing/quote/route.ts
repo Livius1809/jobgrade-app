@@ -27,18 +27,19 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const serviceCode = searchParams.get("service")
   const volume = parseInt(searchParams.get("volume") ?? "1", 10)
+  const executionVariant = searchParams.get("variant") ?? "AUTO" // AUTO | HYBRID_AI_MEDIATED | HYBRID_HUMAN_MEDIATED
 
   if (!serviceCode || isNaN(volume) || volume < 1) {
     return NextResponse.json(
-      { message: "Parametri obligatorii: service, volume (>= 1)" },
+      { message: "Parametri obligatorii: service, volume (>= 1); opțional: variant" },
       { status: 400 }
     )
   }
 
-  // Citește pricing curent + valoare credit
+  // Citește pricing curent + valoare credit (filtrat pe variantă)
   const [pricing, creditValue] = await Promise.all([
     prisma.servicePricing.findFirst({
-      where: { serviceCode, effectiveFrom: { lte: new Date() } },
+      where: { serviceCode, executionVariant, effectiveFrom: { lte: new Date() } },
       orderBy: { effectiveFrom: "desc" },
     }),
     prisma.creditValue.findFirst({ orderBy: { effectiveFrom: "desc" } }),
