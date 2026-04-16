@@ -218,7 +218,7 @@ const REPORT_LIBRARY: Array<{
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports, payrollAggregate, payGapReport, activeSessionsCount, employeeRecords, oldJobsCount, recentJobs, recentSessions, recentPayrollEntries] = await Promise.all([
+  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports, payrollAggregate, payGapReport, activeSessionsCount, employeeRecords, oldJobsCount, recentJobs, recentSessions, recentPayrollEntries, allPayroll] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId } }).catch(() => null),
@@ -271,6 +271,22 @@ async function getPortalData(tenantId: string) {
       orderBy: { createdAt: "desc" },
       take: 100,
     }).catch(() => [] as Array<{ importBatchId: string; createdAt: Date }>),
+    (prisma as any).payrollEntry.findMany({
+      where: { tenantId },
+      select: {
+        department: true,
+        hierarchyLevel: true,
+        gender: true,
+        baseSalary: true,
+        totalMonthlyGross: true,
+      },
+    }).catch(() => [] as Array<{
+      department: string
+      hierarchyLevel: string
+      gender: string
+      baseSalary: number
+      totalMonthlyGross: number | null
+    }>),
   ])
 
   // Pay gap (UE 2023/970): diferență salariu mediu bărbați vs femei
@@ -389,6 +405,103 @@ async function getPortalData(tenantId: string) {
       recentPayrollEntries,
       reports,
     }),
+    orgStructure: buildOrgStructure(allPayroll),
+    payGapBrut: buildPayGapBrut(allPayroll, payGapPercent),
+  }
+}
+
+/* ── Organigramă: agregare PayrollEntry pe departament × hierarchyLevel ── */
+type OrgStructure = {
+  totalPositions: number
+  totalEmployees: number
+  departments: Array<{
+    name: string
+    count: number
+    levels: Array<{ level: string; count: number }>
+  }>
+  byLevel: Array<{ level: string; count: number }>
+}
+
+const HIERARCHY_ORDER = ["N", "N-1", "N-2", "N-3", "N-4", "N-5+"]
+
+function buildOrgStructure(
+  payroll: Array<{ department: string; hierarchyLevel: string }>
+): OrgStructure | null {
+  if (payroll.length === 0) return null
+
+  // Agregare pe departament
+  const deptMap = new Map<string, Map<string, number>>()
+  const levelMap = new Map<string, number>()
+
+  for (const p of payroll) {
+    const dept = p.department || "—"
+    const lvl = p.hierarchyLevel || "—"
+
+    if (!deptMap.has(dept)) deptMap.set(dept, new Map())
+    const lvls = deptMap.get(dept)!
+    lvls.set(lvl, (lvls.get(lvl) ?? 0) + 1)
+
+    levelMap.set(lvl, (levelMap.get(lvl) ?? 0) + 1)
+  }
+
+  const departments = Array.from(deptMap.entries())
+    .map(([name, lvls]) => ({
+      name,
+      count: Array.from(lvls.values()).reduce((s, n) => s + n, 0),
+      levels: Array.from(lvls.entries())
+        .map(([level, count]) => ({ level, count }))
+        .sort((a, b) => HIERARCHY_ORDER.indexOf(a.level) - HIERARCHY_ORDER.indexOf(b.level)),
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const byLevel = Array.from(levelMap.entries())
+    .map(([level, count]) => ({ level, count }))
+    .sort((a, b) => HIERARCHY_ORDER.indexOf(a.level) - HIERARCHY_ORDER.indexOf(b.level))
+
+  return {
+    totalPositions: deptMap.size > 0 ? new Set(payroll.map(p => `${p.department}|${p.hierarchyLevel}`)).size : 0,
+    totalEmployees: payroll.length,
+    departments,
+    byLevel,
+  }
+}
+
+/* ── Pay gap brut: din PayrollEntry dacă EmployeeSalaryRecord lipsește ── */
+type PayGapBrut = {
+  percent: number
+  countMale: number
+  countFemale: number
+  avgMale: number
+  avgFemale: number
+} | null
+
+function buildPayGapBrut(
+  payroll: Array<{ gender: string; baseSalary: number; totalMonthlyGross: number | null }>,
+  fromEmployeeRecords: number | null
+): PayGapBrut {
+  // Dacă deja calculat din EmployeeSalaryRecord, nu re-calculăm
+  if (fromEmployeeRecords !== null) {
+    return null // semnal că pay gap e disponibil din cealaltă sursă (Snapshot)
+  }
+  if (payroll.length === 0) return null
+
+  const m = payroll.filter(p => p.gender === "MALE")
+  const f = payroll.filter(p => p.gender === "FEMALE")
+  if (m.length === 0 || f.length === 0) return null
+
+  const sumOf = (arr: typeof payroll) =>
+    arr.reduce((s, p) => s + (p.totalMonthlyGross ?? p.baseSalary), 0)
+
+  const avgM = sumOf(m) / m.length
+  const avgF = sumOf(f) / f.length
+  if (avgM === 0) return null
+
+  return {
+    percent: Math.round(((avgM - avgF) / avgM) * 1000) / 10,
+    countMale: m.length,
+    countFemale: f.length,
+    avgMale: avgM,
+    avgFemale: avgF,
   }
 }
 
@@ -597,6 +710,172 @@ function NextBestStepCard({
   )
 }
 
+/* ── Vedere de ansamblu: organigramă + pay gap brut ─────────────────────────
+   „Surprize plăcute" la primul upload de stat funcții — apar imediat fără ca
+   clientul să fi cerut explicit servicii.
+*/
+function OrgOverviewSection({
+  org,
+  payGapBrut,
+  payGapPercent,
+}: {
+  org: OrgStructure | null
+  payGapBrut: PayGapBrut
+  payGapPercent: number | null
+}) {
+  if (!org && payGapPercent === null && !payGapBrut) return null
+
+  const fmt = (n: number) => new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(n)
+
+  // Pay gap final (preferință: EmployeeSalaryRecord; fallback: PayrollEntry)
+  const gap = payGapPercent !== null ? payGapPercent : payGapBrut?.percent ?? null
+  const gapTone =
+    gap === null ? "muted" :
+    Math.abs(gap) < 5 ? "success" :
+    Math.abs(gap) < 15 ? "warn" : "danger"
+
+  const gapBg: Record<string, string> = {
+    success: "bg-emerald-50 border-emerald-200",
+    warn: "bg-amber-50 border-amber-200",
+    danger: "bg-coral/10 border-coral/30",
+    muted: "bg-slate-50 border-slate-200",
+  }
+  const gapText: Record<string, string> = {
+    success: "text-emerald-700",
+    warn: "text-amber-700",
+    danger: "text-coral-dark",
+    muted: "text-slate-500",
+  }
+  const gapInterpretation =
+    gap === null ? "Adăugați date angajați (gen + salariu) pentru calcul" :
+    Math.abs(gap) < 5 ? "Echitate salarială bună — sub pragul de atenționare UE 2023/970" :
+    Math.abs(gap) < 15 ? "Diferență moderată — recomandat un raport detaliat pentru investigare" :
+    "Diferență semnificativă — necesită acțiune; rulați raportul pentru analiza pe categorii de muncitori"
+
+  return (
+    <section>
+      <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
+        Vedere de ansamblu
+      </h2>
+      <div className="grid lg:grid-cols-3 gap-4">
+        {/* Organigramă (2 coloane pe lg) */}
+        {org && (
+          <div className="lg:col-span-2 bg-surface rounded-xl border border-border p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-slate-900">Organigramă</p>
+              <span className="text-[10px] text-slate-400">
+                {fmt(org.departments.length)} departamente · {fmt(org.totalEmployees)} angajați
+              </span>
+            </div>
+
+            {/* Vedere pe niveluri ierarhice (top-down) */}
+            <div className="space-y-3">
+              {org.byLevel.map((lvl) => {
+                const widthPct = (lvl.count / org.totalEmployees) * 100
+                return (
+                  <div key={lvl.level}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-slate-700">
+                        {lvl.level} <span className="text-slate-400">·</span>{" "}
+                        <span className="text-slate-500">{fmt(lvl.count)} posturi</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400">{widthPct.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-5 bg-slate-100 rounded overflow-hidden flex">
+                      {/* Sub-bare per departament în acest nivel */}
+                      {org.departments
+                        .map((d) => ({
+                          name: d.name,
+                          count: d.levels.find((l) => l.level === lvl.level)?.count ?? 0,
+                        }))
+                        .filter((d) => d.count > 0)
+                        .map((d, i) => {
+                          const colors = ["bg-indigo-500", "bg-emerald-500", "bg-violet-500", "bg-amber-500", "bg-sky-500", "bg-fuchsia-500", "bg-coral", "bg-slate-400"]
+                          const color = colors[i % colors.length]
+                          const subWidth = (d.count / lvl.count) * 100
+                          return (
+                            <div
+                              key={d.name}
+                              className={`h-full ${color}`}
+                              style={{ width: `${subWidth}%` }}
+                              title={`${d.name}: ${d.count} posturi`}
+                            />
+                          )
+                        })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Legendă departamente */}
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-2">
+                Departamente
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {org.departments.slice(0, 12).map((d, i) => {
+                  const colors = ["bg-indigo-500", "bg-emerald-500", "bg-violet-500", "bg-amber-500", "bg-sky-500", "bg-fuchsia-500", "bg-coral", "bg-slate-400"]
+                  const color = colors[i % colors.length]
+                  return (
+                    <span key={d.name} className="inline-flex items-center gap-1.5 text-[10px] text-slate-600 bg-slate-50 px-2 py-1 rounded">
+                      <span className={`w-2 h-2 rounded-sm ${color}`} />
+                      {d.name} <span className="text-slate-400">({d.count})</span>
+                    </span>
+                  )
+                })}
+                {org.departments.length > 12 && (
+                  <span className="text-[10px] text-slate-400 italic px-2 py-1">
+                    + încă {org.departments.length - 12}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pay gap brut */}
+        <div className={`rounded-xl border p-5 ${gapBg[gapTone]}`}>
+          <p className="text-sm font-semibold text-slate-900 mb-1">
+            Decalaj salarial brut
+          </p>
+          <p className="text-[10px] text-slate-500 mb-3">pe gen, calcul preliminar</p>
+          {gap !== null ? (
+            <>
+              <p className={`text-4xl font-bold mb-2 ${gapText[gapTone]}`}>
+                {gap > 0 ? "+" : ""}
+                {gap}%
+              </p>
+              <p className="text-xs text-slate-700 leading-relaxed mb-3">
+                {gapInterpretation}
+              </p>
+              {payGapBrut && (
+                <div className="text-[10px] text-slate-500 space-y-0.5 pt-2 border-t border-slate-200">
+                  <p>♂ {payGapBrut.countMale} bărbați · medie {fmt(payGapBrut.avgMale)} RON</p>
+                  <p>♀ {payGapBrut.countFemale} femei · medie {fmt(payGapBrut.avgFemale)} RON</p>
+                </div>
+              )}
+              <Link
+                href="/pay-gap"
+                className="inline-block mt-3 text-xs text-indigo-600 hover:underline"
+              >
+                Raport detaliat →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-medium text-slate-400 mb-2">—</p>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {gapInterpretation}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ── Snapshot organizație: KPI-uri „vii" pentru HR (administrator de cont) ──
    Combinație de KPI-uri HARD (din date directe) și SOFT (din rapoarte rulate).
    KPI-urile SOFT apar ca „—" cu hint la serviciul care le calculează —
@@ -728,6 +1007,13 @@ export default async function PortalPage() {
 
       {/* ══════════ SNAPSHOT ORGANIZAȚIE (HR view) ══════════ */}
       <OrgSnapshotBar data={data} />
+
+      {/* ══════════ VEDERE DE ANSAMBLU — surprize plăcute la upload ══════════ */}
+      <OrgOverviewSection
+        org={data.orgStructure}
+        payGapBrut={data.payGapBrut}
+        payGapPercent={data.payGapPercent}
+      />
 
       {/* ══════════ GREETING ══════════ */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
