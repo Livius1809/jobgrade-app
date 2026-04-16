@@ -4,7 +4,6 @@ import Image from "next/image"
 import Link from "next/link"
 import SignOutButton from "@/components/auth/SignOutButton"
 import NarrativeGuide from "@/components/guide/NarrativeGuide"
-import { prisma } from "@/lib/prisma"
 
 export default async function PortalLayout({
   children,
@@ -15,20 +14,6 @@ export default async function PortalLayout({
   if (!session) redirect("/login")
 
   const isOwner = session.user.role === "SUPER_ADMIN" || session.user.role === "OWNER"
-
-  // Indicatori pentru ghidul narativ — fetch ușor (counts + profile)
-  const tenantId = session.user.tenantId
-  const [profile, jobCount, payrollCount] = await Promise.all([
-    prisma.companyProfile.findUnique({
-      where: { tenantId },
-      select: { cui: true, industry: true, anafSyncedAt: true },
-    }).catch(() => null),
-    prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
-    (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0) as Promise<number>,
-  ])
-  const hasIdentity = !!(profile?.cui && profile?.industry && profile?.anafSyncedAt)
-  const hasJobs = jobCount > 0
-  const hasPayroll = payrollCount > 0
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -69,13 +54,8 @@ export default async function PortalLayout({
         </div>
       </footer>
 
-      {/* ── Călăuza narativă (bubble jos-dreapta) ────────────── */}
-      <NarrativeGuide
-        role={session.user.role as "OWNER" | "COMPANY_ADMIN" | "FACILITATOR" | "REPRESENTATIVE" | "SUPER_ADMIN" | null}
-        hasIdentity={hasIdentity}
-        hasJobs={hasJobs}
-        hasPayroll={hasPayroll}
-      />
+      {/* ── Consultant HR (bubble jos-dreapta) ──────────────── */}
+      <NarrativeGuide />
     </div>
   )
 }
