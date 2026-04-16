@@ -436,7 +436,10 @@ function NextBestStepCard({
         <span className="text-2xl">⭐</span>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">
-            Următorul pas recomandat
+            Următorul pas recomandat{" "}
+            <span className="font-normal normal-case tracking-normal text-amber-600/80">
+              (deblochează cele mai multe servicii simultan)
+            </span>
           </p>
           <p className="text-sm text-slate-800 mb-3 leading-relaxed">
             Adăugați{" "}
