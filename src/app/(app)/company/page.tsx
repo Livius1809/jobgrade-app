@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import CompanyProfileForm from "@/components/company/CompanyProfileForm"
 
 export const metadata = { title: "Profil companie" }
+export const dynamic = "force-dynamic"
 
 export default async function CompanyPage() {
   const session = await auth()
@@ -36,6 +37,9 @@ export default async function CompanyPage() {
                 regCom: profile.regCom ?? "",
                 address: profile.address ?? "",
                 county: profile.county ?? "",
+                caenCode: profile.caenCode ?? "",
+                caenName: profile.caenName ?? "",
+                isVATPayer: profile.isVATPayer,
               }
             : null
         }

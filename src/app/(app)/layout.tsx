@@ -40,6 +40,9 @@ export default async function AppLayout({
             <Link href="/portal" className="font-medium text-text-warm hover:text-coral transition-colors">
               Portal
             </Link>
+            <Link href="/company" className="text-text-secondary hover:text-foreground transition-colors">
+              Companie
+            </Link>
             <Link href="/jobs" className="text-text-secondary hover:text-foreground transition-colors">
               Posturi
             </Link>
