@@ -56,6 +56,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     services: [
       { id: "je", label: "Evaluarea și ierarhizarea posturilor de lucru", href: "/sessions", requiredInputs: ["jobs"], color: "indigo", creditCost: "credite/poziție" },
       { id: "salary-grades", label: "Structuri salariale (clase și trepte)", href: "/sessions", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
+      { id: "performance-eval", label: "Evaluarea performanței (obiective cf. fișei postului, indicatori de performanță)", href: "/performance", requiredInputs: ["jobs_complete"], color: "indigo", creditCost: "credite/angajat" },
       { id: "salary-packages", label: "Pachete salariale (compensații, beneficii, scenarii bugetare)", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
       { id: "benchmark", label: "Benchmark salarial", href: "/compensation/benchmark", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
     ],
@@ -66,6 +67,8 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     services: [
       { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/angajat" },
       { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/proiect" },
+      { id: "employee-file", label: "Fișa angajatului (atribuții, ierarhie, clasă și treaptă salarială, pachet salarial, plan de dezvoltare)", href: "/employees", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/angajat" },
+      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (dorințe individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/proiect" },
     ],
   },
   {
