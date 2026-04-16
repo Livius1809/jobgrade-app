@@ -160,14 +160,24 @@ const GROUP_LABELS: Record<InputGroup, string> = {
 const REPORT_LIBRARY: Array<{
   id: string
   label: string
-  type: "HIERARCHY" | "SALARY_GRADES" | "PAY_GAP" | "JOINT" | "BUDGET" | "KPI" | "FULL"
+  type: string
 }> = [
+  // Evaluare & structură
   { id: "hierarchy", label: "Raport ierarhizare posturi", type: "HIERARCHY" },
   { id: "salary-grades", label: "Raport structură salarială", type: "SALARY_GRADES" },
-  { id: "pay-gap", label: "Raport decalaj salarial (UE 2023/970)", type: "PAY_GAP" },
-  { id: "joint", label: "Raport evaluare comună (Art. 10)", type: "JOINT" },
   { id: "budget", label: "Raport impact bugetar", type: "BUDGET" },
   { id: "kpi", label: "Raport KPI organizație", type: "KPI" },
+  // Conformitate
+  { id: "pay-gap", label: "Raport decalaj salarial (UE 2023/970)", type: "PAY_GAP" },
+  { id: "joint", label: "Raport evaluare comună (Art. 10)", type: "JOINT" },
+  // Recrutare & inducție
+  { id: "job-description", label: "Fișa de post (document tipărit per poziție)", type: "JOB_DESCRIPTION" },
+  { id: "shortlist", label: "Listă scurtă candidați", type: "SHORTLIST" },
+  { id: "info-conditions", label: "Formular informare condiții", type: "INFO_CONDITIONS" },
+  { id: "job-offer", label: "Ofertă de angajare", type: "JOB_OFFER" },
+  { id: "internal-synthesis", label: "Sinteză documente interne (extras relevant per poziție)", type: "INTERNAL_SYNTHESIS" },
+  { id: "employee-manual", label: "Manualul angajatului", type: "EMPLOYEE_MANUAL" },
+  // Sinteză
   { id: "full", label: "Raport complet (toate secțiunile)", type: "FULL" },
 ]
 
