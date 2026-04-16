@@ -763,20 +763,46 @@ function OrgOverviewSection({
       </h2>
       <div className="grid lg:grid-cols-2 gap-4">
         {/* Organigramă — Departament → Locație */}
-        {org && (
+        {org && (() => {
+          // Detect dacă „departamentele" sunt de fapt locații (pattern repetitiv:
+          // ex: „Magazin X", „Magazin Y" — același prefix). Atunci propunem grupare.
+          const allLocations = new Set<string>(org.departments.flatMap(d => d.locations.map(l => l.city)))
+          const looksLikeLocations = (() => {
+            if (org.departments.length < 3) return false
+            const firstWords = org.departments.map(d => d.name.split(/[\s—-]/)[0].toLowerCase())
+            const counts = new Map<string, number>()
+            for (const w of firstWords) counts.set(w, (counts.get(w) ?? 0) + 1)
+            const maxRepeat = Math.max(...Array.from(counts.values()))
+            return maxRepeat >= org.departments.length * 0.5
+          })()
+          const headerLabel = looksLikeLocations
+            ? `${fmt(org.departments.length)} înregistrări · ${fmt(org.totalEmployees)} angajați`
+            : `${fmt(org.departments.length)} departamente · ${fmt(allLocations.size)} locații · ${fmt(org.totalEmployees)} angajați`
+
+          return (
           <div className="bg-surface rounded-xl border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-semibold text-slate-900">Organigramă</p>
-              <span className="text-[10px] text-slate-400">
-                {fmt(org.departments.length)} departamente · {fmt(org.totalEmployees)} angajați
-              </span>
+              <span className="text-[10px] text-slate-400">{headerLabel}</span>
             </div>
-            <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4">
+            <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1">
               <p className="text-[10px] text-amber-800 leading-snug">
-                <strong>Locația</strong> = punct de lucru juridic distinct (sediu,
-                hală producție, magazin, depozit). Verificați gruparea — se citește
-                automat din câmpul „localitate" din statul de salarii.
+                <strong>Departamentele</strong> sunt entități organizaționale
+                (Vânzări, Producție, Financiar, Administrativ etc.).{" "}
+                <strong>Locațiile</strong> sunt puncte de lucru fizice — pot fi
+                sau nu puncte de lucru juridice cu CUI distinct.
               </p>
+              <p className="text-[10px] text-amber-800 leading-snug">
+                Dacă o locație nu are CUI propriu, aparține de un departament
+                (ex: cele 15 magazine aparțin departamentului „Vânzări").
+              </p>
+              {looksLikeLocations && (
+                <p className="text-[10px] text-coral-dark leading-snug pt-1 border-t border-amber-200">
+                  ⚠ Pare că aceste înregistrări sunt locații (același prefix repetat)
+                  — recomandat să le grupați sub un departament real în statul de
+                  salarii.
+                </p>
+              )}
             </div>
 
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
@@ -807,7 +833,8 @@ function OrgOverviewSection({
               })}
             </div>
           </div>
-        )}
+          )
+        })()}
 
         {/* Decalaj salarial pe categorii de muncitori */}
         <div className="bg-surface rounded-xl border border-border p-5">
