@@ -21,6 +21,7 @@ const INPUT_LABELS: Record<string, string> = {
   jobs: "Fișe de post",
   jobs_complete: "Fișe de post complete",
   payroll: "Stat de salarii",
+  internal_docs: "Documente interne companie",
 }
 
 /* ── Servicii — ce poate accesa cu datele respective ──────────────── */
@@ -63,12 +64,13 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     ],
   },
   {
-    name: "Recrutare și perioadă de inducție",
+    name: "Recrutare, angajare, perioadă de inducție",
     color: "sky",
     services: [
       { id: "recruit-design", label: "Proiectarea procesului de recrutare", href: "/recruitment/design", requiredInputs: ["company_identity", "jobs"], color: "sky", creditCost: "credite/proiect" },
       { id: "recruit-manage", label: "Gestionarea procesului de recrutare", href: "/recruitment", requiredInputs: ["jobs"], color: "sky", creditCost: "credite/candidat" },
-      { id: "induction-manual", label: "Manualul noului angajat", href: "/recruitment/induction", requiredInputs: ["jobs_complete", "company_identity"], color: "sky", creditCost: "credite/manual" },
+      { id: "pre-hire-docs", label: "Documente pre-angajare (listă scurtă, formular informare condiții, ofertă angajare, documente interne companie — Fișa post, Regulament de ordine interioară, Contract colectiv de muncă, Cod etic etc.)", href: "/recruitment/documents", requiredInputs: ["jobs_complete", "company_identity", "internal_docs"], color: "sky", creditCost: "credite/candidat" },
+      { id: "induction-docs", label: "Documente perioadă de inducție — Manualul noului angajat", href: "/recruitment/induction", requiredInputs: ["jobs_complete", "company_identity"], color: "sky", creditCost: "credite/manual" },
     ],
   },
   {
@@ -120,10 +122,11 @@ const INPUT_LIBRARY: InputDef[] = [
   { id: "payroll", group: "B", label: "Stat de funcții", weight: 3, href: "/compensation/packages" },
   { id: "jobs", group: "B", label: "Fișe de post (atribuții, cerințe, responsabilități)", weight: 3, href: "/jobs" },
   { id: "demographics", group: "B", label: "Date demografice angajați (gen, vârstă, vechime)", weight: 3, href: "/employees", comingSoon: true },
-  // C. Sisteme operaționale (3 × pondere 2)
+  // C. Sisteme operaționale (4 × pondere 2)
   { id: "kpis", group: "C", label: "Obiective și indicatori de performanță (per post)", weight: 2, href: "/performance", comingSoon: true },
   { id: "salary-packages-input", group: "C", label: "Pachete salariale extinse (compensații + beneficii non-monetare)", weight: 2, href: "/compensation/packages" },
   { id: "evaluation-committee", group: "C", label: "Comitet de evaluare (membri + roluri)", weight: 2, href: "/sessions", comingSoon: true },
+  { id: "internal_docs", group: "C", label: "Documente interne companie (Regulament intern, Contract colectiv, Cod etic, politici)", weight: 2, href: "/company/documents", comingSoon: true },
   // D. Opționale strategice (3 × pondere 1)
   { id: "aspirations", group: "D", label: "Aspirații profesionale individuale (chestionar angajați)", weight: 1, href: "/hr-development", comingSoon: true },
   { id: "training-plan", group: "D", label: "Plan și buget formare", weight: 1, href: "/training", comingSoon: true },
