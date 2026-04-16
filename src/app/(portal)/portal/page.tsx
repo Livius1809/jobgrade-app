@@ -93,7 +93,7 @@ const REPORT_LIBRARY: Array<{
   type: "HIERARCHY" | "SALARY_GRADES" | "PAY_GAP" | "JOINT" | "BUDGET" | "KPI" | "FULL"
 }> = [
   { id: "hierarchy", label: "Raport ierarhizare posturi", type: "HIERARCHY" },
-  { id: "salary-grades", label: "Raport structură salarială (Pitariu)", type: "SALARY_GRADES" },
+  { id: "salary-grades", label: "Raport structură salarială", type: "SALARY_GRADES" },
   { id: "pay-gap", label: "Raport decalaj salarial (UE 2023/970)", type: "PAY_GAP" },
   { id: "joint", label: "Raport evaluare comună (Art. 10)", type: "JOINT" },
   { id: "budget", label: "Raport impact bugetar", type: "BUDGET" },
