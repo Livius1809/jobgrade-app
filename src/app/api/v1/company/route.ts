@@ -15,6 +15,10 @@ const schema = z.object({
   regCom: z.string().optional(),
   address: z.string().optional(),
   county: z.string().optional(),
+  caenCode: z.string().optional(),
+  caenName: z.string().optional(),
+  isVATPayer: z.boolean().optional(),
+  anafSyncedAt: z.string().datetime().optional(),
 })
 
 export async function PUT(req: NextRequest) {
@@ -36,33 +40,27 @@ export async function PUT(req: NextRequest) {
         })
       }
 
+      const sharedFields = {
+        website: data.website || null,
+        description: data.description || null,
+        mission: data.mission || null,
+        vision: data.vision || null,
+        industry: data.industry || null,
+        size: data.size || null,
+        cui: data.cui || null,
+        regCom: data.regCom || null,
+        address: data.address || null,
+        county: data.county || null,
+        caenCode: data.caenCode || null,
+        caenName: data.caenName || null,
+        isVATPayer: data.isVATPayer ?? null,
+        anafSyncedAt: data.anafSyncedAt ? new Date(data.anafSyncedAt) : null,
+      }
+
       await tx.companyProfile.upsert({
         where: { tenantId },
-        update: {
-          website: data.website || null,
-          description: data.description || null,
-          mission: data.mission || null,
-          vision: data.vision || null,
-          industry: data.industry || null,
-          size: data.size || null,
-          cui: data.cui || null,
-          regCom: data.regCom || null,
-          address: data.address || null,
-          county: data.county || null,
-        },
-        create: {
-          tenantId,
-          website: data.website || null,
-          description: data.description || null,
-          mission: data.mission || null,
-          vision: data.vision || null,
-          industry: data.industry || null,
-          size: data.size || null,
-          cui: data.cui || null,
-          regCom: data.regCom || null,
-          address: data.address || null,
-          county: data.county || null,
-        },
+        update: sharedFields,
+        create: { tenantId, ...sharedFields },
       })
     })
 

@@ -141,8 +141,12 @@ model CompanyProfile {
   regCom      String?
   address     String?
   county      String?
+  caenCode    String?
+  caenName    String?
+  isVATPayer  Boolean?
   logoUrl     String?
   extractedAt DateTime?
+  anafSyncedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

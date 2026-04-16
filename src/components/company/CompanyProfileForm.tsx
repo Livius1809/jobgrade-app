@@ -18,6 +18,10 @@ const schema = z.object({
   regCom: z.string().optional(),
   address: z.string().optional(),
   county: z.string().optional(),
+  caenCode: z.string().optional(),
+  caenName: z.string().optional(),
+  isVATPayer: z.boolean().optional(),
+  anafSyncedAt: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -33,6 +37,9 @@ interface ProfileData {
   regCom: string
   address: string
   county: string
+  caenCode?: string
+  caenName?: string
+  isVATPayer?: boolean | null
 }
 
 interface CompanyProfileFormProps {
@@ -74,6 +81,14 @@ export default function CompanyProfileForm({
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
   const [extracting, setExtracting] = useState(false)
+  const [anafLoading, setAnafLoading] = useState(false)
+  const [anafInfo, setAnafInfo] = useState<{
+    name: string
+    caenName: string | null
+    industry: string | null
+    isVATPayer: boolean
+    syncedAt: Date
+  } | null>(null)
 
   const {
     register,
@@ -86,10 +101,60 @@ export default function CompanyProfileForm({
     defaultValues: {
       tenantName,
       ...profile,
+      isVATPayer: profile?.isVATPayer ?? undefined,
     },
   })
 
   const website = watch("website")
+  const cui = watch("cui")
+
+  async function handleAnafLookup() {
+    if (!cui || !cui.trim()) {
+      setError("Completează CUI-ul înainte de a căuta la ANAF.")
+      return
+    }
+    setAnafLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const cleanCui = cui.replace(/\D/g, "")
+      const res = await fetch(`/api/v1/anaf/lookup?cui=${cleanCui}`)
+      const json = await res.json()
+
+      if (!res.ok) {
+        setError(json.message || "Nu am găsit firma la ANAF.")
+        setAnafLoading(false)
+        return
+      }
+
+      // Completare automată câmpuri
+      setValue("tenantName", json.name)
+      if (json.registrationNumber) setValue("regCom", json.registrationNumber)
+      if (json.address) setValue("address", json.address)
+      if (json.county) setValue("county", json.county)
+      if (json.caen?.code) setValue("caenCode", json.caen.code)
+      if (json.caen?.name) setValue("caenName", json.caen.name)
+      if (json.caen?.industry) setValue("industry", json.caen.industry)
+      setValue("isVATPayer", json.isVATPayer)
+      setValue("anafSyncedAt", new Date().toISOString())
+
+      setAnafInfo({
+        name: json.name,
+        caenName: json.caen?.name ?? null,
+        industry: json.caen?.industry ?? null,
+        isVATPayer: json.isVATPayer,
+        syncedAt: new Date(),
+      })
+      setSuccess(
+        `Datele firmei ${json.name} au fost completate automat din ANAF.`
+      )
+    } catch {
+      setError("Eroare la conectarea cu ANAF. Încearcă din nou.")
+    } finally {
+      setAnafLoading(false)
+    }
+  }
 
   async function handleExtract() {
     if (!website) {
@@ -235,12 +300,34 @@ export default function CompanyProfileForm({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               CUI
             </label>
-            <input
-              {...register("cui")}
-              type="text"
-              placeholder="ex: RO12345678"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex gap-2">
+              <input
+                {...register("cui")}
+                type="text"
+                placeholder="ex: 12345678 sau RO12345678"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAnafLookup}
+                disabled={anafLoading || !cui}
+                title="Completează automat din ANAF"
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+              >
+                {anafLoading ? (
+                  <span className="text-xs">Se caută...</span>
+                ) : (
+                  <>
+                    <span>🇷🇴</span>
+                    <span className="text-xs">ANAF</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Apasă <strong>ANAF</strong> și completăm automat denumire,
+              adresă, COD CAEN și statut TVA.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -254,6 +341,46 @@ export default function CompanyProfileForm({
             />
           </div>
         </div>
+
+        {anafInfo && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm">
+            <div className="flex items-start gap-2 mb-2">
+              <span className="text-lg">✓</span>
+              <div className="flex-1">
+                <p className="font-semibold text-emerald-900">
+                  Profil completat din ANAF
+                </p>
+                <p className="text-emerald-800 mt-0.5">
+                  {anafInfo.name}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+              {anafInfo.caenName && (
+                <div>
+                  <span className="text-emerald-700">Activitate:</span>{" "}
+                  <span className="text-emerald-900 font-medium">
+                    {anafInfo.caenName}
+                  </span>
+                </div>
+              )}
+              {anafInfo.industry && (
+                <div>
+                  <span className="text-emerald-700">Industrie:</span>{" "}
+                  <span className="text-emerald-900 font-medium">
+                    {anafInfo.industry}
+                  </span>
+                </div>
+              )}
+              <div>
+                <span className="text-emerald-700">TVA:</span>{" "}
+                <span className="text-emerald-900 font-medium">
+                  {anafInfo.isVATPayer ? "plătitor" : "neplătitor"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>
