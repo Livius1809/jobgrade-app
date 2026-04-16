@@ -168,8 +168,8 @@ export default function PrivacyPage() {
             <tbody className="divide-y divide-border/40">
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cont și autentificare</td><td className="px-3 py-2 text-text-warm">Ca să accesați platforma</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Evaluare posturi</td><td className="px-3 py-2 text-text-warm">Serviciul principal</td></tr>
-              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Analiză structură salarială</td><td className="px-3 py-2 text-text-warm">Calcul grade și disparități</td></tr>
-              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Pay gap UE 2023/970</td><td className="px-3 py-2 text-text-warm">Obligație legală</td></tr>
+              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Analiză structură salarială</td><td className="px-3 py-2 text-text-warm">Calcul clase, trepte și disparități</td></tr>
+              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Decalaj salarial UE 2023/970</td><td className="px-3 py-2 text-text-warm">Obligație legală</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cereri Art. 7</td><td className="px-3 py-2 text-text-warm">Drept legal angajați</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Analize AI</td><td className="px-3 py-2 text-text-warm">Generare conținut, KPI</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Notificări</td><td className="px-3 py-2 text-text-warm">Evenimente importante</td></tr>
@@ -217,7 +217,7 @@ export default function PrivacyPage() {
           <p className="text-sm font-semibold text-coral-dark mb-2">Ce nu facem</p>
           <ul className="text-sm text-text-warm space-y-1.5">
             <li>Nu vindem date personale către terți</li>
-            <li>Nu antrenăm modele AI pe datele clienților</li>
+            <li>Nu antrenăm modele AI cu datele clienților</li>
             <li>Nu partajăm date pentru marketing terț</li>
           </ul>
         </div>
@@ -253,7 +253,7 @@ export default function PrivacyPage() {
             { t: "Dreptul la restricționare", d: "Limitați prelucrarea în anumite cazuri (Art. 18)" },
             { t: "Dreptul la portabilitate", d: "Primiți datele într-un format structurat, lizibil mașinii (Art. 20)" },
             { t: "Dreptul la opoziție", d: "Vă opuneți prelucrării bazate pe interes legitim (Art. 21)" },
-            { t: "Drept Art. 22", d: "Nu fiți supus unei decizii bazate exclusiv pe prelucrare automată" },
+            { t: "Dreptul Art. 22", d: "De a nu fi supus unei decizii bazate exclusiv pe prelucrare automată" },
             { t: "Dreptul la plângere ANSPDCP", d: "Sesizați autoritatea de supraveghere (www.dataprotection.ro)" },
           ].map((r) => (
             <div key={r.t} className="rounded-lg border border-border/60 bg-surface px-4 py-3">
