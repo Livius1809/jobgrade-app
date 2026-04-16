@@ -239,7 +239,7 @@ export default function AbonamentePage() {
           <p className="text-xs">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
           <div className="flex justify-center gap-6 text-xs">
             <Link href="/privacy" className="hover:text-white">Confidențialitate</Link>
-            <Link href="/terms" className="hover:text-white">Termeni</Link>
+            <Link href="/termeni" className="hover:text-white">Termeni și condiții</Link>
             <Link href="/transparenta-ai" className="hover:text-white">Transparența AI</Link>
           </div>
         </div>

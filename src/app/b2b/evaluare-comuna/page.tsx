@@ -212,7 +212,7 @@ export default function EvaluareComunaLanding() {
           <p className="text-sm">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
           <div className="flex justify-center gap-6 text-xs">
             <Link href="/privacy" className="hover:text-white">Politica de confidențialitate</Link>
-            <Link href="/terms" className="hover:text-white">Termeni și condiții</Link>
+            <Link href="/termeni" className="hover:text-white">Termeni și condiții</Link>
             <Link href="/cookies" className="hover:text-white">Cookie-uri</Link>
           </div>
         </div>

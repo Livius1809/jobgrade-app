@@ -126,37 +126,20 @@ export default function TransparentaAIPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 header-glass">
-        <div
-          className="flex items-center justify-between px-6 h-16"
-          style={{ maxWidth: "56rem", margin: "0 auto" }}
-        >
-          <Link href="/" className="flex items-center gap-2.5 group">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center">
             <Image
               src="/logo.svg"
               alt="JobGrade"
-              width={32}
-              height={32}
-              className="transition-transform duration-500 group-hover:rotate-45"
+              width={160}
+              height={40}
+              className="h-9 w-auto"
             />
-            <span className="text-lg font-semibold text-indigo-dark">
-              JobGrade
-            </span>
           </Link>
-
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-sm font-medium text-text-warm hover:text-indigo transition-colors duration-200"
-            >
-              Acasa
-            </Link>
-            <Link
-              href="/login"
-              className="text-sm font-medium text-text-warm hover:text-coral transition-colors duration-200"
-            >
-              Intra in platforma
-            </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="/" className="text-slate-600 hover:text-indigo-600">Acasă</Link>
+            <Link href="/login" className="text-slate-600 hover:text-indigo-600">Intră în platformă</Link>
           </nav>
         </div>
       </header>
@@ -713,22 +696,18 @@ export default function TransparentaAIPage() {
       </main>
 
       {/* ── Footer ─────────────────────────────────────────────── */}
-      <footer className="border-t border-border/50 py-6 px-6 mt-8">
-        <div
-          className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary/50"
-          style={{ maxWidth: "56rem", margin: "0 auto" }}
-        >
-          <span>JobGrade &middot; Psihobusiness Consulting SRL</span>
-          <div className="flex items-center gap-3">
-            <span className="border border-border/50 px-2 py-0.5 rounded text-text-micro">
-              GDPR
-            </span>
-            <span className="border border-border/50 px-2 py-0.5 rounded text-text-micro">
-              AI Act UE
-            </span>
-            <span className="border border-border/50 px-2 py-0.5 rounded text-text-micro">
-              Directiva 2023/970
-            </span>
+      <footer className="bg-slate-900 text-slate-400 py-12 mt-16">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+          <p className="text-sm">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs">
+            <Link href="/termeni" className="hover:text-white transition-colors">Termeni și condiții</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Politica de confidențialitate</Link>
+            <Link href="/cookies" className="hover:text-white transition-colors">Cookie-uri</Link>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <span className="border border-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-500">GDPR</span>
+            <span className="border border-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-500">AI Act UE</span>
+            <span className="border border-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-500">Directiva 2023/970</span>
           </div>
         </div>
       </footer>

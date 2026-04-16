@@ -45,15 +45,14 @@ const STORAGE = [
 export default function CookiesPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 header-glass">
-        <div className="flex items-center justify-between px-6 h-16" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image src="/logo.svg" alt="JobGrade" width={32} height={32} className="transition-transform duration-500 group-hover:rotate-45" />
-            <span className="text-lg font-semibold text-indigo-dark">JobGrade</span>
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm font-medium text-text-warm hover:text-indigo transition-colors">Acasă</Link>
-            <Link href="/login" className="text-sm font-medium text-text-warm hover:text-coral transition-colors">Intră în platformă</Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="/" className="text-slate-600 hover:text-indigo-600">Acasă</Link>
+            <Link href="/login" className="text-slate-600 hover:text-indigo-600">Intră în platformă</Link>
           </nav>
         </div>
       </header>
@@ -197,13 +196,13 @@ export default function CookiesPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border/50 py-6 px-6 mt-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary/50" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <span>JobGrade · Psihobusiness Consulting SRL</span>
-          <div className="flex items-center gap-3">
-            <Link href="/termeni" className="hover:text-indigo">Termeni</Link>
-            <Link href="/privacy" className="hover:text-indigo">Confidențialitate</Link>
-            <Link href="/transparenta-ai" className="hover:text-indigo">Transparență AI</Link>
+      <footer className="bg-slate-900 text-slate-400 py-12 mt-16">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-3">
+          <p className="text-sm">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs">
+            <Link href="/termeni" className="hover:text-white transition-colors">Termeni și condiții</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Politica de confidențialitate</Link>
+            <Link href="/transparenta-ai" className="hover:text-white transition-colors">Transparență AI</Link>
           </div>
         </div>
       </footer>

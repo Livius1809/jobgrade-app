@@ -89,7 +89,7 @@ export default async function AppLayout({
         >
           <span>JobGrade · Psihobusiness Consulting SRL</span>
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            <Link href="/termeni" className="hover:text-indigo transition-colors">Termeni</Link>
+            <Link href="/termeni" className="hover:text-indigo transition-colors">Termeni și condiții</Link>
             <span className="text-text-secondary/30">·</span>
             <Link href="/privacy" className="hover:text-indigo transition-colors">Confidențialitate</Link>
             <span className="text-text-secondary/30">·</span>
