@@ -114,7 +114,7 @@ export const NARRATIVE_MESSAGES: NarrativeMessage[] = [
     id: "fallback-portal",
     match: (c) => /^\/portal\/?$/.test(c.pathname),
     title: "Bun venit pe panoul JobGrade",
-    body: "Aici ai vederea de ansamblu: snapshotul organizației sus, datele tale și serviciile disponibile mai jos. Pe măsură ce adaugi inputuri noi, indicele de relevanță crește și mai multe servicii se activează. Apasă din nou „🌟 Ghid" pe alte pagini pentru explicații contextuale.",
+    body: `Aici ai vederea de ansamblu: snapshotul organizației sus, datele tale și serviciile disponibile mai jos. Pe măsură ce adaugi inputuri noi, indicele de relevanță crește și mai multe servicii se activează. Apasă din nou „🌟 Ghid" pe alte pagini pentru explicații contextuale.`,
     priority: 1,
   },
   {
