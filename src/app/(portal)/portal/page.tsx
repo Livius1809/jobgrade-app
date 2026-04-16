@@ -132,7 +132,7 @@ const INPUT_LIBRARY: InputDef[] = [
   {
     id: "internal_docs",
     group: "C",
-    label: "Documente interne companie (e suficient unul)",
+    label: "Documente interne companie (documente existente)",
     weight: 2,
     href: "/company/documents",
     comingSoon: true,
