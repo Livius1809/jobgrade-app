@@ -385,7 +385,7 @@ function OrgSnapshotBar({ data }: { data: Awaited<ReturnType<typeof getPortalDat
   const hardKpis = [
     {
       label: "Echitate salarială",
-      sub: "pay gap pe gen",
+      sub: "decalaj salarial pe gen",
       value: data.payGapPercent !== null ? `${data.payGapPercent}%` : "—",
       tone: data.payGapPercent === null ? "muted" :
             Math.abs(data.payGapPercent) < 5 ? "success" :
@@ -440,10 +440,10 @@ function OrgSnapshotBar({ data }: { data: Awaited<ReturnType<typeof getPortalDat
     },
     {
       label: "Conformitate UE 2023/970",
-      sub: "raport pay gap recent",
+      sub: "raport decalaj salarial recent",
       value: data.payGapLastAt && (Date.now() - new Date(data.payGapLastAt).getTime()) < 365 * 86_400_000 ? "✓" : "⚠",
       tone: data.payGapLastAt && (Date.now() - new Date(data.payGapLastAt).getTime()) < 365 * 86_400_000 ? "success" : "warn",
-      hint: data.payGapLastAt ? null : "Generează raportul de pay gap",
+      hint: data.payGapLastAt ? null : "Generează raportul de decalaj salarial",
     },
   ]
 
