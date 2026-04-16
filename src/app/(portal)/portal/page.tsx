@@ -45,17 +45,19 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Profil sectorial (instant cu CUI)",
     color: "emerald",
     services: [
-      { id: "sector-overview", label: "Profil sectorial — repere salariale pe industrie", href: "/sector-profile", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
-      { id: "sector-paygap", label: "Top pay gaps tipice în sector", href: "/sector-profile#paygap", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
-      { id: "mvv-draft", label: "MVV draft auto-generat din obiectul de activitate", href: "/company#mvv", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
+      { id: "sector-overview", label: "Profil sectorial — repere salariale în industrie", href: "/sector-profile", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
+      { id: "sector-paygap", label: "Top 5 decalaje salariale specifice sectorului de activitate", href: "/sector-profile#paygap", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
+      { id: "mvv-draft", label: "Misiune, Viziune, Valori (MVV) — șablon editabil auto-completat", href: "/company#mvv", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
     ],
   },
   {
     name: "Evaluare",
     color: "indigo",
     services: [
-      { id: "je", label: "Evaluarea posturilor", href: "/sessions", requiredInputs: ["jobs"], color: "indigo", creditCost: "credite/poziție" },
-      { id: "salary", label: "Pachete salariale + benchmark", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
+      { id: "je", label: "Evaluarea și ierarhizarea posturilor de lucru", href: "/sessions", requiredInputs: ["jobs"], color: "indigo", creditCost: "credite/poziție" },
+      { id: "salary-grades", label: "Structuri salariale (clase și trepte)", href: "/sessions", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
+      { id: "salary-packages", label: "Pachete salariale (compensații, beneficii, scenarii bugetare)", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
+      { id: "benchmark", label: "Benchmark salarial", href: "/compensation/benchmark", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
     ],
   },
   {
@@ -78,26 +80,38 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
     ],
   },
-  {
-    name: "Instrumente",
-    color: "slate",
-    services: [
-      { id: "reports", label: "Rapoarte generate", href: "/reports", requiredInputs: [], color: "slate" },
-      { id: "settings", label: "Setări organizație", href: "/settings", requiredInputs: [], color: "slate" },
-    ],
-  },
+]
+
+/* ── Jurnal rapoarte — lista completă a rapoartelor produse de platformă ── */
+const REPORT_LIBRARY: Array<{
+  id: string
+  label: string
+  type: "HIERARCHY" | "SALARY_GRADES" | "PAY_GAP" | "JOINT" | "BUDGET" | "KPI" | "FULL"
+}> = [
+  { id: "hierarchy", label: "Raport ierarhizare posturi", type: "HIERARCHY" },
+  { id: "salary-grades", label: "Raport structură salarială (Pitariu)", type: "SALARY_GRADES" },
+  { id: "pay-gap", label: "Raport decalaj salarial (UE 2023/970)", type: "PAY_GAP" },
+  { id: "joint", label: "Raport evaluare comună (Art. 10)", type: "JOINT" },
+  { id: "budget", label: "Raport impact bugetar", type: "BUDGET" },
+  { id: "kpi", label: "Raport KPI organizație", type: "KPI" },
+  { id: "full", label: "Raport complet (toate secțiunile)", type: "FULL" },
 ]
 
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount] = await Promise.all([
+  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId } }).catch(() => null),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
     (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0) as Promise<number>,
     prisma.job.count({ where: { tenantId, status: "ACTIVE", responsibilities: { not: null } } }).catch(() => 0),
+    prisma.report.findMany({
+      where: { tenantId },
+      select: { type: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => [] as Array<{ type: string; createdAt: Date }>),
   ])
 
   const providedInputs = new Set<string>()
@@ -112,6 +126,18 @@ async function getPortalData(tenantId: string) {
   const jobsPercent = jobCount === 0 ? 0 : completeJobCount > 0 ? 100 : 60
   const payrollPercent = payrollCount > 0 ? 100 : 0
 
+  // Agregare jurnal rapoarte: count + ultima dată per type
+  const reportsByType = new Map<string, { count: number; lastAt: Date }>()
+  for (const r of reports) {
+    const prev = reportsByType.get(r.type)
+    if (!prev) {
+      reportsByType.set(r.type, { count: 1, lastAt: r.createdAt })
+    } else {
+      prev.count += 1
+      // reports e ordered desc, deci primul lastAt e cel corect
+    }
+  }
+
   return {
     credits,
     companyName: tenant?.name ?? "Organizația ta",
@@ -122,6 +148,7 @@ async function getPortalData(tenantId: string) {
     jobsPercent,
     payrollPercent,
     providedInputs,
+    reportsByType,
   }
 }
 
@@ -361,16 +388,59 @@ export default async function PortalPage() {
         </div>
       </section>
 
-      {/* ══════════ RAPOARTE GENERATE ══════════ */}
+      {/* ══════════ JURNAL RAPOARTE GENERATE ══════════ */}
       <section>
         <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
-          Rapoarte generate
+          Jurnal rapoarte generate
         </h2>
-        <div className="bg-surface rounded-xl border border-border p-5">
-          <p className="text-sm text-slate-400 text-center py-4">
-            Rapoartele vor apărea aici pe măsură ce rulezi serviciile disponibile.
-          </p>
-          <div className="text-center">
+        <div className="rounded-xl border border-border bg-slate-50/50 border-l-4 border-l-slate-300 p-5">
+          <div className="space-y-2">
+            {REPORT_LIBRARY.map((r) => {
+              const stats = data.reportsByType.get(r.type)
+              const generated = !!stats && stats.count > 0
+              const lastAt = stats?.lastAt
+                ? new Date(stats.lastAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" })
+                : null
+
+              return (
+                <div key={r.id} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      generated ? "bg-emerald-500" : "bg-slate-300"
+                    }`} />
+                    {generated ? (
+                      <Link
+                        href={`/reports?type=${r.type}`}
+                        className="text-sm text-slate-700 hover:underline font-medium"
+                      >
+                        {r.label}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-slate-400">{r.label}</span>
+                    )}
+                  </div>
+                  {generated ? (
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-[10px] text-slate-500">
+                        {stats!.count}× generate · ultima {lastAt}
+                      </span>
+                      <Link
+                        href={`/reports?type=${r.type}`}
+                        className="text-[10px] text-indigo-500 hover:underline"
+                      >
+                        Vezi jurnal →
+                      </Link>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 flex-shrink-0 italic">
+                      încă negenerat
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-200 text-right">
             <Link href="/reports" className="text-xs text-indigo-500 hover:underline">
               Toate rapoartele →
             </Link>
