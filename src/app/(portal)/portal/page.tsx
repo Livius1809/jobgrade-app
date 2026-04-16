@@ -367,6 +367,117 @@ async function getPortalData(tenantId: string) {
   }
 }
 
+/* ── Calcul „Următorul pas recomandat" ──────────────────────────────────────
+   Pentru fiecare input necompletat, simulăm activarea și numărăm câte servicii
+   noi devin disponibile. Sugerăm inputul cu impactul cel mai mare.
+*/
+function computeNextBestStep(
+  inputStatuses: Map<string, InputStatus>,
+  providedInputs: Set<string>
+): { input: InputDef; unlocked: Service[] } | null {
+  let bestInput: InputDef | null = null
+  let bestUnlocked: Service[] = []
+
+  for (const input of INPUT_LIBRARY) {
+    const status = inputStatuses.get(input.id)
+    if (status === "COMPLETE") continue
+
+    // Simulez că acest input ar deveni provided
+    const simulated = new Set(providedInputs)
+    simulated.add(input.id)
+
+    // Număr serviciile care nu erau disponibile dar devin disponibile
+    const newlyAvailable: Service[] = []
+    for (const cat of SERVICE_CATEGORIES) {
+      for (const svc of cat.services) {
+        const wasAvail = svc.requiredInputs.every(r => providedInputs.has(r))
+        const willBeAvail = svc.requiredInputs.every(r => simulated.has(r))
+        if (!wasAvail && willBeAvail) newlyAvailable.push(svc)
+      }
+    }
+
+    if (newlyAvailable.length > bestUnlocked.length) {
+      bestUnlocked = newlyAvailable
+      bestInput = input
+    }
+  }
+
+  if (!bestInput || bestUnlocked.length === 0) return null
+  return { input: bestInput, unlocked: bestUnlocked }
+}
+
+function NextBestStepCard({
+  step,
+}: {
+  step: ReturnType<typeof computeNextBestStep>
+}) {
+  if (!step) {
+    return (
+      <section className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">🎉</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-emerald-900 mb-1">
+              Toate datele esențiale sunt completate
+            </p>
+            <p className="text-xs text-emerald-700">
+              Aveți acces la majoritatea serviciilor. Rulați rapoarte sau
+              adăugați date opționale pentru a debloca KPI-urile soft.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/60 p-5">
+      <div className="flex items-start gap-3">
+        <span className="text-2xl">⭐</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">
+            Următorul pas recomandat
+          </p>
+          <p className="text-sm text-slate-800 mb-3 leading-relaxed">
+            Adăugați{" "}
+            <strong className="text-amber-900">
+              {step.input.label.replace(/\s*\([^)]*\)\s*$/, "")}
+            </strong>{" "}
+            și deblocați instant <strong>{step.unlocked.length}</strong>{" "}
+            {step.unlocked.length === 1 ? "serviciu nou" : "servicii noi"}:
+          </p>
+          <ul className="text-xs text-slate-700 mb-4 space-y-0.5">
+            {step.unlocked.slice(0, 5).map((svc) => (
+              <li key={svc.id} className="flex items-start gap-1.5">
+                <span className="text-amber-500 mt-0.5">→</span>
+                <span>{svc.label.replace(/\s*\([^)]*\)\s*$/, "")}</span>
+              </li>
+            ))}
+            {step.unlocked.length > 5 && (
+              <li className="text-[10px] text-slate-500 italic ml-4">
+                ... și încă {step.unlocked.length - 5}
+              </li>
+            )}
+          </ul>
+          {step.input.href && !step.input.comingSoon && (
+            <Link
+              href={step.input.href}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-md text-xs font-medium hover:bg-amber-700 transition-colors"
+            >
+              Adaugă acum →
+            </Link>
+          )}
+          {step.input.comingSoon && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 rounded-md text-xs font-medium">
+              În curând disponibil
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ── Snapshot organizație: KPI-uri „vii" pentru HR (administrator de cont) ──
    Combinație de KPI-uri HARD (din date directe) și SOFT (din rapoarte rulate).
    KPI-urile SOFT apar ca „—" cu hint la serviciul care le calculează —
@@ -491,6 +602,7 @@ export default async function PortalPage() {
   const session = await auth()
   const data = await getPortalData(session!.user.tenantId)
   const firstName = session!.user.name?.split(" ")[0] ?? ""
+  const nextStep = computeNextBestStep(data.inputStatuses, data.providedInputs)
 
   return (
     <div className="min-h-[calc(100vh-4rem)] space-y-10">
@@ -525,6 +637,9 @@ export default async function PortalPage() {
           </Link>
         </div>
       </div>
+
+      {/* ══════════ URMĂTORUL PAS RECOMANDAT ══════════ */}
+      <NextBestStepCard step={nextStep} />
 
       {/* ══════════ DATELE TALE — 2 coloane ══════════ */}
       <section>
