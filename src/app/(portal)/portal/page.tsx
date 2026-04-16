@@ -787,32 +787,24 @@ function OrgOverviewSection({
               <p className="text-sm font-semibold text-slate-900">Inventar posturi</p>
               <span className="text-[10px] text-slate-400">{headerLabel}</span>
             </div>
-            <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1">
+            <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1.5">
               <p className="text-[10px] text-amber-800 leading-snug">
-                Vedere preliminară din statul de funcții — gruparea pe departamente
-                și locații reflectă ce a fost încărcat, NU o organigramă reală
-                (lipsesc relațiile de subordonare, rolurile de coordonare,
-                top-ul ierarhic).
+                Imagine aproximativă construită pe baza datelor furnizate,
+                potrivit statului de funcții. Nu este o organigramă reală
+                deoarece lipsesc relațiile de subordonare, rolurile de
+                coordonare, nivelul ierarhic de vârf.
               </p>
-              <p className="text-[10px] text-amber-800 leading-snug">
-                <strong>Departamentele</strong> sunt entități organizaționale
-                (Vânzări, Producție etc.); <strong>locațiile</strong> sunt puncte
-                de lucru fizice (pot avea sau nu CUI propriu — dacă nu, aparțin
-                de un departament).
+              <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
+                💡 Organigrama reală este utilizată ca input pentru o parte
+                din serviciile oferite organizației, în ansamblu.
               </p>
               {looksLikeLocations && (
                 <p className="text-[10px] text-coral-dark leading-snug pt-1 border-t border-amber-200">
-                  ⚠ Pare că aceste înregistrări sunt locații (același prefix repetat)
-                  — recomandat să le grupați sub un departament real în statul de
-                  funcții.
+                  ⚠ Pare că aceste înregistrări sunt locații (același prefix
+                  repetat) — recomandat să le grupați sub un departament real
+                  în statul de funcții.
                 </p>
               )}
-              <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
-                💡 Pentru o <strong>organigramă reală</strong> (cu subordonări,
-                manageri, niveluri ierarhice precise) și pentru servicii precum
-                Diagnoză organizațională sau Dezvoltare resurse umane, va trebui
-                declarată separat — modul în pregătire.
-              </p>
             </div>
 
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
@@ -841,6 +833,15 @@ function OrgOverviewSection({
                   </div>
                 )
               })}
+            </div>
+
+            {/* Nota explicativă departamente vs locații */}
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <p className="text-[10px] text-slate-500 leading-snug italic">
+                Departamentele sunt entități funcționale ale organizației
+                (Vânzări, Producție etc.); locațiile sunt puncte de lucru
+                fizice care aparțin entităților funcționale ale companiei.
+              </p>
             </div>
           </div>
           )
