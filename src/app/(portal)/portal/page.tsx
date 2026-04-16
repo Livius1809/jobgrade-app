@@ -790,9 +790,12 @@ function OrgOverviewSection({
             <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1.5">
               <p className="text-[10px] text-amber-800 leading-snug">
                 Imagine aproximativă construită pe baza datelor furnizate,
-                potrivit statului de funcții. Nu este o organigramă reală
-                deoarece lipsesc relațiile de subordonare, rolurile de
-                coordonare, nivelul ierarhic de vârf.
+                potrivit statului de funcții.
+              </p>
+              <p className="text-[10px] text-amber-800 leading-snug">
+                Nu este o organigramă reală deoarece lipsesc relațiile de
+                subordonare, rolurile de coordonare, nivelul ierarhic de
+                vârf.
               </p>
               <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
                 💡 Organigrama reală este utilizată ca input pentru o parte
@@ -930,27 +933,41 @@ function OrgOverviewSection({
                     })}
                   </div>
 
-                  {/* Bloc decizie informată — acționabilitate */}
+                  {/* Bloc decizie informată — acționabilitate, conform Art. 9 UE 2023/970 */}
                   <div className="rounded-lg bg-indigo-50/60 border border-indigo-200 p-3 mb-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 mb-1.5">
                       🔍 Decizie informată
                     </p>
                     <p className="text-[11px] text-slate-700 leading-snug mb-2">
-                      Decalajul de gen pe o categorie nu indică automat
-                      discriminare. Verificați posibile cauze legitime înainte
-                      de a acționa:
+                      Conform Directivei UE 2023/970, <strong>toate decalajele
+                      ≥ 5%</strong> trebuie analizate și explicate. Pot fi
+                      justificabile (rămân) sau nu (trebuie eliminate prin
+                      măsuri de corecție).
+                    </p>
+                    <p className="text-[10px] text-slate-600 mb-1.5 font-medium">
+                      Posibile cauze de analizat pe fiecare categorie:
                     </p>
                     <ul className="text-[10px] text-slate-600 space-y-0.5 list-disc pl-4 mb-2">
                       <li>vechime medie diferită pe gen pentru aceeași poziție</li>
                       <li>calificări/certificări extra deținute</li>
                       <li>rezultate evaluare performanță anterioare</li>
                       <li>responsabilități adiționale neformalizate</li>
+                      <li>diferențe în pachetul total (variabil, beneficii)</li>
                     </ul>
-                    <p className="text-[10px] text-slate-700 leading-snug">
-                      Dacă diferența <strong>NU</strong> e justificabilă →
-                      plan de aliniere salarială. Dacă <strong>e</strong>{" "}
-                      justificabilă → documentați excepția pentru audit ITM /
-                      ANSPDCP.
+                    <p className="text-[10px] text-slate-700 leading-snug mb-2">
+                      <strong>Dacă diferența e justificabilă</strong> →
+                      documentare formală a cauzei pentru audit ITM / ANSPDCP.
+                    </p>
+                    <p className="text-[10px] text-slate-700 leading-snug mb-2">
+                      <strong>Dacă NU e justificabilă</strong> → plan de
+                      corecție cu mediere obligatorie a reprezentantului
+                      salariaților.
+                    </p>
+                    <p className="text-[10px] text-indigo-700 leading-snug pt-1.5 border-t border-indigo-200">
+                      JobGrade oferă: analiza cauzelor pe fiecare categorie,
+                      măsuri de corecție personalizate, gestionarea procesului
+                      de mediere cu reprezentantul salariaților, documente
+                      pentru audit.
                     </p>
                   </div>
                   {payGapByCategory.filter(c => Math.abs(c.diffPercent) >= 5).length > 5 && (
