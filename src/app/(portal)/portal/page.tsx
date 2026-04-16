@@ -813,7 +813,7 @@ function OrgOverviewSection({
                 const color = colors[i % colors.length]
                 return (
                   <div key={d.name} className="border border-slate-100 rounded-lg p-3 bg-white/60">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${color}`} />
                         <span className="text-sm font-medium text-slate-800 truncate">{d.name}</span>
@@ -822,15 +822,16 @@ function OrgOverviewSection({
                         {fmt(d.count)} angajați
                       </span>
                     </div>
-                    {/* Locațiile sub departament */}
-                    <div className="ml-4 space-y-0.5">
-                      {d.locations.map((loc) => (
-                        <div key={loc.city} className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-600">📍 {loc.city}</span>
-                          <span className="text-slate-400">{loc.count}</span>
-                        </div>
+                    {/* Locațiile inline (compact, fără simbol geografic care ar sugera precizie) */}
+                    <p className="text-[11px] text-slate-500 leading-relaxed pl-4">
+                      {d.locations.map((loc, idx) => (
+                        <span key={loc.city}>
+                          {idx > 0 && <span className="text-slate-300 mx-1.5">·</span>}
+                          <span className="text-slate-600">{loc.city}</span>
+                          <span className="text-slate-400 ml-1">({loc.count})</span>
+                        </span>
                       ))}
-                    </div>
+                    </p>
                   </div>
                 )
               })}
