@@ -312,15 +312,26 @@ export default async function PortalPage() {
                   <p className="text-sm font-medium text-slate-900">Fișe de post</p>
                   <span className="text-xs text-slate-400">{data.jobCount} fișe încărcate</span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${data.jobsPercent === 100 ? "bg-emerald-500" : data.jobsPercent > 0 ? "bg-amber-400" : "bg-slate-200"}`}
                     style={{ width: `${data.jobsPercent}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-slate-400 mb-2">
                   {data.jobsPercent === 100 ? "Complete — gata de procesare" : data.jobsPercent > 0 ? "Încărcate — necesită completare atribuții" : "Nicio fișă încărcată"}
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/jobs/new" className="text-[11px] px-2.5 py-1 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-colors">
+                    + Manual
+                  </Link>
+                  <Link href="/jobs/import" className="text-[11px] px-2.5 py-1 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-colors">
+                    📊 Import Excel
+                  </Link>
+                  <Link href="/jobs/new?mode=ai" className="text-[11px] px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 text-purple-700 transition-colors">
+                    ✨ AI
+                  </Link>
+                </div>
               </div>
 
               {/* Stat de salarii */}
@@ -329,15 +340,23 @@ export default async function PortalPage() {
                   <p className="text-sm font-medium text-slate-900">Stat de salarii</p>
                   <span className="text-xs text-slate-400">{data.payrollCount} intrări importate</span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${data.payrollPercent === 100 ? "bg-emerald-500" : "bg-slate-200"}`}
                     style={{ width: `${data.payrollPercent}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-slate-400 mb-2">
                   {data.payrollPercent === 100 ? "Importat — gata de procesare" : "Niciun stat importat"}
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/pay-gap/employees" className="text-[11px] px-2.5 py-1 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-colors">
+                    + Manual
+                  </Link>
+                  <Link href="/pay-gap/employees#import" className="text-[11px] px-2.5 py-1 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-colors">
+                    📊 Import Excel
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -369,8 +388,13 @@ export default async function PortalPage() {
                   style={{ width: `${data.relevanceIndex}%` }}
                 />
               </div>
+              <p className="text-[11px] text-slate-500 mb-1 leading-snug">
+                Arată măsura în care puteți utiliza serviciile JobGrade
+                și genera documentele necesare.
+              </p>
               <p className="text-[10px] text-slate-400 mb-5">
-                Activarea serviciilor de mai jos crește pe măsură ce completezi datele.
+                Activarea serviciilor de mai jos crește pe măsură ce
+                completați datele relevante.
               </p>
 
               {/* Lista compactă A-D */}
