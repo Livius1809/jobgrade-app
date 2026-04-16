@@ -86,6 +86,48 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
   },
 ]
 
+/* ── Inputuri detaliate (4 grupe, 12 itemi) + indice relevanță ─────────────
+   Pondere per input: A=3, B=3, C=2, D=1 → max total = 27 puncte
+   Status per input: EMPTY (0), PARTIAL (½ pondere), COMPLETE (pondere completă)
+*/
+type InputStatus = "EMPTY" | "PARTIAL" | "COMPLETE"
+type InputGroup = "A" | "B" | "C" | "D"
+
+interface InputDef {
+  id: string
+  group: InputGroup
+  label: string
+  weight: number
+  href?: string // unde merge clientul să-l completeze
+  comingSoon?: boolean
+}
+
+const INPUT_LIBRARY: InputDef[] = [
+  // A. Identitate (3 × pondere 3)
+  { id: "identity", group: "A", label: "Identitate firmă (CUI → ANAF)", weight: 3, href: "/portal" },
+  { id: "company-extended", group: "A", label: "Date suplimentare companie (misiune, viziune, valori, descriere)", weight: 3, href: "/company" },
+  { id: "representatives", group: "A", label: "Reprezentanți și roluri (cine semnează, cine validează)", weight: 3, href: "/company#representatives", comingSoon: true },
+  // B. Posturi & oameni (3 × pondere 3)
+  { id: "payroll", group: "B", label: "Stat de funcții", weight: 3, href: "/compensation/packages" },
+  { id: "jobs", group: "B", label: "Fișe de post (atribuții, cerințe, responsabilități)", weight: 3, href: "/jobs" },
+  { id: "demographics", group: "B", label: "Date demografice angajați (gen, vârstă, vechime)", weight: 3, href: "/employees", comingSoon: true },
+  // C. Sisteme operaționale (3 × pondere 2)
+  { id: "kpis", group: "C", label: "Obiective și indicatori de performanță (per post)", weight: 2, href: "/performance", comingSoon: true },
+  { id: "salary-packages-input", group: "C", label: "Pachete salariale extinse (compensații + beneficii non-monetare)", weight: 2, href: "/compensation/packages" },
+  { id: "evaluation-committee", group: "C", label: "Comitet de evaluare (membri + roluri)", weight: 2, href: "/sessions", comingSoon: true },
+  // D. Opționale strategice (3 × pondere 1)
+  { id: "aspirations", group: "D", label: "Aspirații profesionale individuale (chestionar angajați)", weight: 1, href: "/hr-development", comingSoon: true },
+  { id: "training-plan", group: "D", label: "Plan și buget formare", weight: 1, href: "/training", comingSoon: true },
+  { id: "org-climate", group: "D", label: "Climat organizațional (chestionar)", weight: 1, href: "/climate", comingSoon: true },
+]
+
+const GROUP_LABELS: Record<InputGroup, string> = {
+  A: "A. Identitate (esențial)",
+  B: "B. Posturi & oameni (esențial)",
+  C: "C. Sisteme operaționale",
+  D: "D. Opționale strategice",
+}
+
 /* ── Jurnal rapoarte — lista completă a rapoartelor produse de platformă ── */
 const REPORT_LIBRARY: Array<{
   id: string
@@ -142,6 +184,49 @@ async function getPortalData(tenantId: string) {
     }
   }
 
+  // Status per input + indice de relevanță
+  const inputStatuses = new Map<string, InputStatus>()
+
+  // A. Identitate firmă
+  if (profile?.cui && profile?.industry && profile?.anafSyncedAt) {
+    inputStatuses.set("identity", "COMPLETE")
+  } else if (profile?.cui) {
+    inputStatuses.set("identity", "PARTIAL")
+  } else {
+    inputStatuses.set("identity", "EMPTY")
+  }
+
+  // A. Date suplimentare companie (mission + vision + values complet)
+  const hasMV = !!profile?.mission && !!profile?.vision
+  const hasValues = (profile?.values?.length ?? 0) > 0
+  if (hasMV && hasValues) inputStatuses.set("company-extended", "COMPLETE")
+  else if (hasMV || hasValues || profile?.description) inputStatuses.set("company-extended", "PARTIAL")
+  else inputStatuses.set("company-extended", "EMPTY")
+
+  // B. Stat de funcții
+  inputStatuses.set("payroll", payrollCount > 0 ? "COMPLETE" : "EMPTY")
+
+  // B. Fișe de post (parțial dacă există dar incomplete)
+  if (jobCount === 0) inputStatuses.set("jobs", "EMPTY")
+  else if (completeJobCount === jobCount) inputStatuses.set("jobs", "COMPLETE")
+  else inputStatuses.set("jobs", "PARTIAL")
+
+  // Restul (placeholder coming soon) → EMPTY
+  for (const def of INPUT_LIBRARY) {
+    if (!inputStatuses.has(def.id)) inputStatuses.set(def.id, "EMPTY")
+  }
+
+  // Calcul indice
+  let earned = 0
+  let maxScore = 0
+  for (const def of INPUT_LIBRARY) {
+    maxScore += def.weight
+    const status = inputStatuses.get(def.id)
+    if (status === "COMPLETE") earned += def.weight
+    else if (status === "PARTIAL") earned += def.weight / 2
+  }
+  const relevanceIndex = maxScore > 0 ? Math.round((earned / maxScore) * 100) : 0
+
   return {
     credits,
     companyName: tenant?.name ?? "Organizația ta",
@@ -153,6 +238,8 @@ async function getPortalData(tenantId: string) {
     payrollPercent,
     providedInputs,
     reportsByType,
+    inputStatuses,
+    relevanceIndex,
   }
 }
 
@@ -255,56 +342,84 @@ export default async function PortalPage() {
             </div>
           </div>
 
-          {/* Dreapta — Date relevante pentru procesare */}
+          {/* Dreapta — Indice de relevanță + lista completă inputuri */}
           <div>
             <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
-              Date relevante pentru procesare
+              Indice de relevanță
             </h2>
-            <div className="bg-surface rounded-xl border border-border p-5 space-y-4">
-              {/* Fișe complete */}
-              <div className={`rounded-lg px-4 py-3 ${data.providedInputs.has("jobs_complete") ? "bg-emerald-50" : "bg-amber-50"}`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                    data.providedInputs.has("jobs_complete") ? "bg-emerald-500 text-white" : "bg-amber-400 text-white"
-                  }`}>
-                    {data.providedInputs.has("jobs_complete") ? "✓" : "!"}
-                  </span>
-                  <p className="text-sm font-medium text-slate-900">Fișe de post complete</p>
-                </div>
-                {!data.providedInputs.has("jobs_complete") && (
-                  <div className="ml-7">
-                    <p className="text-xs text-slate-500 mb-2">Completează pentru fiecare post:</p>
-                    <ul className="text-[10px] text-slate-400 space-y-0.5 mb-2">
-                      <li>• Atribuții și responsabilități</li>
-                      <li>• Cerințe (educație, experiență)</li>
-                      <li>• Condiții de muncă</li>
-                    </ul>
-                    <Link href="/jobs" className="text-xs text-indigo-600 hover:underline">Completează acum →</Link>
-                  </div>
-                )}
-                {data.providedInputs.has("jobs_complete") && (
-                  <p className="text-xs text-emerald-600 ml-7">Gata de procesare</p>
-                )}
+            <div className="bg-surface rounded-xl border border-border p-5">
+              {/* Indice mare cu progress bar */}
+              <div className="flex items-end gap-3 mb-1">
+                <span className={`text-4xl font-bold ${
+                  data.relevanceIndex >= 70 ? "text-emerald-600" :
+                  data.relevanceIndex >= 40 ? "text-amber-500" :
+                  "text-slate-400"
+                }`}>
+                  {data.relevanceIndex}%
+                </span>
+                <span className="text-xs text-slate-500 mb-1.5">date relevante</span>
               </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-1">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    data.relevanceIndex >= 70 ? "bg-emerald-500" :
+                    data.relevanceIndex >= 40 ? "bg-amber-400" :
+                    "bg-slate-300"
+                  }`}
+                  style={{ width: `${data.relevanceIndex}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 mb-5">
+                Activarea serviciilor de mai jos crește pe măsură ce completezi datele.
+              </p>
 
-              {/* Date salariale */}
-              <div className={`rounded-lg px-4 py-3 ${data.providedInputs.has("payroll") ? "bg-emerald-50" : "bg-slate-50"}`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                    data.providedInputs.has("payroll") ? "bg-emerald-500 text-white" : "bg-slate-300 text-slate-500"
-                  }`}>
-                    {data.providedInputs.has("payroll") ? "✓" : ""}
-                  </span>
-                  <p className="text-sm font-medium text-slate-900">Date salariale</p>
-                </div>
-                {data.providedInputs.has("payroll") ? (
-                  <p className="text-xs text-emerald-600 ml-7">Gata de procesare — {data.payrollCount} intrări</p>
-                ) : (
-                  <div className="ml-7">
-                    <p className="text-xs text-slate-400 mb-2">Importă statul de salarii cu: funcție, salariu, gen, normă</p>
-                    <Link href="/compensation/packages" className="text-xs text-indigo-600 hover:underline">Importă acum →</Link>
-                  </div>
-                )}
+              {/* Lista compactă A-D */}
+              <div className="space-y-3">
+                {(["A", "B", "C", "D"] as InputGroup[]).map((g) => {
+                  const items = INPUT_LIBRARY.filter(i => i.group === g)
+                  return (
+                    <div key={g}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        {GROUP_LABELS[g]}
+                      </p>
+                      <div className="space-y-1">
+                        {items.map((input) => {
+                          const status = data.inputStatuses.get(input.id) ?? "EMPTY"
+                          const dotColor =
+                            status === "COMPLETE" ? "bg-emerald-500" :
+                            status === "PARTIAL" ? "bg-amber-400" :
+                            "bg-slate-300"
+                          const textColor =
+                            status === "COMPLETE" ? "text-slate-700" :
+                            status === "PARTIAL" ? "text-slate-600" :
+                            "text-slate-400"
+                          const labelClickable = !input.comingSoon && status !== "COMPLETE"
+
+                          return (
+                            <div key={input.id} className="flex items-start justify-between gap-2 group">
+                              <div className="flex items-start gap-2 min-w-0">
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${dotColor}`} />
+                                {labelClickable ? (
+                                  <Link href={input.href ?? "#"} className={`text-xs ${textColor} hover:text-indigo-600 hover:underline leading-snug`}>
+                                    {input.label}
+                                  </Link>
+                                ) : (
+                                  <span className={`text-xs ${textColor} leading-snug`}>{input.label}</span>
+                                )}
+                              </div>
+                              <span className="text-[9px] text-slate-400 flex-shrink-0 mt-1">
+                                {input.comingSoon ? "în curând" :
+                                 status === "COMPLETE" ? "✓" :
+                                 status === "PARTIAL" ? "parțial" :
+                                 ""}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
