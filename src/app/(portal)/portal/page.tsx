@@ -22,6 +22,15 @@ const INPUT_LABELS: Record<string, string> = {
   jobs_complete: "Fișe de post complete",
   payroll: "Stat de salarii",
   internal_docs: "Documente interne companie",
+  kpis: "Obiective și KPI per post",
+  "salary-packages-input": "Pachete salariale extinse",
+  "evaluation-committee": "Comitet de evaluare",
+  demographics: "Date demografice angajați",
+  aspirations: "Aspirații profesionale individuale",
+  "org-climate": "Climat organizațional",
+  "training-plan": "Plan și buget formare",
+  representatives: "Reprezentanți și roluri",
+  "company-extended": "Date suplimentare companie",
 }
 
 /* ── Servicii — ce poate accesa cu datele respective ──────────────── */
@@ -58,8 +67,8 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     services: [
       { id: "je", label: "Evaluarea și ierarhizarea posturilor de lucru", href: "/sessions", requiredInputs: ["jobs"], color: "indigo", creditCost: "credite/poziție" },
       { id: "salary-grades", label: "Structuri salariale (clase și trepte)", href: "/sessions", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
-      { id: "performance-eval", label: "Evaluarea performanței (obiective cf. fișei postului, indicatori de performanță)", href: "/performance", requiredInputs: ["jobs_complete"], color: "indigo", creditCost: "credite/angajat" },
-      { id: "salary-packages", label: "Pachete salariale (compensații, beneficii, scenarii bugetare)", href: "/compensation/packages", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
+      { id: "performance-eval", label: "Evaluarea performanței (obiective cf. fișei postului, indicatori de performanță)", href: "/performance", requiredInputs: ["jobs_complete", "kpis"], color: "indigo", creditCost: "credite/angajat" },
+      { id: "salary-packages", label: "Pachete salariale (compensații, beneficii, scenarii bugetare)", href: "/compensation/packages", requiredInputs: ["jobs", "payroll", "salary-packages-input"], color: "indigo", creditCost: "credite/proiect" },
       { id: "benchmark", label: "Benchmark salarial", href: "/compensation/benchmark", requiredInputs: ["jobs", "payroll"], color: "indigo", creditCost: "credite/proiect" },
     ],
   },
@@ -70,7 +79,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "recruit-design", label: "Proiectarea procesului de recrutare", href: "/recruitment/design", requiredInputs: ["company_identity", "jobs"], color: "sky", creditCost: "credite/proiect" },
       { id: "recruit-manage", label: "Gestionarea procesului de recrutare", href: "/recruitment", requiredInputs: ["jobs"], color: "sky", creditCost: "credite/candidat" },
       { id: "pre-hire-docs", label: "Documente pre-angajare (listă scurtă, formular informare condiții, ofertă angajare, documente interne companie — Fișa post, Regulament de ordine interioară, Contract colectiv de muncă, Cod etic etc.)", href: "/recruitment/documents", requiredInputs: ["jobs_complete", "company_identity", "internal_docs"], color: "sky", creditCost: "credite/candidat" },
-      { id: "induction-docs", label: "Documente perioadă de inducție — Manualul noului angajat", href: "/recruitment/induction", requiredInputs: ["jobs_complete", "company_identity"], color: "sky", creditCost: "credite/manual" },
+      { id: "induction-docs", label: "Documente perioadă de inducție — Manualul noului angajat", href: "/recruitment/induction", requiredInputs: ["jobs_complete", "company_identity", "internal_docs"], color: "sky", creditCost: "credite/manual" },
     ],
   },
   {
@@ -78,21 +87,21 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     color: "violet",
     services: [
       { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/angajat" },
-      { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/proiect" },
-      { id: "employee-file", label: "Fișa angajatului (atribuții, ierarhie, clasă și treaptă salarială, pachet salarial, plan de dezvoltare)", href: "/employees", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/angajat", optional: true },
-      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (aspirații profesionale individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/proiect", optional: true },
+      { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll", "evaluation-committee"], color: "violet", creditCost: "credite/proiect" },
+      { id: "employee-file", label: "Fișa angajatului (atribuții, ierarhie, clasă și treaptă salarială, pachet salarial, plan de dezvoltare)", href: "/employees", requiredInputs: ["jobs_complete", "payroll", "demographics"], color: "violet", creditCost: "credite/angajat", optional: true },
+      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (aspirații profesionale individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll", "aspirations"], color: "violet", creditCost: "credite/proiect", optional: true },
     ],
   },
   {
     name: "Dezvoltare organizațională",
     color: "fuchsia",
     services: [
-      { id: "eval-personal", label: "Evaluarea personalului", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
-      { id: "diagnosis", label: "Diagnoză organizațională", href: "#", requiredInputs: ["jobs_complete"], color: "fuchsia" },
-      { id: "multigen", label: "Managementul echipelor multigeneraționale", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
-      { id: "omAI", label: "Managementul structurilor și echipelor mixte om-AI", href: "#", requiredInputs: ["jobs_complete"], color: "fuchsia" },
-      { id: "quality", label: "Procese interne și Manualul calității", href: "#", requiredInputs: ["jobs_complete"], color: "fuchsia" },
-      { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs_complete", "payroll"], color: "fuchsia" },
+      { id: "eval-personal", label: "Evaluarea personalului", href: "#", requiredInputs: ["jobs_complete", "payroll", "kpis"], color: "fuchsia" },
+      { id: "diagnosis", label: "Diagnoză organizațională", href: "#", requiredInputs: ["jobs_complete", "evaluation-committee"], color: "fuchsia" },
+      { id: "multigen", label: "Managementul echipelor multigeneraționale", href: "#", requiredInputs: ["jobs_complete", "payroll", "demographics"], color: "fuchsia" },
+      { id: "omAI", label: "Managementul structurilor și echipelor mixte om-AI", href: "#", requiredInputs: ["jobs_complete", "internal_docs"], color: "fuchsia" },
+      { id: "quality", label: "Procese interne și Manualul calității", href: "#", requiredInputs: ["jobs_complete", "internal_docs"], color: "fuchsia" },
+      { id: "culture", label: "Cultură organizațională și performanță", href: "#", requiredInputs: ["jobs_complete", "payroll", "org-climate"], color: "fuchsia" },
     ],
   },
 ]
@@ -456,8 +465,8 @@ export default async function PortalPage() {
                 și genera documentele necesare.
               </p>
               <p className="text-[10px] text-slate-400 mb-5">
-                Activarea serviciilor de mai jos crește pe măsură ce
-                completați datele relevante.
+                Cu cât oferiți mai multe date relevante, cu atât
+                disponibilitatea serviciilor oferite va fi mai mare.
               </p>
 
               {/* Lista compactă A-D */}
