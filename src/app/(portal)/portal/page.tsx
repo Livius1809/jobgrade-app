@@ -69,7 +69,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/angajat" },
       { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/proiect" },
       { id: "employee-file", label: "Fișa angajatului (atribuții, ierarhie, clasă și treaptă salarială, pachet salarial, plan de dezvoltare)", href: "/employees", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/angajat", optional: true },
-      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (dorințe individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/proiect", optional: true },
+      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (aspirații profesionale individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/proiect", optional: true },
     ],
   },
   {
