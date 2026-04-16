@@ -218,7 +218,7 @@ const REPORT_LIBRARY: Array<{
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports, payrollAggregate, payGapReport, activeSessionsCount, employeeRecords, oldJobsCount] = await Promise.all([
+  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports, payrollAggregate, payGapReport, activeSessionsCount, employeeRecords, oldJobsCount, recentJobs, recentSessions, recentPayrollEntries] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId } }).catch(() => null),
@@ -253,6 +253,24 @@ async function getPortalData(tenantId: string) {
         updatedAt: { lt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) },
       },
     }).catch(() => 0),
+    prisma.job.findMany({
+      where: { tenantId },
+      select: { title: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }).catch(() => [] as Array<{ title: string; createdAt: Date }>),
+    prisma.evaluationSession.findMany({
+      where: { tenantId },
+      select: { name: true, createdAt: true, status: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }).catch(() => [] as Array<{ name: string; createdAt: Date; status: string }>),
+    (prisma as any).payrollEntry.findMany({
+      where: { tenantId },
+      select: { importBatchId: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }).catch(() => [] as Array<{ importBatchId: string; createdAt: Date }>),
   ])
 
   // Pay gap (UE 2023/970): diferență salariu mediu bărbați vs femei
@@ -364,7 +382,105 @@ async function getPortalData(tenantId: string) {
     medianSalary,
     employeeRecordsCount: employeeRecords.length,
     oldJobsCount,
+    recentEvents: buildRecentEvents({
+      profile,
+      recentJobs,
+      recentSessions,
+      recentPayrollEntries,
+      reports,
+    }),
   }
+}
+
+/* ── Mini-jurnal activitate: agregă evenimente recente din mai multe surse ── */
+type RecentEvent = { at: Date; icon: string; text: string; href?: string }
+
+function buildRecentEvents(args: {
+  profile: { anafSyncedAt?: Date | null } | null
+  recentJobs: Array<{ title: string; createdAt: Date }>
+  recentSessions: Array<{ name: string; createdAt: Date; status: string }>
+  recentPayrollEntries: Array<{ importBatchId: string; createdAt: Date }>
+  reports: Array<{ type: string; createdAt: Date }>
+}): RecentEvent[] {
+  const events: RecentEvent[] = []
+
+  // ANAF sync
+  if (args.profile?.anafSyncedAt) {
+    events.push({
+      at: new Date(args.profile.anafSyncedAt),
+      icon: "🇷🇴",
+      text: "Identitate firmă sincronizată din ANAF",
+    })
+  }
+
+  // Fișe de post create
+  for (const j of args.recentJobs) {
+    events.push({
+      at: j.createdAt,
+      icon: "📋",
+      text: `Fișă de post „${j.title}" creată`,
+      href: "/jobs",
+    })
+  }
+
+  // Sesiuni evaluare
+  for (const s of args.recentSessions) {
+    events.push({
+      at: s.createdAt,
+      icon: "⚖️",
+      text: `Sesiune evaluare „${s.name}" — ${s.status === "COMPLETED" ? "finalizată" : "creată"}`,
+      href: "/sessions",
+    })
+  }
+
+  // Import-uri stat salarii (groupBy importBatchId, count entries)
+  const batches = new Map<string, { at: Date; count: number }>()
+  for (const e of args.recentPayrollEntries) {
+    const prev = batches.get(e.importBatchId)
+    if (!prev || e.createdAt > prev.at) {
+      batches.set(e.importBatchId, {
+        at: prev?.at ?? e.createdAt,
+        count: (prev?.count ?? 0) + 1,
+      })
+    } else {
+      prev.count += 1
+    }
+  }
+  for (const [, batch] of batches) {
+    events.push({
+      at: batch.at,
+      icon: "💰",
+      text: `Stat salarii actualizat (${batch.count} intrări)`,
+      href: "/pay-gap/employees",
+    })
+  }
+
+  // Rapoarte generate
+  for (const r of args.reports.slice(0, 5)) {
+    events.push({
+      at: r.createdAt,
+      icon: "📊",
+      text: `Raport „${r.type}" generat`,
+      href: `/reports?type=${r.type}`,
+    })
+  }
+
+  // Sortare DESC, take 10
+  events.sort((a, b) => b.at.getTime() - a.at.getTime())
+  return events.slice(0, 10)
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = Date.now()
+  const diff = now - new Date(date).getTime()
+  const min = Math.floor(diff / 60_000)
+  const hr = Math.floor(diff / 3_600_000)
+  const day = Math.floor(diff / 86_400_000)
+  if (min < 1) return "acum"
+  if (min < 60) return `acum ${min} min`
+  if (hr < 24) return `acum ${hr}h`
+  if (day < 7) return `acum ${day}z`
+  return new Date(date).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "2-digit" })
 }
 
 /* ── Calcul „Următorul pas recomandat" ──────────────────────────────────────
@@ -1015,6 +1131,40 @@ export default async function PortalPage() {
               Toate rapoartele →
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ══════════ ACTIVITATE RECENTĂ ══════════ */}
+      <section>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
+          Activitate recentă
+        </h2>
+        <div className="bg-surface rounded-xl border border-border p-5">
+          {data.recentEvents.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-4">
+              Nicio activitate înregistrată încă.
+            </p>
+          ) : (
+            <ol className="space-y-2">
+              {data.recentEvents.map((ev, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="text-base flex-shrink-0 mt-0.5">{ev.icon}</span>
+                  <div className="flex-1 min-w-0 flex items-baseline justify-between gap-3">
+                    {ev.href ? (
+                      <Link href={ev.href} className="text-sm text-slate-700 hover:text-indigo-600 hover:underline truncate">
+                        {ev.text}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-slate-700 truncate">{ev.text}</span>
+                    )}
+                    <span className="text-[10px] text-slate-400 flex-shrink-0">
+                      {formatRelativeTime(ev.at)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       </section>
     </div>
