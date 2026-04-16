@@ -111,6 +111,9 @@ interface InputDef {
   weight: number
   href?: string // unde merge clientul să-l completeze
   comingSoon?: boolean
+  // Sub-itemi opționali. Regula: e suficient UNUL completat ca input să fie 100%.
+  // Folosit pentru categorii de documente unde clientul rar le are pe toate.
+  subItems?: string[]
 }
 
 const INPUT_LIBRARY: InputDef[] = [
@@ -126,7 +129,20 @@ const INPUT_LIBRARY: InputDef[] = [
   { id: "kpis", group: "C", label: "Obiective și indicatori de performanță (per post)", weight: 2, href: "/performance", comingSoon: true },
   { id: "salary-packages-input", group: "C", label: "Pachete salariale extinse (compensații + beneficii non-monetare)", weight: 2, href: "/compensation/packages" },
   { id: "evaluation-committee", group: "C", label: "Comitet de evaluare (membri + roluri)", weight: 2, href: "/sessions", comingSoon: true },
-  { id: "internal_docs", group: "C", label: "Documente interne companie (Regulament intern, Contract colectiv, Cod etic, politici)", weight: 2, href: "/company/documents", comingSoon: true },
+  {
+    id: "internal_docs",
+    group: "C",
+    label: "Documente interne companie (e suficient unul)",
+    weight: 2,
+    href: "/company/documents",
+    comingSoon: true,
+    subItems: [
+      "Regulament de ordine interioară (ROI)",
+      "Contract colectiv de muncă (CCM)",
+      "Cod etic / cod de conduită",
+      "Politici interne (antidiscriminare, anticorupție etc.)",
+    ],
+  },
   // D. Opționale strategice (3 × pondere 1)
   { id: "aspirations", group: "D", label: "Aspirații profesionale individuale (chestionar angajați)", weight: 1, href: "/hr-development", comingSoon: true },
   { id: "training-plan", group: "D", label: "Plan și buget formare", weight: 1, href: "/training", comingSoon: true },
@@ -432,23 +448,35 @@ export default async function PortalPage() {
                           const labelClickable = !input.comingSoon && status !== "COMPLETE"
 
                           return (
-                            <div key={input.id} className="flex items-start justify-between gap-2 group">
-                              <div className="flex items-start gap-2 min-w-0">
-                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${dotColor}`} />
-                                {labelClickable ? (
-                                  <Link href={input.href ?? "#"} className={`text-xs ${textColor} hover:text-indigo-600 hover:underline leading-snug`}>
-                                    {input.label}
-                                  </Link>
-                                ) : (
-                                  <span className={`text-xs ${textColor} leading-snug`}>{input.label}</span>
-                                )}
+                            <div key={input.id}>
+                              <div className="flex items-start justify-between gap-2 group">
+                                <div className="flex items-start gap-2 min-w-0">
+                                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${dotColor}`} />
+                                  {labelClickable ? (
+                                    <Link href={input.href ?? "#"} className={`text-xs ${textColor} hover:text-indigo-600 hover:underline leading-snug`}>
+                                      {input.label}
+                                    </Link>
+                                  ) : (
+                                    <span className={`text-xs ${textColor} leading-snug`}>{input.label}</span>
+                                  )}
+                                </div>
+                                <span className="text-[9px] text-slate-400 flex-shrink-0 mt-1">
+                                  {input.comingSoon ? "în curând" :
+                                   status === "COMPLETE" ? "✓" :
+                                   status === "PARTIAL" ? "parțial" :
+                                   ""}
+                                </span>
                               </div>
-                              <span className="text-[9px] text-slate-400 flex-shrink-0 mt-1">
-                                {input.comingSoon ? "în curând" :
-                                 status === "COMPLETE" ? "✓" :
-                                 status === "PARTIAL" ? "parțial" :
-                                 ""}
-                              </span>
+                              {input.subItems && input.subItems.length > 0 && (
+                                <ul className="ml-6 mt-0.5 mb-1 space-y-0.5">
+                                  {input.subItems.map((sub, si) => (
+                                    <li key={si} className="text-[10px] text-slate-400 leading-snug flex items-start gap-1.5">
+                                      <span className="text-slate-300">•</span>
+                                      <span>{sub}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           )
                         })}
