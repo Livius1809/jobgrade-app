@@ -867,8 +867,14 @@ export default async function PortalPage() {
                 <div className="space-y-2">
                   {cat.services.map((svc, idx) => {
                     const missingInputs = svc.requiredInputs.filter(r => !data.providedInputs.has(r))
-                    const available = missingInputs.length === 0
+                    const hasData = missingInputs.length === 0
                     const missingLabels = missingInputs.map(id => INPUT_LABELS[id] || id)
+
+                    // Determinăm statusul. Servicii „gratuit" (Profil sectorial) nu necesită credite.
+                    const requiresCredits = svc.creditCost && svc.creditCost !== "gratuit"
+                    const hasNoCredits = hasData && requiresCredits && data.credits <= 0
+                    const blocked = hasNoCredits
+                    const available = hasData && !blocked
 
                     // Inserăm un separator chiar înainte de primul serviciu opțional
                     const showOptionalSeparator =
@@ -885,21 +891,39 @@ export default async function PortalPage() {
                         )}
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                              available ? (svc.optional ? "bg-emerald-300" : "bg-emerald-500") : "bg-slate-300"
-                            }`} />
+                            {/* Bullet status: verde (available), 🔒 portocaliu (blocked), gri (missing-data) */}
+                            {available ? (
+                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${svc.optional ? "bg-emerald-300" : "bg-emerald-500"}`} />
+                            ) : blocked ? (
+                              <span className="text-[11px] flex-shrink-0 leading-none">🔒</span>
+                            ) : (
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-300" />
+                            )}
                             {available ? (
                               <Link href={svc.href} className={`text-sm hover:underline ${textColorMap[svc.color]} ${svc.optional ? "" : "font-medium"}`}>
                                 {svc.label}
                               </Link>
+                            ) : blocked ? (
+                              <span className="text-sm text-amber-700">{svc.label}</span>
                             ) : (
                               <span className="text-sm text-slate-400">{svc.label}</span>
                             )}
                           </div>
-                          {!available && (
+                          {/* Status info dreapta */}
+                          {!hasData && (
                             <span className="text-[10px] text-slate-400 flex-shrink-0">
                               lipsă: {missingLabels.join(", ")}
                             </span>
+                          )}
+                          {blocked && (
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <span className="text-[10px] text-amber-600">
+                                Sold credite insuficient ({data.credits})
+                              </span>
+                              <Link href="/settings/billing" className="text-[10px] text-amber-700 font-medium hover:underline">
+                                Reîncarcă →
+                              </Link>
+                            </div>
                           )}
                           {available && (
                             <div className="flex items-center gap-3 flex-shrink-0">
