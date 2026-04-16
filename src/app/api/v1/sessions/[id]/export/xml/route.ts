@@ -129,8 +129,8 @@ ${evalSession.jobResults
       <Purpose>${escapeXml(jr.job.purpose)}</Purpose>
       <TotalScore>${jr.totalScore}</TotalScore>
       <NormalizedScore>${jr.normalizedScore.toFixed(2)}</NormalizedScore>
-      <MaxScore>560</MaxScore>
-      <Percentile>${((jr.normalizedScore / 560) * 100).toFixed(1)}</Percentile>
+      <MaxScore>2800</MaxScore>
+      <Percentile>${(jr.normalizedScore * 100).toFixed(1)}</Percentile>
       ${
         jr.salaryGrade
           ? `<SalaryGrade>

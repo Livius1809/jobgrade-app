@@ -120,8 +120,8 @@ export async function POST(
         scoring: {
           totalPoints: jr.totalScore,
           normalizedScore: jr.normalizedScore,
-          maxPoints: 560,
-          percentile: parseFloat(((jr.normalizedScore / 560) * 100).toFixed(1)),
+          maxPoints: 2800,
+          percentile: parseFloat((jr.normalizedScore * 100).toFixed(1)),
         },
         salaryGrade: jr.salaryGrade
           ? {

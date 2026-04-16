@@ -4,13 +4,13 @@
  * Citește fișa de post (descriere, responsabilități, cerințe) și propune
  * subfactorul potrivit per criteriu, bazat pe conținutul real, nu pe titlu.
  *
- * Criteriile de evaluare (6):
- * 1. Educație/Experiență (A-G, 16-112 pct)
- * 2. Comunicare (A-E, 17-85 pct)
- * 3. Rezolvarea problemelor (A-G, 16-112 pct)
- * 4. Luarea deciziilor (A-G, 16-112 pct)
- * 5. Impact asupra afacerii (A-D, 28-112 pct) ← criteriu cheie încadrare
- * 6. Condiții de lucru (A-C, 9-27 pct)
+ * Criteriile de evaluare (6) — bareme Connex GSM JE Manual (max total 2800 pct):
+ * 1. Educație/Experiență (A-G, 80-560 pct)
+ * 2. Comunicare (A-E, 85-425 pct)
+ * 3. Rezolvarea problemelor (A-G, 80-560 pct)
+ * 4. Luarea deciziilor (A-G, 80-560 pct)
+ * 5. Impact asupra afacerii (A-D, 140-560 pct) ← criteriu cheie încadrare
+ * 6. Condiții de lucru (A-C, 45-135 pct)
  */
 
 import Anthropic from "@anthropic-ai/sdk"
