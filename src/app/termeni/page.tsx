@@ -61,10 +61,11 @@ export default function TermsPage() {
           </h1>
           <p className="text-lg text-text-warm leading-relaxed mb-3">
             Acești termeni reglementează relația dintre dumneavoastră
-            (Client — persoană juridică sau persoană fizică) și
-            Psihobusiness Consulting SRL (operatorul JobGrade). Sunt
-            redactați clar, fără capcane, și se aplică atât pentru
-            utilizarea B2B (companii), cât și B2C (utilizatori individuali).
+            (Client — persoană juridică sau persoană fizică) și{" "}
+            Psihobusiness Consulting SRL, compania care operează platforma
+            JobGrade. Sunt redactați clar, fără capcane, și se aplică atât
+            pentru utilizarea B2B (companii), cât și B2C (utilizatori
+            individuali).
           </p>
           <p className="text-sm text-text-secondary">Ultima actualizare: {LAST_UPDATED}</p>
         </div>
@@ -85,7 +86,8 @@ export default function TermsPage() {
 
         <H id="definitii" n={1}>Definiții</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
-          <li><strong>JobGrade / Operatorul:</strong> platforma SaaS oferită de Psihobusiness Consulting SRL, CUI RO15790994</li>
+          <li><strong>JobGrade:</strong> platforma SaaS oferită de Psihobusiness Consulting SRL, CUI RO15790994</li>
+          <li><strong>Compania:</strong> Psihobusiness Consulting SRL — entitatea juridică ce operează platforma JobGrade și e responsabilă pentru servicii</li>
           <li>
             <strong>Client:</strong> poate fi:
             <ul className="list-disc pl-6 mt-1 space-y-1">
@@ -121,8 +123,8 @@ export default function TermsPage() {
 
         <h3 className="text-lg font-semibold text-indigo-dark mb-3">3.1. Pentru companii (B2B)</h3>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-4 list-disc pl-6">
-          <li>Evaluare și ierarhizare a posturilor de lucru pe 6 criterii (metodologie Connex GSM)</li>
-          <li>Structuri salariale pe clase și trepte (algoritm Pitariu)</li>
+          <li>Evaluare și ierarhizare a posturilor de lucru pe 6 criterii (metodologie validată internațional)</li>
+          <li>Structuri salariale pe clase și trepte (algoritm de clasificare salarială validat)</li>
           <li>Analiză decalaj salarial conformă Directivei UE 2023/970</li>
           <li>Recrutare, angajare și inducție (proces + documente)</li>
           <li>Dezvoltare organizațională (cultură, procese, multigenerațional)</li>
@@ -157,8 +159,8 @@ export default function TermsPage() {
           <li>Pentru B2C, contul folosește un <strong>pseudonim ales de utilizator</strong> — identitatea reală nu e accesibilă agenților AI și e stocată separat (privacy by design, două straturi)</li>
           <li>Pentru B2B, contul are un administrator (de obicei HR Director) care poate invita alți utilizatori cu roluri specifice</li>
           <li>Clientul este responsabil pentru securitatea credențialelor (parolă, sesiuni active)</li>
-          <li>Clientul notifică imediat Operatorul în caz de utilizare neautorizată a contului (<a href="mailto:contact@jobgrade.ro" className="text-indigo hover:underline">contact@jobgrade.ro</a>)</li>
-          <li>Operatorul poate suspenda contul în caz de breșă de securitate suspectată sau neplată</li>
+          <li>Clientul notifică imediat Compania în caz de utilizare neautorizată a contului (<a href="mailto:contact@jobgrade.ro" className="text-indigo hover:underline">contact@jobgrade.ro</a>)</li>
+          <li>Compania poate suspenda contul în caz de breșă de securitate suspectată sau neplată</li>
           <li>Clienții B2C pot șterge contul în orice moment din setări — perioadă de grație 30 zile, apoi ștergere definitivă</li>
         </ul>
 
@@ -180,12 +182,12 @@ export default function TermsPage() {
           <li>Respectarea drepturilor proprilor angajați (informare, consultare, conform Codului Muncii)</li>
           <li>Asigurarea bazei legale pentru încărcarea datelor angajaților (consimțământ sau interes legitim)</li>
           <li>Neutilizarea platformei pentru activități ilegale, discriminatorii sau dăunătoare</li>
-          <li>Respectarea drepturilor de proprietate intelectuală ale Operatorului</li>
+          <li>Respectarea drepturilor de proprietate intelectuală ale Companiei</li>
         </ul>
 
         <H id="obligatii-noi" n={7}>Obligațiile noastre</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
-          <li>Furnizarea serviciilor cu disponibilitate țintă 99% lunar (excluzând mentenanță planificată)</li>
+          <li>Furnizarea serviciilor cu disponibilitate ridicată (excluzând mentenanță planificată anunțată în prealabil); SLA-uri specifice pot fi negociate separat în contract dedicat</li>
           <li>Securizarea datelor conform Art. 32 GDPR (criptare, backup, control acces)</li>
           <li>Notificare incidente de securitate în 72h (Art. 33 GDPR)</li>
           <li>Suport tehnic prin email <a href="mailto:contact@jobgrade.ro" className="text-indigo hover:underline">contact@jobgrade.ro</a> (răspuns în zile lucrătoare)</li>
@@ -201,30 +203,30 @@ export default function TermsPage() {
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>AI-ul propune; deciziile finale aparțin Clientului</li>
           <li>Niciun raport sau evaluare AI nu se folosește singură pentru decizii cu impact asupra angajaților fără validare umană (conformă Art. 22 GDPR și Art. 14 AI Act)</li>
-          <li>Operatorul nu garantează acuratețea absolută a output-ului AI; Clientul are responsabilitatea de validare</li>
+          <li>Compania nu garantează acuratețea absolută a output-ului AI; Clientul are responsabilitatea de validare</li>
           <li>Anthropic nu antrenează modele pe datele Clientului (confirmat contractual)</li>
         </ul>
 
         <H id="proprietate" n={9}>Proprietate intelectuală</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
-          <li><strong>Platforma JobGrade</strong> (cod, design, metodologii proprii) — proprietatea Operatorului</li>
+          <li><strong>Platforma JobGrade</strong> (cod, design, metodologii proprii) — proprietatea Companiei</li>
           <li><strong>Conținutul Clientului</strong> (fișe, salarii, evaluări) — proprietatea Clientului</li>
-          <li><strong>Rapoartele generate</strong> sunt proprietatea Clientului, dar pot fi utilizate de Operator agregat și anonimizat pentru îmbunătățirea serviciilor și statistici sectoriale</li>
+          <li><strong>Rapoartele generate</strong> sunt proprietatea Clientului, dar pot fi utilizate de Companie în formă agregată și anonimizată pentru îmbunătățirea serviciilor și statistici sectoriale</li>
           <li>Marca <strong>JobGrade</strong> este înregistrată; folosirea ei externă necesită acord scris</li>
         </ul>
 
         <H id="raspundere" n={10}>Limitarea răspunderii</H>
         <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-5 mb-6">
           <p className="text-sm text-amber-900 leading-relaxed">
-            Operatorul răspunde pentru daune directe cauzate de neîndeplinirea
+            Compania răspunde pentru daune directe cauzate de neîndeplinirea
             culpabilă a obligațiilor sale, în limita sumei plătite de Client
             în ultimele 12 luni înainte de eveniment.
           </p>
         </div>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
-          <li>Operatorul nu răspunde pentru daune indirecte, de imagine, profit nerealizat sau pierderi de date cauzate de Client</li>
+          <li>Compania nu răspunde pentru daune indirecte, de imagine, profit nerealizat sau pierderi de date cauzate de Client</li>
           <li>Nu răspunde pentru consecințele utilizării incorecte a platformei sau a output-urilor AI fără validare umană</li>
-          <li>Nu răspunde pentru indisponibilități cauzate de furnizori terți (Vercel, Neon, Anthropic, Stripe) sau forță majoră</li>
+          <li>Nu răspunde pentru indisponibilități cauzate de furnizori terți sau forță majoră (lista sub-procesatorilor e disponibilă în Politica de confidențialitate)</li>
         </ul>
 
         <H id="incetare" n={11}>Încetarea contractului</H>
@@ -233,7 +235,7 @@ export default function TermsPage() {
           cu 30 zile înainte. Situații speciale:
         </p>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
-          <li>Operatorul poate înceta imediat în caz de utilizare ilegală sau neplată &gt; 60 zile</li>
+          <li>Compania poate înceta imediat în caz de utilizare ilegală sau neplată &gt; 60 zile</li>
           <li>Clientul poate cere ștergerea totală a datelor (Art. 17 GDPR), conform Politicii de confidențialitate</li>
           <li>Datele financiare (facturare) sunt păstrate 10 ani conform Codului Fiscal</li>
           <li>Creditele neutilizate sunt rambursate proporțional în 30 zile</li>
@@ -241,7 +243,7 @@ export default function TermsPage() {
 
         <H id="modificari" n={12}>Modificarea termenilor</H>
         <p className="text-text-warm leading-relaxed mb-6">
-          Operatorul poate actualiza acești termeni. Modificările
+          Compania poate actualiza acești termeni. Modificările
           semnificative sunt comunicate cu minim 30 zile înainte prin email.
           Continuarea utilizării platformei după intrarea în vigoare
           constituie acceptare. Versiunile anterioare sunt arhivate la
@@ -255,7 +257,7 @@ export default function TermsPage() {
         </p>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>Litigiile se supun legislației din România</li>
-          <li>Competența instanțelor: judecătoria/tribunalul de la sediul Operatorului (Ilfov)</li>
+          <li>Competența instanțelor: judecătoria/tribunalul de la sediul Companiei (Ilfov)</li>
           <li>Pentru aspecte GDPR: ANSPDCP (<a href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer" className="text-indigo hover:underline">www.dataprotection.ro</a>)</li>
           <li>Pentru aspecte muncii: ITM teritorial</li>
         </ul>

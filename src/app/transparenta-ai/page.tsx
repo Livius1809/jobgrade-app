@@ -348,7 +348,7 @@ export default function TransparentaAIPage() {
 
         {/* ─── Sectiunea 4: Supraveghere umana ────────────────── */}
         <SectionHeading id="supraveghere" number={4}>
-          Supravegherea umana (Art.14 AI Act)
+          Supravegherea umană (Art. 14 AI Act)
         </SectionHeading>
 
         <div className="rounded-xl border border-indigo/20 bg-indigo/5 p-6 mb-6">
@@ -357,31 +357,34 @@ export default function TransparentaAIPage() {
           </p>
           <ul className="text-sm text-text-warm space-y-2">
             <li>
-              2 psihologi angajati, acreditati de Colegiul Psihologilor din
-              Romania (CPR)
+              Personal specializat acreditat de Colegiul Psihologilor din
+              România (CPR)
             </li>
-            <li>Specializari: psihologia muncii si psihologia transporturilor</li>
-            <li>Atestat de libera practica — pot exercita independent</li>
+            <li>
+              Specializări: psihologia muncii, transporturilor și serviciilor
+            </li>
+            <li>Formare psihanalitică (relevantă pentru interacțiunile B2C)</li>
+            <li>Atestat de liberă practică — exercitare independentă</li>
           </ul>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 mb-6">
-          <InfoCard title="In procesele B2B">
+          <InfoCard title="În procesele B2B">
             <ul className="space-y-1.5">
-              <li>Psihologul supervizeaza metodologia de evaluare</li>
+              <li>Personalul specializat supervizează metodologia de evaluare</li>
               <li>Comitetele de evaluare sunt formate exclusiv din oameni</li>
               <li>AI-ul propune, oamenii decid</li>
               <li>Trail de audit complet pentru fiecare sesiune</li>
             </ul>
           </InfoCard>
-          <InfoCard title="In procesele B2C">
+          <InfoCard title="În procesele B2C">
             <ul className="space-y-1.5">
               <li>
-                SafetyMonitor escaleaza automat la psiholog cand detecteaza
-                distres
+                SafetyMonitor escaladează automat la personalul specializat
+                când detectează distres
               </li>
-              <li>Psihologul poate interveni in orice moment</li>
-              <li>Rapoartele sensibile sunt validate de psiholog</li>
+              <li>Personalul specializat poate interveni în orice moment</li>
+              <li>Rapoartele sensibile sunt validate de personalul specializat</li>
             </ul>
           </InfoCard>
         </div>
@@ -389,8 +392,8 @@ export default function TransparentaAIPage() {
         <div className="rounded-xl border border-border bg-warm-bg p-5 mb-6">
           <p className="text-sm text-text-warm leading-relaxed">
             <strong className="text-indigo-dark">Principiul fundamental:</strong>{" "}
-            Nicio decizie cu impact asupra unei persoane nu este luata exclusiv
-            de AI. Intotdeauna exista un om care valideaza, aproba sau
+            Nicio decizie cu impact asupra unei persoane nu este luată exclusiv
+            de AI. Întotdeauna există un om care validează, aprobă sau
             intervine.
           </p>
         </div>
