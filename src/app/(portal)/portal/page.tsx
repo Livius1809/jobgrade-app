@@ -94,7 +94,7 @@ async function getPortalData(tenantId: string) {
   const [credits, tenant, profile, jobCount, payrollCount, completeJobCount] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
-    prisma.companyProfile.findUnique({ where: { tenantId } }),
+    prisma.companyProfile.findUnique({ where: { tenantId } }).catch(() => null),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
     (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0) as Promise<number>,
     prisma.job.count({ where: { tenantId, status: "ACTIVE", responsibilities: { not: null } } }).catch(() => 0),
@@ -182,7 +182,9 @@ export default async function PortalPage() {
                   isVATPayer: data.profile?.isVATPayer ?? null,
                   address: data.profile?.address ?? null,
                   county: data.profile?.county ?? null,
-                  anafSyncedAt: data.profile?.anafSyncedAt ?? null,
+                  anafSyncedAt: data.profile?.anafSyncedAt
+                    ? data.profile.anafSyncedAt.toISOString()
+                    : null,
                 }}
               />
 

@@ -13,7 +13,7 @@ interface CompanyIdentityCardProps {
     isVATPayer: boolean | null
     address: string | null
     county: string | null
-    anafSyncedAt: Date | null
+    anafSyncedAt: string | null // ISO string pentru serializare Server → Client
   }
 }
 
@@ -22,14 +22,22 @@ export default function CompanyIdentityCard({ initial }: CompanyIdentityCardProp
   const [cui, setCui] = useState(initial.cui ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [synced, setSynced] = useState({
+  const [synced, setSynced] = useState<{
+    name: string | null
+    industry: string | null
+    caenName: string | null
+    isVATPayer: boolean | null
+    address: string | null
+    county: string | null
+    syncedAt: Date | null
+  }>({
     name: initial.name,
     industry: initial.industry,
     caenName: initial.caenName,
     isVATPayer: initial.isVATPayer,
     address: initial.address,
     county: initial.county,
-    syncedAt: initial.anafSyncedAt,
+    syncedAt: initial.anafSyncedAt ? new Date(initial.anafSyncedAt) : null,
   })
 
   const isComplete =
