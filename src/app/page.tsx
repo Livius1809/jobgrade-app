@@ -495,10 +495,10 @@ export default function HomePage() {
             <div>
               <h4 className="text-sm font-semibold mb-4 text-white/80">Legal</h4>
               <ul className="space-y-2.5">
-                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Termeni și condiții</a></li>
-                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Confidențialitate</a></li>
-                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Cookies</a></li>
-                <li><a href="#" className="text-sm text-white/50 hover:text-white transition-colors duration-200">GDPR</a></li>
+                <li><Link href="/termeni" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Termeni și condiții</Link></li>
+                <li><Link href="/privacy" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Confidențialitate</Link></li>
+                <li><Link href="/cookies" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Cookies</Link></li>
+                <li><Link href="/gdpr" className="text-sm text-white/50 hover:text-white transition-colors duration-200">GDPR</Link></li>
                 <li><Link href="/transparenta-ai" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Transparenta AI</Link></li>
               </ul>
             </div>
