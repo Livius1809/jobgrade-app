@@ -777,14 +777,12 @@ function OrgOverviewSection({
             const maxRepeat = Math.max(...Array.from(counts.values()))
             return maxRepeat >= org.departments.length * 0.5
           })()
-          const headerLabel = looksLikeLocations
-            ? `${fmt(org.departments.length)} înregistrări · ${fmt(org.totalEmployees)} angajați`
-            : `${fmt(org.departments.length)} departamente · ${fmt(allLocations.size)} locații · ${fmt(org.totalEmployees)} angajați`
+          const headerLabel = `${fmt(allLocations.size)} ${allLocations.size === 1 ? "locație" : "locații"} · ${fmt(org.totalEmployees)} angajați`
 
           return (
           <div className="bg-surface rounded-xl border border-border p-5">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold text-slate-900">Inventar posturi</p>
+              <p className="text-sm font-semibold text-slate-900">Inventarul posturilor de lucru</p>
               <span className="text-[10px] text-slate-400">{headerLabel}</span>
             </div>
             <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1.5">
@@ -854,7 +852,7 @@ function OrgOverviewSection({
         <div className="bg-surface rounded-xl border border-border p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-slate-900">
-              Decalaj salarial pe categorii
+              Decalajul salarial pe categorii
             </p>
             <span className="text-[10px] text-slate-400">
               poziție × normă · Art. 9 Directiva 2023/970
