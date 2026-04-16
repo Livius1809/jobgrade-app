@@ -38,6 +38,8 @@ const PUBLIC_PATHS = [
   "/transparenta-ai",
   "/gdpr",
   "/termeni",
+  "/privacy",
+  "/cookies",
   // Media Books — conținut public, produs de structura organismului
   "/media-books",
   // Auth flow — reset password
