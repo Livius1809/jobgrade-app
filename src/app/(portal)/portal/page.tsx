@@ -32,6 +32,7 @@ interface Service {
   requiredInputs: string[]
   color: string
   creditCost?: string  // ex: "~5 credite/poziție" sau "—" dacă necalibrat
+  optional?: boolean   // opțional, nu e cerut de lege
 }
 
 interface ServiceCategory {
@@ -67,8 +68,8 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     services: [
       { id: "paygap", label: "Analiza decalajului salarial", href: "/pay-gap", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/angajat" },
       { id: "joint", label: "Evaluarea comună (Art. 10)", href: "/pay-gap/assessments", requiredInputs: ["jobs", "payroll"], color: "violet", creditCost: "credite/proiect" },
-      { id: "employee-file", label: "Fișa angajatului (atribuții, ierarhie, clasă și treaptă salarială, pachet salarial, plan de dezvoltare)", href: "/employees", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/angajat" },
-      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (dorințe individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/proiect" },
+      { id: "employee-file", label: "Fișa angajatului (atribuții, ierarhie, clasă și treaptă salarială, pachet salarial, plan de dezvoltare)", href: "/employees", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/angajat", optional: true },
+      { id: "hr-development", label: "Dezvoltarea resurselor umane în companie (dorințe individuale vs. nevoi organizaționale vs. mijloace necesare)", href: "/hr-development", requiredInputs: ["jobs_complete", "payroll"], color: "violet", creditCost: "credite/proiect", optional: true },
     ],
   },
   {
@@ -347,40 +348,53 @@ export default async function PortalPage() {
                   {cat.name}
                 </h3>
                 <div className="space-y-2">
-                  {cat.services.map((svc) => {
+                  {cat.services.map((svc, idx) => {
                     const missingInputs = svc.requiredInputs.filter(r => !data.providedInputs.has(r))
                     const available = missingInputs.length === 0
                     const missingLabels = missingInputs.map(id => INPUT_LABELS[id] || id)
 
+                    // Inserăm un separator chiar înainte de primul serviciu opțional
+                    const showOptionalSeparator =
+                      svc.optional && (idx === 0 || !cat.services[idx - 1].optional)
+
                     return (
-                      <div key={svc.id} className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                            available ? "bg-emerald-500" : "bg-slate-300"
-                          }`} />
-                          {available ? (
-                            <Link href={svc.href} className={`text-sm hover:underline ${textColorMap[svc.color]} font-medium`}>
-                              {svc.label}
-                            </Link>
-                          ) : (
-                            <span className="text-sm text-slate-400">{svc.label}</span>
-                          )}
-                        </div>
-                        {!available && (
-                          <span className="text-[10px] text-slate-400 flex-shrink-0">
-                            lipsă: {missingLabels.join(", ")}
-                          </span>
-                        )}
-                        {available && (
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            {svc.creditCost && (
-                              <span className="text-[10px] text-slate-400">{svc.creditCost}</span>
-                            )}
-                            <Link href={svc.href} className="text-[10px] text-indigo-500 hover:underline">
-                              Accesează →
-                            </Link>
+                      <div key={svc.id}>
+                        {showOptionalSeparator && (
+                          <div className="flex items-center gap-2 pt-2 mt-2 border-t border-dashed border-slate-200">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                              Opțional · transparență suplimentară (nu este cerut de lege)
+                            </span>
                           </div>
                         )}
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                              available ? (svc.optional ? "bg-emerald-300" : "bg-emerald-500") : "bg-slate-300"
+                            }`} />
+                            {available ? (
+                              <Link href={svc.href} className={`text-sm hover:underline ${textColorMap[svc.color]} ${svc.optional ? "" : "font-medium"}`}>
+                                {svc.label}
+                              </Link>
+                            ) : (
+                              <span className="text-sm text-slate-400">{svc.label}</span>
+                            )}
+                          </div>
+                          {!available && (
+                            <span className="text-[10px] text-slate-400 flex-shrink-0">
+                              lipsă: {missingLabels.join(", ")}
+                            </span>
+                          )}
+                          {available && (
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              {svc.creditCost && (
+                                <span className="text-[10px] text-slate-400">{svc.creditCost}</span>
+                              )}
+                              <Link href={svc.href} className="text-[10px] text-indigo-500 hover:underline">
+                                Accesează →
+                              </Link>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
