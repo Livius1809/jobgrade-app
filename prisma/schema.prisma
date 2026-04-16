@@ -3295,3 +3295,118 @@ model SystemConfig {
 
   @@map("system_config")
 }
+
+// ─────────────────────────────────────────
+// PRICING & TELEMETRY (16.04.2026)
+// Algoritm: cost real → cost acoperitor → BNR+buffer → marjă
+// Vezi: project_pricing_methodology.md
+// Valorile concrete (cost, marjă, buffer) populate de COG după
+// răspunsul la cele 8 întrebări strategice.
+// ─────────────────────────────────────────
+
+model ProviderCost {
+  id               String   @id @default(cuid())
+  provider         String   // "anthropic", "vercel", "neon", "resend", etc.
+  resourceType     String   // "haiku-4-5-input-tokens", "vercel-pro-monthly", "neon-launch-monthly", etc.
+  unitMeasure      String   // "1M tokens", "1 month subscription", "1 client/month", "1 minute compute"
+  costCategory     String   @default("OPEX_PER_EXECUTION")
+  // CAPEX: lunar fix indiferent de volum (plan Vercel Pro, Neon Launch, salarii, marketing)
+  // OPEX_PER_CLIENT: incremental per cont nou activat (storage profil, backup, notificări baseline)
+  // OPEX_PER_EXECUTION: variabil per rulare/sesiune (tokens AI, compute, email, blob)
+  currentCostUSD   Decimal  @db.Decimal(20, 8) // preț real curent (informativ)
+  coveringCostUSD  Decimal  @db.Decimal(20, 8) // preț acoperitor (folosit la calcul — worst case)
+  notes            String?  @db.Text           // de ce e ales acest covering
+  effectiveFrom    DateTime @default(now())
+  updatedBy        String?                     // OWNER, COG, AUTOMATED_JOB
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([provider, resourceType, effectiveFrom])
+  @@index([provider, resourceType])
+  @@index([costCategory])
+  @@map("provider_costs")
+}
+
+model AIOperationTier {
+  id                       String   @id @default(cuid())
+  operationType            String   @unique // "intent-classification", "report-generation-je", etc.
+  description              String?  @db.Text
+  currentModel             String   // "claude-haiku-4-5-20251001"
+  coveringModel            String   // "claude-opus-4-6" (folosit la calcul cost)
+  tokenAmplificationFactor Decimal  @default(1.0) @db.Decimal(5, 2) // 1.0-2.0 (Opus poate genera mai mult)
+  notes                    String?  @db.Text
+  effectiveFrom            DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("ai_operation_tiers")
+}
+
+model ServiceUsageLog {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  userId              String?
+  serviceCode         String   // ID serviciu (ex: "je-evaluate", "consultant-hr-chat")
+  executionId         String?  // ID execuție (sesiune chat, raport, etc.)
+  operationType       String?  // mapare la AIOperationTier (dacă e operație AI)
+
+  // Telemetry brut
+  modelUsed           String?  // model AI efectiv folosit
+  tokensInput         Int      @default(0)
+  tokensOutput        Int      @default(0)
+  computeMs           Int      @default(0)
+  dbReadBytes         Int      @default(0)
+  dbWriteBytes        Int      @default(0)
+  bandwidthBytes      Int      @default(0)
+  emailsSent          Int      @default(0)
+  blobBytes           Int      @default(0)
+  humanMinutes        Decimal  @default(0) @db.Decimal(8, 2) // pentru servicii mixte cu uman
+
+  // Cost calculat
+  costRealRON         Decimal? @db.Decimal(12, 4) // costul real (informativ)
+  costCoveringRON     Decimal? @db.Decimal(12, 4) // costul acoperitor (folosit pentru margin)
+  creditsCharged      Decimal? @db.Decimal(10, 4) // credite debitate efectiv
+
+  metadata            Json?    // payload suplimentar (ex: durata sesiune chat)
+  createdAt           DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([serviceCode, createdAt])
+  @@index([userId, createdAt])
+  @@map("service_usage_logs")
+}
+
+model ServicePricing {
+  id                 String   @id @default(cuid())
+  serviceCode        String   // "je-evaluate", "pay-gap-report", "consultant-hr-chat", etc.
+  serviceName        String
+  serviceType        String   // "REPORT" | "ASSISTANCE" | "PROCESS"
+  unitMeasure        String   // "rulare", "minut", "intrebare", "sesiune"
+  costInCredits      Decimal  @db.Decimal(10, 4) // preț în credite per unitate
+  marginMultiplier   Decimal? @db.Decimal(5, 2)  // factor multiplicare cost intern → preț (informativ)
+  chatTier           String?  // "FAMILIARIZARE" | "CONSULTANTA" (doar pentru ASSISTANCE)
+  isFreeTier         Boolean  @default(false)    // ex: primele N minute familiarizare gratuit
+  freeTierLimit      Int?                        // limita gratuit (minute, întrebări, etc.)
+  freeTierUnit       String?                     // "minutes_per_month", "questions_per_session"
+  effectiveFrom      DateTime @default(now())
+  notes              String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([serviceCode, chatTier, effectiveFrom])
+  @@index([serviceCode])
+  @@map("service_pricing")
+}
+
+model CreditValue {
+  id                  String   @id @default(cuid())
+  bnrUsdRonRate       Decimal  @db.Decimal(10, 4) // cursul BNR USD→RON la data efectiva
+  bnrEurRonRate       Decimal? @db.Decimal(10, 4) // cursul BNR EUR→RON (pentru furnizori EUR)
+  bufferPercent       Decimal  @default(5.0) @db.Decimal(5, 2) // buffer peste BNR (decizie COG)
+  effectiveUsdRonRate Decimal  @db.Decimal(10, 4) // BNR × (1 + buffer/100) — folosit la conversie
+  valuePerCreditRON   Decimal  @db.Decimal(8, 4)  // RON per 1 credit (decizie COG)
+  effectiveFrom       DateTime @default(now())
+  notes               String?  @db.Text
+  createdAt           DateTime @default(now())
+
+  @@map("credit_values")
+}
