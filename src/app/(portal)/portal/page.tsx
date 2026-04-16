@@ -161,24 +161,49 @@ const REPORT_LIBRARY: Array<{
   id: string
   label: string
   type: string
+  group: string
 }> = [
-  // Evaluare & structură
-  { id: "hierarchy", label: "Raport ierarhizare posturi", type: "HIERARCHY" },
-  { id: "salary-grades", label: "Raport structură salarială", type: "SALARY_GRADES" },
-  { id: "budget", label: "Raport impact bugetar", type: "BUDGET" },
-  { id: "kpi", label: "Raport KPI organizație", type: "KPI" },
-  // Conformitate
-  { id: "pay-gap", label: "Raport decalaj salarial (UE 2023/970)", type: "PAY_GAP" },
-  { id: "joint", label: "Raport evaluare comună (Art. 10)", type: "JOINT" },
+  // Profil sectorial (instant cu CUI)
+  { id: "sector-profile", label: "Raport profil sectorial — repere salariale în industrie", type: "SECTOR_PROFILE", group: "Profil sectorial" },
+  { id: "sector-paygap-top5", label: "Top 5 decalaje salariale specifice sectorului", type: "SECTOR_PAYGAP", group: "Profil sectorial" },
+  { id: "mvv-draft", label: "Misiune, Viziune, Valori (MVV) — șablon editabil", type: "MVV_DRAFT", group: "Profil sectorial" },
+
+  // Evaluare
+  { id: "hierarchy", label: "Raport ierarhizare posturi", type: "HIERARCHY", group: "Evaluare" },
+  { id: "salary-grades", label: "Raport structură salarială (clase și trepte)", type: "SALARY_GRADES", group: "Evaluare" },
+  { id: "performance-position", label: "Raport KPI per poziție (obiective și indicatori)", type: "KPI_POSITION", group: "Evaluare" },
+  { id: "performance-evaluation", label: "Raport evaluare performanță", type: "PERFORMANCE_EVAL", group: "Evaluare" },
+  { id: "salary-packages", label: "Raport pachete salariale (compensații + beneficii)", type: "SALARY_PACKAGES", group: "Evaluare" },
+  { id: "benchmark", label: "Raport benchmark salarial", type: "BENCHMARK", group: "Evaluare" },
+  { id: "budget", label: "Raport impact bugetar", type: "BUDGET", group: "Evaluare" },
+  { id: "kpi", label: "Raport KPI organizație", type: "KPI", group: "Evaluare" },
+
   // Recrutare & inducție
-  { id: "job-description", label: "Fișa de post (document tipărit per poziție)", type: "JOB_DESCRIPTION" },
-  { id: "shortlist", label: "Listă scurtă candidați", type: "SHORTLIST" },
-  { id: "info-conditions", label: "Formular informare condiții", type: "INFO_CONDITIONS" },
-  { id: "job-offer", label: "Ofertă de angajare", type: "JOB_OFFER" },
-  { id: "internal-synthesis", label: "Sinteză documente interne (extras relevant per poziție)", type: "INTERNAL_SYNTHESIS" },
-  { id: "employee-manual", label: "Manualul angajatului", type: "EMPLOYEE_MANUAL" },
+  { id: "recruit-design", label: "Raport proiectare proces recrutare", type: "RECRUIT_DESIGN", group: "Recrutare & inducție" },
+  { id: "recruit-manage", label: "Raport gestionare proces recrutare", type: "RECRUIT_MANAGE", group: "Recrutare & inducție" },
+  { id: "job-description", label: "Fișa de post (document tipărit per poziție)", type: "JOB_DESCRIPTION", group: "Recrutare & inducție" },
+  { id: "shortlist", label: "Listă scurtă candidați", type: "SHORTLIST", group: "Recrutare & inducție" },
+  { id: "info-conditions", label: "Formular informare condiții", type: "INFO_CONDITIONS", group: "Recrutare & inducție" },
+  { id: "job-offer", label: "Ofertă de angajare", type: "JOB_OFFER", group: "Recrutare & inducție" },
+  { id: "internal-synthesis", label: "Sinteză documente interne (extras relevant per poziție)", type: "INTERNAL_SYNTHESIS", group: "Recrutare & inducție" },
+  { id: "employee-manual", label: "Manualul angajatului", type: "EMPLOYEE_MANUAL", group: "Recrutare & inducție" },
+
+  // Conformitate EU 2023/970
+  { id: "pay-gap", label: "Raport decalaj salarial (UE 2023/970)", type: "PAY_GAP", group: "Conformitate EU 2023/970" },
+  { id: "joint", label: "Raport evaluare comună (Art. 10)", type: "JOINT", group: "Conformitate EU 2023/970" },
+  { id: "employee-file", label: "Fișa angajatului (per persoană) — opțional", type: "EMPLOYEE_FILE", group: "Conformitate EU 2023/970" },
+  { id: "hr-development", label: "Raport dezvoltare resurse umane — opțional", type: "HR_DEVELOPMENT", group: "Conformitate EU 2023/970" },
+
+  // Dezvoltare organizațională
+  { id: "personnel-eval", label: "Raport evaluare personal", type: "PERSONNEL_EVAL", group: "Dezvoltare organizațională" },
+  { id: "org-diagnosis", label: "Raport diagnoză organizațională", type: "ORG_DIAGNOSIS", group: "Dezvoltare organizațională" },
+  { id: "multigen", label: "Raport echipe multigeneraționale", type: "MULTIGEN", group: "Dezvoltare organizațională" },
+  { id: "om-ai", label: "Raport structuri și echipe mixte om-AI", type: "OM_AI", group: "Dezvoltare organizațională" },
+  { id: "quality", label: "Raport procese interne și Manualul calității", type: "QUALITY", group: "Dezvoltare organizațională" },
+  { id: "culture", label: "Raport cultură organizațională și performanță", type: "CULTURE", group: "Dezvoltare organizațională" },
+
   // Sinteză
-  { id: "full", label: "Raport complet (toate secțiunile)", type: "FULL" },
+  { id: "full", label: "Raport complet (toate secțiunile)", type: "FULL", group: "Sinteză" },
 ]
 
 /* ── Data fetching ────────────────────────────────────────────────── */
@@ -603,53 +628,65 @@ export default async function PortalPage() {
           Jurnal rapoarte generate
         </h2>
         <div className="rounded-xl border border-border bg-slate-50/50 border-l-4 border-l-slate-300 p-5">
-          <div className="space-y-2">
-            {REPORT_LIBRARY.map((r) => {
-              const stats = data.reportsByType.get(r.type)
-              const generated = !!stats && stats.count > 0
-              const lastAt = stats?.lastAt
-                ? new Date(stats.lastAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" })
-                : null
-
+          <div className="space-y-5">
+            {Array.from(new Set(REPORT_LIBRARY.map(r => r.group))).map((group) => {
+              const reportsInGroup = REPORT_LIBRARY.filter(r => r.group === group)
               return (
-                <div key={r.id} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                      generated ? "bg-emerald-500" : "bg-slate-300"
-                    }`} />
-                    {generated ? (
-                      <Link
-                        href={`/reports?type=${r.type}`}
-                        className="text-sm text-slate-700 hover:underline font-medium"
-                      >
-                        {r.label}
-                      </Link>
-                    ) : (
-                      <span className="text-sm text-slate-400">{r.label}</span>
-                    )}
+                <div key={group}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    {group}
+                  </p>
+                  <div className="space-y-1.5">
+                    {reportsInGroup.map((r) => {
+                      const stats = data.reportsByType.get(r.type)
+                      const generated = !!stats && stats.count > 0
+                      const lastAt = stats?.lastAt
+                        ? new Date(stats.lastAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" })
+                        : null
+
+                      return (
+                        <div key={r.id} className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                              generated ? "bg-emerald-500" : "bg-slate-300"
+                            }`} />
+                            {generated ? (
+                              <Link
+                                href={`/reports?type=${r.type}`}
+                                className="text-sm text-slate-700 hover:underline font-medium"
+                              >
+                                {r.label}
+                              </Link>
+                            ) : (
+                              <span className="text-sm text-slate-400">{r.label}</span>
+                            )}
+                          </div>
+                          {generated ? (
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <span className="text-[10px] text-slate-500">
+                                {stats!.count}× generate · ultima {lastAt}
+                              </span>
+                              <Link
+                                href={`/reports?type=${r.type}`}
+                                className="text-[10px] text-indigo-500 hover:underline"
+                              >
+                                Vezi jurnal →
+                              </Link>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 flex-shrink-0 italic">
+                              încă negenerat
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                  {generated ? (
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="text-[10px] text-slate-500">
-                        {stats!.count}× generate · ultima {lastAt}
-                      </span>
-                      <Link
-                        href={`/reports?type=${r.type}`}
-                        className="text-[10px] text-indigo-500 hover:underline"
-                      >
-                        Vezi jurnal →
-                      </Link>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 flex-shrink-0 italic">
-                      încă negenerat
-                    </span>
-                  )}
                 </div>
               )
             })}
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-200 text-right">
+          <div className="mt-5 pt-3 border-t border-slate-200 text-right">
             <Link href="/reports" className="text-xs text-indigo-500 hover:underline">
               Toate rapoartele →
             </Link>
