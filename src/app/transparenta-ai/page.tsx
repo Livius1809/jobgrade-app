@@ -3,9 +3,9 @@ import Image from "next/image"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Transparenta AI",
+  title: "Transparență AI",
   description:
-    "Cum foloseste JobGrade inteligenta artificiala, ce date prelucram si cum va protejam drepturile. Conform AI Act (UE) 2024/1689.",
+    "Cum folosește JobGrade inteligența artificială, ce date prelucrăm și cum vă protejăm drepturile. Conform AI Act (UE) 2024/1689.",
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -18,36 +18,36 @@ const NAV_ITEMS = [
   { id: "ce-este", label: "Ce este JobGrade" },
   { id: "evaluare-b2b", label: "Evaluare B2B" },
   { id: "dezvoltare-b2c", label: "Dezvoltare B2C" },
-  { id: "supraveghere", label: "Supraveghere umana" },
+  { id: "supraveghere", label: "Supraveghere umană" },
   { id: "date", label: "Datele folosite" },
   { id: "drepturi", label: "Drepturile tale" },
-  { id: "limitari", label: "Limitarile AI-ului" },
+  { id: "limitari", label: "Limitările AI-ului" },
   { id: "contact", label: "Contact" },
 ] as const
 
 const CRITERIA = [
   {
-    name: "Educatie si experienta",
-    desc: "Nivelul de pregatire necesar pentru indeplinirea atributiilor postului",
+    name: "Educație și experiență",
+    desc: "Nivelul de pregătire necesar pentru îndeplinirea atribuțiilor postului",
   },
   {
     name: "Comunicare",
-    desc: "Complexitatea si frecventa interactiunilor cerute de post",
+    desc: "Complexitatea și frecvența interacțiunilor cerute de post",
   },
   {
     name: "Rezolvarea problemelor",
-    desc: "Tipul si dificultatea provocarilor pe care titularul le intampina",
+    desc: "Tipul și dificultatea provocărilor pe care titularul le întâmpină",
   },
   {
     name: "Luarea deciziilor",
-    desc: "Nivelul de autonomie si impactul deciziilor asociate postului",
+    desc: "Nivelul de autonomie și impactul deciziilor asociate postului",
   },
   {
     name: "Impactul asupra afacerii",
-    desc: "Contributia postului la rezultatele organizatiei",
+    desc: "Contribuția postului la rezultatele organizației",
   },
   {
-    name: "Conditiile de munca",
+    name: "Condițiile de muncă",
     desc: "Factorii de mediu, efort fizic sau psihic specifici postului",
   },
 ] as const
@@ -56,26 +56,26 @@ const SAFETY_LEVELS = [
   {
     level: "INFORMATIV",
     color: "bg-blue-100 text-blue-800",
-    desc: "Semnale de atentie usoare",
-    action: "Agentul adapteaza tonul conversatiei",
+    desc: "Semnale de atenție ușoare",
+    action: "Agentul adaptează tonul conversației",
   },
   {
     level: "MODERAT",
     color: "bg-yellow-100 text-yellow-800",
-    desc: "Indicii de disconfort emotional",
-    action: "Agentul redirectioneaza catre resurse de suport",
+    desc: "Indicii de disconfort emoțional",
+    action: "Agentul redirecționează către resurse de suport",
   },
   {
     level: "RIDICAT",
     color: "bg-orange-100 text-orange-800",
     desc: "Semne de distres psihologic",
-    action: "Sesiunea se opreste; contact direct cu psihologul",
+    action: "Sesiunea se oprește; contact direct cu personalul specializat",
   },
   {
     level: "CRITIC",
     color: "bg-red-100 text-red-800",
-    desc: "Indicii de criza",
-    action: "Afisare imediata: Telefonul Sperantei (0800 801 200)",
+    desc: "Indicii de criză",
+    action: "Afișare imediată: Telefonul Speranței (0800 801 200)",
   },
 ] as const
 
@@ -149,14 +149,14 @@ export default function TransparentaAIPage() {
         {/* Title block */}
         <div className="mb-12">
           <p className="text-xs text-text-micro uppercase tracking-wider mb-2">
-            Conform AI Act (UE) 2024/1689 — Art.13 si Art.14
+            Conform AI Act (UE) 2024/1689 — Art. 13 și Art. 14
           </p>
           <h1 className="text-3xl md:text-4xl font-semibold text-indigo-dark leading-tight mb-4">
-            Transparenta AI
+            Transparență AI
           </h1>
           <p className="text-lg text-text-warm leading-relaxed mb-3">
-            Va explicam cum functioneaza inteligenta artificiala in platforma
-            JobGrade, ce date folosim, cum luam deciziile si ce drepturi aveti.
+            Vă explicăm cum funcționează inteligența artificială în platforma
+            JobGrade, ce date folosim, cum luăm deciziile și ce drepturi aveți.
           </p>
           <p className="text-sm text-text-secondary">
             Ultima actualizare: {LAST_UPDATED}
@@ -183,35 +183,35 @@ export default function TransparentaAIPage() {
           </ol>
         </nav>
 
-        {/* ─── Sectiunea 1: Ce este JobGrade ──────────────────── */}
+        {/* ─── Secțiunea 1: Ce este JobGrade ──────────────────── */}
         <SectionHeading id="ce-este" number={1}>
-          Ce este JobGrade si cum folosim Inteligenta Artificiala
+          Ce este JobGrade și cum folosim Inteligența Artificială
         </SectionHeading>
 
         <p className="text-text-warm leading-relaxed mb-4">
-          JobGrade este o platforma de evaluare a posturilor si dezvoltare
-          profesionala, operata de Psihobusiness Consulting SRL (CIF:
+          JobGrade este o platformă de evaluare a posturilor și dezvoltare
+          profesională, operată de Psihobusiness Consulting SRL (CIF:
           RO15790994).
         </p>
         <p className="text-text-warm leading-relaxed mb-6">
-          Platforma foloseste modele lingvistice mari (Large Language Models),
+          Platforma folosește modele lingvistice mari (Large Language Models),
           furnizate de Anthropic (modelul Claude), pentru a asista procesele de
-          evaluare si ghidare.
+          evaluare și ghidare.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2 mb-6">
           <InfoCard title="B2B — pentru companii">
             <p>
-              Asistam procesul de evaluare a posturilor: structurarea
-              informatiilor, analiza comparativa a rolurilor si propunerea de
-              scoruri pe criterii obiective. Decizia finala apartine intotdeauna
+              Asistăm procesul de evaluare a posturilor: structurarea
+              informațiilor, analiza comparativă a rolurilor și propunerea de
+              scoruri pe criterii obiective. Decizia finală aparține întotdeauna
               comitetului uman de evaluare.
             </p>
           </InfoCard>
           <InfoCard title="B2C — pentru persoane">
             <p>
-              Ghidam dialoguri de dezvoltare personala si profesionala prin
-              agenti specializati care adapteaza conversatia la profilul si
+              Ghidăm dialoguri de dezvoltare personală și profesională prin
+              agenți specializați care adaptează conversația la profilul și
               nevoile utilizatorului.
             </p>
           </InfoCard>
@@ -227,22 +227,22 @@ export default function TransparentaAIPage() {
               salarizarea
             </li>
             <li>
-              Nu inlocuieste specialistii umani (psihologi, consilieri, juristi)
+              Nu înlocuiește specialiștii umani (psihologi, consilieri, juriști)
             </li>
-            <li>Nu opereaza fara supraveghere umana</li>
+            <li>Nu operează fără supraveghere umană</li>
           </ul>
         </div>
 
-        {/* ─── Sectiunea 2: Evaluare B2B ──────────────────────── */}
+        {/* ─── Secțiunea 2: Evaluare B2B ──────────────────────── */}
         <SectionHeading id="evaluare-b2b" number={2}>
-          Cum functioneaza AI-ul in procesul de evaluare (B2B)
+          Cum funcționează AI-ul în procesul de evaluare (B2B)
         </SectionHeading>
 
         <p className="text-text-warm leading-relaxed mb-6">
-          Evaluarea posturilor in JobGrade se bazeaza pe 6 criterii obiective.
-          Acestea evalueaza postul, nu persoana care il ocupa — asigurand
-          neutralitate din perspectiva genului si conformitate cu Directiva UE
-          2023/970 privind transparenta salariala.
+          Evaluarea posturilor în JobGrade se bazează pe 6 criterii obiective.
+          Acestea evaluează postul, nu persoana care îl ocupă — asigurând
+          neutralitate din perspectiva genului și conformitate cu Directiva UE
+          2023/970 privind transparența salarială.
         </p>
 
         <div className="grid gap-3 mb-8">
@@ -265,60 +265,60 @@ export default function TransparentaAIPage() {
         <div className="grid gap-4 md:grid-cols-2 mb-6">
           <InfoCard title="Rolul AI-ului">
             <ul className="space-y-1.5">
-              <li>Structureaza informatiile din fisele de post</li>
-              <li>Analizeaza si compara posturile pe baza criteriilor</li>
-              <li>Propune scoruri initiale — ca punct de plecare</li>
-              <li>Genereaza rapoarte comparative</li>
+              <li>Structurează informațiile din fișele de post</li>
+              <li>Analizează și compară posturile pe baza criteriilor</li>
+              <li>Propune scoruri inițiale — ca punct de plecare</li>
+              <li>Generează rapoarte comparative</li>
             </ul>
           </InfoCard>
           <InfoCard title="Rolul oamenilor">
             <ul className="space-y-1.5">
-              <li>Comitetul de evaluare valideaza fiecare scor</li>
-              <li>Minimum 3 etape de consens inainte de finalizare</li>
-              <li>Orice evaluare poate fi contestata si reevaluata</li>
+              <li>Comitetul de evaluare validează fiecare scor</li>
+              <li>Minimum 3 etape de consens înainte de finalizare</li>
+              <li>Orice evaluare poate fi contestată și reevaluată</li>
             </ul>
           </InfoCard>
         </div>
 
-        {/* ─── Sectiunea 3: B2C ───────────────────────────────── */}
+        {/* ─── Secțiunea 3: B2C ───────────────────────────────── */}
         <SectionHeading id="dezvoltare-b2c" number={3}>
-          Cum functioneaza AI-ul in dezvoltarea personala (B2C)
+          Cum funcționează AI-ul în dezvoltarea personală (B2C)
         </SectionHeading>
 
         <p className="text-text-warm leading-relaxed mb-6">
-          Modulul B2C ofera dialoguri ghidate cu agenti AI specializati. Fiecare
-          agent are un rol precis si opereaza in limitele unei metodologii
+          Modulul B2C oferă dialoguri ghidate cu agenți AI specializați. Fiecare
+          agent are un rol precis și operează în limitele unei metodologii
           validate.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2 mb-8">
           <InfoCard title="Ce face AI-ul">
             <ul className="space-y-1.5">
-              <li>Adapteaza conversatia la profilul si ritmul utilizatorului</li>
-              <li>Pune intrebari care ajuta la reflectie si auto-cunoastere</li>
+              <li>Adaptează conversația la profilul și ritmul utilizatorului</li>
+              <li>Pune întrebări calibrate care ajută la reflecție și în procesul de auto-cunoaștere</li>
               <li>
-                Ofera perspective bazate pe cadre psihologice validate
+                Oferă perspective bazate pe cadre psihologice validate
               </li>
-              <li>Genereaza rapoarte de progres</li>
+              <li>Generează rapoarte de progres</li>
             </ul>
           </InfoCard>
           <InfoCard title="Ce NU face AI-ul">
             <ul className="space-y-1.5">
               <li>
-                Nu diagnosticheaza — nu este instrument clinic
+                Nu diagnostichează — nu este instrument clinic
               </li>
-              <li>Nu trateaza — nu ofera terapie</li>
-              <li>Nu manipuleaza — ghideaza prin intrebari, nu directive</li>
+              <li>Nu tratează — nu oferă terapie</li>
+              <li>Nu manipulează — ghidează prin întrebări, nu directive</li>
             </ul>
           </InfoCard>
         </div>
 
         <h3 className="text-lg font-semibold text-indigo-dark mb-4">
-          SafetyMonitor — protectie automata
+          SafetyMonitor — protecție automată
         </h3>
         <p className="text-text-warm text-sm leading-relaxed mb-4">
-          Platforma include un sistem de monitorizare cu 4 niveluri de alerta
-          care protejeaza utilizatorul in situatii sensibile:
+          Platforma include un sistem de monitorizare cu 4 niveluri de alertă
+          care protejează utilizatorul în situații sensibile:
         </p>
 
         <div className="grid gap-3 mb-6">
@@ -341,9 +341,9 @@ export default function TransparentaAIPage() {
         </div>
 
         <p className="text-sm text-text-secondary italic mb-6">
-          AI-ul opereaza in zona rationala si reflexiva. Pentru aspecte care tin
-          de experienta traita profunda, platforma recomanda ghizi umani
-          calificati.
+          AI-ul operează în zona rațională și reflexivă. Pentru aspecte care țin
+          de experiența trăită profundă, platforma recomandă consilieri umani
+          calificați.
         </p>
 
         {/* ─── Sectiunea 4: Supraveghere umana ────────────────── */}
@@ -364,7 +364,7 @@ export default function TransparentaAIPage() {
               Specializări: psihologia muncii, transporturilor și serviciilor
             </li>
             <li>Formare psihanalitică (relevantă pentru interacțiunile B2C)</li>
-            <li>Atestat de liberă practică — exercitare independentă</li>
+            <li>Atestat de liberă practică — conferă dreptul de exercitare independentă a profesiei de psiholog</li>
           </ul>
         </div>
 
@@ -374,7 +374,7 @@ export default function TransparentaAIPage() {
               <li>Personalul specializat supervizează metodologia de evaluare</li>
               <li>Comitetele de evaluare sunt formate exclusiv din oameni</li>
               <li>AI-ul propune, oamenii decid</li>
-              <li>Trail de audit complet pentru fiecare sesiune</li>
+              <li>Jurnal de audit complet pentru fiecare sesiune</li>
             </ul>
           </InfoCard>
           <InfoCard title="În procesele B2C">
@@ -408,13 +408,13 @@ export default function TransparentaAIPage() {
         </h3>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6">
           <li>
-            Informatii furnizate direct de utilizator: raspunsuri la
-            chestionare, continut de dialog, documente incarcate (CV, fise de
+            Informații furnizate direct de utilizator: răspunsuri la
+            chestionare, conținut de dialog, documente încărcate (CV, fișe de
             post)
           </li>
           <li>
-            Date de navigare si interactiune in platforma (pentru imbunatatirea
-            experientei)
+            Date de navigare și interacțiune în platformă (pentru îmbunătățirea
+            experienței)
           </li>
         </ul>
 
@@ -424,40 +424,40 @@ export default function TransparentaAIPage() {
           </p>
           <ul className="text-sm text-text-warm space-y-1.5">
             <li>
-              <strong>Nu antrenam modele AI pe datele clientilor.</strong>{" "}
+              <strong>Nu antrenăm modele AI cu datele clienților.</strong>{" "}
               Folosim modele pre-antrenate (Claude, furnizat de Anthropic).
               Datele sunt procesate, nu folosite pentru antrenament.
             </li>
             <li>
-              <strong>Nu colectam date din surse externe</strong> fara
-              consimtamantul explicit al utilizatorului
+              <strong>Nu colectăm date din surse externe</strong> fără
+              consimțământul explicit al utilizatorului
             </li>
             <li>
-              <strong>Nu vindem si nu partajam date</strong> cu terti in scopuri
+              <strong>Nu vindem și nu partajăm date</strong> cu terți în scopuri
               de marketing
             </li>
           </ul>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 mb-6">
-          <InfoCard title="Masuri de protectie">
+          <InfoCard title="Măsuri de protecție">
             <ul className="space-y-1.5">
               <li>
-                B2C: pseudonim obligatoriu — identitatea reala nu este accesibila
-                agentilor AI
+                B2C: pseudonim obligatoriu — identitatea reală nu este accesibilă
+                agenților AI
               </li>
               <li>
-                Doua straturi de separare — date de identitate si de interactiune
-                in baze separate
+                Două straturi de separare — date de identitate și de interacțiune
+                în baze separate
               </li>
-              <li>Criptare in tranzit (TLS) si in repaus</li>
+              <li>Criptare în tranzit (TLS) și în repaus</li>
             </ul>
           </InfoCard>
-          <InfoCard title="Termene de retentie">
+          <InfoCard title="Termene de retenție">
             <ul className="space-y-1.5">
               <li>Date evaluare B2B: durata contractului + 5 ani</li>
-              <li>Date interactiune B2C: 3 ani de la ultima activitate</li>
-              <li>Cont B2C inactiv: notificare la 24 luni, stergere la 36</li>
+              <li>Date interacțiune B2C: 3 ani de la ultima activitate</li>
+              <li>Cont B2C inactiv: notificare la 24 luni, ștergere la 36</li>
               <li>Date audit: 10 ani</li>
             </ul>
           </InfoCard>
@@ -474,20 +474,20 @@ export default function TransparentaAIPage() {
         <div className="grid gap-3 mb-8">
           {[
             {
-              title: "Dreptul de a sti ca interactionezi cu un AI",
-              desc: "Toti agentii din platforma se identifica clar ca fiind asistenti AI. Nu simulam interactiuni umane.",
+              title: "Dreptul de a ști că interacționezi cu un AI",
+              desc: "Toți agenții din platformă se identifică clar ca fiind asistenți AI. Nu simulăm interacțiuni umane.",
             },
             {
-              title: "Dreptul de a cere explicatie",
-              desc: "Poti solicita o explicatie despre cum a ajuns AI-ul la o recomandare sau un scor propus.",
+              title: "Dreptul de a cere explicație",
+              desc: "Poți solicita o explicație despre cum a ajuns AI-ul la o recomandare sau un scor propus.",
             },
             {
               title: "Dreptul de a contesta o evaluare",
-              desc: "Comitetul uman reevalueaza integral — AI-ul nu are ultimul cuvant.",
+              desc: "Comitetul uman reevaluează integral — AI-ul nu are ultimul cuvânt.",
             },
             {
-              title: "Dreptul la interventie umana",
-              desc: "In orice moment al interactiunii cu platforma, poti cere sa vorbesti cu un psiholog din echipa noastra.",
+              title: "Dreptul la intervenție umană",
+              desc: "În orice moment al interacțiunii cu platforma, poți cere să vorbești cu personalul specializat din echipa noastră.",
             },
           ].map((r) => (
             <div
@@ -503,25 +503,25 @@ export default function TransparentaAIPage() {
         </div>
 
         <h3 className="text-lg font-semibold text-indigo-dark mb-4">
-          Drepturi GDPR (Art.15-17 RGPD)
+          Drepturi GDPR (Art. 15-17 RGPD)
         </h3>
         <div className="grid gap-3 sm:grid-cols-2 mb-8">
           {[
             {
               title: "Dreptul de acces",
-              desc: "Solicita o copie a tuturor datelor pe care le detinem despre tine",
+              desc: "Solicită o copie a tuturor datelor pe care le deținem despre tine",
             },
             {
               title: "Dreptul la rectificare",
-              desc: "Corecteaza orice date inexacte",
+              desc: "Corectează orice date inexacte",
             },
             {
-              title: "Dreptul la stergere",
-              desc: "Cere stergerea contului si a datelor asociate",
+              title: "Dreptul la ștergere",
+              desc: "Cere ștergerea contului și a datelor asociate",
             },
             {
               title: "Dreptul la portabilitate",
-              desc: "Exporta datele tale in format structurat",
+              desc: "Exportă datele tale în format structurat",
             },
           ].map((r) => (
             <div
@@ -538,11 +538,11 @@ export default function TransparentaAIPage() {
 
         <div className="rounded-xl border border-border bg-warm-bg p-5 mb-6">
           <p className="text-sm font-semibold text-indigo-dark mb-2">
-            Cum iti exerciti drepturile
+            Cum îți exerciți drepturile
           </p>
           <ul className="text-sm text-text-warm space-y-1.5">
             <li>
-              <strong>Export date:</strong> din contul tau, sectiunea
+              <strong>Export date:</strong> din contul tău, secțiunea
               &quot;Datele mele&quot; (sau prin API:{" "}
               <code className="text-xs bg-surface border border-border px-1.5 py-0.5 rounded">
                 GET /api/v1/b2c/my-data
@@ -550,15 +550,15 @@ export default function TransparentaAIPage() {
               )
             </li>
             <li>
-              <strong>Stergere cont:</strong> din setari, sectiunea
-              &quot;Sterge contul&quot; (sau prin API:{" "}
+              <strong>Ștergere cont:</strong> din setări, secțiunea
+              &quot;Șterge contul&quot; (sau prin API:{" "}
               <code className="text-xs bg-surface border border-border px-1.5 py-0.5 rounded">
                 DELETE /api/v1/b2c/account
               </code>
-              ). Perioada de gratie: 30 de zile.
+              ). Perioadă de grație: 30 de zile.
             </li>
             <li>
-              <strong>Alte solicitari:</strong>{" "}
+              <strong>Alte solicitări:</strong>{" "}
               <a
                 href="mailto:contact@jobgrade.ro"
                 className="text-indigo hover:text-indigo-dark transition-colors"
@@ -569,37 +569,37 @@ export default function TransparentaAIPage() {
           </ul>
         </div>
 
-        {/* ─── Sectiunea 7: Limitari ──────────────────────────── */}
+        {/* ─── Secțiunea 7: Limitări ──────────────────────────── */}
         <SectionHeading id="limitari" number={7}>
-          Limitarile AI-ului
+          Limitările AI-ului
         </SectionHeading>
 
         <p className="text-text-warm leading-relaxed mb-6">
-          Credem in transparenta. De aceea va spunem deschis ce nu poate face
+          Credem în transparență. De aceea vă spunem deschis ce nu poate face
           AI-ul nostru:
         </p>
 
         <div className="grid gap-3 mb-8">
           {[
             {
-              title: "AI-ul poate gresi",
-              desc: "Recomandarile si scorurile propuse sunt sugestii informate, nu certitudini. De aceea fiecare proces include validare umana.",
+              title: "AI-ul poate greși",
+              desc: "Recomandările și scorurile propuse sunt sugestii informate, nu certitudini. De aceea fiecare proces include validare umană.",
             },
             {
-              title: "AI-ul nu inlocuieste un specialist",
-              desc: "Nu este psiholog, terapeut, consilier juridic sau medic. Pentru situatii care necesita expertiza profesionala, va recomandam un specialist acreditat.",
+              title: "AI-ul nu înlocuiește un specialist",
+              desc: "Nu este psiholog, terapeut, consilier juridic sau medic. Pentru situații care necesită expertiză profesională, vă recomandăm un specialist acreditat.",
             },
             {
-              title: "AI-ul nu are experienta traita",
-              desc: "Ghideaza din cunoastere acumulata, nu din experienta personala. Cunoasterea fara experienta are limite pe care le recunoastem.",
+              title: "AI-ul nu are experiență trăită",
+              desc: "Ghidează din cunoaștere acumulată, nu din experiență personală. Cunoașterea fără experiență are limite pe care le recunoaștem.",
             },
             {
-              title: "AI-ul opereaza pe baza informatiilor primite",
-              desc: "Calitatea recomandarilor depinde de calitatea si completitudinea informatiilor furnizate.",
+              title: "AI-ul operează pe baza informațiilor primite",
+              desc: "Calitatea recomandărilor depinde de calitatea și completitudinea informațiilor furnizate.",
             },
             {
               title: "AI-ul nu poate garanta rezultate",
-              desc: "Platforma ofera instrumente si ghidare. Rezultatele depind de modul in care sunt utilizate.",
+              desc: "Platforma oferă instrumente și ghidare. Rezultatele depind de modul în care sunt utilizate.",
             },
           ].map((r) => (
             <div
@@ -616,28 +616,28 @@ export default function TransparentaAIPage() {
 
         <div className="rounded-xl border-2 border-coral/30 bg-coral/5 p-6 mb-6">
           <p className="text-sm font-semibold text-coral-dark mb-3">
-            La situatii de criza
+            La situații de criză
           </p>
           <p className="text-sm text-text-warm mb-3">
-            Daca te afli intr-o situatie dificila sau ai nevoie de ajutor
+            Dacă te afli într-o situație dificilă sau ai nevoie de ajutor
             imediat:
           </p>
           <ul className="text-sm text-text-warm space-y-1.5">
             <li>
-              <strong>Telefonul Sperantei:</strong> 0800 801 200 (gratuit, 24/7)
+              <strong>Telefonul Speranței:</strong> 0800 801 200 (gratuit, 24/7)
             </li>
             <li>
               <strong>Telefonul Sufletului:</strong> 116 123 (gratuit)
             </li>
             <li>
-              <strong>Urgente:</strong> 112
+              <strong>Urgențe:</strong> 112
             </li>
           </ul>
         </div>
 
-        {/* ─── Sectiunea 8: Contact ───────────────────────────── */}
+        {/* ─── Secțiunea 8: Contact ───────────────────────────── */}
         <SectionHeading id="contact" number={8}>
-          Cum ne poti contacta
+          Cum ne poți contacta
         </SectionHeading>
 
         <div className="grid gap-4 md:grid-cols-3 mb-8">
@@ -654,7 +654,7 @@ export default function TransparentaAIPage() {
               <li>CIF: RO15790994</li>
             </ul>
           </InfoCard>
-          <InfoCard title="Responsabil Protectia Datelor (DPO)">
+          <InfoCard title="Responsabil Protecția Datelor (DPO)">
             <a
               href="mailto:dpo@jobgrade.ro"
               className="text-indigo hover:text-indigo-dark transition-colors"
@@ -689,11 +689,11 @@ export default function TransparentaAIPage() {
         {/* ── Compliance notice ────────────────────────────────── */}
         <div className="mt-16 pt-8 border-t border-border/50">
           <p className="text-xs text-text-micro leading-relaxed">
-            Aceasta pagina este actualizata ori de cate ori apar modificari in
-            modul de functionare al AI-ului in platforma JobGrade. Document
-            redactat conform cerintelor Regulamentului (UE) 2024/1689 privind
-            Inteligenta Artificiala (AI Act), Art.13 (Transparenta si furnizarea
-            de informatii) si Art.14 (Supraveghere umana).
+            Această pagină este actualizată ori de câte ori apar modificări în
+            modul de funcționare al AI-ului în platforma JobGrade. Document
+            redactat conform cerințelor Regulamentului (UE) 2024/1689 privind
+            Inteligența Artificială (AI Act), Art. 13 (Transparența și
+            furnizarea de informații) și Art. 14 (Supraveghere umană).
           </p>
         </div>
       </main>
