@@ -124,7 +124,15 @@ export default async function PortalPage() {
           <h1 className="text-xl font-bold text-foreground">
             {firstName ? `Bine ai venit, ${firstName}.` : "Bine ai venit."}
           </h1>
-          <p className="text-sm text-text-secondary mt-1">{data.companyName}</p>
+          <p className="text-sm text-text-secondary mt-1">
+            {data.companyName}{" "}
+            <Link
+              href="/company"
+              className="text-xs text-indigo hover:text-indigo-dark hover:underline ml-2"
+            >
+              Editează profil →
+            </Link>
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold ${
