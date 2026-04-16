@@ -791,21 +791,21 @@ function OrgOverviewSection({
                 potrivit statului de funcții.
               </p>
               <p className="text-[10px] text-amber-800 leading-snug">
-                Nu este o organigramă reală deoarece lipsesc relațiile de
-                subordonare, rolurile de coordonare, nivelul ierarhic de
-                vârf.
+                Nu este o organigramă reală — lipsesc relațiile de
+                subordonare, rolurile de coordonare, nivelul ierarhic de vârf.
+              </p>
+              <p className="text-[10px] text-amber-800 leading-snug">
+                Înregistrările afișate pot fi un mix de locații, categorii
+                profesionale transversale (ex: medici care lucrează în mai
+                multe puncte) și departamente reale; formele de colaborare pot
+                fi diverse (contract individual de muncă, PFA, convenție etc.).
+                Clasificarea exactă necesită cunoașterea afacerii.
               </p>
               <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
-                💡 Organigrama reală este utilizată ca input pentru o parte
-                din serviciile oferite organizației, în ansamblu.
+                💡 Organigrama reală + clasificarea contractelor sunt
+                folosite ca input pentru o parte din serviciile oferite
+                organizației, în ansamblu.
               </p>
-              {looksLikeLocations && (
-                <p className="text-[10px] text-coral-dark leading-snug pt-1 border-t border-amber-200">
-                  ⚠ Pare că aceste înregistrări sunt locații (același prefix
-                  repetat) — recomandat să le grupați sub un departament real
-                  în statul de funcții.
-                </p>
-              )}
             </div>
 
             <div className="max-h-[420px] overflow-y-auto pr-2 divide-y divide-slate-100">
