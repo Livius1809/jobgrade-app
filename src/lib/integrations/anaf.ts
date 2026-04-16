@@ -10,7 +10,7 @@
  * Limitări: max 500 CUI per request, max 1 request/secundă.
  */
 
-const ANAF_ENDPOINT = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/ws/tva"
+const ANAF_ENDPOINT = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva"
 
 export interface AnafCompanyData {
   cui: string
@@ -27,8 +27,8 @@ export interface AnafCompanyData {
 }
 
 interface AnafRawResponse {
-  cod: number
-  message: string
+  cod?: number
+  message?: string
   found: Array<{
     date_generale?: {
       cui: number
@@ -102,8 +102,8 @@ interface AnafRawResponse {
       dcod_Postal?: string
     }
   }>
-  notFound: string[]
-  notprocessed: Array<unknown>
+  notFound: Array<{ cui: number; data: string }>
+  notprocessed?: Array<unknown>
 }
 
 /**
@@ -176,7 +176,7 @@ export async function lookupCUI(rawCUI: string): Promise<AnafCompanyData | null>
 
   const data = (await response.json()) as AnafRawResponse
 
-  if (data.cod !== 200 && data.message?.toLowerCase().includes("error")) {
+  if (data.message && data.message.toLowerCase().includes("error")) {
     throw new Error(`ANAF: ${data.message}`)
   }
 
