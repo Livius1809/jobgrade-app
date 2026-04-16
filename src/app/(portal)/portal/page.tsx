@@ -218,7 +218,7 @@ const REPORT_LIBRARY: Array<{
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports] = await Promise.all([
+  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount, reports, payrollAggregate, payGapReport, activeSessionsCount, employeeRecords, oldJobsCount] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId } }).catch(() => null),
@@ -230,7 +230,52 @@ async function getPortalData(tenantId: string) {
       select: { type: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     }).catch(() => [] as Array<{ type: string; createdAt: Date }>),
+    (prisma as any).payrollEntry.aggregate({
+      where: { tenantId },
+      _sum: { baseSalary: true },
+    }).catch(() => ({ _sum: { baseSalary: null } })) as Promise<{ _sum: { baseSalary: number | null } }>,
+    prisma.report.findFirst({
+      where: { tenantId, type: "PAY_GAP" as any },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }).catch(() => null),
+    prisma.evaluationSession.count({
+      where: { tenantId, status: { notIn: ["COMPLETED", "DRAFT"] } },
+    }).catch(() => 0),
+    prisma.employeeSalaryRecord.findMany({
+      where: { tenantId },
+      select: { gender: true, baseSalary: true, variableComp: true },
+    }).catch(() => [] as Array<{ gender: string; baseSalary: number; variableComp: number }>),
+    prisma.job.count({
+      where: {
+        tenantId,
+        status: "ACTIVE",
+        updatedAt: { lt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) },
+      },
+    }).catch(() => 0),
   ])
+
+  // Pay gap (UE 2023/970): diferență salariu mediu bărbați vs femei
+  let payGapPercent: number | null = null
+  let medianSalary: number | null = null
+  if (employeeRecords.length > 0) {
+    const m = employeeRecords.filter(r => r.gender === "MALE")
+    const f = employeeRecords.filter(r => r.gender === "FEMALE")
+    if (m.length > 0 && f.length > 0) {
+      const avgM = m.reduce((s, r) => s + r.baseSalary + r.variableComp, 0) / m.length
+      const avgF = f.reduce((s, r) => s + r.baseSalary + r.variableComp, 0) / f.length
+      if (avgM > 0) {
+        payGapPercent = Math.round(((avgM - avgF) / avgM) * 1000) / 10 // 1 zecimală
+      }
+    }
+    const totals = employeeRecords.map(r => r.baseSalary + r.variableComp).sort((a, b) => a - b)
+    if (totals.length > 0) {
+      const mid = Math.floor(totals.length / 2)
+      medianSalary = totals.length % 2 === 0
+        ? (totals[mid - 1] + totals[mid]) / 2
+        : totals[mid]
+    }
+  }
 
   const providedInputs = new Set<string>()
   if (jobCount > 0) providedInputs.add("jobs")
@@ -312,7 +357,132 @@ async function getPortalData(tenantId: string) {
     reportsByType,
     inputStatuses,
     relevanceIndex,
+    monthlyBudget: payrollAggregate._sum.baseSalary ?? 0,
+    payGapLastAt: payGapReport?.createdAt ?? null,
+    activeSessionsCount,
+    payGapPercent,
+    medianSalary,
+    employeeRecordsCount: employeeRecords.length,
+    oldJobsCount,
   }
+}
+
+/* ── Snapshot organizație: KPI-uri „vii" pentru HR (administrator de cont) ──
+   Combinație de KPI-uri HARD (din date directe) și SOFT (din rapoarte rulate).
+   KPI-urile SOFT apar ca „—" cu hint la serviciul care le calculează —
+   se aprind când rulezi serviciul.
+*/
+function OrgSnapshotBar({ data }: { data: Awaited<ReturnType<typeof getPortalData>> }) {
+  const fmt = (n: number) => new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(n)
+  const completePercent = data.jobCount > 0 ? Math.round((data.completeJobCount / data.jobCount) * 100) : 0
+  const costPerEmployee = data.payrollCount > 0 && data.monthlyBudget > 0
+    ? data.monthlyBudget / data.payrollCount
+    : null
+
+  const hasReport = (type: string) => (data.reportsByType.get(type)?.count ?? 0) > 0
+
+  // KPI-uri HARD (calculate direct din date)
+  const hardKpis = [
+    {
+      label: "Echitate salarială",
+      sub: "pay gap pe gen",
+      value: data.payGapPercent !== null ? `${data.payGapPercent}%` : "—",
+      tone: data.payGapPercent === null ? "muted" :
+            Math.abs(data.payGapPercent) < 5 ? "success" :
+            Math.abs(data.payGapPercent) < 15 ? "warn" : "danger",
+      hint: data.payGapPercent === null ? "Adaugă date angajați (gen + salariu)" : null,
+    },
+    {
+      label: "Cost mediu / angajat",
+      sub: "salariu total / lună",
+      value: costPerEmployee ? `${fmt(costPerEmployee)} RON` : "—",
+      tone: costPerEmployee ? "primary" : "muted",
+      hint: costPerEmployee ? null : "Importă statul de salarii",
+    },
+    {
+      label: "Acoperire fișe de post",
+      sub: "complete vs total",
+      value: data.jobCount > 0 ? `${completePercent}%` : "—",
+      tone: completePercent === 100 ? "success" : completePercent > 0 ? "warn" : "muted",
+      hint: completePercent === 100 ? null : "Completează atribuțiile",
+    },
+  ]
+
+  // KPI-uri SOFT (din rapoarte agregate — apar când serviciile sunt rulate)
+  const softKpis = [
+    {
+      label: "Indicele de performanță",
+      sub: "din evaluări de performanță",
+      value: hasReport("PERFORMANCE_EVAL") ? "calculat" : "—",
+      tone: hasReport("PERFORMANCE_EVAL") ? "primary" : "muted",
+      hint: hasReport("PERFORMANCE_EVAL") ? null : `Rulează „Evaluarea performanței"`,
+    },
+    {
+      label: "Indicele cultural",
+      sub: "din chestionar climat",
+      value: hasReport("CULTURE") ? "calculat" : "—",
+      tone: hasReport("CULTURE") ? "primary" : "muted",
+      hint: hasReport("CULTURE") ? null : `Rulează „Cultură organizațională"`,
+    },
+    {
+      label: "Maturitatea proceselor",
+      sub: "calitate operațională",
+      value: hasReport("QUALITY") ? "calculat" : "—",
+      tone: hasReport("QUALITY") ? "primary" : "muted",
+      hint: hasReport("QUALITY") ? null : `Rulează „Procese & Calitate"`,
+    },
+    {
+      label: "Indice multigenerațional",
+      sub: "echilibru pe generații",
+      value: hasReport("MULTIGEN") ? "calculat" : "—",
+      tone: hasReport("MULTIGEN") ? "primary" : "muted",
+      hint: hasReport("MULTIGEN") ? null : `Rulează „Echipe multigeneraționale"`,
+    },
+    {
+      label: "Conformitate UE 2023/970",
+      sub: "raport pay gap recent",
+      value: data.payGapLastAt && (Date.now() - new Date(data.payGapLastAt).getTime()) < 365 * 86_400_000 ? "✓" : "⚠",
+      tone: data.payGapLastAt && (Date.now() - new Date(data.payGapLastAt).getTime()) < 365 * 86_400_000 ? "success" : "warn",
+      hint: data.payGapLastAt ? null : "Generează raportul de pay gap",
+    },
+  ]
+
+  const allKpis = [...hardKpis, ...softKpis]
+  const toneClasses: Record<string, string> = {
+    primary: "text-indigo-700",
+    success: "text-emerald-600",
+    warn: "text-amber-600",
+    danger: "text-coral",
+    muted: "text-slate-400",
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-gradient-to-r from-indigo-50/50 to-emerald-50/30 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary/70">
+          Snapshot organizație
+        </p>
+        <p className="text-[10px] text-slate-400 italic">
+          Indicatori vii — se actualizează la fiecare input nou și la fiecare raport rulat
+        </p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {allKpis.map((k) => (
+          <div key={k.label} className="bg-white/70 rounded-lg px-3 py-2 border border-white/80" title={k.hint ?? undefined}>
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium leading-tight">
+              {k.label}
+            </p>
+            <p className={`text-lg font-semibold mt-1 leading-tight ${toneClasses[k.tone]}`}>
+              {k.value}
+            </p>
+            <p className="text-[9px] text-slate-400 mt-0.5 leading-tight">
+              {k.hint ?? k.sub}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
 }
 
 /* ── Page ─────────────────────────────────────────────────────────── */
@@ -324,6 +494,9 @@ export default async function PortalPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] space-y-10">
+
+      {/* ══════════ SNAPSHOT ORGANIZAȚIE (HR view) ══════════ */}
+      <OrgSnapshotBar data={data} />
 
       {/* ══════════ GREETING ══════════ */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
