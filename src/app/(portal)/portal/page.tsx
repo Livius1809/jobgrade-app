@@ -808,28 +808,16 @@ function OrgOverviewSection({
               )}
             </div>
 
-            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
+            <div className="max-h-[420px] overflow-y-auto pr-2 divide-y divide-slate-100">
               {org.departments.map((d) => (
-                <div key={d.name} className="border border-slate-100 rounded-lg p-3 bg-white/60">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-800" />
-                      <span className="text-sm font-medium text-slate-800 truncate">{d.name}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 flex-shrink-0">
-                      {fmt(d.count)} angajați
-                    </span>
+                <div key={d.name} className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-800" />
+                    <span className="text-sm text-slate-800 truncate">{d.name}</span>
                   </div>
-                  {/* Locațiile inline (compact, fără simbol geografic care ar sugera precizie) */}
-                  <p className="text-[11px] text-slate-500 leading-relaxed pl-3.5">
-                    {d.locations.map((loc, idx) => (
-                      <span key={loc.city}>
-                        {idx > 0 && <span className="text-slate-300 mx-1.5">·</span>}
-                        <span className="text-slate-600">{loc.city}</span>
-                        <span className="text-slate-400 ml-1">({loc.count})</span>
-                      </span>
-                    ))}
-                  </p>
+                  <span className="text-[11px] text-slate-500 flex-shrink-0">
+                    {fmt(d.count)} angajați
+                  </span>
                 </div>
               ))}
             </div>
