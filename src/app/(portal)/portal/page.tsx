@@ -795,11 +795,12 @@ function OrgOverviewSection({
                 subordonare, rolurile de coordonare, nivelul ierarhic de vârf.
               </p>
               <p className="text-[10px] text-amber-800 leading-snug">
-                Înregistrările afișate pot fi un mix de locații, categorii
-                profesionale transversale (ex: medici care lucrează în mai
-                multe puncte) și departamente reale; formele de colaborare pot
-                fi diverse (contract individual de muncă, PFA, convenție etc.).
-                Clasificarea exactă necesită cunoașterea afacerii.
+                Înregistrările afișate pot fi un mix de locații (puncte de
+                lucru), categorii profesionale transversale (persoane care
+                lucrează în mai multe puncte) și departamente reale; formele
+                de colaborare pot fi diverse (contract individual de muncă,
+                PFA, convenție civilă etc.). Clasificarea exactă necesită
+                cunoașterea afacerii.
               </p>
               <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
                 💡 Organigrama reală + clasificarea contractelor sunt
