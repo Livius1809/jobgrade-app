@@ -61,8 +61,10 @@ export default function TermsPage() {
           </h1>
           <p className="text-lg text-text-warm leading-relaxed mb-3">
             Acești termeni reglementează relația dintre dumneavoastră
-            (clientul-companie) și Psihobusiness Consulting SRL (operatorul
-            JobGrade). Sunt redactați clar, fără capcane.
+            (Client — persoană juridică sau persoană fizică) și
+            Psihobusiness Consulting SRL (operatorul JobGrade). Sunt
+            redactați clar, fără capcane, și se aplică atât pentru
+            utilizarea B2B (companii), cât și B2C (utilizatori individuali).
           </p>
           <p className="text-sm text-text-secondary">Ultima actualizare: {LAST_UPDATED}</p>
         </div>
@@ -84,11 +86,19 @@ export default function TermsPage() {
         <H id="definitii" n={1}>Definiții</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li><strong>JobGrade / Operatorul:</strong> platforma SaaS oferită de Psihobusiness Consulting SRL, CUI RO15790994</li>
-          <li><strong>Client:</strong> persoană juridică (companie) care creează un cont și utilizează serviciile</li>
-          <li><strong>Utilizator:</strong> persoană fizică autorizată de Client să acceseze contul (HR Director, manager, facilitator)</li>
-          <li><strong>Servicii:</strong> evaluare posturi, structură salarială, pay gap, recrutare, dezvoltare organizațională, generare documente</li>
+          <li>
+            <strong>Client:</strong> poate fi:
+            <ul className="list-disc pl-6 mt-1 space-y-1">
+              <li><strong>Client B2B</strong> — persoană juridică (companie, ONG, instituție) care utilizează serviciile pentru organizația sa</li>
+              <li><strong>Client B2C</strong> — persoană fizică individuală care utilizează serviciile pentru dezvoltare personală/profesională</li>
+            </ul>
+          </li>
+          <li><strong>Utilizator B2B:</strong> persoană fizică autorizată de Client B2B să acceseze contul (HR Director, manager, facilitator, reprezentant)</li>
+          <li><strong>Servicii B2B:</strong> evaluare posturi, structură salarială, pay gap UE 2023/970, recrutare, dezvoltare organizațională, generare documente HR</li>
+          <li><strong>Servicii B2C:</strong> ghidare în dezvoltare personală/profesională prin agenți AI specializați (carduri tematice), Consultant HR personal</li>
           <li><strong>Credite:</strong> unitate de consum a serviciilor, achiziționate prin abonament sau pachete suplimentare</li>
-          <li><strong>Conținut Client:</strong> orice date, documente, fișe, salarii, evaluări încărcate sau generate de Client în platformă</li>
+          <li><strong>Conținut Client:</strong> orice date, documente, fișe, salarii, evaluări, conversații sau jurnale încărcate ori generate de Client în platformă</li>
+          <li><strong>Pseudonim B2C:</strong> identificator generat de platformă pentru protejarea identității utilizatorului B2C — agenții AI nu cunosc identitatea reală</li>
         </ul>
 
         <H id="acceptare" n={2}>Acceptarea termenilor</H>
@@ -108,7 +118,9 @@ export default function TermsPage() {
         <p className="text-text-warm leading-relaxed mb-4">
           JobGrade oferă, fără limitare:
         </p>
-        <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
+
+        <h3 className="text-lg font-semibold text-indigo-dark mb-3">3.1. Pentru companii (B2B)</h3>
+        <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-4 list-disc pl-6">
           <li>Evaluare și ierarhizare a posturilor de lucru pe 6 criterii (metodologie Connex GSM)</li>
           <li>Structuri salariale pe clase și trepte (algoritm Pitariu)</li>
           <li>Analiză decalaj salarial conformă Directivei UE 2023/970</li>
@@ -116,6 +128,22 @@ export default function TermsPage() {
           <li>Dezvoltare organizațională (cultură, procese, multigenerațional)</li>
           <li>Asistență AI prin Consultant HR pentru întrebări profesionale</li>
         </ul>
+
+        <h3 className="text-lg font-semibold text-indigo-dark mb-3">3.2. Pentru persoane fizice (B2C)</h3>
+        <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
+          <li>Ghidare în dezvoltare personală și profesională prin carduri tematice</li>
+          <li>Dialog cu agenți AI specializați, sub pseudonim (identitatea reală nu e accesibilă agenților)</li>
+          <li>Sprijin în alegerea unui rol profesional, identificarea aspirațiilor și planificarea evoluției</li>
+          <li>Comunități tematice cu acces calibrat (după nivelul de pregătire emoțională)</li>
+          <li>Punte de recrutare anonimizată cu companii partenere (cu consimțământul utilizatorului)</li>
+        </ul>
+        <p className="text-text-warm leading-relaxed mb-6">
+          Lista serviciilor active poate evolua. Modificările semnificative
+          sunt comunicate cu minim 30 de zile înainte. Disponibilitatea
+          unui serviciu pentru un Client poate depinde de datele furnizate
+          (ex. pentru B2B: fișe de post, stat de funcții; pentru B2C:
+          completarea profilului prin Profiler) și de soldul de credite.
+        </p>
         <p className="text-text-warm leading-relaxed mb-6">
           Lista serviciilor active poate evolua. Modificările semnificative
           sunt comunicate cu minim 30 de zile înainte. Disponibilitatea
@@ -126,9 +154,12 @@ export default function TermsPage() {
         <H id="cont" n={4}>Cont și autentificare</H>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>Crearea contului este gratuită; utilizarea serviciilor poate necesita abonament și/sau credite</li>
+          <li>Pentru B2C, contul folosește un <strong>pseudonim ales de utilizator</strong> — identitatea reală nu e accesibilă agenților AI și e stocată separat (privacy by design, două straturi)</li>
+          <li>Pentru B2B, contul are un administrator (de obicei HR Director) care poate invita alți utilizatori cu roluri specifice</li>
           <li>Clientul este responsabil pentru securitatea credențialelor (parolă, sesiuni active)</li>
           <li>Clientul notifică imediat Operatorul în caz de utilizare neautorizată a contului (<a href="mailto:contact@jobgrade.ro" className="text-indigo hover:underline">contact@jobgrade.ro</a>)</li>
           <li>Operatorul poate suspenda contul în caz de breșă de securitate suspectată sau neplată</li>
+          <li>Clienții B2C pot șterge contul în orice moment din setări — perioadă de grație 30 zile, apoi ștergere definitivă</li>
         </ul>
 
         <H id="plati" n={5}>Plăți, abonamente, credite</H>

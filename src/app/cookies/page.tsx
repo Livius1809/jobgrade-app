@@ -68,6 +68,8 @@ export default function CookiesPage() {
           <p className="text-lg text-text-warm leading-relaxed mb-3">
             Cum folosim cookie-uri pe jobgrade.ro și ce alegeri aveți.
             Pe scurt: doar cookie-uri esențiale, fără urmărire publicitară.
+            Politica se aplică tuturor vizitatorilor — companii (B2B) și
+            persoane fizice (B2C).
           </p>
           <p className="text-sm text-text-secondary">Ultima actualizare: {LAST_UPDATED}</p>
         </div>

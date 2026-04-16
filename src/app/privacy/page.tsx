@@ -70,7 +70,8 @@ export default function PrivacyPage() {
           </h1>
           <p className="text-lg text-text-warm leading-relaxed mb-3">
             Vă explicăm clar ce date colectăm, de ce, cât timp le păstrăm și
-            ce drepturi aveți. Fără jargon juridic inutil.
+            ce drepturi aveți. Fără jargon juridic inutil. Politica se aplică
+            atât companiilor (B2B), cât și persoanelor fizice (B2C).
           </p>
           <p className="text-sm text-text-secondary">Ultima actualizare: {LAST_UPDATED}</p>
         </div>
@@ -109,7 +110,8 @@ export default function PrivacyPage() {
         </p>
 
         <H id="date-colectate" n={2}>Ce date colectăm</H>
-        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.1. Date pe care ni le furnizați direct</h3>
+
+        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.1. Date pe care ni le furnizați direct (B2B — companii)</h3>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li><strong>Cont:</strong> email, prenume, nume, funcție (opțional), parolă (stocată exclusiv ca hash, nu o vedem și nu o putem recupera)</li>
           <li><strong>Profil companie:</strong> denumire, CUI, Reg. Comerțului, adresă, județ, COD CAEN, industrie, dimensiune, website, misiune, viziune, valori (opțional)</li>
@@ -117,14 +119,31 @@ export default function PrivacyPage() {
           <li><strong>Cereri Art. 7 transparență salarială:</strong> email angajat solicitant + detalii cerere</li>
         </ul>
 
-        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.2. Date generate prin utilizarea platformei</h3>
+        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.2. Date pe care ni le furnizați direct (B2C — persoane fizice)</h3>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 mb-4">
+          <p className="text-sm text-emerald-900">
+            <strong>Privacy by design:</strong> contul B2C folosește un{" "}
+            <strong>pseudonim ales de utilizator</strong>. Identitatea reală
+            (email + nume) e stocată separat de conținutul interacțiunilor;
+            agenții AI nu cunosc identitatea reală.
+          </p>
+        </div>
+        <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
+          <li><strong>Cont B2C:</strong> email + pseudonim (stratul de identitate, izolat); parolă stocată ca hash</li>
+          <li><strong>Profil B2C:</strong> răspunsuri la chestionare (Profiler), aspirații profesionale, situații de viață (la latitudinea utilizatorului) — toate sub pseudonim</li>
+          <li><strong>Conversații cu agenții AI:</strong> jurnal dialog cu agenții specializați (călăuze pe carduri tematice, Consultant HR personal)</li>
+          <li><strong>CV opțional:</strong> dacă utilizatorul îl încarcă pentru cardul „Carieră" (extracție automată în fișă post anonimizată)</li>
+          <li><strong>Comunități tematice:</strong> conținutul mesajelor postate sub pseudonim</li>
+        </ul>
+
+        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.3. Date generate prin utilizarea platformei</h3>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-6 list-disc pl-6">
           <li>Scoruri pe cele 6 criterii de evaluare, justificări, voturi, decizii</li>
           <li>Conversații cu asistentul AI (prompturi + răspunsuri)</li>
           <li>Rapoarte generate (ierarhizare, grade, pay gap, KPI)</li>
         </ul>
 
-        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.3. Date colectate automat</h3>
+        <h3 className="text-lg font-semibold text-indigo-dark mt-6 mb-3">2.4. Date colectate automat</h3>
         <ul className="text-text-warm text-sm leading-relaxed space-y-2 mb-4 list-disc pl-6">
           <li>Cookie de sesiune (necesar pentru autentificare)</li>
           <li>Token JWT (pentru menținerea sesiunii)</li>
@@ -213,9 +232,11 @@ export default function PrivacyPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cont activ</td><td className="px-3 py-2 text-text-warm">Pe durata utilizării</td></tr>
-              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cont inactiv</td><td className="px-3 py-2 text-text-warm">36 luni de la ultima activitate, cu notificare la 24 luni</td></tr>
+              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cont activ (B2B sau B2C)</td><td className="px-3 py-2 text-text-warm">Pe durata utilizării</td></tr>
+              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cont B2B inactiv</td><td className="px-3 py-2 text-text-warm">36 luni de la ultima activitate, cu notificare la 24 luni</td></tr>
+              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Cont B2C inactiv</td><td className="px-3 py-2 text-text-warm">3 ani de la ultima activitate, notificare la 24 luni, ștergere la 36</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Date evaluare B2B</td><td className="px-3 py-2 text-text-warm">Durata contractului + 5 ani</td></tr>
+              <tr><td className="px-3 py-2 font-medium text-indigo-dark">Conversații AI B2C (sub pseudonim)</td><td className="px-3 py-2 text-text-warm">3 ani de la ultima activitate</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Date facturare</td><td className="px-3 py-2 text-text-warm">10 ani (Codul Fiscal)</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Loguri securitate</td><td className="px-3 py-2 text-text-warm">12 luni</td></tr>
               <tr><td className="px-3 py-2 font-medium text-indigo-dark">Audit trail GDPR</td><td className="px-3 py-2 text-text-warm">10 ani</td></tr>
