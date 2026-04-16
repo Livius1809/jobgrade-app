@@ -83,9 +83,20 @@ export default async function AppLayout({
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="border-t border-border/50 py-4 px-6 mt-8">
-        <div className="flex items-center justify-between text-xs text-text-secondary/40" style={{ maxWidth: "72rem", margin: "0 auto" }}>
+        <div
+          className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary/50"
+          style={{ maxWidth: "72rem", margin: "0 auto" }}
+        >
           <span>JobGrade · Psihobusiness Consulting SRL</span>
-          <span className="italic">Evaluăm posturi. Construim echitate.</span>
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <Link href="/termeni" className="hover:text-indigo transition-colors">Termeni</Link>
+            <span className="text-text-secondary/30">·</span>
+            <Link href="/privacy" className="hover:text-indigo transition-colors">Confidențialitate</Link>
+            <span className="text-text-secondary/30">·</span>
+            <Link href="/cookies" className="hover:text-indigo transition-colors">Cookies</Link>
+            <span className="text-text-secondary/30">·</span>
+            <Link href="/transparenta-ai" className="hover:text-indigo transition-colors">Transparență AI</Link>
+          </div>
         </div>
       </footer>
     </div>
