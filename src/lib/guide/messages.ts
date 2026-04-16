@@ -108,6 +108,22 @@ export const NARRATIVE_MESSAGES: NarrativeMessage[] = [
     body: "Aici găsești toate rapoartele generate. Fiecare poate fi descărcat în PDF sau Excel. Tipurile noi de rapoarte (Cultură, Procese & Calitate, Multigen) apar pe măsură ce rulezi serviciile corespunzătoare.",
     priority: 55,
   },
+
+  // ── Fallback general (cea mai joasă prioritate) ─────────────────
+  {
+    id: "fallback-portal",
+    match: (c) => /^\/portal\/?$/.test(c.pathname),
+    title: "Bun venit pe panoul JobGrade",
+    body: "Aici ai vederea de ansamblu: snapshotul organizației sus, datele tale și serviciile disponibile mai jos. Pe măsură ce adaugi inputuri noi, indicele de relevanță crește și mai multe servicii se activează. Apasă din nou „🌟 Ghid" pe alte pagini pentru explicații contextuale.",
+    priority: 1,
+  },
+  {
+    id: "fallback-any",
+    match: () => true,
+    title: "Călăuza JobGrade",
+    body: "Sunt aici cu sfaturi adaptate la pagina pe care te afli. Navighează prin portal, fișe de post, sesiuni sau rapoarte — pe fiecare pagină voi avea o sugestie relevantă pentru pasul următor.",
+    priority: 0,
+  },
 ]
 
 /**
