@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getBalance } from "@/lib/credits"
 import Link from "next/link"
+import CompanyIdentityCard from "@/components/company/CompanyIdentityCard"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -16,6 +17,7 @@ interface DataInput {
 }
 
 const INPUT_LABELS: Record<string, string> = {
+  company_identity: "Identitate firmă (CUI)",
   jobs: "Fișe de post",
   jobs_complete: "Fișe de post complete",
   payroll: "Stat de salarii",
@@ -39,6 +41,15 @@ interface ServiceCategory {
 }
 
 const SERVICE_CATEGORIES: ServiceCategory[] = [
+  {
+    name: "Profil sectorial (instant cu CUI)",
+    color: "emerald",
+    services: [
+      { id: "sector-overview", label: "Profil sectorial — repere salariale pe industrie", href: "/sector-profile", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
+      { id: "sector-paygap", label: "Top pay gaps tipice în sector", href: "/sector-profile#paygap", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
+      { id: "mvv-draft", label: "MVV draft auto-generat din obiectul de activitate", href: "/company#mvv", requiredInputs: ["company_identity"], color: "emerald", creditCost: "gratuit" },
+    ],
+  },
   {
     name: "Evaluare",
     color: "indigo",
@@ -80,9 +91,10 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
 /* ── Data fetching ────────────────────────────────────────────────── */
 
 async function getPortalData(tenantId: string) {
-  const [credits, tenant, jobCount, payrollCount, completeJobCount] = await Promise.all([
+  const [credits, tenant, profile, jobCount, payrollCount, completeJobCount] = await Promise.all([
     getBalance(tenantId),
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
+    prisma.companyProfile.findUnique({ where: { tenantId } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }).catch(() => 0),
     (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0) as Promise<number>,
     prisma.job.count({ where: { tenantId, status: "ACTIVE", responsibilities: { not: null } } }).catch(() => 0),
@@ -92,6 +104,10 @@ async function getPortalData(tenantId: string) {
   if (jobCount > 0) providedInputs.add("jobs")
   if (completeJobCount > 0) providedInputs.add("jobs_complete")
   if (payrollCount > 0) providedInputs.add("payroll")
+  // Identitate firmă completă = avem CUI + industrie sincronizate cu ANAF
+  if (profile?.cui && profile?.industry && profile?.anafSyncedAt) {
+    providedInputs.add("company_identity")
+  }
 
   const jobsPercent = jobCount === 0 ? 0 : completeJobCount > 0 ? 100 : 60
   const payrollPercent = payrollCount > 0 ? 100 : 0
@@ -99,6 +115,7 @@ async function getPortalData(tenantId: string) {
   return {
     credits,
     companyName: tenant?.name ?? "Organizația ta",
+    profile,
     jobCount,
     payrollCount: payrollCount as number,
     completeJobCount,
@@ -155,6 +172,20 @@ export default async function PortalPage() {
               Inputuri client
             </h2>
             <div className="bg-surface rounded-xl border border-border p-5 space-y-5">
+              {/* Identitate firmă (NEW — wizard ANAF inline) */}
+              <CompanyIdentityCard
+                initial={{
+                  name: data.profile?.cui ? data.companyName : null,
+                  cui: data.profile?.cui ?? null,
+                  industry: data.profile?.industry ?? null,
+                  caenName: data.profile?.caenName ?? null,
+                  isVATPayer: data.profile?.isVATPayer ?? null,
+                  address: data.profile?.address ?? null,
+                  county: data.profile?.county ?? null,
+                  anafSyncedAt: data.profile?.anafSyncedAt ?? null,
+                }}
+              />
+
               {/* Fișe de post */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -255,18 +286,21 @@ export default async function PortalPage() {
         <div className="space-y-6">
           {SERVICE_CATEGORIES.map((cat) => {
             const colorMap: Record<string, string> = {
+              emerald: "border-l-emerald-500",
               indigo: "border-l-indigo-500",
               violet: "border-l-violet-500",
               fuchsia: "border-l-fuchsia-500",
               slate: "border-l-slate-300",
             }
             const textColorMap: Record<string, string> = {
+              emerald: "text-emerald-600",
               indigo: "text-indigo-600",
               violet: "text-violet-600",
               fuchsia: "text-fuchsia-600",
               slate: "text-slate-500",
             }
             const bgMap: Record<string, string> = {
+              emerald: "bg-emerald-50/50",
               indigo: "bg-indigo-50/50",
               violet: "bg-violet-50/50",
               fuchsia: "bg-fuchsia-50/50",

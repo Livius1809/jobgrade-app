@@ -25,7 +25,7 @@ export default async function PortalLayout({
 
           <div className="flex items-center gap-4">
             <Link href="/company" className="text-xs font-medium text-text-warm hover:text-coral transition-colors">
-              Companie
+              Detalii companie
             </Link>
             {isOwner && (
               <Link href="/owner" className="text-xs font-medium text-indigo hover:text-indigo-dark transition-colors">

@@ -41,7 +41,7 @@ export default async function AppLayout({
               Portal
             </Link>
             <Link href="/company" className="text-text-secondary hover:text-foreground transition-colors">
-              Companie
+              Detalii companie
             </Link>
             <Link href="/jobs" className="text-text-secondary hover:text-foreground transition-colors">
               Posturi
