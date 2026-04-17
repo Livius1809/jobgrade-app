@@ -2,9 +2,9 @@ import Image from "next/image"
 import Link from "next/link"
 
 export const metadata = {
-  title: "Demo — Rapoarte de referință — JobGrade",
+  title: "Demo — Dosarul de Conformitate EU — JobGrade",
   description:
-    "Vedeți ce obțineți cu JobGrade: rapoarte reale de evaluare posturi, analiză pay gap, structuri salariale. Date fictive, rezultate concrete.",
+    "Vedeți dosarul complet de conformitate cu Directiva EU 2023/970: evaluare posturi, analiză pay gap, justificări, structură salarială, benchmark. Date fictive, rezultate reale.",
 }
 
 /* ── Date fictive AgroVision SRL ────────────────────────────────────────── */
@@ -27,18 +27,18 @@ const JE_RESULTS = [
   { position: "Specialist Vânzări", dept: "Comercial", score: 480, grade: "G-5", salary: "9.800 RON" },
   { position: "Inginer Agronom", dept: "Producție", score: 460, grade: "G-5", salary: "9.500 RON" },
   { position: "Tehnician Laborator", dept: "Producție", score: 380, grade: "G-4", salary: "7.800 RON" },
-  { position: "Operator Linie", dept: "Producție", score: 300, grade: "G-3", salary: "6.200 RON" },
   { position: "Specialist HR", dept: "Administrativ", score: 440, grade: "G-4", salary: "8.500 RON" },
+  { position: "Operator Linie", dept: "Producție", score: 300, grade: "G-3", salary: "6.200 RON" },
   { position: "Șofer Distribuție", dept: "Comercial", score: 260, grade: "G-2", salary: "5.800 RON" },
   { position: "Muncitor Depozit", dept: "Producție", score: 200, grade: "G-1", salary: "5.200 RON" },
 ]
 
 const PAY_GAP_CATEGORIES = [
-  { category: "Management (full-time)", women: "17.800 RON", men: "28.500 RON", gap: "37,5%", flag: "SEMNIFICATIV", justification: "Director General (unic, fondator) vs Director Comercial. Diferență justificată prin senioritate (18 ani vs 6 ani) și responsabilitate decizională." },
-  { category: "Producție — ingineri (full-time)", women: "9.500 RON", men: "14.500 RON", gap: "34,5%", flag: "SEMNIFICATIV", justification: "Inginer Agronom vs Inginer Agronom Șef. Diferența reflectă nivelul ierarhic diferit (G-5 vs G-7) și experiență (3 ani vs 12 ani). Poziții non-comparabile conform Art. 9." },
-  { category: "Comercial (full-time)", women: "9.800 RON", men: "9.800 RON", gap: "0,0%", flag: "OK", justification: "—" },
-  { category: "Administrativ (full-time)", women: "8.500 RON", men: "13.200 RON", gap: "35,6%", flag: "SEMNIFICATIV", justification: "Specialist HR vs Contabil Șef. Funcții diferite, grade diferite (G-4 vs G-6). Nu constituie muncă de valoare egală conform evaluării JE." },
-  { category: "Producție — operatori (full-time)", women: "5.200 RON", men: "6.200 RON", gap: "16,1%", flag: "ATENȚIE", justification: "Muncitor Depozit vs Operator Linie. Grade diferite (G-1 vs G-3). Se recomandă analiză suplimentară pentru eventuală ajustare." },
+  { category: "Management (full-time)", women: "17.800 RON", men: "28.500 RON", gap: "37,5%", flag: "SEMNIFICATIV" as const, justification: "Director General (unic, fondator) vs Director Comercial. Diferență justificată prin senioritate (18 ani vs 6 ani) și responsabilitate decizională." },
+  { category: "Producție — ingineri (full-time)", women: "9.500 RON", men: "14.500 RON", gap: "34,5%", flag: "SEMNIFICATIV" as const, justification: "Inginer Agronom vs Inginer Agronom Șef. Diferența reflectă nivelul ierarhic diferit (G-5 vs G-7) și experiență (3 ani vs 12 ani). Poziții non-comparabile conform Art. 9." },
+  { category: "Comercial (full-time)", women: "9.800 RON", men: "9.800 RON", gap: "0,0%", flag: "OK" as const, justification: "—" },
+  { category: "Administrativ (full-time)", women: "8.500 RON", men: "13.200 RON", gap: "35,6%", flag: "SEMNIFICATIV" as const, justification: "Specialist HR vs Contabil Șef. Funcții diferite, grade diferite (G-4 vs G-6). Nu constituie muncă de valoare egală conform evaluării JE." },
+  { category: "Producție — operatori (full-time)", women: "5.200 RON", men: "6.200 RON", gap: "16,1%", flag: "ATENȚIE" as const, justification: "Muncitor Depozit vs Operator Linie. Grade diferite (G-1 vs G-3). Se recomandă analiză suplimentară pentru eventuală ajustare." },
 ]
 
 const SALARY_GRADES = [
@@ -87,6 +87,106 @@ const JOB_DESCRIPTION = {
   },
 }
 
+/* ── Pachete pe nevoi ───────────────────────────────────────────────────── */
+
+const PACKAGES = [
+  {
+    id: "conformitate-eu",
+    icon: "⚖️",
+    name: "Conformitate EU 2023/970",
+    tagline: "Dosarul complet pentru aliniere legislativă",
+    description: "Tot ce aveți nevoie pentru conformitate cu Directiva EU privind transparența salarială: evaluarea posturilor, analiza decalajelor, justificări documentate, structură salarială obiectivă.",
+    color: "indigo",
+    documents: [
+      "Evaluare și ierarhizare posturi (toate pozițiile)",
+      "Analiză pay gap pe categorii de lucrători (Art. 9)",
+      "Justificări documentate pentru decalaje semnificative",
+      "Structură salarială cu clase și trepte",
+      "Fișe de post actualizate (toate pozițiile)",
+      "Benchmark salarial vs piața din domeniu",
+    ],
+    variants: [
+      { name: "S", positions: "1-10", employees: "până la 30", price: "5.900", credits: "845" },
+      { name: "M", positions: "11-30", employees: "până la 100", price: "15.700", credits: "2.420" },
+      { name: "L", positions: "31-60", employees: "până la 300", price: "29.550", credits: "4.925" },
+      { name: "XL", positions: "61-150", employees: "până la 1.000", price: "69.130", credits: "12.590" },
+    ],
+    traditional: "17.000 — 150.000+ RON (consultanță clasică)",
+    active: true,
+  },
+  {
+    id: "structura-salariala",
+    icon: "📊",
+    name: "Evaluare și Structură Salarială",
+    tagline: "Ordine internă fără componenta de conformitate",
+    description: "Evaluarea obiectivă a posturilor, grila de salarizare, pachete salariale competitive și benchmark cu piața. Pentru companii care vor echitate internă.",
+    color: "emerald",
+    documents: [
+      "Evaluare și ierarhizare posturi",
+      "Structură salarială (clase și trepte)",
+      "Pachete salariale per grad",
+      "Benchmark salarial vs piață",
+    ],
+    variants: [
+      { name: "S", positions: "1-10", employees: "până la 30", price: "4.200", credits: "595" },
+      { name: "M", positions: "11-30", employees: "până la 100", price: "11.400", credits: "1.755" },
+      { name: "L", positions: "31-60", employees: "până la 300", price: "21.600", credits: "3.605" },
+    ],
+    traditional: "12.000 — 80.000+ RON",
+    active: false,
+  },
+  {
+    id: "recrutare",
+    icon: "🎯",
+    name: "Recrutare și Inducție",
+    tagline: "De la proiectare la integrare",
+    description: "Proiectarea procesului de recrutare, gestionarea candidaților, fișe de post, documente pre-angajare și manualul noului angajat.",
+    color: "sky",
+    documents: [
+      "Design proces de recrutare",
+      "Gestionare candidați (screening + evaluare)",
+      "Fișe de post (generate AI)",
+      "Documente pre-angajare",
+      "Manual angajat personalizat",
+    ],
+    variants: [
+      { name: "3 poziții", positions: "3", employees: "15 candidați", price: "3.200", credits: "462" },
+      { name: "6 poziții", positions: "6", employees: "30 candidați", price: "5.800", credits: "864" },
+      { name: "12 poziții", positions: "12", employees: "60 candidați", price: "10.500", credits: "1.668" },
+    ],
+    traditional: "9.000 — 36.000+ RON",
+    active: false,
+  },
+  {
+    id: "dezvoltare",
+    icon: "🌱",
+    name: "Dezvoltare Organizațională",
+    tagline: "Evaluare performanță și plan de creștere",
+    description: "Evaluarea performanței angajaților, planul de dezvoltare HR și evaluarea comună (Art. 10) pentru organizații care investesc în oameni.",
+    color: "amber",
+    documents: [
+      "Evaluare performanță (per lot angajați)",
+      "Plan dezvoltare resurse umane",
+      "Raport impact bugetar",
+      "Evaluare comună (Art. 10, opțional)",
+    ],
+    variants: [
+      { name: "S", positions: "—", employees: "până la 30", price: "3.400", credits: "490" },
+      { name: "M", positions: "—", employees: "până la 100", price: "8.600", credits: "1.330" },
+      { name: "L", positions: "—", employees: "până la 300", price: "18.200", credits: "2.870" },
+    ],
+    traditional: "15.000 — 60.000+ RON",
+    active: false,
+  },
+]
+
+const colorMap: Record<string, { bg: string; border: string; text: string; light: string; badge: string }> = {
+  indigo: { bg: "bg-indigo-600", border: "border-indigo-200", text: "text-indigo-700", light: "bg-indigo-50", badge: "bg-indigo-100 text-indigo-800" },
+  emerald: { bg: "bg-emerald-600", border: "border-emerald-200", text: "text-emerald-700", light: "bg-emerald-50", badge: "bg-emerald-100 text-emerald-800" },
+  sky: { bg: "bg-sky-600", border: "border-sky-200", text: "text-sky-700", light: "bg-sky-50", badge: "bg-sky-100 text-sky-800" },
+  amber: { bg: "bg-amber-600", border: "border-amber-200", text: "text-amber-700", light: "bg-amber-50", badge: "bg-amber-100 text-amber-800" },
+}
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 export default function DemoPage() {
@@ -99,10 +199,9 @@ export default function DemoPage() {
             <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#je" className="text-slate-600 hover:text-indigo-600">Evaluare posturi</a>
-            <a href="#pay-gap" className="text-slate-600 hover:text-indigo-600">Pay Gap</a>
-            <a href="#salary" className="text-slate-600 hover:text-indigo-600">Structură salarială</a>
-            <a href="#benchmark" className="text-slate-600 hover:text-indigo-600">Benchmark</a>
+            <a href="#pachete" className="text-slate-600 hover:text-indigo-600">Pachete</a>
+            <a href="#dosar" className="text-slate-600 hover:text-indigo-600">Dosarul EU</a>
+            <a href="#preturi" className="text-slate-600 hover:text-indigo-600">Variante și prețuri</a>
             <Link href="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
               Activează contul
             </Link>
@@ -114,17 +213,22 @@ export default function DemoPage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-emerald-50/30" />
         <div className="relative max-w-4xl mx-auto px-6 py-20 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium mb-6">
-            <span>📊</span> Rapoarte de referință — date fictive, rezultate reale
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-800 text-xs font-medium mb-6">
+            Termen: iunie 2026 — Directiva EU 2023/970 privind transparența salarială
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            Vedeți ce obțineți cu{" "}
-            <span className="text-indigo-600">JobGrade</span>
+            Dosarul complet de conformitate.{" "}
+            <span className="text-indigo-600">Vedeți cum arată.</span>
           </h1>
           <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Am generat rapoarte complete pentru o companie fictivă — <strong>{COMPANY.name}</strong> ({COMPANY.employees} angajați, {COMPANY.positions} poziții).
-            Explorați fiecare raport ca să înțelegeți ce valoare primiți.
+            Am generat dosarul de conformitate EU pentru o companie fictivă — <strong>{COMPANY.name}</strong> ({COMPANY.employees} angajați, {COMPANY.positions} poziții).
+            Fiecare document pe care ITM-ul îl poate solicita este acoperit.
           </p>
+          <div className="mt-8">
+            <a href="#dosar" className="inline-flex items-center justify-center bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
+              Explorează dosarul complet
+            </a>
+          </div>
         </div>
       </section>
 
@@ -138,259 +242,406 @@ export default function DemoPage() {
               <p className="text-sm text-slate-500">{COMPANY.industry} &middot; CUI {COMPANY.cui}</p>
             </div>
             <div className="flex gap-6 text-sm">
-              <Stat label="Angajați" value={COMPANY.employees} />
-              <Stat label="Poziții" value={COMPANY.positions} />
-              <Stat label="Departamente" value={COMPANY.departments.length} />
+              <StatBox label="Angajați" value={COMPANY.employees} />
+              <StatBox label="Poziții" value={COMPANY.positions} />
+              <StatBox label="Departamente" value={COMPANY.departments.length} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══ R1: EVALUARE POSTURI (JE) ═══ */}
-      <ReportSection id="je" index={1} title="Evaluare și ierarhizare posturi" subtitle="Ierarhia completă a pozițiilor, cu scoruri și grade atribuite pe baza a 6 criterii obiective.">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-indigo-50 text-left">
-                <th className="px-4 py-3 font-semibold text-slate-700">Poziție</th>
-                <th className="px-4 py-3 font-semibold text-slate-700">Departament</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-center">Scor</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-center">Grad</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Salariu actual</th>
-              </tr>
-            </thead>
-            <tbody>
-              {JE_RESULTS.map((r, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-                  <td className="px-4 py-2.5 font-medium text-slate-800">{r.position}</td>
-                  <td className="px-4 py-2.5 text-slate-600">{r.dept}</td>
-                  <td className="px-4 py-2.5 text-center">
-                    <span className="inline-flex items-center justify-center w-12 h-7 rounded bg-indigo-100 text-indigo-800 font-bold text-xs">{r.score}</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-center">
-                    <span className="inline-flex items-center justify-center px-2 h-6 rounded-full bg-indigo-600 text-white font-bold text-[10px]">{r.grade}</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-slate-700">{r.salary}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 p-4 bg-indigo-50/50 rounded-lg">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>Cum se citește:</strong> Scorul reflectă complexitatea poziției pe 6 dimensiuni (Educație, Comunicare, Rezolvare probleme, Luarea deciziilor, Impact asupra afacerii, Condiții de muncă). Gradul (G-1 la G-10) permite compararea obiectivă între departamente diferite. Două poziții cu același grad ar trebui să aibă salarii comparabile.
+      {/* ═══ PACHETE — overview ═══ */}
+      <section id="pachete" className="py-14 bg-slate-50/50">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">Pachete organizate pe nevoi</h2>
+          <p className="text-center text-sm text-slate-500 mb-10 max-w-xl mx-auto">
+            Nu vindem credite abstracte. Fiecare pachet rezolvă o problemă concretă și conține toate documentele necesare.
           </p>
-        </div>
-      </ReportSection>
-
-      {/* ═══ R2: FIȘĂ POST AI ═══ */}
-      <ReportSection id="job-desc" index={2} title="Fișă de post generată AI" subtitle={`Exemplu: ${JOB_DESCRIPTION.title} — generată automat din datele organizației.`} bg="bg-slate-50/50">
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
-          <div className="flex flex-wrap gap-4 text-sm">
-            <Tag label="Departament" value={JOB_DESCRIPTION.department} />
-            <Tag label="Grad" value={JOB_DESCRIPTION.grade} />
-            <Tag label="Raportează la" value={JOB_DESCRIPTION.reports_to} />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Scopul poziției</h4>
-            <p className="text-sm text-slate-700 leading-relaxed">{JOB_DESCRIPTION.purpose}</p>
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Responsabilități principale</h4>
-            <ul className="space-y-1.5">
-              {JOB_DESCRIPTION.responsibilities.map((r, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                  <span className="text-indigo-400 mt-0.5 flex-shrink-0">●</span>
-                  {r}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Criterii de evaluare</h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {Object.entries(JOB_DESCRIPTION.criteria).map(([key, val]) => (
-                <div key={key} className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-semibold uppercase text-slate-400">{key.replace(/_/g, " ")}</p>
-                  <p className="text-xs text-slate-700 mt-1">{val.level}</p>
-                  <div className="flex gap-0.5 mt-1.5">
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <div key={n} className={`w-4 h-1.5 rounded-full ${n <= val.score ? "bg-indigo-500" : "bg-slate-200"}`} />
+          <div className="grid md:grid-cols-2 gap-6">
+            {PACKAGES.map(pkg => {
+              const c = colorMap[pkg.color]
+              return (
+                <div key={pkg.id} className={`relative bg-white rounded-2xl border ${c.border} p-6 ${pkg.active ? "ring-2 ring-indigo-300 shadow-lg" : "shadow-sm"}`}>
+                  {pkg.active && (
+                    <div className="absolute -top-3 left-6 px-3 py-0.5 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                      Dosar demo disponibil
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">{pkg.icon}</span>
+                    <div>
+                      <h3 className="font-bold text-slate-900">{pkg.name}</h3>
+                      <p className="text-xs text-slate-500">{pkg.tagline}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">{pkg.description}</p>
+                  <div className="space-y-1.5 mb-4">
+                    {pkg.documents.map((doc, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-700">
+                        <span className={`mt-0.5 ${c.text}`}>✓</span>
+                        {doc}
+                      </div>
                     ))}
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <div className="text-xs text-slate-400">
+                      De la <strong className="text-slate-700">{pkg.variants[0].price} RON</strong>
+                    </div>
+                    <div className="text-[10px] text-slate-400 line-through">{pkg.traditional}</div>
+                  </div>
+                  {pkg.active && (
+                    <a href="#dosar" className="mt-4 w-full inline-flex items-center justify-center bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                      Vezi dosarul complet generat
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ DOSARUL DE CONFORMITATE EU — toate rapoartele ═══ */}
+      <section id="dosar" className="py-14">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-medium mb-4">
+              ⚖️ Pachet Conformitate EU 2023/970 — Dosar complet
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">Dosarul de conformitate AgroVision SRL</h2>
+            <p className="mt-2 text-sm text-slate-500 max-w-xl mx-auto">
+              6 documente generate automat pe baza datelor organizației. Acesta e dosarul pe care ITM-ul îl va solicita.
+            </p>
+          </div>
+
+          {/* D1: JE */}
+          <ReportSection
+            index={1}
+            title="Evaluare și ierarhizare posturi"
+            subtitle="Ierarhia completă pe 6 criterii obiective — fundament pentru tot dosarul."
+            docLabel="Document obligatoriu: baza evaluării conform Art. 4"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-indigo-50 text-left">
+                    <th className="px-4 py-3 font-semibold text-slate-700">Poziție</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700">Departament</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-center">Scor</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-center">Grad</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Salariu actual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {JE_RESULTS.map((r, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                      <td className="px-4 py-2.5 font-medium text-slate-800">{r.position}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{r.dept}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className="inline-flex items-center justify-center w-12 h-7 rounded bg-indigo-100 text-indigo-800 font-bold text-xs">{r.score}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className="inline-flex items-center justify-center px-2 h-6 rounded-full bg-indigo-600 text-white font-bold text-[10px]">{r.grade}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-700">{r.salary}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <InfoBox>
+              Scorul reflectă complexitatea poziției pe 6 dimensiuni (Educație, Comunicare, Rezolvare probleme, Luarea deciziilor, Impact asupra afacerii, Condiții de muncă). Gradul (G-1 la G-10) permite compararea obiectivă între departamente diferite.
+            </InfoBox>
+          </ReportSection>
+
+          {/* D2: Fișă post */}
+          <ReportSection
+            index={2}
+            title="Fișe de post actualizate"
+            subtitle={`Exemplu: ${JOB_DESCRIPTION.title} — generată automat din datele organizației.`}
+            docLabel="Document obligatoriu: descrierea funcției conform Art. 4 alin. 2"
+          >
+            <div className="p-6 space-y-5">
+              <div className="flex flex-wrap gap-4 text-sm">
+                <Tag label="Departament" value={JOB_DESCRIPTION.department} />
+                <Tag label="Grad" value={JOB_DESCRIPTION.grade} />
+                <Tag label="Raportează la" value={JOB_DESCRIPTION.reports_to} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Scopul poziției</h4>
+                <p className="text-sm text-slate-700 leading-relaxed">{JOB_DESCRIPTION.purpose}</p>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Responsabilități principale</h4>
+                <ul className="space-y-1.5">
+                  {JOB_DESCRIPTION.responsibilities.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <span className="text-indigo-400 mt-0.5 flex-shrink-0">●</span>
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Criterii de evaluare</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(JOB_DESCRIPTION.criteria).map(([key, val]) => (
+                    <div key={key} className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold uppercase text-slate-400">{key.replace(/_/g, " ")}</p>
+                      <p className="text-xs text-slate-700 mt-1">{val.level}</p>
+                      <div className="flex gap-0.5 mt-1.5">
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <div key={n} className={`w-4 h-1.5 rounded-full ${n <= val.score ? "bg-indigo-500" : "bg-slate-200"}`} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <InfoBox>
+              Fiecare fișă de post conține criterii de evaluare aliniate cu ierarhia JE. Dosarul complet include fișe pentru toate cele {COMPANY.positions} poziții.
+            </InfoBox>
+          </ReportSection>
+
+          {/* D3: Pay Gap */}
+          <ReportSection
+            index={3}
+            title="Analiză decalaj salarial (Pay Gap)"
+            subtitle="Conform Art. 9 — analiză pe categorii de lucrători, nu indicator global."
+            docLabel="Raportare obligatorie: Art. 9, categorii definite de Art. 4"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-amber-50 text-left">
+                    <th className="px-4 py-3 font-semibold text-slate-700">Categorie lucrători</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Median F</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Median M</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-center">Gap</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {PAY_GAP_CATEGORIES.map((r, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                      <td className="px-4 py-2.5 font-medium text-slate-800">{r.category}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-700">{r.women}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-700">{r.men}</td>
+                      <td className="px-4 py-2.5 text-center font-bold">
+                        <span className={r.flag === "OK" ? "text-emerald-700" : r.flag === "ATENȚIE" ? "text-amber-700" : "text-red-700"}>
+                          {r.gap}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          r.flag === "OK" ? "bg-emerald-100 text-emerald-800" :
+                          r.flag === "ATENȚIE" ? "bg-amber-100 text-amber-800" :
+                          "bg-red-100 text-red-800"
+                        }`}>
+                          {r.flag}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <InfoBox>
+              Analiza compară salarii mediane pe categorii de lucrători (poziție &times; program de lucru). Un gap peste 5% necesită justificare documentată — vezi documentul următor.
+            </InfoBox>
+          </ReportSection>
+
+          {/* D4: Justificări */}
+          <ReportSection
+            index={4}
+            title="Justificări decalaje semnificative"
+            subtitle="Documentația pe care ITM-ul o solicită: cauze obiective pentru fiecare gap > 5%."
+            docLabel="Sarcina probei inversată: Art. 18 alin. 2"
+          >
+            <div className="p-4 space-y-4">
+              {PAY_GAP_CATEGORIES.filter(r => r.flag !== "OK").map((r, i) => (
+                <div key={i} className="bg-slate-50 rounded-xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-slate-800 text-sm">{r.category}</h4>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      r.flag === "ATENȚIE" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"
+                    }`}>
+                      Gap: {r.gap}
+                    </span>
+                  </div>
+                  <div className="flex gap-6 mb-3 text-xs text-slate-500">
+                    <span>Median femei: <strong className="text-slate-700">{r.women}</strong></span>
+                    <span>Median bărbați: <strong className="text-slate-700">{r.men}</strong></span>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-slate-100">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Justificare obiectivă</p>
+                    <p className="text-sm text-slate-700 leading-relaxed">{r.justification}</p>
                   </div>
                 </div>
               ))}
             </div>
+            <InfoBox>
+              Directiva inversează sarcina probei: angajatorul trebuie să demonstreze că diferențele salariale au cauze obiective (senioritate, competențe, responsabilitate, grad diferit). Acest document constituie proba.
+            </InfoBox>
+          </ReportSection>
+
+          {/* D5: Structură salarială */}
+          <ReportSection
+            index={5}
+            title="Structură salarială (clase și trepte)"
+            subtitle="Grila de salarizare obiectivă — fundamentul echității interne."
+            docLabel="Structuri salariale transparente: Art. 6"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-emerald-50 text-left">
+                    <th className="px-4 py-3 font-semibold text-slate-700">Grad</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Minim (RON)</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Median (RON)</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Maxim (RON)</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700">Poziții</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SALARY_GRADES.map((r, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                      <td className="px-4 py-2.5">
+                        <span className="inline-flex items-center justify-center px-2 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px]">{r.grade}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-600">{r.min}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-800">{r.mid}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-600">{r.max}</td>
+                      <td className="px-4 py-2.5 text-slate-600 text-xs">{r.positions}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <InfoBox>
+              Grila definește plaja salarială pentru fiecare grad. Angajații cu același grad au aceeași plajă salarială — demonstrație de echitate. Diferențele în cadrul plajei reflectă senioritate și performanță.
+            </InfoBox>
+          </ReportSection>
+
+          {/* D6: Benchmark */}
+          <ReportSection
+            index={6}
+            title="Benchmark salarial vs piață"
+            subtitle="Compararea salariilor interne cu datele de piață — competitivitatea ofertei."
+            docLabel="Context suplimentar: pozitionarea față de piață (Art. 5)"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-sky-50 text-left">
+                    <th className="px-4 py-3 font-semibold text-slate-700">Poziție</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">Intern</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">P25</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">P50</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-right">P75</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-center">Index</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {BENCHMARK_DATA.map((r, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                      <td className="px-4 py-2.5 font-medium text-slate-800">{r.position}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-800">{r.internal}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-500">{r.market_p25}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-600">{r.market_p50}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-500">{r.market_p75}</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-slate-700">{r.index}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          r.status === "Competitiv" ? "bg-emerald-100 text-emerald-800" :
+                          r.status === "Peste piață" ? "bg-sky-100 text-sky-800" :
+                          "bg-amber-100 text-amber-800"
+                        }`}>
+                          {r.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <InfoBox>
+              Indexul compară salariul intern cu mediana pieței (P50). Sub 90% = risc de pierdere a angajaților. Peste 110% = supracost salarial. Între 90-110% = zonă competitivă.
+            </InfoBox>
+          </ReportSection>
+        </div>
+      </section>
+
+      {/* ═══ PREȚURI VARIANTE ═══ */}
+      <section id="preturi" className="py-14 bg-slate-50/50">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">Variante și prețuri</h2>
+          <p className="text-center text-sm text-slate-500 mb-10 max-w-xl mx-auto">
+            Fiecare pachet se adaptează la dimensiunea organizației. Prețul include toate documentele din dosar.
+          </p>
+
+          {PACKAGES.map(pkg => {
+            const c = colorMap[pkg.color]
+            return (
+              <div key={pkg.id} className="mb-8">
+                <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4">
+                  <span>{pkg.icon}</span> {pkg.name}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <thead>
+                      <tr className={c.light}>
+                        <th className="px-4 py-3 font-semibold text-slate-700 text-left">Varianta</th>
+                        <th className="px-4 py-3 font-semibold text-slate-700 text-center">Poziții</th>
+                        <th className="px-4 py-3 font-semibold text-slate-700 text-center">Angajați</th>
+                        <th className="px-4 py-3 font-semibold text-slate-700 text-right">Credite</th>
+                        <th className="px-4 py-3 font-semibold text-slate-700 text-right">Preț (RON)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pkg.variants.map((v, i) => (
+                        <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${c.badge}`}>{v.name}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center text-slate-600">{v.positions}</td>
+                          <td className="px-4 py-2.5 text-center text-slate-600">{v.employees}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500">{v.credits} cr</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-slate-800">{v.price} RON</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-2 text-xs text-slate-400">
+                  Echivalent consultanță tradițională: {pkg.traditional}
+                </p>
+              </div>
+            )
+          })}
+
+          <div className="mt-6 p-6 bg-white rounded-2xl border border-slate-200 text-center">
+            <p className="text-sm text-slate-600 mb-1">
+              Toate pachetele necesită <strong>abonament activ</strong> (399 RON/lună sau 3.990 RON/an).
+            </p>
+            <p className="text-xs text-slate-400">
+              Abonamentul include: acces platformă, dashboard cu diagnostic, MVV draft, profil sectorial, consultant HR familiarizare (135 min/lună).
+            </p>
           </div>
         </div>
-      </ReportSection>
-
-      {/* ═══ R3: PAY GAP ═══ */}
-      <ReportSection id="pay-gap" index={3} title="Analiză decalaj salarial (Pay Gap)" subtitle="Conform Art. 9, Directiva EU 2023/970 — analiză pe categorii de lucrători, nu indicator global.">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-amber-50 text-left">
-                <th className="px-4 py-3 font-semibold text-slate-700">Categorie lucrători</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Median F</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Median M</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-center">Gap</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PAY_GAP_CATEGORIES.map((r, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-                  <td className="px-4 py-2.5 font-medium text-slate-800">{r.category}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-700">{r.women}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-700">{r.men}</td>
-                  <td className="px-4 py-2.5 text-center font-bold">
-                    <span className={r.flag === "OK" ? "text-emerald-700" : r.flag === "ATENȚIE" ? "text-amber-700" : "text-red-700"}>
-                      {r.gap}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      r.flag === "OK" ? "bg-emerald-100 text-emerald-800" :
-                      r.flag === "ATENȚIE" ? "bg-amber-100 text-amber-800" :
-                      "bg-red-100 text-red-800"
-                    }`}>
-                      {r.flag}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 p-4 bg-amber-50/50 rounded-lg">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>Cum se citește:</strong> Analiza compară salarii mediane pe categorii de lucrători (poziție &times; program de lucru), nu un indicator global. Un gap &gt; 5% marchează &ldquo;SEMNIFICATIV&rdquo; — nu înseamnă automat discriminare, dar necesită justificare documentată.
-          </p>
-        </div>
-      </ReportSection>
-
-      {/* ═══ R4: JUSTIFICARE PAY GAP ═══ */}
-      <ReportSection id="justification" index={4} title="Justificare decalaj semnificativ" subtitle="Raport de argumentare pentru fiecare categorie cu gap > 5% — documentul pe care ITM-ul îl va solicita." bg="bg-slate-50/50">
-        <div className="space-y-4">
-          {PAY_GAP_CATEGORIES.filter(r => r.flag !== "OK").map((r, i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-slate-800 text-sm">{r.category}</h4>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  r.flag === "ATENȚIE" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"
-                }`}>
-                  Gap: {r.gap}
-                </span>
-              </div>
-              <div className="flex gap-6 mb-3 text-xs text-slate-500">
-                <span>Median femei: <strong className="text-slate-700">{r.women}</strong></span>
-                <span>Median bărbați: <strong className="text-slate-700">{r.men}</strong></span>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Justificare obiectivă</p>
-                <p className="text-sm text-slate-700 leading-relaxed">{r.justification}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 p-4 bg-indigo-50/50 rounded-lg">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>De ce contează:</strong> Directiva EU 2023/970 inversează sarcina probei — angajatorul trebuie să demonstreze că diferențele salariale au cauze obiective (senioritate, competențe, responsabilitate). Acest raport constituie documentația justificativă.
-          </p>
-        </div>
-      </ReportSection>
-
-      {/* ═══ R5: STRUCTURĂ SALARIALĂ ═══ */}
-      <ReportSection id="salary" index={5} title="Structură salarială (clase și trepte)" subtitle="Grila de salarizare cu minim, median și maxim per grad — fundament pentru echitate internă.">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-emerald-50 text-left">
-                <th className="px-4 py-3 font-semibold text-slate-700">Grad</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Minim (RON)</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Median (RON)</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Maxim (RON)</th>
-                <th className="px-4 py-3 font-semibold text-slate-700">Poziții</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SALARY_GRADES.map((r, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-                  <td className="px-4 py-2.5">
-                    <span className="inline-flex items-center justify-center px-2 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px]">{r.grade}</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-slate-600">{r.min}</td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-slate-800">{r.mid}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-600">{r.max}</td>
-                  <td className="px-4 py-2.5 text-slate-600 text-xs">{r.positions}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 p-4 bg-emerald-50/50 rounded-lg">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>Cum se folosește:</strong> Grila definește plaja salarială pentru fiecare grad. Un angajat cu salariul sub minim e sub-remunerat pentru complexitatea postului. Unul peste maxim e supra-remunerat — sau merită promovat la gradul următor.
-          </p>
-        </div>
-      </ReportSection>
-
-      {/* ═══ R6: BENCHMARK ═══ */}
-      <ReportSection id="benchmark" index={6} title="Benchmark salarial vs piață" subtitle="Compararea salariilor interne cu datele de piață — percentilele 25, 50 și 75." bg="bg-slate-50/50">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-sky-50 text-left">
-                <th className="px-4 py-3 font-semibold text-slate-700">Poziție</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">Intern</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">P25</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">P50</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-right">P75</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-center">Index</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {BENCHMARK_DATA.map((r, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-                  <td className="px-4 py-2.5 font-medium text-slate-800">{r.position}</td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-slate-800">{r.internal}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-500">{r.market_p25}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-600">{r.market_p50}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-500">{r.market_p75}</td>
-                  <td className="px-4 py-2.5 text-center font-bold text-slate-700">{r.index}</td>
-                  <td className="px-4 py-2.5 text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      r.status === "Competitiv" ? "bg-emerald-100 text-emerald-800" :
-                      r.status === "Peste piață" ? "bg-sky-100 text-sky-800" :
-                      "bg-amber-100 text-amber-800"
-                    }`}>
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 p-4 bg-sky-50/50 rounded-lg">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>Cum se citește:</strong> Indexul compară salariul intern cu mediana pieței (P50). Sub 90% = risc de pierdere a angajaților. Peste 110% = supracost salarial. Între 90-110% = zonă competitivă.
-          </p>
-        </div>
-      </ReportSection>
+      </section>
 
       {/* ═══ CTA ═══ */}
       <section className="py-20 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold leading-tight">
-            Aceste rapoarte pot fi generate pentru compania dumneavoastră
+            Dosarul de conformitate poate fi generat pentru compania dumneavoastră
           </h2>
           <p className="mt-4 text-indigo-200 text-lg leading-relaxed">
             Încărcați datele organizației, iar platforma generează automat
-            evaluarea posturilor, structura salarială, analiza pay gap și
-            documentația conformă cu Directiva EU 2023/970.
+            toate documentele necesare pentru conformitate cu Directiva EU 2023/970.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -407,7 +658,7 @@ export default function DemoPage() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-indigo-300">
-            Include 50 credite/lună &middot; Rapoarte gratuite: profil sectorial, MVV draft &middot; Fără angajament pe termen lung
+            Diagnostic gratuit inclus &middot; Rapoarte de referință gratuite: profil sectorial, MVV draft &middot; Fără angajament pe termen lung
           </p>
         </div>
       </section>
@@ -433,7 +684,7 @@ export default function DemoPage() {
 
 function DemoWatermark() {
   return (
-    <div className="absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800">
+    <div className="absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 z-10">
       <span className="text-[10px] font-bold uppercase tracking-wider">Demo</span>
       <span className="text-[9px]">Date fictive</span>
     </div>
@@ -441,32 +692,45 @@ function DemoWatermark() {
 }
 
 function ReportSection({
-  id, index, title, subtitle, children, bg = "",
+  index, title, subtitle, docLabel, children,
 }: {
-  id: string; index: number; title: string; subtitle: string; children: React.ReactNode; bg?: string
+  index: number; title: string; subtitle: string; docLabel: string; children: React.ReactNode
 }) {
   return (
-    <section id={id} className={`py-14 ${bg}`}>
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="relative">
-          <DemoWatermark />
-          <div className="mb-6">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold mr-2">
+    <div className="mb-10">
+      <div className="relative bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <DemoWatermark />
+        {/* Header */}
+        <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold flex-shrink-0">
               {index}
             </span>
-            <h2 className="inline text-xl font-bold text-slate-900">{title}</h2>
-            <p className="mt-2 text-sm text-slate-500 max-w-2xl">{subtitle}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            {children}
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+              <p className="text-sm text-slate-500">{subtitle}</p>
+              <p className="mt-1 text-[10px] text-indigo-600 font-medium uppercase tracking-wider">{docLabel}</p>
+            </div>
           </div>
         </div>
+        {/* Content */}
+        {children}
       </div>
-    </section>
+    </div>
   )
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function InfoBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-4 mb-4 mt-3 p-3 bg-slate-50 rounded-lg">
+      <p className="text-xs text-slate-600 leading-relaxed">
+        <strong>Cum se citește:</strong> {children}
+      </p>
+    </div>
+  )
+}
+
+function StatBox({ label, value }: { label: string; value: number }) {
   return (
     <div className="text-center">
       <p className="text-2xl font-bold text-indigo-700">{value}</p>
