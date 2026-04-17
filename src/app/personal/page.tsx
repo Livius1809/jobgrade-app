@@ -178,7 +178,7 @@ export default function PersonalPage() {
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">1</div>
               <h3 className="font-semibold text-foreground mb-2">Alege-ți un alias</h3>
               <p className="text-sm text-text-secondary leading-relaxed text-justify">
-                Numele tău de crisalidă. Nu avem nevoie de date personale ca să te cunoaștem. Primești o adresă de email pe domeniul nostru.
+                Va fi numele tău de crisalidă. Nu avem nevoie de date personale ca să te cunoaștem. Primești o adresă de email pe domeniul nostru.
               </p>
             </div>
             <div className="text-center">
@@ -208,20 +208,40 @@ export default function PersonalPage() {
           <h2 className="text-xl md:text-2xl font-semibold text-center text-foreground mb-3">
             Șase carduri. Un singur drum.
           </h2>
-          <p className="text-sm text-text-secondary text-justify mb-12 leading-relaxed" style={{ maxWidth: "40rem", margin: "0 auto 3rem auto" }}>
-            Fiecare card reprezintă o dimensiune a existenței tale. Ele sunt
-            dimensiuni concentrice. Începem cu nivele mai &bdquo;superficiale&rdquo;
-            dar importante, legate de rolurile pe care ți le asumi, profesionale
-            și sociale și navigăm împreună către &bdquo;CINE EȘTI TU&rdquo;, cel
-            din spatele acestora. Nu este un drum oarecare, este drumul către
-            &bdquo;TINE&rdquo;, noi suntem pe rând consilieri, antrenori, călăuze.
-            Fiecare dintre noi reprezintă de fapt oglinda a ceea ce tu ai devenit
-            pe fiecare nivel al existenței tale. Decizia de a merge mai departe
-            este totdeauna a ta. Ca și alegerile pe care le vei face. Scopul
-            nostru este ca tu să-ți trăiești viața conștient și să te bucuri.
-            Dacă acesta este și scopul tău, te așteptăm în portal, pentru a
-            evolua împreună&hellip;
-          </p>
+          <div className="text-sm text-text-secondary text-justify mb-12 leading-relaxed space-y-4" style={{ maxWidth: "40rem", margin: "0 auto 3rem auto" }}>
+            <p>
+              Fiecare card reprezintă o dimensiune a existenței tale. Ele sunt
+              dimensiuni concentrice. Începem cu nivele mai &bdquo;superficiale&rdquo;
+              dar importante, legate de rolurile pe care ți le asumi, profesionale
+              și sociale și navigăm împreună către &bdquo;CINE EȘTI TU&rdquo;, cel
+              din spatele acestora.
+            </p>
+            <p>
+              Nu este un drum oarecare, este drumul către &bdquo;TINE&rdquo;; noi
+              suntem pe rând, doar&hellip; &bdquo;consilieri&rdquo;,
+              &bdquo;antrenori&rdquo;, &bdquo;călăuze&rdquo;.
+            </p>
+            <p>
+              Fiecare dintre noi reprezintă de fapt oglinda a ceea ce tu ai
+              devenit pe fiecare nivel al existenței tale.
+            </p>
+            <p>
+              Decizia de a merge mai departe este totdeauna, a ta&hellip; Ca și
+              alegerile pe care le faci. Și să nu uiți că și atunci când nu știi
+              încotro să mergi, este tot alegerea ta, nu faci o
+              &bdquo;pauză&rdquo; ci alegi să stagnezi.
+            </p>
+            <p>
+              Scopul nostru este ca tu să-ți trăiești viața conștient și să poți
+              extrage sensuri și semnificații folositoare, indiferent de
+              împrejurările în care te afli sau de contextele de învățare pe care
+              ți le creezi, conștient sau nu.
+            </p>
+            <p>
+              Dacă acesta este și scopul tău, te așteptăm în portal, pentru a
+              evolua împreună&hellip;
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {cards.map((card) => (
