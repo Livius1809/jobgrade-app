@@ -123,7 +123,7 @@ export default function EvaluareComunaLanding() {
             <DiffCard icon="📈" title="Plan de remediere cu impact bugetar" text="Nu doar diagnostic, ci plan concret: ce ajustezi, când, cu ce cost. Sustenabil financiar pentru organizație." />
             <DiffCard icon="🔒" title="Documentație de audit" text="Fiecare pas al procesului e documentat: decizii, justificări, termene. Dovada bunei-credințe în fața oricărei verificări." />
             <DiffCard icon="🔔" title="Monitorizare post-remediere" text="Platforma urmărește dacă măsurile adoptate produc efectul dorit. Alertare automată dacă decalajul persistă." />
-            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat CPR în psihologia muncii. AI-ul procesează și identifică tipare, interpretarea rămâne umană." />
+            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat de Colegiul Psihologilor din România în domeniul psihologiei muncii, transporturilor și serviciilor, cu formare psihanalitică. AI-ul procesează și identifică tipare, interpretarea rămâne umană." />
           </div>
         </div>
       </section>
@@ -214,6 +214,7 @@ export default function EvaluareComunaLanding() {
             <Link href="/privacy" className="hover:text-white">Politica de confidențialitate</Link>
             <Link href="/termeni" className="hover:text-white">Termeni și condiții</Link>
             <Link href="/cookies" className="hover:text-white">Cookie-uri</Link>
+            <Link href="/transparenta-ai" className="hover:text-white">Transparență AI</Link>
           </div>
         </div>
       </footer>

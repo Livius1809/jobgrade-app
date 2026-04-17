@@ -123,7 +123,7 @@ export default function PayGapLanding() {
             <DiffCard icon="🔔" title="Monitorizare continuă" text="Platforma alertează automat când decizii salariale noi creează sau agravează inechități. Nu doar anual — continuu." />
             <DiffCard icon="📄" title="Conformitate completă" text="Raportul anual, justificările pentru diferențe peste 5%, planurile de corecție — generate automat, conforme cu Directiva EU." />
             <DiffCard icon="🔒" title="Confidențialitate garantată" text="Datele salariale sunt protejate prin criptare. Rapoartele agregate respectă anonimizarea (k-anonymity, minim 5 persoane per grup)." />
-            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat CPR în psihologia muncii. AI-ul procesează date și identifică tipare, dar interpretarea rămâne umană." />
+            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat de Colegiul Psihologilor din România în domeniul psihologiei muncii, transporturilor și serviciilor, cu formare psihanalitică. AI-ul procesează date și identifică tipare, dar interpretarea rămâne umană." />
           </div>
         </div>
       </section>
@@ -227,6 +227,7 @@ export default function PayGapLanding() {
             <Link href="/privacy" className="hover:text-white">Politica de confidențialitate</Link>
             <Link href="/termeni" className="hover:text-white">Termeni și condiții</Link>
             <Link href="/cookies" className="hover:text-white">Cookie-uri</Link>
+            <Link href="/transparenta-ai" className="hover:text-white">Transparență AI</Link>
           </div>
         </div>
       </footer>
