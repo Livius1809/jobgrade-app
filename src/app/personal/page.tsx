@@ -21,6 +21,7 @@ const cards = [
     active: true,
     color: "coral",
     icon: "/favicon.svg",
+    layout: "full" as const, // capac sus — full width
   },
   {
     id: "CARD_3",
@@ -30,15 +31,7 @@ const cards = [
     active: true,
     color: "indigo",
     icon: "/favicon.svg",
-  },
-  {
-    id: "CARD_1",
-    title: "Drumul către mine",
-    subtitle: "Călăuza AI",
-    description: "Cel mai profund strat. Aici nu mai lucrezi cu ce faci sau cu cine interacționezi. Aici te întâlnești cu cine ești, dincolo de roluri și așteptări.",
-    active: false,
-    color: "coral",
-    icon: "/favicon.svg",
+    layout: "half" as const, // stânga sus
   },
   {
     id: "CARD_2",
@@ -48,6 +41,7 @@ const cards = [
     active: false,
     color: "indigo",
     icon: "/favicon.svg",
+    layout: "half" as const, // dreapta sus
   },
   {
     id: "CARD_4",
@@ -57,6 +51,17 @@ const cards = [
     active: false,
     color: "coral",
     icon: "/favicon.svg",
+    layout: "half" as const, // stânga jos
+  },
+  {
+    id: "CARD_1",
+    title: "Drumul către mine",
+    subtitle: "Călăuza AI",
+    description: "Cel mai profund strat. Aici nu mai lucrezi cu ce faci sau cu cine interacționezi. Aici te întâlnești cu cine ești, dincolo de roluri și așteptări.",
+    active: false,
+    color: "coral",
+    icon: "/favicon.svg",
+    layout: "half" as const, // dreapta jos
   },
   {
     id: "CARD_5",
@@ -66,6 +71,7 @@ const cards = [
     active: false,
     color: "indigo",
     icon: "/favicon.svg",
+    layout: "full" as const, // capac jos — full width
   },
 ]
 
@@ -206,6 +212,8 @@ export default function PersonalPage() {
               <div
                 key={card.id}
                 className={`relative rounded-2xl border p-8 transition-all duration-500 ${
+                  card.layout === "full" ? "md:col-span-2" : ""
+                } ${
                   card.active
                     ? `border-${card.color}/20 bg-gradient-to-br from-${card.color}/5 to-${card.color}/2 hover:shadow-lg hover:border-${card.color}/30`
                     : "border-indigo/10 bg-surface/40 opacity-60"
