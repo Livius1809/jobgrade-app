@@ -4,7 +4,7 @@ import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
 
 export const metadata = {
   title: "JobGrade — Un drum care începe cu tine",
-  description: "Descoperă cine ești cu adevărat. Profilare personalizată, dezvoltare autentică, parcurs evolutiv ghidat.",
+  description: "Un demers evolutiv care începe cu tine. Profilare personalizată, dezvoltare autentică, parcurs ghidat.",
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -17,7 +17,7 @@ const cards = [
     id: "CARD_6",
     title: "Spune-mi despre mine",
     subtitle: "Profiler AI",
-    description: "Profilerul tău personal. Te cunoaște din fiecare conversație, din fiecare test, din fiecare alegere pe care o faci aici. Cu cât interacționezi mai mult, cu atât te vede mai clar.",
+    description: "Profilerul tău personal. Învață despre tine pe măsură ce interacționezi cu el, cu fiecare conversație, fiecare test, fiecare alegere pe care o faci aici. Cu cât interacționezi mai mult, cu atât te vede mai clar, cu atât imaginea ta din oglinda pe care ți-o arată este mai precisă și te poți cunoaște mai bine.",
     active: true,
     color: "coral",
     icon: "/favicon.svg",
@@ -26,7 +26,7 @@ const cards = [
     id: "CARD_3",
     title: "Îmi asum un rol profesional",
     subtitle: "Consilier Carieră AI",
-    description: "Descoperă-ți valoarea profesională reală. Încarcă-ți CV-ul, primești o radiografie a profilului tău pe criterii obiective. Găsește rolurile care ți se potrivesc cu adevărat.",
+    description: "Evoluția profesională este parte din drumul tău. Aici poți descoperi ce înseamnă să evaluezi cât valorezi din punct de vedere profesional nu numai pentru un job prin care să câștigi bine, ci mai ales pentru a câștiga mai bine bucurându-te de ceea ce faci. Încarcă-ți CV-ul și primești o radiografie a profilului tău pe criterii obiective. Găsește rolurile care ți se potrivesc cu adevărat.",
     active: true,
     color: "indigo",
     icon: "/favicon.svg",
@@ -62,7 +62,7 @@ const cards = [
     id: "CARD_5",
     title: "Antreprenoriatul transformațional",
     subtitle: "Coach AI",
-    description: "Pune totul cap la cap într-un proiect care contează. Nu un curs de business, ci integrarea a tot ceea ce ai descoperit despre tine, pus în slujba unui bine mai mare.",
+    description: "Pune totul cap la cap într-un proiect care contează. Nu un curs de business, ci integrarea a tot ceea ce ai descoperit despre tine, pus în slujba unui bine mai înalt.",
     active: false,
     color: "indigo",
     icon: "/favicon.svg",
@@ -123,7 +123,7 @@ export default function PersonalPage() {
         </h1>
 
         <p className="text-center text-base md:text-lg text-text-secondary leading-relaxed mb-4" style={{ maxWidth: "36rem" }}>
-          Un drum de evoluție care începe cu tine. Nu cu un test. Nu cu o etichetă.
+          Un demers evolutiv care începe cu tine. Nu cu un test. Nu cu o etichetă.
           Cu o conversație sinceră despre cine ești și cine vrei să devii.
         </p>
 
@@ -163,12 +163,13 @@ export default function PersonalPage() {
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">2</div>
               <h3 className="font-semibold text-foreground mb-2">Vorbește cu Profiler-ul AI</h3>
               <p className="text-sm text-text-secondary leading-relaxed">
-                Prima conversație. Spune-i ce te aduce aici — sau nu. Te ascultă, te observă și începe să te cunoască din fiecare cuvânt.
+                Prima conversație. Spune-i ce te aduce aici — sau nu. Te ascultă, te observă și începe să te cunoască odată cu fiecare cuvânt.
               </p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">3</div>
               <h3 className="font-semibold text-foreground mb-2">Explorează la ritmul tău</h3>
+
               <p className="text-sm text-text-secondary leading-relaxed">
                 Două carduri sunt deschise din start. Restul se deschid pe măsură ce ești pregătit. Nimeni nu te grăbește.
               </p>
@@ -185,9 +186,19 @@ export default function PersonalPage() {
           <h2 className="text-xl md:text-2xl font-semibold text-center text-foreground mb-3">
             Șase carduri. Un singur drum.
           </h2>
-          <p className="text-sm text-text-secondary text-center mb-12" style={{ maxWidth: "32rem", margin: "0 auto 3rem auto" }}>
-            Fiecare card e un strat al aceluiași lucru: tu.
-            Nu sunt paralele — sunt concentrice. Fiecare strat conține și transcende pe cele dinaintea lui.
+          <p className="text-sm text-text-secondary text-center mb-12 leading-relaxed" style={{ maxWidth: "40rem", margin: "0 auto 3rem auto" }}>
+            Fiecare card reprezintă o dimensiune a existenței tale. Ele sunt
+            dimensiuni concentrice. Începem cu nivele mai &bdquo;superficiale&rdquo;
+            dar importante, legate de rolurile pe care ți le asumi, profesionale
+            și sociale și navigăm împreună către &bdquo;CINE EȘTI TU&rdquo;, cel
+            din spatele acestora. Nu este un drum oarecare, este drumul către
+            &bdquo;TINE&rdquo;, noi suntem pe rând consilieri, antrenori, călăuze.
+            Fiecare dintre noi reprezintă de fapt oglinda a ceea ce tu ai devenit
+            pe fiecare nivel al existenței tale. Decizia de a merge mai departe
+            este totdeauna a ta. Ca și alegerile pe care le vei face. Scopul
+            nostru este ca tu să-ți trăiești viața conștient și să te bucuri.
+            Dacă acesta este și scopul tău, te așteptăm în portal, pentru a
+            evolua împreună&hellip;
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -242,8 +253,9 @@ export default function PersonalPage() {
             Mătasea din care e țesută crisalida este chiar substanța din care se naște fluturele.
           </p>
           <p className="text-base text-text-secondary leading-relaxed mb-8">
-            Drumul tău aici e simplu: din crisalidă, prin metamorfoză, spre zbor.
-            La ritmul tău. Cu sprijinul nostru. Fără grabă.
+            Drumul tău aici e simplu: din crisalidă, prin metamorfoză, ajungi
+            un fluture frumos care învață să zboare. La ritmul tău. Cu sprijinul
+            nostru. Fără grabă.
           </p>
 
           <div className="w-12 h-0.5 rounded-full bg-gradient-to-r from-coral to-indigo mb-6" style={{ margin: "0 auto 1.5rem auto" }} />
@@ -290,8 +302,9 @@ export default function PersonalPage() {
           </p>
           <p className="text-sm text-text-secondary leading-relaxed">
             Toți agenții din platformă sunt agenți AI. Interacțiunile
-            sensibile sunt monitorizate automat (SafetyMonitor) și
-            escaladează la personalul specializat când e necesar.
+            sensibile sunt monitorizate automat (SafetyMonitor) iar
+            cazurile care necesită atenție suplimentară sunt escaladate
+            la personalul uman specializat.
           </p>
         </div>
       </section>
