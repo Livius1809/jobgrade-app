@@ -16,7 +16,7 @@ const cards = [
   {
     id: "CARD_6",
     title: "Spune-mi despre mine",
-    subtitle: "Profiler",
+    subtitle: "Profiler AI",
     description: "Profilerul tău personal. Te cunoaște din fiecare conversație, din fiecare test, din fiecare alegere pe care o faci aici. Cu cât interacționezi mai mult, cu atât te vede mai clar.",
     active: true,
     color: "coral",
@@ -25,8 +25,8 @@ const cards = [
   {
     id: "CARD_3",
     title: "Îmi asum un rol profesional",
-    subtitle: "Consilier Carieră",
-    description: "Descoperă-ți valoarea profesională reală. Încarcă-ți CV-ul, primești o radiografie a profilului tău pe 6 criterii obiective. Găsește rolurile care ți se potrivesc cu adevărat.",
+    subtitle: "Consilier Carieră AI",
+    description: "Descoperă-ți valoarea profesională reală. Încarcă-ți CV-ul, primești o radiografie a profilului tău pe criterii obiective. Găsește rolurile care ți se potrivesc cu adevărat.",
     active: true,
     color: "indigo",
     icon: "/favicon.svg",
@@ -34,7 +34,7 @@ const cards = [
   {
     id: "CARD_1",
     title: "Drumul către mine",
-    subtitle: "Călăuza",
+    subtitle: "Călăuza AI",
     description: "Cel mai profund strat. Aici nu mai lucrezi cu ce faci sau cu cine interacționezi. Aici te întâlnești cu cine ești, dincolo de roluri și așteptări.",
     active: false,
     color: "coral",
@@ -43,7 +43,7 @@ const cards = [
   {
     id: "CARD_2",
     title: "Eu și ceilalți, adică NOI",
-    subtitle: "Consilier Dezvoltare Personală",
+    subtitle: "Consilier Dezvoltare Personală AI",
     description: "Înțelege cum funcționezi în relație cu ceilalți. Construiește o hartă a relațiilor tale și descoperă tiparele care te ajută sau te țin pe loc.",
     active: false,
     color: "indigo",
@@ -52,7 +52,7 @@ const cards = [
   {
     id: "CARD_4",
     title: "Oameni de succes, oameni de valoare",
-    subtitle: "Coach",
+    subtitle: "Coach AI",
     description: "Ce contează cu adevărat? Dincolo de realizări și recunoaștere, există o distincție fundamentală între succes și valoare. Descoper-o.",
     active: false,
     color: "coral",
@@ -61,7 +61,7 @@ const cards = [
   {
     id: "CARD_5",
     title: "Antreprenoriatul transformațional",
-    subtitle: "Coach",
+    subtitle: "Coach AI",
     description: "Pune totul cap la cap într-un proiect care contează. Nu un curs de business, ci integrarea a tot ceea ce ai descoperit despre tine, pus în slujba unui bine mai mare.",
     active: false,
     color: "indigo",
@@ -85,15 +85,8 @@ export default function PersonalPage() {
          ═══════════════════════════════════════════════════════════ */}
       <header className="relative z-50 sticky top-0 bg-white/80 backdrop-blur-md border-b border-indigo/10">
         <div className="flex items-center justify-between px-6 h-16" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image
-              src="/logo.svg"
-              alt="JobGrade"
-              width={32}
-              height={32}
-              className="transition-transform duration-500 group-hover:rotate-45"
-            />
-            <span className="text-lg font-semibold text-foreground">JobGrade</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.svg" alt="JobGrade" width={160} height={40} className="h-9 w-auto" />
           </Link>
           <nav className="flex items-center gap-6">
             <a href="#carduri" className="hidden md:inline text-sm font-medium text-text-warm hover:text-coral transition-colors">Cardurile</a>
@@ -168,9 +161,9 @@ export default function PersonalPage() {
             </div>
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">2</div>
-              <h3 className="font-semibold text-foreground mb-2">Vorbește cu Profiler-ul</h3>
+              <h3 className="font-semibold text-foreground mb-2">Vorbește cu Profiler-ul AI</h3>
               <p className="text-sm text-text-secondary leading-relaxed">
-                Prima conversație. Spune-i ce te aduce aici — sau nu. El te ascultă, te observă, și începe să te cunoască din fiecare cuvânt.
+                Prima conversație. Spune-i ce te aduce aici — sau nu. Te ascultă, te observă și începe să te cunoască din fiecare cuvânt.
               </p>
             </div>
             <div className="text-center">
@@ -284,19 +277,38 @@ export default function PersonalPage() {
         </div>
       </section>
 
+      {/* ── Încredere — cine suntem ──────────────────────────── */}
+      <section className="px-6 py-12 bg-indigo/3">
+        <div className="text-center" style={{ maxWidth: "36rem", margin: "0 auto" }}>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary/50 mb-4">
+            Cine ne susține
+          </p>
+          <p className="text-sm text-text-secondary leading-relaxed mb-3">
+            Platforma este dezvoltată de personal acreditat de Colegiul
+            Psihologilor din România în domeniul psihologiei muncii,
+            transporturilor și serviciilor, cu formare psihanalitică.
+          </p>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            Toți agenții din platformă sunt agenți AI. Interacțiunile
+            sensibile sunt monitorizate automat (SafetyMonitor) și
+            escaladează la personalul specializat când e necesar.
+          </p>
+        </div>
+      </section>
+
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="bg-indigo-dark text-white">
-        <div className="px-6 py-12" style={{ maxWidth: "56rem", margin: "0 auto" }}>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <Image src="/logo.svg" alt="JobGrade" width={24} height={24} className="brightness-0 invert" />
-              <span className="text-sm font-semibold">JobGrade</span>
-              <span className="text-xs text-white/40 ml-2">&copy; 2026 Psihobusiness Consulting SRL</span>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-white/40">
-              <span className="border border-white/10 px-2 py-0.5 rounded">GDPR</span>
-              <span className="border border-white/10 px-2 py-0.5 rounded">AI Act UE</span>
-            </div>
+      <footer className="bg-slate-900 text-slate-400 py-12">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+          <p className="text-sm">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs">
+            <Link href="/termeni" className="hover:text-white transition-colors">Termeni și condiții</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Politica de confidențialitate</Link>
+            <Link href="/cookies" className="hover:text-white transition-colors">Cookie-uri</Link>
+            <Link href="/transparenta-ai" className="hover:text-white transition-colors">Transparență AI</Link>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <span className="border border-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-500">GDPR</span>
+            <span className="border border-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-500">AI Act UE</span>
           </div>
         </div>
       </footer>
