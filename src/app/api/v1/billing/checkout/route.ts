@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         : SUBSCRIPTION.monthlyPriceId
 
       if (!priceId) {
-        return NextResponse.json({ message: "Prețul abonamentului nu este configurat." }, { status: 400 })
+        return NextResponse.json({ message: "Prețul abonamentului nu este configurat în Stripe." }, { status: 400 })
       }
 
       const checkoutSession = await stripe.checkout.sessions.create({
@@ -71,14 +71,44 @@ export async function POST(req: NextRequest) {
 
     // ── Credits checkout ──
     const pkg = CREDIT_PACKAGES.find((p) => p.id === data.packageId)
-    if (!pkg || !pkg.priceId) {
-      return NextResponse.json({ message: "Pachet invalid sau neconfigurat." }, { status: 400 })
+    if (!pkg) {
+      return NextResponse.json({ message: "Pachet invalid." }, { status: 400 })
     }
 
+    // If Stripe price ID configured → use it
+    if (pkg.priceId) {
+      const checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{ price: pkg.priceId, quantity: 1 }],
+        mode: "payment",
+        success_url: `${APP_URL}/settings/billing?success=credits&amount=${pkg.credits}`,
+        cancel_url: `${APP_URL}/settings/billing?canceled=1`,
+        metadata: {
+          tenantId,
+          type: "credits",
+          packageId: pkg.id,
+          credits: String(pkg.credits),
+        },
+      })
+      return NextResponse.json({ url: checkoutSession.url })
+    }
+
+    // Fallback: create price on-the-fly (test mode)
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
-      line_items: [{ price: pkg.priceId, quantity: 1 }],
+      line_items: [{
+        price_data: {
+          currency: "ron",
+          product_data: {
+            name: `${pkg.label} — ${pkg.credits} credite`,
+            description: pkg.description,
+          },
+          unit_amount: pkg.price * 100, // Stripe uses bani (cents)
+        },
+        quantity: 1,
+      }],
       mode: "payment",
       success_url: `${APP_URL}/settings/billing?success=credits&amount=${pkg.credits}`,
       cancel_url: `${APP_URL}/settings/billing?canceled=1`,

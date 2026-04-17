@@ -25,45 +25,98 @@ export const stripe = new Proxy({} as Stripe, {
 export const SUBSCRIPTION = {
   id: "subscription",
   label: "Abonament JobGrade",
-  description: "Acces portal, găzduire date, suport, 1h consultanță/lună",
+  description: "Acces portal, dashboard cu diagnostic, MVV draft, profil sectorial, consultant HR familiarizare (135 min/lună)",
   monthlyPriceId: process.env.STRIPE_PRICE_SUBSCRIPTION_MONTHLY || "",
   annualPriceId: process.env.STRIPE_PRICE_SUBSCRIPTION_ANNUAL || "",
-  // Prețuri de calibrat — placeholder
-  monthlyPrice: 0,
-  annualPrice: 0,
+  monthlyPrice: 399,     // RON/lună
+  annualPrice: 3_990,    // RON/an (17% discount)
   currency: "RON",
 }
 
 // ── Pachete credite (one-time payment) ──
-export const CREDIT_PACKAGES = [
+export interface CreditPackage {
+  id: string
+  credits: number
+  price: number        // RON
+  pricePerCredit: number
+  currency: string
+  label: string
+  description: string
+  priceId: string
+  popular?: boolean
+  discount?: string
+}
+
+export const CREDIT_PACKAGES: CreditPackage[] = [
+  {
+    id: "credits_micro",
+    credits: 100,
+    price: 800,
+    pricePerCredit: 8.00,
+    currency: "RON",
+    label: "Micro",
+    description: "O evaluare JE + un raport mic",
+    priceId: process.env.STRIPE_PRICE_CREDITS_MICRO || "",
+  },
+  {
+    id: "credits_mini",
+    credits: 250,
+    price: 1_875,
+    pricePerCredit: 7.50,
+    currency: "RON",
+    label: "Mini",
+    description: "4 poziții JE sau mix de rapoarte",
+    priceId: process.env.STRIPE_PRICE_CREDITS_MINI || "",
+    discount: "6%",
+  },
   {
     id: "credits_start",
-    credits: 0,    // de calibrat
-    price: 0,      // de calibrat
+    credits: 500,
+    price: 3_500,
+    pricePerCredit: 7.00,
     currency: "RON",
-    label: "Pachet Start",
-    description: "Pentru primele evaluări și rapoarte",
+    label: "Start",
+    description: "Firmă mică — acoperire ~6 luni",
     priceId: process.env.STRIPE_PRICE_CREDITS_START || "",
+    discount: "12%",
   },
   {
     id: "credits_business",
-    credits: 0,    // de calibrat
-    price: 0,      // de calibrat
+    credits: 1_500,
+    price: 9_750,
+    pricePerCredit: 6.50,
     currency: "RON",
-    label: "Pachet Business",
-    description: "Pentru utilizare regulată",
+    label: "Business",
+    description: "Firmă medie — acoperire ~1 an",
     priceId: process.env.STRIPE_PRICE_CREDITS_BUSINESS || "",
     popular: true,
-    discount: "10%",
+    discount: "19%",
+  },
+  {
+    id: "credits_professional",
+    credits: 5_000,
+    price: 30_000,
+    pricePerCredit: 6.00,
+    currency: "RON",
+    label: "Professional",
+    description: "Firmă mare — suită completă",
+    priceId: process.env.STRIPE_PRICE_CREDITS_PROFESSIONAL || "",
+    discount: "25%",
   },
   {
     id: "credits_enterprise",
-    credits: 0,    // de calibrat
-    price: 0,      // de calibrat
+    credits: 15_000,
+    price: 82_500,
+    pricePerCredit: 5.50,
     currency: "RON",
-    label: "Pachet Enterprise",
-    description: "Pentru organizații cu volum mare",
+    label: "Enterprise",
+    description: "Corporație — volum maxim",
     priceId: process.env.STRIPE_PRICE_CREDITS_ENTERPRISE || "",
-    discount: "20%",
+    discount: "31%",
   },
-] as const
+]
+
+// Helper: find package by ID
+export function findCreditPackage(id: string): CreditPackage | undefined {
+  return CREDIT_PACKAGES.find(p => p.id === id)
+}
