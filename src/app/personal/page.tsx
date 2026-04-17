@@ -133,9 +133,25 @@ export default function PersonalPage() {
           Cu o conversație sinceră despre cine ești și cine vrei să devii.
         </p>
 
-        <p className="text-center text-sm text-text-secondary/60 italic mb-8">
+        <p className="text-center text-sm text-text-secondary/60 italic mb-10">
           Evoluăm împreună.
         </p>
+
+        <div className="text-center mb-10" style={{ maxWidth: "36rem" }}>
+          <p className="text-lg md:text-xl text-foreground font-medium leading-relaxed mb-4">
+            Totul începe cu o crisalidă.
+          </p>
+          <p className="text-sm text-text-secondary leading-relaxed mb-4">
+            Nu e o rupere de ce ai fost. E o transfigurare a aceleiași esențe.
+            Mătasea din care e țesută crisalida este chiar substanța din care
+            se naște fluturele.
+          </p>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            Drumul tău aici e simplu: din crisalidă, prin metamorfoză, ajungi
+            un fluture frumos care învață să zboare. La ritmul tău. Cu sprijinul
+            nostru. Fără grabă.
+          </p>
+        </div>
 
         <div className="flex items-center gap-2 text-xs text-text-secondary/40">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -249,25 +265,11 @@ export default function PersonalPage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-           METAMORFOZA — Povestea vizuală
+           CONVERGENȚĂ — înainte de CTA
          ═══════════════════════════════════════════════════════════ */}
       <section className="px-6 py-16 md:py-20 bg-gradient-to-b from-transparent to-coral/3">
         <div className="text-center" style={{ maxWidth: "36rem", margin: "0 auto" }}>
-          <p className="text-lg md:text-xl text-foreground font-medium leading-relaxed mb-6">
-            Totul începe cu o crisalidă.
-          </p>
-          <p className="text-base text-text-secondary leading-relaxed mb-6">
-            Nu e o rupere de ce ai fost. E o transfigurare a aceleiași esențe.
-            Mătasea din care e țesută crisalida este chiar substanța din care se naște fluturele.
-          </p>
-          <p className="text-base text-text-secondary leading-relaxed mb-8">
-            Drumul tău aici e simplu: din crisalidă, prin metamorfoză, ajungi
-            un fluture frumos care învață să zboare. La ritmul tău. Cu sprijinul
-            nostru. Fără grabă.
-          </p>
-
           <div className="w-12 h-0.5 rounded-full bg-gradient-to-r from-coral to-indigo mb-6" style={{ margin: "0 auto 1.5rem auto" }} />
-
           <p className="text-lg font-semibold text-foreground mb-2">
             Începem cu CINE alegi să fii.
           </p>
