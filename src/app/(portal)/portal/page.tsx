@@ -774,7 +774,8 @@ function OrgOverviewSection({
   const topGaps = payGapByCategory.filter(c => Math.abs(c.diffPercent) >= 5).slice(0, 5)
   const equalCategories = payGapByCategory.length - payGapByCategory.filter(c => Math.abs(c.diffPercent) >= 5).length
 
-  // Construcție props calculator: dedup pe serviceCode (doar varianta AUTO ca default)
+  // Construcție props calculator: dedup pe serviceCode (doar AUTO pentru lista principală)
+  // + transmitem TOATE variantele ca map separat pentru lookup per variantă
   const seenCodes = new Set<string>()
   const calcServices = servicePricing
     .filter((sp) => {
@@ -783,18 +784,32 @@ function OrgOverviewSection({
       seenCodes.add(sp.serviceCode)
       return true
     })
-    .map((sp) => ({
-      code: sp.serviceCode,
-      name: sp.serviceName,
-      type: sp.serviceType,
-      unitLabel: sp.unitMeasure,
-      hasVariants: sp.serviceType === "PROCESS",
-      priceCredits: sp.costInCredits !== null ? Number(sp.costInCredits) : null,
-      priceRON:
-        sp.costInCredits !== null && creditValueRON !== null
-          ? Number(sp.costInCredits) * creditValueRON
-          : null,
-    }))
+    .map((sp) => {
+      // Verifică dacă există alte variante pentru acest serviceCode
+      const variants = servicePricing.filter(
+        (v) => v.serviceCode === sp.serviceCode && v.executionVariant !== "AUTO"
+      )
+      return {
+        code: sp.serviceCode,
+        name: sp.serviceName,
+        type: sp.serviceType,
+        unitLabel: sp.unitMeasure,
+        hasVariants: variants.length > 0,
+        priceCredits: sp.costInCredits !== null ? Number(sp.costInCredits) : null,
+        priceRON:
+          sp.costInCredits !== null && creditValueRON !== null
+            ? Number(sp.costInCredits) * creditValueRON
+            : null,
+      }
+    })
+
+  // Map cu toate prețurile per variantă (serviceCode|variant → credite)
+  const variantPrices = new Map<string, number>()
+  for (const sp of servicePricing) {
+    if (sp.costInCredits !== null) {
+      variantPrices.set(`${sp.serviceCode}|${sp.executionVariant}`, Number(sp.costInCredits))
+    }
+  }
 
   // Dacă nu avem nici prețuri nici pay gap — lista servicii statică ca fallback
   const hasCalcServices = calcServices.length > 0
@@ -960,6 +975,7 @@ function OrgOverviewSection({
           <ServiceCalculator
             services={hasCalcServices ? calcServices : fallbackServices}
             valuePerCreditRON={creditValueRON}
+            variantPrices={Object.fromEntries(variantPrices)}
           />
         </div>
       </div>

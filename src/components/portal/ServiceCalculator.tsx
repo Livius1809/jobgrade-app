@@ -15,6 +15,7 @@ interface ServiceOption {
 interface ServiceCalculatorProps {
   services: ServiceOption[]
   valuePerCreditRON: number | null
+  variantPrices?: Record<string, number> // "serviceCode|VARIANT" → credite
 }
 
 interface SelectedService {
@@ -32,6 +33,7 @@ const VARIANT_LABELS: Record<string, string> = {
 export default function ServiceCalculator({
   services,
   valuePerCreditRON,
+  variantPrices = {},
 }: ServiceCalculatorProps) {
   const [selected, setSelected] = useState<Map<string, SelectedService>>(new Map())
 
@@ -75,16 +77,22 @@ export default function ServiceCalculator({
       const svc = services.find((s) => s.code === code)
       if (!svc) continue
       count++
-      if (svc.priceCredits !== null) {
-        credits += svc.priceCredits * sel.quantity
-        ron += (svc.priceRON ?? 0) * sel.quantity
+
+      // Lookup preț per variantă selectată (dacă există)
+      const variantKey = `${code}|${sel.variant}`
+      const variantPrice = variantPrices[variantKey]
+      const effectiveCredits = variantPrice ?? svc.priceCredits
+
+      if (effectiveCredits !== null && effectiveCredits !== undefined) {
+        credits += effectiveCredits * sel.quantity
+        ron += effectiveCredits * (valuePerCreditRON ?? 0) * sel.quantity
       } else {
         allPriced = false
       }
     }
 
     return { credits, ron, allPriced, count }
-  }, [selected, services])
+  }, [selected, services, variantPrices, valuePerCreditRON])
 
   // Grupare pe tip
   const grouped = useMemo(() => {
@@ -151,9 +159,15 @@ export default function ServiceCalculator({
                         </span>
                       </label>
                       <span className="text-[10px] text-slate-400 flex-shrink-0">
-                        {svc.priceCredits !== null
-                          ? `${svc.priceCredits} cr/${svc.unitLabel}`
-                          : "în calibrare"}
+                        {(() => {
+                          const selVariant = selected.get(svc.code)?.variant
+                          const vKey = selVariant ? `${svc.code}|${selVariant}` : null
+                          const vPrice = vKey ? variantPrices[vKey] : undefined
+                          const displayPrice = vPrice ?? svc.priceCredits
+                          return displayPrice !== null && displayPrice !== undefined
+                            ? `${displayPrice} cr/${svc.unitLabel}`
+                            : "în calibrare"
+                        })()}
                       </span>
                     </div>
 
