@@ -98,7 +98,7 @@ export default function B2BLanding() {
             <StepCard
               step="2"
               title="Evaluezi cu comitetul"
-              text="Comitetul intern desemnat de organizația-client evaluează pe 4 criterii obiective. AI-ul asistă și semnalează inconsistențe — dar decizia rămâne umană, conform Art. 14 AI Act."
+              text="Comitetul intern desemnat de organizația-client evaluează pe 4 criterii primare de evaluare (conform legislației UE), detaliate în 6 criterii secundare. AI-ul asistă și semnalează inconsistențe — dar decizia rămâne umană, conform Art. 14 AI Act."
             />
             <StepCard
               step="3"
@@ -120,10 +120,10 @@ export default function B2BLanding() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <DiffCard icon="📉" title="5–10x mai accesibil" text="Aceeași rigurozitate metodologică, fără costurile consultanței tradiționale." />
             <DiffCard icon="⚡" title="Zile, nu luni" text="Implementare în 2–4 săptămâni, nu 4–8 luni. Durata efectivă e sub controlul dvs. — comitetul lucrează în ritmul propriu." />
-            <DiffCard icon="⚖️" title="4 criterii neutre din perspectiva genului" text="Criterii obiective de evaluare conformă cu cerințele legislației privind transparența salarială." />
+            <DiffCard icon="⚖️" title="4 criterii primare + 6 criterii secundare" text="Criterii obiective de evaluare neutre din perspectiva genului, conforme cu cerințele legislației europene privind transparența salarială." />
             <DiffCard icon="🔒" title="Trasabilitate completă" text="Fiecare evaluare, vot și ajustare — înregistrate cu dată, oră și justificare. Registru de audit accesibil oricând." />
-            <DiffCard icon="🏢" title="Per poziție, nu per angajat" text="Plătiți pentru cele 80 de posturi distincte, nu pentru cei 800 de angajați." />
-            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat de Colegiul Psihologilor din România în domeniul psihologiei muncii, transporturilor și serviciilor, cu experiență în resurse umane și proiecte pentru organizații din România. AI-ul procesează date, nu ia decizii." />
+            <DiffCard icon="🏢" title="Per poziție, nu per angajat" text="Plătiți pentru numărul de poziții distincte, nu pentru numărul de angajați." />
+            <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat de Colegiul Psihologilor din România în domeniul psihologiei muncii, transporturilor și serviciilor, cu formare psihanalitică și experiență în resurse umane și proiecte pentru organizații din România. AI-ul procesează date, nu ia decizii." />
           </div>
         </div>
       </section>
@@ -287,10 +287,11 @@ export default function B2BLanding() {
       <footer className="bg-slate-900 text-slate-400 py-12">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-3">
           <p className="text-sm">&copy; 2026 Psihobusiness Consulting SRL &middot; CIF RO15790994</p>
-          <div className="flex justify-center gap-6 text-xs">
+          <div className="flex flex-wrap justify-center gap-6 text-xs">
             <Link href="/privacy" className="hover:text-white">Politica de confidențialitate</Link>
             <Link href="/termeni" className="hover:text-white">Termeni și condiții</Link>
             <Link href="/cookies" className="hover:text-white">Cookie-uri</Link>
+            <Link href="/transparenta-ai" className="hover:text-white">Transparență AI</Link>
           </div>
         </div>
       </footer>
