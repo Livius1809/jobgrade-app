@@ -116,6 +116,8 @@ async function collectAgentData(
     propagationsOut, propagationsOutPrev,
     propagationsIn, propagationsInPrev,
     sentinelAlerts,
+    alignmentAligned, alignmentMisaligned, alignmentEscalated, alignmentTotal,
+    antiPatternsCount,
   ] = await Promise.all([
     // KB growth current
     p.kBEntry.count({ where: { agentRole, createdAt: { gte: periodStart, lte: periodEnd } } }),
@@ -175,6 +177,13 @@ async function collectAgentData(
     p.kBEntry.count({ where: { agentRole, source: "PROPAGATED", createdAt: { gte: prevStart, lte: prevEnd } } }),
     // Sentinel alerts
     p.kBEntry.count({ where: { agentRole, tags: { hasSome: ["alert", "intuition"] }, createdAt: { gte: periodStart, lte: periodEnd } } }),
+    // Alignment checks (din pipeline inteligent)
+    p.alignmentLog.count({ where: { agentRole, result: "ALIGNED", createdAt: { gte: periodStart, lte: periodEnd } } }).catch(() => 0),
+    p.alignmentLog.count({ where: { agentRole, result: "MISALIGNED", createdAt: { gte: periodStart, lte: periodEnd } } }).catch(() => 0),
+    p.alignmentLog.count({ where: { agentRole, result: "ESCALATED", createdAt: { gte: periodStart, lte: periodEnd } } }).catch(() => 0),
+    p.alignmentLog.count({ where: { agentRole, createdAt: { gte: periodStart, lte: periodEnd } } }).catch(() => 0),
+    // Anti-patterns (learning artifacts de tip anti-pattern pentru acest agent)
+    p.learningArtifact.count({ where: { studentRole: agentRole, antiPattern: { not: null } } }).catch(() => 0),
   ])
 
   return {
@@ -192,6 +201,8 @@ async function collectAgentData(
     propagationsOut: { current: propagationsOut, previous: propagationsOutPrev },
     propagationsIn: { current: propagationsIn, previous: propagationsInPrev },
     sentinelAlerts,
+    alignmentChecks: { aligned: alignmentAligned, misaligned: alignmentMisaligned, escalated: alignmentEscalated, total: alignmentTotal },
+    antiPatterns: antiPatternsCount,
   }
 }
 
@@ -329,23 +340,33 @@ function calculateDimensions(data: Awaited<ReturnType<typeof collectAgentData>>)
     ],
   })
 
-  // 8. ALINIERE MORALĂ — coerență cu CÂMPUL
-  // Scor implicit ridicat (agentii sunt aliniti by design), scade la probleme
+  // 8. ALINIERE MORALĂ — coerență REALĂ cu CÂMPUL
+  // NU presupunem aliniere by design — măsurăm din dovezi concrete:
+  // alignment checks trecute, anti-patterns detectate, output-uri retractate
+  const alignmentData = data.alignmentChecks ?? { aligned: 0, misaligned: 0, escalated: 0, total: 0 }
+  const antiPatterns = data.antiPatterns ?? 0
+  const alignedRate = alignmentData.total > 0
+    ? (alignmentData.aligned / alignmentData.total) * 100
+    : 50 // fără date = nu știm, nu presupunem
   const moralScore = Math.min(100, Math.max(0,
-    85 +                                               // Baza — aliniat by design
-    (data.reflections.current * 5) -                   // Reflecția crește alinierea
-    (data.escalations.current * 10) +                  // Escaladările pot indica probleme
-    (data.kbHighConf.current > 0 ? 5 : 0)             // Cunoaștere validată
+    Math.round(alignedRate) +                           // Rată reală de aliniere din alignment checker
+    (data.reflections.current * 3) -                    // Reflecția crește ușor
+    (antiPatterns * 15) -                               // Anti-patterns = dovadă de probleme reale
+    (alignmentData.misaligned * 20) -                   // MISALIGNED = penalizare serioasă
+    (alignmentData.escalated * 5)                       // Escaladare = incertitudine (mai puțin grav)
   ))
   dims.push({
     name: "Aliniere morală",
     score: moralScore,
-    trend: "stable", // Rareori se schimbă dramatic
+    trend: trend(moralScore, 50),
     evidence: [
+      alignmentData.total > 0
+        ? `${alignmentData.aligned}/${alignmentData.total} verificări trecute (${Math.round(alignedRate)}%)`
+        : "Nicio verificare alignment încă — scor neutru",
+      alignmentData.misaligned > 0 ? `${alignmentData.misaligned} acțiuni blocate ca nealiniate` : "Zero acțiuni nealiniate",
+      antiPatterns > 0 ? `${antiPatterns} anti-patterns detectate` : "Zero anti-patterns",
       `${data.reflections.current} reflecții morale/etice`,
-      data.escalations.current === 0 ? "Zero incidente etice" : `${data.escalations.current} situații escaladate`,
-      `Scor bazal: 85/100 (aliniat prin L1 CÂMP)`,
-    ],
+    ].filter(e => !e.startsWith("0 ") && !e.startsWith("Zero")),
   })
 
   return dims
