@@ -27,7 +27,7 @@ const cards = [
     id: "CARD_3",
     title: "Îmi asum un rol profesional",
     subtitle: "Consilier Carieră AI",
-    description: "Evoluția profesională este parte din drumul tău. Aici poți descoperi ce înseamnă să evaluezi cât valorezi din punct de vedere profesional nu numai pentru un job prin care să câștigi bine, ci mai ales pentru a câștiga mai bine bucurându-te de ceea ce faci. Încarcă-ți CV-ul și primești o radiografie a profilului tău pe criterii obiective. Găsește rolurile care ți se potrivesc cu adevărat.",
+    description: "Evoluția profesională este parte din drumul tău. Aici poți descoperi ce înseamnă să evaluezi cât valorezi din punct de vedere profesional nu numai pentru un job prin care să câștigi bine, ci mai ales pentru a câștiga mai bine, bucurându-te de ceea ce faci.\n\nÎncarcă-ți CV-ul și primești o radiografie a profilului tău pe criterii obiective. Găsește rolurile care ți se potrivesc cu adevărat.",
     active: true,
     color: "indigo",
     icon: "/favicon.svg",
@@ -37,7 +37,7 @@ const cards = [
     id: "CARD_2",
     title: "Eu și ceilalți, adică NOI",
     subtitle: "Consilier Dezvoltare Personală AI",
-    description: "Înțelege cum funcționezi în relație cu ceilalți. Construiește o hartă a relațiilor tale și descoperă tiparele care te ajută sau te țin pe loc.",
+    description: `Viața nu poate fi împlinită altfel decât în cadrul relațiilor pe care le construim. Suntem ființe sociale iar interacțiunile cu ceilalți configurează o parte importantă din drumul nostru evolutiv. Vei înțelege diferența dintre „ce trebuie să știu/fac pentru a avea o relație fericită cu X" și „cum pot să evoluez, ca să creez contexte în care tipul de relații dorite să se manifeste".\n\nÎnțelege cum funcționezi în relație cu ceilalți. Construiește o hartă a relațiilor tale și descoperă tiparele care te ajută sau te țin pe loc.`,
     active: false,
     color: "indigo",
     icon: "/favicon.svg",
@@ -47,7 +47,7 @@ const cards = [
     id: "CARD_4",
     title: "Oameni de succes, oameni de valoare",
     subtitle: "Coach AI",
-    description: "Ce contează cu adevărat? Dincolo de realizări și recunoaștere, există o distincție fundamentală între succes și valoare. Descoper-o.",
+    description: `Ce contează cu adevărat? Și pentru cine? Răspunsul la cele două întrebări face diferența. Ele pot fi privite ca etichete atașate oamenilor care adoptă un anumit tip de comportament, au o anume atitudine față de tot și toate. Efectele succesului se văd, se măsoară și se… uită. Efectele valorii se simt; ele construiesc la rândul lor, contexte de evoluție.\n\nA fi om de succes sau unul de valoare este din nou, o chestiune de alegere.\n\nDacă vrei să afli ce înseamnă și ce ți se potrivește, ai ajuns în locul potrivit.`,
     active: false,
     color: "coral",
     icon: "/favicon.svg",
@@ -57,7 +57,7 @@ const cards = [
     id: "CARD_1",
     title: "Drumul către mine",
     subtitle: "Călăuza AI",
-    description: "Cel mai profund strat. Aici nu mai lucrezi cu ce faci sau cu cine interacționezi. Aici te întâlnești cu cine ești, dincolo de roluri și așteptări.",
+    description: `E timpul să cunoști care este dimensiunea ta cea mai profundă, vom vorbi despre evoluția ta spirituală, dincolo de condiționările pe care societatea ți le-a confecționat de-a lungul existenței tale, de până acum.\n\nAici nu mai lucrezi cu „ce faci" sau cu „cine interacționezi", ci te întâlnești cu „Cine ești", dincolo de roluri și așteptări. Vei afla mult și multe despre esența ta adevărată… Însă explorarea profunzimilor ființei tale nu se termină aici, ci începe… de aici.\n\nSe continuă natural cu experimentarea nemijlocită a celor aflate. Este timpul să trăiești pe viu, experimentând cunoașterea acumulată până acum, însă de data asta împreună și sub îndrumarea directă a Călăuzelor umane. Drumul către TINE continuă, doar CĂLĂUZA se schimbă.`,
     active: false,
     color: "coral",
     icon: "/favicon.svg",
@@ -67,7 +67,7 @@ const cards = [
     id: "CARD_5",
     title: "Antreprenoriatul transformațional",
     subtitle: "Coach AI",
-    description: "Pune totul cap la cap într-un proiect care contează. Nu un curs de business, ci integrarea a tot ceea ce ai descoperit despre tine, pus în slujba unui bine mai înalt.",
+    description: `Atunci când tot ceea ce faci se aliniază esenței tale adevărate, redevii autentic, rolurile asumate creează spații de dezvoltare pentru tine și ceilalți. Totul capătă sens, totul are o semnificație, viața devine un scenariu evolutiv iar binele capătă nuanțe și profunzimi pe care nu le bănuiai până acum.\n\nOrice acțiune a ta naște un proiect în care binele se manifestă la niveluri din ce în ce mai cuprinzătoare, care la rândul său generează un alt nivel mai evoluat de… bine. Aici nu vorbim de un bine punctual și limitat în timp ci de baza creării unui nivel de bine care susține viața sub toate formele și aspectele ei și care se auto-propagă.\n\nPune totul cap la cap într-un proiect care contează. Nu vorbim numai de cum să construiești un business, ci mai ales de cum să fii exemplul viu al unui drum evolutiv coerent, care prin contagiune va conta pentru ceilalți.\n\nAici vei experimenta integrarea a tot ceea ce ai descoperit despre tine, pus în slujba unui bine mai înalt, indiferent de finalitatea proiectului tău.`,
     active: false,
     color: "indigo",
     icon: "/favicon.svg",
@@ -275,9 +275,11 @@ export default function PersonalPage() {
                 <h3 className={`text-lg font-semibold mb-3 ${card.active ? "text-foreground" : "text-foreground/50"}`}>
                   {card.title}
                 </h3>
-                <p className={`text-sm leading-relaxed text-justify ${card.active ? "text-text-secondary" : "text-text-secondary/40"}`}>
-                  {card.description}
-                </p>
+                <div className={`text-sm leading-relaxed text-justify space-y-3 ${card.active ? "text-text-secondary" : "text-text-secondary/40"}`}>
+                  {card.description.split("\n\n").map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
