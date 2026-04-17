@@ -1456,13 +1456,32 @@ export default async function PortalPage() {
         <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
           Jurnal rapoarte generate
         </h2>
-        <div className="rounded-xl border border-border bg-slate-50/50 border-l-4 border-l-slate-300 p-5">
-          <div className="space-y-5">
+        <div className="rounded-xl border border-border bg-white p-5">
+          <div className="space-y-4">
             {Array.from(new Set(REPORT_LIBRARY.map(r => r.group))).map((group) => {
               const reportsInGroup = REPORT_LIBRARY.filter(r => r.group === group)
+
+              // Fundal pal corelat cu culoarea categoriei de serviciu asociată
+              const groupBg: Record<string, string> = {
+                "Profil sectorial": "bg-emerald-50/40",
+                "Evaluare": "bg-indigo-50/40",
+                "Recrutare & inducție": "bg-sky-50/40",
+                "Conformitate EU 2023/970": "bg-violet-50/40",
+                "Dezvoltare organizațională": "bg-fuchsia-50/40",
+                "Sinteză": "bg-slate-50/40",
+              }
+              const groupTextColor: Record<string, string> = {
+                "Profil sectorial": "text-emerald-700",
+                "Evaluare": "text-indigo-700",
+                "Recrutare & inducție": "text-sky-700",
+                "Conformitate EU 2023/970": "text-violet-700",
+                "Dezvoltare organizațională": "text-fuchsia-700",
+                "Sinteză": "text-slate-600",
+              }
+
               return (
-                <div key={group}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                <div key={group} className={`rounded-lg ${groupBg[group] ?? "bg-slate-50/40"} px-4 py-3`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${groupTextColor[group] ?? "text-slate-500"}`}>
                     {group}
                   </p>
                   <div className="space-y-1.5">
