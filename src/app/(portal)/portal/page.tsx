@@ -4,6 +4,7 @@ import { getBalance } from "@/lib/credits"
 import Link from "next/link"
 import CompanyIdentityCard from "@/components/company/CompanyIdentityCard"
 import ServiceCalculator from "@/components/portal/ServiceCalculator"
+import PackageSelector from "@/components/portal/PackageSelector"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -1122,6 +1123,20 @@ export default async function PortalPage() {
 
       {/* ══════════ SNAPSHOT ORGANIZAȚIE (HR view) ══════════ */}
       <OrgSnapshotBar data={data} />
+
+      {/* ══════════ PACHETE — model concentric ══════════ */}
+      <section>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
+          Pachete de servicii
+        </h2>
+        <div className="bg-surface rounded-xl border border-border p-6">
+          <PackageSelector
+            positionCount={data.jobCount}
+            employeeCount={data.payrollCount}
+            creditBalance={data.credits}
+          />
+        </div>
+      </section>
 
       {/* ══════════ VEDERE DE ANSAMBLU ══════════ */}
       <OrgOverviewSection
