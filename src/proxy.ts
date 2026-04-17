@@ -42,6 +42,8 @@ const PUBLIC_PATHS = [
   "/cookies",
   // Media Books — conținut public, produs de structura organismului
   "/media-books",
+  // Demo — galerie rapoarte sample, public
+  "/demo",
   // Auth flow — reset password
   "/reset-password",
 ]

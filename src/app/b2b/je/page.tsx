@@ -22,6 +22,7 @@ export default function B2BLanding() {
             <a href="#problema" className="text-slate-600 hover:text-indigo-600">Problema</a>
             <a href="#solutia" className="text-slate-600 hover:text-indigo-600">Soluția</a>
             <a href="#pricing" className="text-slate-600 hover:text-indigo-600">Prețuri</a>
+            <Link href="/demo" className="text-slate-600 hover:text-indigo-600">Exemple rapoarte</Link>
             <a href="#demo" className="bg-[#E85D43] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#d04e36] transition-colors">
               Programează demo
             </a>
