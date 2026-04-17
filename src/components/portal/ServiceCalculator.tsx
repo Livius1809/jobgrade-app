@@ -8,8 +8,10 @@ interface ServiceOption {
   type: string // REPORT | ASSISTANCE | PROCESS
   unitLabel: string
   hasVariants: boolean
-  priceCredits: number | null // null = preț în calibrare
+  priceCredits: number | null // baza fixă (null = preț în calibrare)
   priceRON: number | null
+  perUnitCredits: number | null // variabil per unitate (null = preț fix)
+  perUnitLabel: string | null // ex: "angajat", "poziție"
 }
 
 interface ServiceCalculatorProps {
@@ -81,11 +83,14 @@ export default function ServiceCalculator({
       // Lookup preț per variantă selectată (dacă există)
       const variantKey = `${code}|${sel.variant}`
       const variantPrice = variantPrices[variantKey]
-      const effectiveCredits = variantPrice ?? svc.priceCredits
+      const baseCredits = variantPrice ?? svc.priceCredits
+      const perUnit = svc.perUnitCredits ?? 0
 
-      if (effectiveCredits !== null && effectiveCredits !== undefined) {
-        credits += effectiveCredits * sel.quantity
-        ron += effectiveCredits * (valuePerCreditRON ?? 0) * sel.quantity
+      if (baseCredits !== null && baseCredits !== undefined) {
+        // Formula mixtă: bază + perUnit × cantitate
+        const totalForService = baseCredits + perUnit * sel.quantity
+        credits += totalForService
+        ron += totalForService * (valuePerCreditRON ?? 0)
       } else {
         allPriced = false
       }
@@ -163,10 +168,12 @@ export default function ServiceCalculator({
                           const selVariant = selected.get(svc.code)?.variant
                           const vKey = selVariant ? `${svc.code}|${selVariant}` : null
                           const vPrice = vKey ? variantPrices[vKey] : undefined
-                          const displayPrice = vPrice ?? svc.priceCredits
-                          return displayPrice !== null && displayPrice !== undefined
-                            ? `${displayPrice} cr/${svc.unitLabel}`
-                            : "în calibrare"
+                          const base = vPrice ?? svc.priceCredits
+                          if (base === null || base === undefined) return "în calibrare"
+                          if (svc.perUnitCredits && svc.perUnitCredits > 0) {
+                            return `${base} cr + ${svc.perUnitCredits} cr/${svc.perUnitLabel ?? svc.unitLabel}`
+                          }
+                          return `${base} cr/${svc.unitLabel}`
                         })()}
                       </span>
                     </div>

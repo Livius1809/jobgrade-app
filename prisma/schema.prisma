@@ -3385,8 +3385,16 @@ model ServicePricing {
   // preț distinct (AUTO, HYBRID_AI_MEDIATED, HYBRID_HUMAN_MEDIATED).
   // Folosit de servicii de tip evaluare (JE, evaluare comună, mediere decalaj).
   executionVariant   String   @default("AUTO") // "AUTO" | "HYBRID_AI_MEDIATED" | "HYBRID_HUMAN_MEDIATED"
-  unitMeasure        String   // "rulare", "minut", "intrebare", "sesiune"
-  costInCredits      Decimal  @db.Decimal(10, 4) // preț în credite per unitate
+  unitMeasure        String   // "rulare", "minut", "intrebare", "sesiune", "angajat", "pozitie"
+  // Tarifare mixtă CAPEX+OPEX:
+  // costInCredits = baza fixă (componenta CAPEX — setup, framework, infrastructură)
+  // perUnitCredits = variabila per unitate (componenta OPEX — scalează cu volumul)
+  // Formula: total = costInCredits + perUnitCredits × cantitate
+  // Dacă costInCredits = 0 → pur OPEX (doar per unitate)
+  // Dacă perUnitCredits = 0/null → preț fix per proiect (pur CAPEX sau preț flat)
+  costInCredits      Decimal  @db.Decimal(10, 4) // baza fixă (credite)
+  perUnitCredits     Decimal? @db.Decimal(10, 4) // variabil per unitate (credite) — null = preț fix
+  perUnitLabel       String?  // denumire unitate variabilă (ex: "angajat", "poziție") — pt afișare
   marginMultiplier   Decimal? @db.Decimal(5, 2)  // factor multiplicare cost intern → preț (informativ)
   chatTier           String?  // "FAMILIARIZARE" | "CONSULTANTA" (doar pentru ASSISTANCE)
   isFreeTier         Boolean  @default(false)

@@ -800,6 +800,8 @@ function OrgOverviewSection({
           sp.costInCredits !== null && creditValueRON !== null
             ? Number(sp.costInCredits) * creditValueRON
             : null,
+        perUnitCredits: (sp as any).perUnitCredits !== null ? Number((sp as any).perUnitCredits) : null,
+        perUnitLabel: (sp as any).perUnitLabel ?? null,
       }
     })
 
@@ -823,6 +825,8 @@ function OrgOverviewSection({
           hasVariants: cat.name.includes("Recrutare") || svc.id.startsWith("je") || svc.id === "joint",
           priceCredits: null as number | null,
           priceRON: null as number | null,
+          perUnitCredits: null as number | null,
+          perUnitLabel: null as string | null,
         }))
       )
     : []
