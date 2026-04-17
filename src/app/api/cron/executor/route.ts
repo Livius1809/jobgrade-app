@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { executeQueue } from "@/lib/agents/task-executor"
+import { runIntelligentBatch } from "@/lib/agents/intelligent-executor"
 
 export const maxDuration = 300 // 5 min — matches execute-task route
 
@@ -50,14 +50,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await executeQueue({
-      limit: 5,
-      maxAgeHours: 720, // 30 days — tasks transferred from dev have older createdAt
-    })
+    const result = await runIntelligentBatch(5)
 
     return NextResponse.json({
       ok: true,
-      ...result,
+      threshold: result.thresholdResult,
+      tasksProcessed: result.tasksProcessed,
+      tasksSkippedKB: result.tasksSkippedKB,
+      tasksBlockedAlignment: result.tasksBlockedAlignment,
+      tasksBlockedBudget: result.tasksBlockedBudget,
+      tasksExecuted: result.tasksExecuted,
+      results: result.results,
+      totalDurationMs: result.totalDurationMs,
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
