@@ -57,7 +57,7 @@ function LoginForm() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
         <span className="px-4 py-2 border-b-2 border-coral text-coral font-medium text-sm">
-          Login
+          Autentificare
         </span>
         <Link
           href="/register"

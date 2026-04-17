@@ -170,7 +170,7 @@ export default function RegisterPage() {
           href="/login"
           className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm"
         >
-          Login
+          Autentificare
         </Link>
         <span className="px-4 py-2 border-b-2 border-coral text-coral font-medium text-sm">
           Cont nou
