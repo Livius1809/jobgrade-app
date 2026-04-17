@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getBalance } from "@/lib/credits"
 import Link from "next/link"
 import CompanyIdentityCard from "@/components/company/CompanyIdentityCard"
+import ServiceCalculator from "@/components/portal/ServiceCalculator"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -415,6 +416,14 @@ async function getPortalData(tenantId: string) {
     }),
     orgStructure: buildOrgStructure(allPayroll),
     payGapByCategory: buildPayGapByCategory(allPayroll),
+    servicePricing: await prisma.servicePricing.findMany({
+      where: { effectiveFrom: { lte: new Date() } },
+      orderBy: { effectiveFrom: "desc" },
+    }).catch(() => []),
+    creditValueRON: (await prisma.creditValue.findFirst({
+      orderBy: { effectiveFrom: "desc" },
+      select: { valuePerCreditRON: true },
+    }).catch(() => null))?.valuePerCreditRON ?? null,
   }
 }
 
@@ -743,20 +752,65 @@ function NextBestStepCard({
    2023/970 (NU indicator global, care nu măsoară un fenomen abordabil).
 */
 function OrgOverviewSection({
-  org,
   payGapByCategory,
+  servicePricing,
+  creditValueRON,
 }: {
-  org: OrgStructure | null
   payGapByCategory: PayGapByCategory[]
+  servicePricing: Array<{
+    serviceCode: string
+    serviceName: string
+    serviceType: string
+    unitMeasure: string
+    executionVariant: string
+    costInCredits: unknown // Decimal
+    chatTier: string | null
+  }>
+  creditValueRON: number | null
 }) {
-  if (!org && payGapByCategory.length === 0) return null
-
   const fmt = (n: number) => new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(n)
-  const colors = ["bg-indigo-500", "bg-emerald-500", "bg-violet-500", "bg-amber-500", "bg-sky-500", "bg-fuchsia-500", "bg-coral", "bg-slate-400"]
 
   // Top decalaje: cele >5% diferență
   const topGaps = payGapByCategory.filter(c => Math.abs(c.diffPercent) >= 5).slice(0, 5)
   const equalCategories = payGapByCategory.length - payGapByCategory.filter(c => Math.abs(c.diffPercent) >= 5).length
+
+  // Construcție props calculator: dedup pe serviceCode (doar varianta AUTO ca default)
+  const seenCodes = new Set<string>()
+  const calcServices = servicePricing
+    .filter((sp) => {
+      if (sp.executionVariant !== "AUTO") return false
+      if (seenCodes.has(sp.serviceCode)) return false
+      seenCodes.add(sp.serviceCode)
+      return true
+    })
+    .map((sp) => ({
+      code: sp.serviceCode,
+      name: sp.serviceName,
+      type: sp.serviceType,
+      unitLabel: sp.unitMeasure,
+      hasVariants: sp.serviceType === "PROCESS",
+      priceCredits: sp.costInCredits !== null ? Number(sp.costInCredits) : null,
+      priceRON:
+        sp.costInCredits !== null && creditValueRON !== null
+          ? Number(sp.costInCredits) * creditValueRON
+          : null,
+    }))
+
+  // Dacă nu avem nici prețuri nici pay gap — lista servicii statică ca fallback
+  const hasCalcServices = calcServices.length > 0
+  const fallbackServices = !hasCalcServices
+    ? SERVICE_CATEGORIES.flatMap((cat) =>
+        cat.services.map((svc) => ({
+          code: svc.id,
+          name: svc.label.replace(/\s*\([^)]*\)\s*$/, ""),
+          type: cat.name.includes("Recrutare") ? "PROCESS" : "REPORT",
+          unitLabel: "rulare",
+          hasVariants: cat.name.includes("Recrutare") || svc.id.startsWith("je") || svc.id === "joint",
+          priceCredits: null as number | null,
+          priceRON: null as number | null,
+        }))
+      )
+    : []
 
   return (
     <section>
@@ -764,78 +818,7 @@ function OrgOverviewSection({
         Vedere de ansamblu
       </h2>
       <div className="grid lg:grid-cols-2 gap-4">
-        {/* Organigramă — Departament → Locație */}
-        {org && (() => {
-          // Detect dacă „departamentele" sunt de fapt locații (pattern repetitiv:
-          // ex: „Magazin X", „Magazin Y" — același prefix). Atunci propunem grupare.
-          const allLocations = new Set<string>(org.departments.flatMap(d => d.locations.map(l => l.city)))
-          const looksLikeLocations = (() => {
-            if (org.departments.length < 3) return false
-            const firstWords = org.departments.map(d => d.name.split(/[\s—-]/)[0].toLowerCase())
-            const counts = new Map<string, number>()
-            for (const w of firstWords) counts.set(w, (counts.get(w) ?? 0) + 1)
-            const maxRepeat = Math.max(...Array.from(counts.values()))
-            return maxRepeat >= org.departments.length * 0.5
-          })()
-          const headerLabel = `${fmt(allLocations.size)} ${allLocations.size === 1 ? "locație" : "locații"} · ${fmt(org.totalEmployees)} angajați`
-
-          return (
-          <div className="bg-surface rounded-xl border border-border p-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold text-slate-900">Inventarul posturilor de lucru</p>
-              <span className="text-[10px] text-slate-400">{headerLabel}</span>
-            </div>
-            <div className="rounded-lg bg-amber-50/50 border border-amber-100 px-3 py-2 mb-4 space-y-1.5">
-              <p className="text-[10px] text-amber-800 leading-snug">
-                Imagine aproximativă construită pe baza datelor furnizate,
-                potrivit statului de funcții.
-              </p>
-              <p className="text-[10px] text-amber-800 leading-snug">
-                Nu este o organigramă reală — lipsesc relațiile de
-                subordonare, rolurile de coordonare, nivelul ierarhic de vârf.
-              </p>
-              <p className="text-[10px] text-amber-800 leading-snug">
-                Înregistrările afișate pot fi un mix de locații (puncte de
-                lucru), categorii profesionale transversale (persoane care
-                lucrează în mai multe puncte) și departamente reale; formele
-                de colaborare pot fi diverse (contract individual de muncă,
-                PFA, convenție civilă etc.). Clasificarea exactă necesită
-                cunoașterea afacerii.
-              </p>
-              <p className="text-[10px] text-indigo-700 leading-snug pt-1 border-t border-amber-200">
-                💡 Organigrama reală + clasificarea contractelor sunt
-                folosite ca input pentru o parte din serviciile oferite
-                organizației, în ansamblu.
-              </p>
-            </div>
-
-            <div className="max-h-[420px] overflow-y-auto pr-2 divide-y divide-slate-100">
-              {org.departments.map((d) => (
-                <div key={d.name} className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-800" />
-                    <span className="text-sm text-slate-800 truncate">{d.name}</span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 flex-shrink-0">
-                    {fmt(d.count)} angajați
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Nota explicativă departamente vs locații */}
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <p className="text-[10px] text-slate-500 leading-snug italic">
-                Departamentele sunt entități funcționale ale organizației
-                (Vânzări, Producție etc.); locațiile sunt puncte de lucru
-                fizice care aparțin entităților funcționale ale companiei.
-              </p>
-            </div>
-          </div>
-          )
-        })()}
-
-        {/* Decalaj salarial pe categorii de muncitori */}
+        {/* STÂNGA — Decalajul salarial pe categorii */}
         <div className="bg-surface rounded-xl border border-border p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-slate-900">
@@ -970,6 +953,14 @@ function OrgOverviewSection({
               </Link>
             </>
           )}
+        </div>
+
+        {/* DREAPTA — Calculator de servicii (înlocuiește inventarul posturilor) */}
+        <div className="bg-surface rounded-xl border border-border p-5">
+          <ServiceCalculator
+            services={hasCalcServices ? calcServices : fallbackServices}
+            valuePerCreditRON={creditValueRON}
+          />
         </div>
       </div>
     </section>
@@ -1112,10 +1103,11 @@ export default async function PortalPage() {
       {/* ══════════ SNAPSHOT ORGANIZAȚIE (HR view) ══════════ */}
       <OrgSnapshotBar data={data} />
 
-      {/* ══════════ VEDERE DE ANSAMBLU — surprize plăcute la upload ══════════ */}
+      {/* ══════════ VEDERE DE ANSAMBLU ══════════ */}
       <OrgOverviewSection
-        org={data.orgStructure}
         payGapByCategory={data.payGapByCategory}
+        servicePricing={data.servicePricing}
+        creditValueRON={data.creditValueRON ? Number(data.creditValueRON) : null}
       />
 
       {/* ══════════ GREETING ══════════ */}
