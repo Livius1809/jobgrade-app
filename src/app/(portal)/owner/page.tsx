@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import CogChat from "@/components/chat/CogChat"
+import { getOrganismTelemetryOverview } from "@/lib/agents/execution-telemetry"
+import { getLearningStats } from "@/lib/agents/learning-pipeline"
 import LayerCardInteractive from "./LayerCardInteractive"
 import OrganismPulse from "./OrganismPulse"
 import OwnerInbox from "@/components/owner/OwnerInbox"
@@ -349,6 +351,9 @@ export default async function OwnerDashboard() {
               </Link>
             </div>
 
+            {/* ══════════ PIPELINE INTELIGENT — telemetry live ══════════ */}
+            <PipelineTelemetrySection />
+
             {/* ══════════ SECȚIUNEA 1: Organismul ══════════ */}
             <section>
               <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
@@ -366,26 +371,20 @@ export default async function OwnerDashboard() {
               </div>
             </section>
 
-            {/* ══════════ SECȚIUNEA 2: Decizii necesare ══════════ */}
-            <section>
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
-                Decizii necesare
-                {data.decisions.length > 0 && (
+            {/* ══════════ SECȚIUNEA 2: Decizii necesare (doar dacă > 0) ══════════ */}
+            {data.decisions.length > 0 && (
+              <section>
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
+                  Decizii necesare
                   <span className="ml-2 text-coral">{data.decisions.length}</span>
-                )}
-              </h2>
-              {data.decisions.length === 0 ? (
-                <div className="rounded-xl border border-border bg-surface p-5">
-                  <p className="text-sm text-text-secondary">Zero decizii necesare. Organismul funcționează autonom.</p>
-                </div>
-              ) : (
+                </h2>
                 <div className="space-y-3">
                   {data.decisions.map((d, i) => (
                     <DecisionCard key={d.situationId ?? i} decision={d} />
                   ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
             {/* ══════════ Sumar situații ══════════ */}
             {data.situationsSummary && data.situationsSummary.total > 0 && (
@@ -515,6 +514,64 @@ async function PilotSection() {
       </div>
     </div>
   )
+}
+
+// ── Pipeline Telemetry Section ───────────────────────────────────────────────
+
+async function PipelineTelemetrySection() {
+  try {
+    const [telemetry, learning] = await Promise.all([
+      getOrganismTelemetryOverview(24),
+      getLearningStats(),
+    ])
+
+    const fmt = (n: number) => new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 2 }).format(n)
+
+    return (
+      <section>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
+          Pipeline inteligent — ultimele 24h
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium">Task-uri procesate</p>
+            <p className="text-2xl font-bold text-indigo-700 mt-1">{telemetry.totalTasks}</p>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium">KB Hit Rate</p>
+            <p className={`text-2xl font-bold mt-1 ${telemetry.kbHitRate > 20 ? "text-emerald-600" : "text-slate-400"}`}>
+              {telemetry.kbHitRate}%
+            </p>
+            <p className="text-[9px] text-slate-400">execuții evitate prin KB</p>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium">Cost total</p>
+            <p className="text-2xl font-bold text-amber-600 mt-1">${fmt(telemetry.totalCostUSD)}</p>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium">Artefacte create</p>
+            <p className="text-2xl font-bold text-violet-600 mt-1">{learning.createdLast7Days}</p>
+            <p className="text-[9px] text-slate-400">din {learning.totalArtifacts} total</p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium mb-2">Eficiență threshold</p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${telemetry.thresholdEfficiency > 60 ? "bg-emerald-500" : "bg-amber-400"}`}
+                style={{ width: `${telemetry.thresholdEfficiency}%` }}
+              />
+            </div>
+            <span className="text-sm font-semibold text-slate-700">{telemetry.thresholdEfficiency}%</span>
+            <span className="text-[9px] text-slate-400">cron runs utile</span>
+          </div>
+        </div>
+      </section>
+    )
+  } catch {
+    return null
+  }
 }
 
 // ── Componente auxiliare ─────────────────────────────────────────────────────
