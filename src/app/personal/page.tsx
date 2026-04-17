@@ -124,7 +124,7 @@ export default function PersonalPage() {
         <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-center mb-6 text-foreground">
           Începem cu cine alegi să{" "}
           <span className="bg-gradient-to-r from-coral via-coral to-indigo bg-clip-text text-transparent">
-            fii.
+            FII.
           </span>
         </h1>
 
@@ -293,7 +293,7 @@ export default function PersonalPage() {
         <div className="text-center" style={{ maxWidth: "36rem", margin: "0 auto" }}>
           <div className="w-12 h-0.5 rounded-full bg-gradient-to-r from-coral to-indigo mb-6" style={{ margin: "0 auto 1.5rem auto" }} />
           <p className="text-lg font-semibold text-foreground mb-2">
-            Începem cu CINE alegi să fii.
+            Începem cu CINE alegi să FII.
           </p>
           <p className="text-base text-coral font-medium">
             Evoluăm împreună.
