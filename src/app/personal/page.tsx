@@ -128,7 +128,7 @@ export default function PersonalPage() {
           </span>
         </h1>
 
-        <p className="text-center text-base md:text-lg text-text-secondary leading-relaxed mb-4" style={{ maxWidth: "36rem" }}>
+        <p className="text-justify text-base md:text-lg text-text-secondary leading-relaxed mb-4" style={{ maxWidth: "36rem" }}>
           Un demers evolutiv care începe cu tine. Nu cu un test. Nu cu o etichetă.
           Cu o conversație sinceră despre cine ești și cine vrei să devii.
         </p>
@@ -141,12 +141,12 @@ export default function PersonalPage() {
           <p className="text-lg md:text-xl text-foreground font-medium leading-relaxed mb-4">
             Totul începe cu o crisalidă.
           </p>
-          <p className="text-sm text-text-secondary leading-relaxed mb-4">
+          <p className="text-sm text-text-secondary leading-relaxed text-justify mb-4">
             Nu e o rupere de ce ai fost. E o transfigurare a aceleiași esențe.
             Mătasea din care e țesută crisalida este chiar substanța din care
             se naște fluturele.
           </p>
-          <p className="text-sm text-text-secondary leading-relaxed">
+          <p className="text-sm text-text-secondary leading-relaxed text-justify">
             Drumul tău aici e simplu: din crisalidă, prin metamorfoză, ajungi
             un fluture frumos care învață să zboare. La ritmul tău. Cu sprijinul
             nostru. Fără grabă.
@@ -177,14 +177,14 @@ export default function PersonalPage() {
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">1</div>
               <h3 className="font-semibold text-foreground mb-2">Alege-ți un alias</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">
+              <p className="text-sm text-text-secondary leading-relaxed text-justify">
                 Numele tău de crisalidă. Nu avem nevoie de date personale ca să te cunoaștem. Primești o adresă de email pe domeniul nostru.
               </p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">2</div>
               <h3 className="font-semibold text-foreground mb-2">Vorbește cu Profiler-ul AI</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">
+              <p className="text-sm text-text-secondary leading-relaxed text-justify">
                 Prima conversație. Spune-i ce te aduce aici — sau nu. Te ascultă, te observă și începe să te cunoască odată cu fiecare cuvânt.
               </p>
             </div>
@@ -192,7 +192,7 @@ export default function PersonalPage() {
               <div className="w-12 h-12 rounded-full bg-coral/10 text-coral font-bold text-lg flex items-center justify-center mx-auto mb-4">3</div>
               <h3 className="font-semibold text-foreground mb-2">Explorează la ritmul tău</h3>
 
-              <p className="text-sm text-text-secondary leading-relaxed">
+              <p className="text-sm text-text-secondary leading-relaxed text-justify">
                 Două carduri sunt deschise din start. Restul se deschid pe măsură ce ești pregătit. Nimeni nu te grăbește.
               </p>
             </div>
@@ -208,7 +208,7 @@ export default function PersonalPage() {
           <h2 className="text-xl md:text-2xl font-semibold text-center text-foreground mb-3">
             Șase carduri. Un singur drum.
           </h2>
-          <p className="text-sm text-text-secondary text-center mb-12 leading-relaxed" style={{ maxWidth: "40rem", margin: "0 auto 3rem auto" }}>
+          <p className="text-sm text-text-secondary text-justify mb-12 leading-relaxed" style={{ maxWidth: "40rem", margin: "0 auto 3rem auto" }}>
             Fiecare card reprezintă o dimensiune a existenței tale. Ele sunt
             dimensiuni concentrice. Începem cu nivele mai &bdquo;superficiale&rdquo;
             dar importante, legate de rolurile pe care ți le asumi, profesionale
@@ -255,7 +255,7 @@ export default function PersonalPage() {
                 <h3 className={`text-lg font-semibold mb-3 ${card.active ? "text-foreground" : "text-foreground/50"}`}>
                   {card.title}
                 </h3>
-                <p className={`text-sm leading-relaxed ${card.active ? "text-text-secondary" : "text-text-secondary/40"}`}>
+                <p className={`text-sm leading-relaxed text-justify ${card.active ? "text-text-secondary" : "text-text-secondary/40"}`}>
                   {card.description}
                 </p>
               </div>
@@ -305,12 +305,12 @@ export default function PersonalPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-text-secondary/50 mb-4">
             Cine ne susține
           </p>
-          <p className="text-sm text-text-secondary leading-relaxed mb-3">
+          <p className="text-sm text-text-secondary leading-relaxed text-justify mb-3">
             Platforma este dezvoltată de personal acreditat de Colegiul
             Psihologilor din România în domeniul psihologiei muncii,
             transporturilor și serviciilor, cu formare psihanalitică.
           </p>
-          <p className="text-sm text-text-secondary leading-relaxed">
+          <p className="text-sm text-text-secondary leading-relaxed text-justify">
             Toți agenții din platformă sunt agenți AI. Interacțiunile
             sensibile sunt monitorizate automat (SafetyMonitor) iar
             cazurile care necesită atenție suplimentară sunt escaladate
