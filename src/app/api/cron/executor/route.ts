@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const now = new Date()
   const eetHour = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getHours()
   const eetDay = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getDay()
-  if (eetDay === 0 || eetDay === 6 || eetHour < 8 || eetHour >= 18) {
+  if (eetDay === 0 || eetDay === 6 || eetHour < 8 || eetHour >= 22) {
     return NextResponse.json({ ok: true, skipped: true, reason: "Outside business hours (L-V 08-18 EET)" })
   }
 
