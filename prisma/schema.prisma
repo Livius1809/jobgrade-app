@@ -3424,3 +3424,88 @@ model CreditValue {
 
   @@map("credit_values")
 }
+
+// ─────────────────────────────────────────
+// ORGANISM INTELLIGENT — CRONURI INTELIGENTE
+// Arhitectura: threshold → KB-first → alignment → cost-gate → executor → learning → telemetry
+// ─────────────────────────────────────────
+
+model ExecutionTelemetry {
+  id                String   @id @default(cuid())
+  taskId            String?
+  agentRole         String
+  taskType          String?
+  modelUsed         String   // "haiku" | "sonnet" | "opus"
+  tokensInput       Int      @default(0)
+  tokensOutput      Int      @default(0)
+  estimatedCostUSD  Float    @default(0)
+  kbHit             Boolean  @default(false)
+  kbSimilarityScore Float?
+  alignmentResult   String   @default("SKIPPED") // ALIGNED | UNCERTAIN | MISALIGNED | SKIPPED
+  alignmentLevel    Int?     // 1-5 la ce nivel s-a rezolvat alinierea
+  thresholdPassed   Boolean  @default(true)
+  durationMs        Int      @default(0)
+  webSearchCount    Int      @default(0)
+  learningCreated   Boolean  @default(false)
+  isInternal        Boolean  @default(true) // true = consum organism, false = consum client
+  createdAt         DateTime @default(now())
+
+  @@index([agentRole, createdAt])
+  @@index([createdAt])
+  @@map("execution_telemetry")
+}
+
+model LearningArtifact {
+  id                  String   @id @default(cuid())
+  problemClass        String   // clasificare problema (ex: "alignment-check", "kb-gap", "escalation-pattern")
+  rule                String   @db.Text // regula extrasa
+  example             String   @db.Text // exemplu concret
+  antiPattern         String?  @db.Text // ce NU trebuie facut
+  sourceEscalationId  String?  // task-ul care a generat artefactul
+  teacherRole         String   // cine a produs artefactul (agentul care a rezolvat)
+  studentRole         String   // cui i-a fost livrat (agentul care a escalat)
+  sourceType          String   @default("ESCALATION") // ESCALATION | POST_EXECUTION | EXTRAPOLATION
+  appliedCount        Int      @default(0) // de cate ori a fost aplicat cu succes
+  effectivenessScore  Float    @default(0) // 0-1, creste cu fiecare aplicare reusita
+  expiresAt           DateTime? // expirare daca nu e folosit >90 zile
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([studentRole, problemClass])
+  @@index([teacherRole])
+  @@map("learning_artifacts")
+}
+
+model AgentBudget {
+  id                 String   @id @default(cuid())
+  agentRole          String   @unique
+  dailyLimitTokens   Int      @default(20000)
+  monthlyLimitTokens Int      @default(500000)
+  alertThreshold     Float    @default(0.8) // 80% din limita
+  currentDailyUsed   Int      @default(0)
+  currentMonthlyUsed Int      @default(0)
+  lastResetDaily     DateTime @default(now())
+  lastResetMonthly   DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("agent_budgets")
+}
+
+model AlignmentLog {
+  id              String   @id @default(cuid())
+  taskId          String?
+  agentRole       String
+  actionSummary   String   @db.Text // ce voia sa faca
+  level           Int      // 1-5: la ce nivel s-a rezolvat
+  result          String   // ALIGNED | UNCERTAIN | MISALIGNED | EXTRAPOLATED
+  resolvedBy      String?  // agentRole care a rezolvat (daca escalat/extrapolat)
+  reasoning       String?  @db.Text // justificare
+  artifactCreated Boolean  @default(false) // a generat LearningArtifact
+  costTokens      Int      @default(0) // tokens consumate pentru verificare (0 la Nivel 1-3)
+  createdAt       DateTime @default(now())
+
+  @@index([agentRole, createdAt])
+  @@index([level, result])
+  @@map("alignment_logs")
+}
