@@ -371,18 +371,33 @@ export default async function OwnerDashboard() {
               </div>
             </section>
 
-            {/* ══════════ SECȚIUNEA 2: Decizii necesare (doar dacă > 0) ══════════ */}
+            {/* ══════════ SECȚIUNEA 2: Decizii necesare (compact, max 3) ══════════ */}
             {data.decisions.length > 0 && (
               <section>
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
-                  Decizii necesare
-                  <span className="ml-2 text-coral">{data.decisions.length}</span>
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80">
+                    Decizii necesare
+                    <span className="ml-2 text-coral">{data.decisions.length}</span>
+                  </h2>
+                  {data.decisions.length > 3 && (
+                    <Link href="/owner/situations" className="text-[10px] text-indigo hover:underline">
+                      Toate cele {data.decisions.length} →
+                    </Link>
+                  )}
+                </div>
                 <div className="space-y-3">
-                  {data.decisions.map((d, i) => (
+                  {data.decisions.slice(0, 3).map((d, i) => (
                     <DecisionCard key={d.situationId ?? i} decision={d} />
                   ))}
                 </div>
+                {data.decisions.length > 3 && (
+                  <Link
+                    href="/owner/situations"
+                    className="block mt-3 text-center text-xs text-indigo hover:underline py-2 rounded-lg border border-indigo/10 hover:bg-indigo/5 transition-colors"
+                  >
+                    Vezi toate cele {data.decisions.length} decizii →
+                  </Link>
+                )}
               </section>
             )}
 
