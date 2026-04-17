@@ -371,35 +371,50 @@ export default async function OwnerDashboard() {
               </div>
             </section>
 
-            {/* ══════════ SECȚIUNEA 2: Decizii necesare (compact, max 3) ══════════ */}
-            {data.decisions.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80">
-                    Decizii necesare
-                    <span className="ml-2 text-coral">{data.decisions.length}</span>
-                  </h2>
-                  {data.decisions.length > 3 && (
-                    <Link href="/owner/situations" className="text-[10px] text-indigo hover:underline">
-                      Toate cele {data.decisions.length} →
+            {/* ══════════ SECȚIUNEA 2: Decizii Owner (doar CRITICAL + HIGH) ══════════ */}
+            {(() => {
+              // Owner vede DOAR deciziile CRITICAL + HIGH (restul sunt pentru COG)
+              const ownerDecisions = data.decisions.filter(
+                d => d.severity === "CRITICAL" || d.severity === "HIGH"
+              )
+              const cogDecisions = data.decisions.length - ownerDecisions.length
+
+              if (ownerDecisions.length === 0) return null
+
+              return (
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80">
+                      Decizii care necesită atenția ta
+                      <span className="ml-2 text-coral">{ownerDecisions.length}</span>
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      {cogDecisions > 0 && (
+                        <span className="text-[9px] text-slate-400">
+                          + {cogDecisions} gestionate de organism
+                        </span>
+                      )}
+                      <Link href="/owner/situations" className="text-[10px] text-indigo hover:underline">
+                        Toate situațiile →
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {ownerDecisions.slice(0, 3).map((d, i) => (
+                      <DecisionCard key={d.situationId ?? i} decision={d} />
+                    ))}
+                  </div>
+                  {ownerDecisions.length > 3 && (
+                    <Link
+                      href="/owner/situations"
+                      className="block mt-3 text-center text-xs text-indigo hover:underline py-2 rounded-lg border border-indigo/10 hover:bg-indigo/5 transition-colors"
+                    >
+                      Vezi toate cele {ownerDecisions.length} decizii →
                     </Link>
                   )}
-                </div>
-                <div className="space-y-3">
-                  {data.decisions.slice(0, 3).map((d, i) => (
-                    <DecisionCard key={d.situationId ?? i} decision={d} />
-                  ))}
-                </div>
-                {data.decisions.length > 3 && (
-                  <Link
-                    href="/owner/situations"
-                    className="block mt-3 text-center text-xs text-indigo hover:underline py-2 rounded-lg border border-indigo/10 hover:bg-indigo/5 transition-colors"
-                  >
-                    Vezi toate cele {data.decisions.length} decizii →
-                  </Link>
-                )}
-              </section>
-            )}
+                </section>
+              )
+            })()}
 
             {/* ══════════ Sumar situații ══════════ */}
             {data.situationsSummary && data.situationsSummary.total > 0 && (
