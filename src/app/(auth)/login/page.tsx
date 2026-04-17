@@ -52,7 +52,7 @@ function LoginForm() {
   return (
     <div className="w-full" style={{ maxWidth: "24rem", margin: "0 auto" }}>
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Intră în portal</h2>
-      <p className="text-slate-500 mb-8">Contul organizației tale pe JobGrade</p>
+      <p className="text-slate-500 mb-8">Spațiul tău personal pe JobGrade</p>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
