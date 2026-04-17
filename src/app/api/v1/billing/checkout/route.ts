@@ -125,7 +125,8 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: "Date invalide.", errors: error.issues }, { status: 400 })
     }
-    console.error("[BILLING CHECKOUT]", error)
-    return NextResponse.json({ message: "Eroare la creare sesiune plată." }, { status: 500 })
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("[BILLING CHECKOUT]", errMsg, error)
+    return NextResponse.json({ message: `Eroare: ${errMsg}` }, { status: 500 })
   }
 }
