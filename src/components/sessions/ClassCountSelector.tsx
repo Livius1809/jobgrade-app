@@ -7,6 +7,9 @@ interface Props {
   effectiveClassCount: number
   userClassCount: number | null
   onClassCountChange: (count: number | null) => void
+  effectiveStepCount: number
+  userStepCount: number | null
+  onStepCountChange: (count: number | null) => void
 }
 
 const DISPERSION_LEVELS = [
@@ -45,7 +48,9 @@ const DISPERSION_LEVELS = [
   },
 ] as const
 
-export default function ClassCountSelector({ classDetection, effectiveClassCount, userClassCount, onClassCountChange }: Props) {
+const DEFAULT_STEP_COUNT = 4
+
+export default function ClassCountSelector({ classDetection, effectiveClassCount, userClassCount, onClassCountChange, effectiveStepCount, userStepCount, onStepCountChange }: Props) {
   const activeLevel = classDetection.cvPercent < 15 ? "low" : classDetection.cvPercent < 30 ? "medium" : "high"
 
   return (
@@ -58,42 +63,86 @@ export default function ClassCountSelector({ classDetection, effectiveClassCount
           </p>
         </div>
 
-        {/* Selector nr. clase */}
-        <div className="flex items-center gap-2 shrink-0">
-          <label className="text-[10px] text-slate-500 font-medium">Clase:</label>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                const next = effectiveClassCount - 1
-                if (next >= 3) onClassCountChange(next)
-              }}
-              disabled={effectiveClassCount <= 3}
-              className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
-            >
-              −
-            </button>
-            <span className="text-sm font-bold text-indigo-600 w-6 text-center tabular-nums">
-              {effectiveClassCount}
-            </span>
-            <button
-              onClick={() => {
-                const next = effectiveClassCount + 1
-                if (next <= 11) onClassCountChange(next)
-              }}
-              disabled={effectiveClassCount >= 11}
-              className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
-            >
-              +
-            </button>
+        {/* Selectoare nr. clase + nr. trepte */}
+        <div className="flex items-center gap-4 shrink-0">
+          {/* Nr. clase */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-slate-500 font-medium">Clase:</label>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  const next = effectiveClassCount - 1
+                  if (next >= 3) onClassCountChange(next)
+                }}
+                disabled={effectiveClassCount <= 3}
+                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
+              >
+                −
+              </button>
+              <span className="text-sm font-bold text-indigo-600 w-6 text-center tabular-nums">
+                {effectiveClassCount}
+              </span>
+              <button
+                onClick={() => {
+                  const next = effectiveClassCount + 1
+                  if (next <= 11) onClassCountChange(next)
+                }}
+                disabled={effectiveClassCount >= 11}
+                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
+              >
+                +
+              </button>
+            </div>
+            {userClassCount !== null && userClassCount !== classDetection.suggested && (
+              <button
+                onClick={() => onClassCountChange(null)}
+                className="text-[9px] text-slate-400 hover:text-indigo-500 underline"
+              >
+                reset
+              </button>
+            )}
           </div>
-          {userClassCount !== null && userClassCount !== classDetection.suggested && (
-            <button
-              onClick={() => onClassCountChange(null)}
-              className="text-[9px] text-slate-400 hover:text-indigo-500 underline"
-            >
-              reset
-            </button>
-          )}
+
+          {/* Separator */}
+          <div className="w-px h-5 bg-slate-200" />
+
+          {/* Nr. trepte */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-slate-500 font-medium">Trepte:</label>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  const next = effectiveStepCount - 1
+                  if (next >= 2) onStepCountChange(next)
+                }}
+                disabled={effectiveStepCount <= 2}
+                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-violet-100 active:bg-violet-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
+              >
+                −
+              </button>
+              <span className="text-sm font-bold text-violet-600 w-6 text-center tabular-nums">
+                {effectiveStepCount}
+              </span>
+              <button
+                onClick={() => {
+                  const next = effectiveStepCount + 1
+                  if (next <= 10) onStepCountChange(next)
+                }}
+                disabled={effectiveStepCount >= 10}
+                className="w-6 h-6 rounded text-xs font-bold bg-slate-100 hover:bg-violet-100 active:bg-violet-200 disabled:opacity-30 text-slate-700 flex items-center justify-center transition-colors"
+              >
+                +
+              </button>
+            </div>
+            {userStepCount !== null && userStepCount !== DEFAULT_STEP_COUNT && (
+              <button
+                onClick={() => onStepCountChange(null)}
+                className="text-[9px] text-slate-400 hover:text-violet-500 underline"
+              >
+                reset
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -130,7 +179,7 @@ export default function ClassCountSelector({ classDetection, effectiveClassCount
       </div>
 
       <p className="text-[9px] text-slate-400 text-right">
-        Organizația dvs.: CV = {classDetection.cvPercent}% · {effectiveClassCount} clase selectate · sugestie: {classDetection.suggested}
+        Organizația dvs.: CV = {classDetection.cvPercent}% · {effectiveClassCount} clase × {effectiveStepCount} trepte · sugestie: {classDetection.suggested} clase
       </p>
     </div>
   )

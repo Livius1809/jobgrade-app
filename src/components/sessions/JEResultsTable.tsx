@@ -173,11 +173,14 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
   const [userClassCount, setUserClassCount] = useState<number | null>(null)
   const effectiveClassCount = userClassCount ?? classDetection?.suggested ?? 5
 
+  const [userStepCount, setUserStepCount] = useState<number | null>(null)
+  const effectiveStepCount = userStepCount ?? 4
+
   const pitariuGrades = useMemo(() => {
     if (!hasSalaryData) return null
-    const computed = buildPitariuGrades(salaryPoints, effectiveClassCount)
+    const computed = buildPitariuGrades(salaryPoints, effectiveClassCount, effectiveStepCount)
     return computed.length > 0 ? computed : null
-  }, [salaryPoints, effectiveClassCount, hasSalaryData])
+  }, [salaryPoints, effectiveClassCount, effectiveStepCount, hasSalaryData])
 
   const activeGrades: SalaryGrade[] = useMemo(() => {
     if (pitariuGrades) {
@@ -192,16 +195,27 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
     return grades
   }, [pitariuGrades, grades])
 
-  // Hybrid: moștenește steps de la DB grades prin overlap de scor
+  // Trepte: folosim treptele generate de Pitariu (configurabile),
+  // cu fallback la DB grades prin overlap de scor
   const activeGradesWithSteps: SalaryGrade[] = useMemo(() => {
     if (!pitariuGrades) return grades
-    return activeGrades.map(ag => {
-      const dbMatch = grades.find(dbg =>
-        Math.max(ag.scoreMin, dbg.scoreMin) < Math.min(ag.scoreMax, dbg.scoreMax)
-      )
-      return { ...ag, steps: dbMatch?.steps }
+    return pitariuGrades.map(pg => {
+      const pitariuSteps: SalaryStep[] = pg.steps.map(s => ({
+        step: s.stepNumber,
+        name: s.name,
+        salary: s.salary,
+        criteria: null,
+      }))
+      return {
+        name: pg.name,
+        scoreMin: pg.scoreMin,
+        scoreMax: pg.scoreMax,
+        salaryMin: pg.salaryMin,
+        salaryMax: pg.salaryMax,
+        steps: pitariuSteps,
+      }
     })
-  }, [activeGrades, grades, pitariuGrades])
+  }, [pitariuGrades, grades])
 
   // Budget impact calculation
   const budgetImpact = useMemo(() => {
@@ -382,6 +396,9 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             effectiveClassCount={effectiveClassCount}
             userClassCount={userClassCount}
             onClassCountChange={setUserClassCount}
+            effectiveStepCount={effectiveStepCount}
+            userStepCount={userStepCount}
+            onStepCountChange={setUserStepCount}
           />
         )}
 

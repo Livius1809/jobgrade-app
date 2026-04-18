@@ -48,3 +48,5 @@ docs/metodologie-job-evaluation.txt
 backups/
 test-results/
 reports/
+
+.env*.local

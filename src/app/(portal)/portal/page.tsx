@@ -1478,11 +1478,19 @@ export default async function PortalPage() {
         </div>
       </section>
 
-      {/* ══════════ JURNAL RAPOARTE GENERATE ══════════ */}
+      {/* ══════════ RAPORT MASTER + JURNAL RAPOARTE ══════════ */}
       <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70 mb-4">
-          Jurnal rapoarte generate
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-text-secondary/70">
+            Jurnal rapoarte generate
+          </h2>
+          <a
+            href="/reports/master"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            📖 Raport Master
+          </a>
+        </div>
         <div className="rounded-xl border border-border bg-white p-5">
           <div className="space-y-4">
             {Array.from(new Set(REPORT_LIBRARY.map(r => r.group))).map((group) => {

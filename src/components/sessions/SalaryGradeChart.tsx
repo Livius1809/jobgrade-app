@@ -91,6 +91,7 @@ export default function SalaryGradeChart({ grades, salaryPoints, title }: Props)
       order: i + 1,
       scoreMid: (g.scoreMin + g.scoreMax) / 2,
       salaryMid: (g.salaryMin + g.salaryMax) / 2,
+      steps: [],
     }))
     return salaryPoints
       .filter(p => p.salary > 0)
@@ -107,6 +108,7 @@ export default function SalaryGradeChart({ grades, salaryPoints, title }: Props)
       order: i + 1,
       scoreMid: (g.scoreMin + g.scoreMax) / 2,
       salaryMid: (g.salaryMin + g.salaryMax) / 2,
+      steps: [],
     }))
     return buildRegressionLines(gradesForReg)
   }, [grades])

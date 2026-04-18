@@ -26,6 +26,12 @@ export interface ScorePoint {
   label?: string
 }
 
+export interface PitariuStep {
+  stepNumber: number
+  name: string
+  salary: number
+}
+
 export interface PitariuGrade {
   name: string
   order: number
@@ -35,6 +41,7 @@ export interface PitariuGrade {
   salaryMin: number
   salaryMax: number
   salaryMid: number
+  steps: PitariuStep[]
 }
 
 /** Raportul geometric observat din Tabelul 2.8 Pitariu */
@@ -124,9 +131,48 @@ export function autoDetectClassCount(scores: number[]): ClassDetection {
  * @param numClasses - Nr. de clase (opțional, auto-detectat dacă lipsește)
  * @returns Lista de clase ordonate ascendent
  */
+/**
+ * Generează treptele salariale uniform distribuite în interiorul unei clase.
+ *
+ * @param salaryMin - Minimul clasei
+ * @param salaryMax - Maximul clasei
+ * @param numSteps - Nr. de trepte dorit (2-10)
+ * @param classOrder - Nr. clasei (pentru naming)
+ * @returns Lista de trepte cu salariul corespunzător
+ */
+export function buildStepsForGrade(
+  salaryMin: number,
+  salaryMax: number,
+  numSteps: number,
+  classOrder: number,
+): PitariuStep[] {
+  const clamped = Math.max(2, Math.min(10, numSteps))
+  const steps: PitariuStep[] = []
+  for (let s = 0; s < clamped; s++) {
+    const salary = clamped === 1
+      ? (salaryMin + salaryMax) / 2
+      : salaryMin + (salaryMax - salaryMin) * (s / (clamped - 1))
+    steps.push({
+      stepNumber: s + 1,
+      name: `C${classOrder} T${s + 1}`,
+      salary: Math.round(salary),
+    })
+  }
+  return steps
+}
+
+/**
+ * Construiește clasele salariale conform algoritmului Pitariu.
+ *
+ * @param points - Lista de (scor, salariu) pentru fiecare post/angajat
+ * @param numClasses - Nr. de clase (opțional, auto-detectat dacă lipsește)
+ * @param numSteps - Nr. de trepte per clasă (opțional, default 4)
+ * @returns Lista de clase ordonate ascendent
+ */
 export function buildPitariuGrades(
   points: ScorePoint[],
   numClasses?: number,
+  numSteps: number = 4,
 ): PitariuGrade[] {
   if (points.length < 2) return []
 
@@ -220,15 +266,19 @@ export function buildPitariuGrades(
     // Suprapunere naturală Pitariu: maxim clasă i > minim clasă i
     // (se întâmplă automat dacă centrele sunt suficient de apropiate)
 
+    const roundedMin = Math.round(Math.max(0, salaryMin))
+    const roundedMax = Math.round(salaryMax)
+
     grades.push({
       name: `Clasă ${i + 1}`,
       order: i + 1,
       scoreMin,
       scoreMax,
       scoreMid,
-      salaryMin: Math.round(Math.max(0, salaryMin)),
-      salaryMax: Math.round(salaryMax),
+      salaryMin: roundedMin,
+      salaryMax: roundedMax,
       salaryMid: Math.round((salaryMin + salaryMax) / 2),
+      steps: buildStepsForGrade(roundedMin, roundedMax, numSteps, i + 1),
     })
   }
 
@@ -248,6 +298,11 @@ export function buildPitariuGrades(
       current.salaryMid = Math.round((current.salaryMin + current.salaryMax) / 2)
       next.salaryMid = Math.round((next.salaryMin + next.salaryMax) / 2)
     }
+  }
+
+  // --- Pas 6: Regenerare trepte după ajustările de suprapunere ---
+  for (const grade of grades) {
+    grade.steps = buildStepsForGrade(grade.salaryMin, grade.salaryMax, numSteps, grade.order)
   }
 
   return grades
