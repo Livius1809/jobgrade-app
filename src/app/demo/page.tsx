@@ -19,7 +19,7 @@ export default async function DemoPage() {
             Date fictive AgroVision SRL · Toate straturile vizibile
           </p>
         </div>
-        <MasterReportWrapper data={data} initialTheme="magazine" />
+        <MasterReportWrapper data={data} initialTheme="sobru" />
       </div>
     </main>
   )
