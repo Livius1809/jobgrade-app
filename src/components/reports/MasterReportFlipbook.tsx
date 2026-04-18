@@ -18,7 +18,7 @@ interface Props {
 const Page = forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string }>(
   function Page({ children, className = "" }, ref) {
     return (
-      <div ref={ref} className={`bg-white overflow-y-auto ${className}`}>
+      <div ref={ref} className={`bg-white overflow-hidden ${className}`}>
         {children}
       </div>
     )
@@ -41,26 +41,26 @@ const themes: Record<Theme, {
   lockOverlay: string
 }> = {
   sobru: {
-    heading: "text-slate-900 font-serif text-2xl font-bold",
-    subheading: "text-slate-700 font-serif text-lg font-semibold",
-    body: "text-slate-600 text-sm leading-relaxed",
+    heading: "text-slate-900 font-serif text-xl font-bold",
+    subheading: "text-slate-700 font-serif text-sm font-semibold",
+    body: "text-slate-600 text-xs leading-relaxed",
     accent: "text-indigo-700",
-    card: "border border-slate-200 rounded-lg p-4 bg-white",
+    card: "border border-slate-200 rounded-lg p-3 bg-white",
     badge: "text-[10px] font-medium px-2 py-0.5 rounded",
-    pageBg: "bg-white p-8",
+    pageBg: "bg-white p-5",
     tableHead: "bg-slate-50 text-slate-700 text-xs font-semibold",
     tableRow: "border-b border-slate-100 text-sm",
     coverBg: "bg-gradient-to-br from-slate-800 to-slate-900",
     lockOverlay: "bg-slate-100/80 backdrop-blur-sm",
   },
   magazine: {
-    heading: "text-slate-900 text-2xl font-black tracking-tight",
-    subheading: "text-indigo-600 text-lg font-bold",
-    body: "text-slate-600 text-sm leading-relaxed",
+    heading: "text-slate-900 text-xl font-black tracking-tight",
+    subheading: "text-indigo-600 text-sm font-bold",
+    body: "text-slate-600 text-xs leading-relaxed",
     accent: "text-indigo-500",
-    card: "border border-indigo-100 rounded-xl p-5 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm",
+    card: "border border-indigo-100 rounded-xl p-3 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm",
     badge: "text-[10px] font-bold px-2.5 py-1 rounded-full",
-    pageBg: "bg-gradient-to-b from-white to-slate-50/50 p-8",
+    pageBg: "bg-gradient-to-b from-white to-slate-50/50 p-5",
     tableHead: "bg-indigo-50 text-indigo-800 text-xs font-bold",
     tableRow: "border-b border-indigo-50 text-sm",
     coverBg: "bg-gradient-to-br from-indigo-900 via-violet-900 to-slate-900",
@@ -160,12 +160,11 @@ function TOCPage({ data, t, onNavigate }: { data: MasterReportData; t: typeof th
   return (
     <div className={`${t.pageBg} h-full`}>
       <h2 className={t.heading}>Cuprins</h2>
-      <p className={`${t.body} mt-2 mb-6`}>
-        Prezentul raport sintetizează rezultatele analizei realizate asupra structurii organizaționale
-        și salariale a companiei <strong>{data.company.name}</strong>. Fiecare strat se construiește
-        pe cel anterior, asigurând o abordare coerentă și fundamentată.
+      <p className={`${t.body} mt-1 mb-3`}>
+        Prezentul raport sintetizează rezultatele analizei asupra structurii organizaționale
+        și salariale a companiei <strong>{data.company.name}</strong>.
       </p>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {sections.map(s => (
           <button
             key={s.layer}
@@ -229,7 +228,7 @@ function JEPage({ data, t }: { data: MasterReportData; t: typeof themes.sobru })
         <h2 className={t.heading}>Evaluare și ierarhizare posturi</h2>
       </div>
 
-      <div className={`${t.body} mb-4 space-y-2`}>
+      <div className={`${t.body} mb-2 space-y-1`}>
         <p>
           Evaluarea posturilor a fost realizată prin metoda analitică a punctajelor, conform recomandărilor
           Organizației Internaționale a Muncii (ILO, 2008) și cerințelor
@@ -266,7 +265,7 @@ function JEPage({ data, t }: { data: MasterReportData; t: typeof themes.sobru })
         </table>
       </div>
 
-      <div className="mt-4 space-y-1">
+      <div className="mt-2 space-y-1">
         <p className="text-[10px] text-slate-400">
           <strong>Concluzie:</strong> Ierarhia reflectă complexitatea reală a fiecărui post, independent de
           persoana care îl ocupă. Acest clasament constituie fundamentul pe care se construiește
@@ -296,7 +295,7 @@ function SalaryGradesPage({ data, t }: { data: MasterReportData; t: typeof theme
         <h2 className={t.heading}>Structură salarială</h2>
       </div>
 
-      <div className={`${t.body} mb-4 space-y-2`}>
+      <div className={`${t.body} mb-2 space-y-1`}>
         <p>
           Structura salarială prezentată mai jos a fost construită pe baza rezultatelor evaluării posturilor,
           prin metoda claselor salariale cu progresie geometrică. Fiecare clasă grupează posturi cu
@@ -336,7 +335,7 @@ function SalaryGradesPage({ data, t }: { data: MasterReportData; t: typeof theme
         </table>
       </div>
 
-      <div className="mt-4 space-y-1">
+      <div className="mt-2 space-y-1">
         <p className="text-[10px] text-slate-400">
           <strong>Recomandare:</strong> Dacă un angajat se află pe ultima treaptă a clasei de salarizare,
           se recomandă elaborarea unui Plan de carieră în vederea retenției acestuia.
@@ -365,7 +364,7 @@ function PayGapPage({ data, t }: { data: MasterReportData; t: typeof themes.sobr
         <h2 className={t.heading}>Analiză decalaj salarial</h2>
       </div>
 
-      <div className={`${t.body} mb-4 space-y-2`}>
+      <div className={`${t.body} mb-2 space-y-1`}>
         <p>
           Analiza decalajului salarial a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>,
           care prevede compararea remunerației pe categorii de lucrători care prestează muncă de valoare egală
@@ -378,10 +377,10 @@ function PayGapPage({ data, t }: { data: MasterReportData; t: typeof themes.sobr
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {pg.map((c, i) => (
           <div key={i} className={t.card}>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-semibold text-slate-800">{c.category}</h3>
               <span className={`${t.badge} ${flagColors[c.flag]}`}>{c.flag}</span>
             </div>
@@ -416,7 +415,7 @@ function BenchmarkPage({ data, t }: { data: MasterReportData; t: typeof themes.s
         <h2 className={t.heading}>Benchmark salarial vs. piață</h2>
       </div>
 
-      <div className={`${t.body} mb-4 space-y-2`}>
+      <div className={`${t.body} mb-2 space-y-1`}>
         <p>
           Competitivitatea salarială a fost evaluată prin compararea nivelurilor interne cu percentilele
           de piață (P25, P50, P75) pentru pozițiile echivalente din industria relevantă.
@@ -482,7 +481,7 @@ function DevelopmentPage({ data, t }: { data: MasterReportData; t: typeof themes
         <h2 className={t.heading}>Dezvoltare organizațională</h2>
       </div>
 
-      <div className={`${t.body} mb-4 space-y-2`}>
+      <div className={`${t.body} mb-2 space-y-1`}>
         <p>
           Pe baza evaluării și a structurii salariale construite în straturile anterioare, sunt disponibile
           servicii de dezvoltare organizațională care valorifică datele deja colectate.
@@ -519,20 +518,19 @@ function AnnexInputsPage({ data, t }: { data: MasterReportData; t: typeof themes
   return (
     <div className={`${t.pageBg} h-full`}>
       <h2 className={t.heading}>Anexe — Datele analizei</h2>
-      <p className={`${t.body} mt-2 mb-4`}>
-        Transparența procesului este esențială. Mai jos este prezentat parcursul complet al analizei:
-        datele furnizate de organizația dumneavoastră, procesele de prelucrare și modul în care s-au
-        obținut rezultatele din acest raport.
+      <p className={`${t.body} mt-1 mb-2`}>
+        Mai jos este prezentat parcursul complet al analizei: datele furnizate de organizație,
+        procesele de prelucrare și modul în care s-au obținut rezultatele.
       </p>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* A. Ce a introdus clientul */}
         <div className={t.card}>
           <h3 className={t.subheading}>A. Datele furnizate de organizație</h3>
-          <p className={`${t.body} mt-1 mb-2`}>
-            Analiza a pornit de la datele introduse de echipa dumneavoastră în platformă:
+          <p className={`${t.body} mt-1 mb-1`}>
+            Datele introduse de echipa dumneavoastră în platformă:
           </p>
-          <ul className={`${t.body} space-y-1.5`}>
+          <ul className={`${t.body} space-y-0.5`}>
             <li className="flex items-start gap-2">
               <span className="text-emerald-500 mt-0.5">✓</span>
               <span><strong>Profilul organizației</strong> — denumire, CUI, domeniu de activitate, structura departamentală ({data.company.departments.length} departamente)</span>
@@ -555,10 +553,10 @@ function AnnexInputsPage({ data, t }: { data: MasterReportData; t: typeof themes
         {/* B. Ce am prelucrat */}
         <div className={t.card}>
           <h3 className={t.subheading}>B. Procesele de prelucrare</h3>
-          <p className={`${t.body} mt-1 mb-2`}>
-            Datele furnizate au parcurs mai multe etape de analiză:
+          <p className={`${t.body} mt-1 mb-1`}>
+            Etapele de analiză parcurse:
           </p>
-          <ul className={`${t.body} space-y-1.5`}>
+          <ul className={`${t.body} space-y-0.5`}>
             <li className="flex items-start gap-2">
               <span className="text-indigo-500 mt-0.5">①</span>
               <span><strong>Scorare analitică</strong> — fiecare criteriu a fost cuantificat conform grilei de evaluare validate, generând un scor total per post</span>
@@ -600,10 +598,10 @@ function AnnexLegalPage({ t }: { t: typeof themes.sobru }) {
   return (
     <div className={`${t.pageBg} h-full`}>
       <h2 className={t.heading}>Anexe — Cadru legislativ și metodologic</h2>
-      <div className="mt-4 space-y-4">
+      <div className="mt-2 space-y-2">
         <div className={t.card}>
           <h3 className={t.subheading}>D. Cadru legislativ</h3>
-          <ul className={`${t.body} mt-2 space-y-1.5`}>
+          <ul className={`${t.body} mt-1 space-y-0.5`}>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">§</span>
               <span><strong>Directiva (UE) 2023/970</strong> — privind consolidarea aplicării principiului egalității de remunerare între femei și bărbați pentru aceeași muncă sau pentru o muncă de aceeași valoare, prin transparență salarială</span>
@@ -624,7 +622,7 @@ function AnnexLegalPage({ t }: { t: typeof themes.sobru }) {
         </div>
         <div className={t.card}>
           <h3 className={t.subheading}>E. Metodologie</h3>
-          <ul className={`${t.body} mt-2 space-y-1.5`}>
+          <ul className={`${t.body} mt-1 space-y-0.5`}>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">•</span>
               <span>Evaluare analitică bazată pe 6 criterii neutre din perspectiva genului (conform ILO, „Guide to gender-neutral job evaluation", 2008)</span>
@@ -641,7 +639,7 @@ function AnnexLegalPage({ t }: { t: typeof themes.sobru }) {
         </div>
         <div className={t.card}>
           <h3 className={t.subheading}>F. Glosar</h3>
-          <ul className={`${t.body} mt-2 space-y-1`}>
+          <ul className={`${t.body} mt-1 space-y-0.5`}>
             <li><strong>Clasă salarială</strong> — interval de punctaj care grupează posturi cu complexitate similară, cu limite salariale minim/maxim asociate</li>
             <li><strong>Treaptă de salarizare</strong> — nivel salarial în cadrul unei clase; avansarea reflectă evoluția profesională (performanță, vechime, instruire)</li>
             <li><strong>Scor de evaluare</strong> — punctajul total rezultat din evaluarea analitică pe cele 6 criterii</li>
