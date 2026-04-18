@@ -166,37 +166,32 @@ function TOCPage({ data, t, onNavigate }: { data: MasterReportData; t: typeof th
   return (
     <div className={`${t.pageBg} h-full`}>
       <h2 className={t.heading}>Cuprins</h2>
-      <p className={`${t.body} mt-1 mb-3`}>
-        Prezentul raport sintetizează rezultatele analizei asupra structurii organizaționale
-        și salariale a companiei <strong>{data.company.name}</strong>.
+      <p className={`${t.body} mt-1 mb-2`}>
+        Raportul sintetizează analiza structurii organizaționale și salariale a companiei <strong>{data.company.name}</strong>.
       </p>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {sections.map(s => (
           <button
             key={s.layer}
             onClick={() => s.unlocked && onNavigate(s.page)}
             className={`${t.card} ${!s.unlocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-md transition-shadow"} w-full text-left`}
           >
-            <div className="flex items-start gap-3">
-              <span className="text-xl">{s.icon}</span>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className={`${t.badge} ${s.unlocked ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>
-                    {s.layer}
-                  </span>
-                  <h3 className={t.subheading}>{s.title}</h3>
-                  {!s.unlocked && <span className="text-xs text-slate-400 ml-auto">🔒</span>}
-                </div>
-                <ul className="mt-1.5 space-y-0.5">
-                  {s.items.map(item => (
-                    <li key={item} className={`${t.body} flex items-center gap-2`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${s.unlocked ? "bg-emerald-400" : "bg-slate-300"}`} />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base">{s.icon}</span>
+              <span className={`${t.badge} ${s.unlocked ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>
+                {s.layer}
+              </span>
+              <h3 className={t.subheading}>{s.title}</h3>
+              {!s.unlocked && <span className="text-xs text-slate-400 ml-auto">🔒</span>}
             </div>
+            <ul className="mt-0.5 ml-6 space-y-0">
+              {s.items.map(item => (
+                <li key={item} className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <span className={`w-1 h-1 rounded-full ${s.unlocked ? "bg-emerald-400" : "bg-slate-300"}`} />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </button>
         ))}
       </div>
