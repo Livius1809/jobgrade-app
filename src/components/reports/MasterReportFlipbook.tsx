@@ -372,14 +372,13 @@ function PayGapPage({ data, t }: { data: MasterReportData; t: typeof themes.sobr
 
       <div className={`${t.body} mb-2 space-y-1`}>
         <p>
-          Analiza decalajului salarial a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>,
-          care prevede compararea remunerației pe categorii de lucrători care prestează muncă de valoare egală
-          sau aceeași muncă.
+          Analiza decalajului salarial a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>.
+          Comparația se face exclusiv între angajații de gen diferit care ocupă <strong>aceeași poziție</strong> și
+          lucrează cu <strong>aceeași normă de lucru</strong>.
         </p>
         <p>
           Un decalaj de peste <strong>5%</strong> care nu poate fi justificat prin criterii obiective (vechime,
-          performanță, nivel ierarhic diferit) necesită măsuri corective documentate.
-          Mai jos sunt prezentate concluziile pe fiecare categorie analizată.
+          performanță) necesită documentare și eventual măsuri corective.
         </p>
       </div>
 

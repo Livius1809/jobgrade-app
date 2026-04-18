@@ -186,11 +186,10 @@ function buildDemoSalaryGrades(): MasterSalaryGrade[] {
 }
 
 const DEMO_PAY_GAP: MasterPayGapCategory[] = [
-  { category: "Management (full-time)", women: "17.800 RON", men: "28.500 RON", gap: "37,5%", flag: "SEMNIFICATIV", justification: "Director General (unic, fondator) vs Director Comercial. Diferență justificată prin senioritate (18 ani vs 6 ani) și responsabilitate decizională." },
-  { category: "Producție — ingineri (full-time)", women: "9.500 RON", men: "14.500 RON", gap: "34,5%", flag: "SEMNIFICATIV", justification: "Inginer Agronom vs Inginer Agronom Șef. Diferența reflectă nivelul ierarhic diferit (Clasă 5 vs Clasă 7) și experiență (3 ani vs 12 ani). Poziții non-comparabile conform Art. 9." },
-  { category: "Comercial (full-time)", women: "9.800 RON", men: "9.800 RON", gap: "0,0%", flag: "OK", justification: "—" },
-  { category: "Administrativ (full-time)", women: "8.500 RON", men: "13.200 RON", gap: "35,6%", flag: "SEMNIFICATIV", justification: "Specialist HR vs Contabil Șef. Funcții diferite, clase diferite (Clasă 4 vs Clasă 6). Nu constituie muncă de valoare egală conform evaluării JE." },
-  { category: "Producție — operatori (full-time)", women: "5.200 RON", men: "6.200 RON", gap: "16,1%", flag: "ATENȚIE", justification: "Muncitor Depozit vs Operator Linie. Clase diferite (Clasă 1 vs Clasă 3). Se recomandă analiză suplimentară pentru eventuală ajustare." },
+  { category: "Operator Linie · normă întreagă", women: "6.000 RON", men: "6.200 RON", gap: "3,2%", flag: "OK", justification: "—" },
+  { category: "Inginer Agronom · normă întreagă", women: "9.200 RON", men: "9.500 RON", gap: "3,2%", flag: "OK", justification: "—" },
+  { category: "Specialist Vânzări · normă întreagă", women: "9.800 RON", men: "9.800 RON", gap: "0,0%", flag: "OK", justification: "—" },
+  { category: "Muncitor Depozit · normă întreagă", women: "4.900 RON", men: "5.200 RON", gap: "5,8%", flag: "ATENȚIE", justification: "Decalaj ușor peste pragul de 5%. Se recomandă verificarea criteriilor obiective (vechime, performanță) și documentarea justificării." },
 ]
 
 const DEMO_BENCHMARK: MasterBenchmark[] = [
