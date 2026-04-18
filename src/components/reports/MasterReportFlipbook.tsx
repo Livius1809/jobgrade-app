@@ -301,55 +301,43 @@ function SalaryGradesPage({ data, t }: { data: MasterReportData; t: typeof theme
         <h2 className={t.heading}>Structură salarială</h2>
       </div>
 
-      <div className={`${t.body} mb-2 space-y-1`}>
-        <p>
-          Structura salarială prezentată mai jos a fost construită pe baza rezultatelor evaluării posturilor,
-          prin metoda claselor salariale cu progresie geometrică. Fiecare clasă grupează posturi cu
-          complexitate similară și definește un interval salarial minim–maxim.
-        </p>
-        <p>
-          Conform <strong>Art. 4 alin. (4) din Directiva (UE) 2023/970</strong>, structurile de remunerare
-          trebuie să fie transparente și bazate pe criterii obiective. Treptele din cadrul fiecărei clase
-          permit avansarea salarială corelată cu evoluția profesională — performanță, vechime, nivel de instruire.
-        </p>
-      </div>
+      <p className={`${t.body} mb-2`}>
+        Clase salariale cu progresie geometrică, derivate din evaluarea posturilor.
+        Treptele permit avansarea corelată cu performanța, vechimea și instruirea
+        (Ref: <strong>Art. 4(4), Directiva (UE) 2023/970</strong>).
+      </p>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
+        <table className="w-full text-left text-xs">
           <thead>
             <tr className={t.tableHead}>
-              <th className="px-2 py-1.5 rounded-tl-lg">Clasă</th>
-              <th className="px-2 py-1.5 text-right">Minim</th>
-              <th className="px-2 py-1.5 text-right">Median</th>
-              <th className="px-2 py-1.5 text-right">Maxim</th>
-              <th className="px-2 py-1.5">Posturi</th>
-              <th className="px-2 py-1.5 rounded-tr-lg">Trepte</th>
+              <th className="px-2 py-1 rounded-tl-lg">Clasă</th>
+              <th className="px-2 py-1 text-right">Minim</th>
+              <th className="px-2 py-1 text-right">Median</th>
+              <th className="px-2 py-1 text-right">Maxim</th>
+              <th className="px-2 py-1">Posturi</th>
+              <th className="px-2 py-1 rounded-tr-lg">Trepte</th>
             </tr>
           </thead>
           <tbody>
             {sg.map((g, i) => (
               <tr key={i} className={t.tableRow}>
-                <td className="px-2 py-1.5 font-semibold text-slate-800">{g.grade}</td>
-                <td className="px-2 py-1.5 text-right font-mono text-sm">{g.min}</td>
-                <td className="px-2 py-1.5 text-right font-mono text-sm font-semibold">{g.mid}</td>
-                <td className="px-2 py-1.5 text-right font-mono text-sm">{g.max}</td>
-                <td className="px-2 py-1.5 text-xs text-slate-500 max-w-[200px] truncate">{g.positions}</td>
-                <td className="px-2 py-1.5 text-xs text-slate-500">{g.steps.length} trepte</td>
+                <td className="px-2 py-1 font-semibold text-slate-800">{g.grade}</td>
+                <td className="px-2 py-1 text-right font-mono">{g.min}</td>
+                <td className="px-2 py-1 text-right font-mono font-semibold">{g.mid}</td>
+                <td className="px-2 py-1 text-right font-mono">{g.max}</td>
+                <td className="px-2 py-1 text-slate-500 max-w-[200px] truncate">{g.positions}</td>
+                <td className="px-2 py-1 text-slate-500">{g.steps.length} trepte</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-2 space-y-1">
-        <p className="text-[10px] text-slate-400">
-          <strong>Recomandare:</strong> Dacă un angajat se află pe ultima treaptă a clasei de salarizare,
-          se recomandă elaborarea unui Plan de carieră în vederea retenției acestuia.
-        </p>
-        <p className="text-[10px] text-slate-400">
-          Ref: Directiva (UE) 2023/970, Art. 4(4); Legea nr. 53/2003 (Codul Muncii), Art. 159–163.
-        </p>
-      </div>
+      <p className="mt-1 text-[9px] text-slate-400">
+        Dacă un angajat se află pe ultima treaptă, se recomandă elaborarea unui Plan de carieră.
+        Ref: Directiva (UE) 2023/970, Art. 4(4); Codul Muncii, Art. 159–163.
+      </p>
     </div>
   )
 }
@@ -523,75 +511,34 @@ function AnnexInputsPage({ data, t }: { data: MasterReportData; t: typeof themes
   return (
     <div className={`${t.pageBg} h-full`}>
       <h2 className={t.heading}>Anexe — Datele analizei</h2>
-      <p className={`${t.body} mt-1 mb-2`}>
-        Mai jos este prezentat parcursul complet al analizei: datele furnizate de organizație,
-        procesele de prelucrare și modul în care s-au obținut rezultatele.
-      </p>
 
-      <div className="space-y-2">
-        {/* A. Ce a introdus clientul */}
+      <div className="mt-2 space-y-1.5">
         <div className={t.card}>
           <h3 className={t.subheading}>A. Datele furnizate de organizație</h3>
-          <p className={`${t.body} mt-1 mb-1`}>
-            Datele introduse de echipa dumneavoastră în platformă:
-          </p>
-          <ul className={`${t.body} space-y-0.5`}>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 mt-0.5">✓</span>
-              <span><strong>Profilul organizației</strong> — denumire, CUI, domeniu de activitate, structura departamentală ({data.company.departments.length} departamente)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 mt-0.5">✓</span>
-              <span><strong>Nomenclatorul de posturi</strong> — {data.company.positions} posturi unice, fiecare cu denumire, departament și subordonare</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 mt-0.5">✓</span>
-              <span><strong>Statul de funcții</strong> — {data.company.employees} angajați cu salariul brut de încadrare</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 mt-0.5">✓</span>
-              <span><strong>Evaluarea criteriilor</strong> — pentru fiecare post, echipa a selectat nivelul de complexitate pe 6 criterii obiective, cu asistență AI</span>
-            </li>
+          <ul className={`${t.body} mt-1 space-y-0.5 text-[11px]`}>
+            <li>✓ <strong>Profilul organizației</strong> — denumire, CUI, domeniu, {data.company.departments.length} departamente</li>
+            <li>✓ <strong>Nomenclatorul de posturi</strong> — {data.company.positions} posturi unice cu denumire și subordonare</li>
+            <li>✓ <strong>Statul de funcții</strong> — {data.company.employees} angajați cu salariul brut de încadrare</li>
+            <li>✓ <strong>Evaluarea criteriilor</strong> — nivelul de complexitate pe 6 criterii obiective per post</li>
           </ul>
         </div>
 
-        {/* B. Ce am prelucrat */}
         <div className={t.card}>
           <h3 className={t.subheading}>B. Procesele de prelucrare</h3>
-          <p className={`${t.body} mt-1 mb-1`}>
-            Etapele de analiză parcurse:
-          </p>
-          <ul className={`${t.body} space-y-0.5`}>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">①</span>
-              <span><strong>Scorare analitică</strong> — fiecare criteriu a fost cuantificat conform grilei de evaluare validate, generând un scor total per post</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">②</span>
-              <span><strong>Ierarhizare</strong> — posturile au fost ordonate descrescător după scor, reflectând complexitatea reală</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">③</span>
-              <span><strong>Construcția claselor salariale</strong> — pe baza dispersiei scorurilor și salariilor, au fost generate clase cu intervale și trepte de salarizare</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">④</span>
-              <span><strong>Analiza decalajelor</strong> — salariile au fost comparate pe categorii echivalente, conform cerințelor Art. 9 din Directiva EU 2023/970</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-500 mt-0.5">⑤</span>
-              <span><strong>Benchmark de piață</strong> — nivelurile interne au fost comparate cu percentilele de piață pentru industria și regiunea relevantă</span>
-            </li>
+          <ul className={`${t.body} mt-1 space-y-0.5 text-[11px]`}>
+            <li>① <strong>Scorare analitică</strong> — cuantificarea fiecărui criteriu, scor total per post</li>
+            <li>② <strong>Ierarhizare</strong> — ordonare descrescătoare după scor</li>
+            <li>③ <strong>Clase salariale</strong> — generate din dispersia scorurilor și salariilor, cu trepte</li>
+            <li>④ <strong>Analiza decalajelor</strong> — comparație F/M pe aceeași poziție și normă (Art. 9)</li>
+            <li>⑤ <strong>Benchmark</strong> — comparație cu percentilele de piață P25/P50/P75</li>
           </ul>
         </div>
 
-        {/* C. Validarea */}
         <div className={t.card}>
           <h3 className={t.subheading}>C. Validare și calitate</h3>
-          <p className={`${t.body} mt-1`}>
-            Rezultatele au fost generate asistatic de inteligența artificială și validate de echipa
-            dumneavoastră înainte de finalizare. Metodologia este conformă cu standardele ILO și
-            cu cerințele Directivei (UE) 2023/970 privind transparența salarială.
+          <p className="text-[11px] text-slate-600 mt-1">
+            Rezultatele au fost generate cu asistență AI și validate de echipa dumneavoastră.
+            Metodologia este conformă cu standardele ILO și Directiva (UE) 2023/970.
           </p>
         </div>
       </div>
