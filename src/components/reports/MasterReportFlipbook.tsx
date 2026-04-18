@@ -153,7 +153,7 @@ function TOCSection({ data, t }: { data: MasterReportData; t: typeof themes.sobr
     },
     {
       layer: "LAYER 2", icon: "🎯", title: "Competitivitate", anchor: SECTION_IDS.benchmark,
-      items: ["Benchmark salarial — poziționare față de piața relevantă"],
+      items: ["Salariile organizației vs. benchmark de piață (industrie, regiune)"],
       unlocked: data.layers.layer2.unlocked,
     },
     {
@@ -467,37 +467,59 @@ function PayGapSection({ data, t }: { data: MasterReportData; t: typeof themes.s
 
 function BenchmarkSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
   const bm = data.layers.layer2.benchmarks
+
+  function getPositionColor(status: string) {
+    switch (status) {
+      case "Sub P25": return "bg-red-100 text-red-700"
+      case "P25–P50": return "bg-amber-100 text-amber-700"
+      case "P50–P75": return "bg-emerald-100 text-emerald-700"
+      case "Peste P75": return "bg-blue-100 text-blue-700"
+      default: return "bg-slate-100 text-slate-600"
+    }
+  }
+
   return (
     <PageSheet id={SECTION_IDS.benchmark} pageNum={6} totalPages={9}>
       <div className="relative">
         {!data.layers.layer2.unlocked && <LockedOverlay layerName="LAYER 2 — Competitivitate" t={t} />}
         <div className="flex items-center gap-3 mb-2">
           <span className={`${t.badge} bg-violet-100 text-violet-700`}>LAYER 2</span>
-          <h2 className={t.heading}>Benchmark salarial vs. piață</h2>
+          <h2 className={t.heading}>Salariile organizației vs. Benchmark de piață</h2>
         </div>
 
         <div className={`${t.body} mb-6 space-y-3`}>
           <p>
-            Competitivitatea salarială a fost evaluată prin compararea nivelurilor interne cu percentilele
-            de piață (P25, P50, P75) pentru pozițiile echivalente din industria relevantă.
+            Salariile din cadrul organizației au fost comparate cu datele de piață relevante (industrie,
+            regiune, județe limitrofe). Datele de piață provin din surse agregate (INS TEMPO, studii
+            salariale, portaluri de recrutare) și descriu distribuția salariilor pe piață sub formă
+            de percentile.
           </p>
           <p>
-            Indicele de competitivitate (raport salariu intern / mediană piață) oferă o imagine clară a
-            poziționării organizației. Un indice sub 90% semnalează risc de fluctuație, iar unul peste 110%
-            poate indica o supracompensare care necesită evaluare.
+            Salariile de piață se înscriu într-o <strong>distribuție normală</strong> (curba lui Gauss):
+            P25 reprezintă pragul inferior al zonei medii, P50 (mediana) este centrul distribuției,
+            iar P75 reprezintă pragul superior. <strong>Compa-ratio</strong> (salariul intern / mediana
+            pieței × 100) indică unde se poziționează organizația față de centrul distribuției.
           </p>
+        </div>
+
+        {/* Legendă vizuală distribuție */}
+        <div className="mb-4 flex items-center gap-2 text-[10px]">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-200" /> Sub P25 — risc fluctuație</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-100 border border-amber-200" /> P25–P50 — sub mediană</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200" /> P50–P75 — competitiv</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-100 border border-blue-200" /> Peste P75 — peste piață</span>
         </div>
 
         <table className="w-full text-left">
           <thead>
             <tr className={t.tableHead}>
               <th className="px-4 py-3 rounded-tl-lg">Poziție</th>
-              <th className="px-4 py-3 text-right">Intern</th>
+              <th className="px-4 py-3 text-right">Salariu intern</th>
               <th className="px-4 py-3 text-right">P25</th>
-              <th className="px-4 py-3 text-right">P50</th>
+              <th className="px-4 py-3 text-right">Mediană (P50)</th>
               <th className="px-4 py-3 text-right">P75</th>
-              <th className="px-4 py-3 text-right">Index</th>
-              <th className="px-4 py-3 rounded-tr-lg">Status</th>
+              <th className="px-4 py-3 text-right">Compa-ratio</th>
+              <th className="px-4 py-3 rounded-tr-lg">Poziționare</th>
             </tr>
           </thead>
           <tbody>
@@ -510,22 +532,27 @@ function BenchmarkSection({ data, t }: { data: MasterReportData; t: typeof theme
                 <td className="px-4 py-3 text-right font-mono text-xs text-slate-400">{b.marketP75}</td>
                 <td className="px-4 py-3 text-right font-mono">{b.index}</td>
                 <td className="px-4 py-3">
-                  <span className={`${t.badge} ${
-                    b.status === "Competitiv" ? "bg-emerald-100 text-emerald-700"
-                    : b.status === "Peste piață" ? "bg-amber-100 text-amber-700"
-                    : "bg-red-100 text-red-700"
-                  }`}>{b.status}</span>
+                  <span className={`${t.badge} ${getPositionColor(b.status)}`}>{b.status}</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
+        <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-2`}>
           <p className="text-xs text-slate-500">
-            <strong>Recomandare:</strong> Pentru pozițiile cu index sub 90%, se recomandă ajustarea salarială
-            treptată sau îmbunătățirea pachetului total de compensații (beneficii, dezvoltare profesională)
-            pentru a reduce riscul de fluctuație.
+            <strong>Interpretare:</strong> Un compa-ratio de 100% înseamnă aliniere perfectă cu mediana pieței.
+            Valorile sub 85% semnalează un risc crescut de fluctuație a personalului — salariul nu este
+            competitiv. Valorile peste 110% pot indica o supracompensare care merită evaluată în raport cu
+            performanța și strategia de retenție a organizației.
+          </p>
+          <p className="text-xs text-slate-500">
+            <strong>Recomandare:</strong> Pentru pozițiile situate sub P25, se recomandă ajustarea salarială
+            treptată sau îmbunătățirea pachetului total de compensații. Pozițiile în zona P50–P75 sunt
+            competitiv poziționate și susțin retenția.
+          </p>
+          <p className="text-[11px] text-slate-400">
+            Surse date piață: INS TEMPO, studii salariale sectoriale, portaluri de recrutare. Actualizare trimestrială.
           </p>
         </div>
       </div>

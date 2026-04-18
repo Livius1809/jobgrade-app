@@ -214,13 +214,13 @@ const DEMO_PAY_GAP: MasterPayGapCategory[] = [
 ]
 
 const DEMO_BENCHMARK: MasterBenchmark[] = [
-  { position: "Director General", internal: "28.500", marketP25: "22.000", marketP50: "30.000", marketP75: "42.000", index: "95%", status: "Competitiv" },
-  { position: "Director Producție", internal: "18.200", marketP25: "15.000", marketP50: "19.500", marketP75: "26.000", index: "93%", status: "Competitiv" },
-  { position: "Inginer Agronom Șef", internal: "14.500", marketP25: "12.000", marketP50: "15.800", marketP75: "20.000", index: "92%", status: "Competitiv" },
-  { position: "Contabil Șef", internal: "13.200", marketP25: "11.000", marketP50: "14.000", marketP75: "18.000", index: "94%", status: "Competitiv" },
-  { position: "Specialist Vânzări", internal: "9.800", marketP25: "7.500", marketP50: "9.200", marketP75: "12.000", index: "107%", status: "Peste piață" },
-  { position: "Operator Linie", internal: "6.200", marketP25: "5.500", marketP50: "6.800", marketP75: "8.000", index: "91%", status: "Sub piață" },
-  { position: "Muncitor Depozit", internal: "5.200", marketP25: "4.800", marketP50: "5.600", marketP75: "6.500", index: "93%", status: "Competitiv" },
+  { position: "Director General", internal: "28.500", marketP25: "22.000", marketP50: "30.000", marketP75: "42.000", index: "95%", status: "P25–P50" },
+  { position: "Director Producție", internal: "18.200", marketP25: "15.000", marketP50: "19.500", marketP75: "26.000", index: "93%", status: "P25–P50" },
+  { position: "Inginer Agronom Șef", internal: "14.500", marketP25: "12.000", marketP50: "15.800", marketP75: "20.000", index: "92%", status: "P25–P50" },
+  { position: "Contabil Șef", internal: "13.200", marketP25: "11.000", marketP50: "14.000", marketP75: "18.000", index: "94%", status: "P25–P50" },
+  { position: "Specialist Vânzări", internal: "9.800", marketP25: "7.500", marketP50: "9.200", marketP75: "12.000", index: "107%", status: "P50–P75" },
+  { position: "Operator Linie", internal: "6.200", marketP25: "5.500", marketP50: "6.800", marketP75: "8.000", index: "91%", status: "P25–P50" },
+  { position: "Muncitor Depozit", internal: "5.200", marketP25: "4.800", marketP50: "5.600", marketP75: "6.500", index: "93%", status: "P25–P50" },
 ]
 
 // ─── Funcția principală ───────────────────────────────────────────────────
