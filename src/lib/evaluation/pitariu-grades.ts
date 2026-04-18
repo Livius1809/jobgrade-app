@@ -300,7 +300,23 @@ export function buildPitariuGrades(
     }
   }
 
-  // --- Pas 6: Regenerare trepte după ajustările de suprapunere ---
+  // --- Pas 6: Monotonie finală pe înălțime (h_i >= h_{i-1}) ---
+  // Pitariu: clasele superioare au OBLIGATORIU interval salarial mai larg.
+  // Ajustările de suprapunere pot deforma proporțiile — le corectăm.
+  for (let i = 1; i < grades.length; i++) {
+    const prevHeight = grades[i - 1].salaryMax - grades[i - 1].salaryMin
+    const currHeight = grades[i].salaryMax - grades[i].salaryMin
+    if (currHeight < prevHeight) {
+      // Extindem simetric ca height-ul să fie cel puțin prevHeight * r
+      const targetHeight = Math.round(prevHeight * r)
+      const center = (grades[i].salaryMin + grades[i].salaryMax) / 2
+      grades[i].salaryMin = Math.round(center - targetHeight / 2)
+      grades[i].salaryMax = Math.round(center + targetHeight / 2)
+      grades[i].salaryMid = Math.round(center)
+    }
+  }
+
+  // --- Pas 7: Regenerare trepte după ajustările de suprapunere și monotonie ---
   for (const grade of grades) {
     grade.steps = buildStepsForGrade(grade.salaryMin, grade.salaryMax, numSteps, grade.order)
   }
