@@ -32,6 +32,15 @@ export interface MasterJobEvaluation {
   score: number
   grade: string
   salary: string
+  /** Litere pe cele 6 scale JobGrade (secret: corespondența punctaj→literă) */
+  letters?: {
+    Knowledge: string
+    Communications: string
+    ProblemSolving: string
+    DecisionMaking: string
+    BusinessImpact: string
+    WorkingConditions: string
+  }
 }
 
 export interface MasterJobDescription {
@@ -121,18 +130,30 @@ const DEMO_COMPANY: MasterCompany = {
 }
 
 const DEMO_JE: MasterJobEvaluation[] = [
-  { position: "Director General", department: "Management", score: 920, grade: "Clasă 10", salary: "28.500 RON" },
-  { position: "Director Producție", department: "Management", score: 780, grade: "Clasă 8", salary: "18.200 RON" },
-  { position: "Director Comercial", department: "Comercial", score: 760, grade: "Clasă 8", salary: "17.800 RON" },
-  { position: "Inginer Agronom Șef", department: "Producție", score: 680, grade: "Clasă 7", salary: "14.500 RON" },
-  { position: "Contabil Șef", department: "Administrativ", score: 620, grade: "Clasă 6", salary: "13.200 RON" },
-  { position: "Specialist Vânzări", department: "Comercial", score: 480, grade: "Clasă 5", salary: "9.800 RON" },
-  { position: "Inginer Agronom", department: "Producție", score: 460, grade: "Clasă 5", salary: "9.500 RON" },
-  { position: "Specialist HR", department: "Administrativ", score: 440, grade: "Clasă 4", salary: "8.500 RON" },
-  { position: "Tehnician Laborator", department: "Producție", score: 380, grade: "Clasă 4", salary: "7.800 RON" },
-  { position: "Operator Linie", department: "Producție", score: 300, grade: "Clasă 3", salary: "6.200 RON" },
-  { position: "Șofer Distribuție", department: "Comercial", score: 260, grade: "Clasă 2", salary: "5.800 RON" },
-  { position: "Muncitor Depozit", department: "Producție", score: 200, grade: "Clasă 1", salary: "5.200 RON" },
+  { position: "Director General", department: "Management", score: 920, grade: "Clasă 10", salary: "28.500 RON",
+    letters: { Knowledge: "G", Communications: "E", ProblemSolving: "G", DecisionMaking: "G", BusinessImpact: "D", WorkingConditions: "A" } },
+  { position: "Director Producție", department: "Management", score: 780, grade: "Clasă 8", salary: "18.200 RON",
+    letters: { Knowledge: "F", Communications: "D", ProblemSolving: "F", DecisionMaking: "F", BusinessImpact: "D", WorkingConditions: "B" } },
+  { position: "Director Comercial", department: "Comercial", score: 760, grade: "Clasă 8", salary: "17.800 RON",
+    letters: { Knowledge: "F", Communications: "E", ProblemSolving: "E", DecisionMaking: "E", BusinessImpact: "D", WorkingConditions: "A" } },
+  { position: "Inginer Agronom Șef", department: "Producție", score: 680, grade: "Clasă 7", salary: "14.500 RON",
+    letters: { Knowledge: "F", Communications: "C", ProblemSolving: "E", DecisionMaking: "E", BusinessImpact: "C", WorkingConditions: "C" } },
+  { position: "Contabil Șef", department: "Administrativ", score: 620, grade: "Clasă 6", salary: "13.200 RON",
+    letters: { Knowledge: "E", Communications: "C", ProblemSolving: "D", DecisionMaking: "D", BusinessImpact: "C", WorkingConditions: "A" } },
+  { position: "Specialist Vânzări", department: "Comercial", score: 480, grade: "Clasă 5", salary: "9.800 RON",
+    letters: { Knowledge: "D", Communications: "D", ProblemSolving: "C", DecisionMaking: "C", BusinessImpact: "B", WorkingConditions: "A" } },
+  { position: "Inginer Agronom", department: "Producție", score: 460, grade: "Clasă 5", salary: "9.500 RON",
+    letters: { Knowledge: "E", Communications: "B", ProblemSolving: "D", DecisionMaking: "C", BusinessImpact: "B", WorkingConditions: "C" } },
+  { position: "Specialist HR", department: "Administrativ", score: 440, grade: "Clasă 4", salary: "8.500 RON",
+    letters: { Knowledge: "D", Communications: "C", ProblemSolving: "C", DecisionMaking: "C", BusinessImpact: "B", WorkingConditions: "A" } },
+  { position: "Tehnician Laborator", department: "Producție", score: 380, grade: "Clasă 4", salary: "7.800 RON",
+    letters: { Knowledge: "D", Communications: "B", ProblemSolving: "C", DecisionMaking: "B", BusinessImpact: "B", WorkingConditions: "C" } },
+  { position: "Operator Linie", department: "Producție", score: 300, grade: "Clasă 3", salary: "6.200 RON",
+    letters: { Knowledge: "B", Communications: "A", ProblemSolving: "B", DecisionMaking: "B", BusinessImpact: "A", WorkingConditions: "C" } },
+  { position: "Șofer Distribuție", department: "Comercial", score: 260, grade: "Clasă 2", salary: "5.800 RON",
+    letters: { Knowledge: "B", Communications: "A", ProblemSolving: "A", DecisionMaking: "A", BusinessImpact: "B", WorkingConditions: "B" } },
+  { position: "Muncitor Depozit", department: "Producție", score: 200, grade: "Clasă 1", salary: "5.200 RON",
+    letters: { Knowledge: "A", Communications: "A", ProblemSolving: "A", DecisionMaking: "A", BusinessImpact: "A", WorkingConditions: "B" } },
 ]
 
 const DEMO_JOB_DESCRIPTIONS: MasterJobDescription[] = [

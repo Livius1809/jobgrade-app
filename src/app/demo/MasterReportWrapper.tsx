@@ -8,6 +8,6 @@ const MasterReportFlipbook = dynamic(
   { ssr: false, loading: () => <div className="text-center py-20 text-slate-400">Se încarcă flipbook-ul...</div> }
 )
 
-export function MasterReportWrapper({ data, initialTheme }: { data: MasterReportData; initialTheme: "sobru" | "magazine" }) {
+export function MasterReportWrapper({ data, initialTheme }: { data: MasterReportData; initialTheme: "sobru" | "modern" }) {
   return <MasterReportFlipbook data={data} initialTheme={initialTheme} />
 }

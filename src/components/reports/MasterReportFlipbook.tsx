@@ -5,7 +5,7 @@ import type { MasterReportData } from "@/lib/reports/master-report-data"
 
 // ─── Tipuri ────────────────────────────────────────────────────────────────
 
-type Theme = "sobru" | "magazine"
+type Theme = "sobru" | "modern"
 
 interface Props {
   data: MasterReportData
@@ -42,7 +42,7 @@ const themes: Record<Theme, {
     lockOverlay: "bg-slate-100/80 backdrop-blur-sm",
     separator: "border-slate-200",
   },
-  magazine: {
+  modern: {
     heading: "text-slate-900 text-2xl font-black tracking-tight",
     subheading: "text-indigo-600 text-base font-bold",
     body: "text-slate-600 text-sm leading-relaxed",
@@ -223,6 +223,20 @@ function LockedOverlay({ layerName, t }: { layerName: string; t: typeof themes.s
 
 function JESection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
   const je = data.layers.baza.jobEvaluations
+
+  // Agregare litere 6→4 criterii legale
+  function getLegalLetters(j: typeof je[0]) {
+    if (!j.letters) return null
+    return {
+      cunostinte: `${j.letters.Knowledge}·${j.letters.Communications}`,
+      efort: j.letters.ProblemSolving,
+      responsabilitati: `${j.letters.DecisionMaking}·${j.letters.BusinessImpact}`,
+      conditii: j.letters.WorkingConditions,
+    }
+  }
+
+  const hasLetters = je.some(j => j.letters)
+
   return (
     <PageSheet id={SECTION_IDS.je} pageNum={3} totalPages={9}>
       <div className="relative">
@@ -240,30 +254,75 @@ function JESection({ data, t }: { data: MasterReportData; t: typeof themes.sobru
             obiective și neutre din perspectiva genului.
           </p>
           <p>
-            Au fost aplicate <strong>6 criterii de evaluare</strong> (educație, comunicare, rezolvare de probleme,
-            luarea deciziilor, impact asupra afacerii, condiții de muncă), fiecare cu subfactori
-            și niveluri graduale. Scorurile agregate determină ierarhia prezentată mai jos.
+            Fiecare post a fost evaluat pe <strong>4 criterii</strong> definite la Art. 3(1)(g) al Directivei:
+            cunoștințe și deprinderi profesionale, efort intelectual și/sau fizic, responsabilități
+            și condiții de muncă. Nivelul de complexitate per criteriu este exprimat prin litere
+            (A = minim → G = maxim).
           </p>
         </div>
+
+        {hasLetters && (
+          <div className="mb-4 grid grid-cols-4 gap-3 text-xs">
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-slate-700">Cunoștințe</p>
+              <p className="text-slate-400 mt-0.5">Ce trebuie să știi și să poți</p>
+              <p className="text-[10px] text-slate-300 mt-1">2 scale: educație · comunicare</p>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-slate-700">Efort</p>
+              <p className="text-slate-400 mt-0.5">Complexitatea problemelor</p>
+              <p className="text-[10px] text-slate-300 mt-1">1 scală</p>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-slate-700">Responsabilități</p>
+              <p className="text-slate-400 mt-0.5">Ce decizi și ce impact are</p>
+              <p className="text-[10px] text-slate-300 mt-1">2 scale: decizie · impact</p>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-slate-700">Condiții</p>
+              <p className="text-slate-400 mt-0.5">Mediul de lucru</p>
+              <p className="text-[10px] text-slate-300 mt-1">1 scală</p>
+            </div>
+          </div>
+        )}
 
         <table className="w-full text-left">
           <thead>
             <tr className={t.tableHead}>
-              <th className="px-4 py-3 rounded-tl-lg">#</th>
-              <th className="px-4 py-3">Poziție</th>
-              <th className="px-4 py-3">Departament</th>
-              <th className="px-4 py-3 text-right rounded-tr-lg">Scor</th>
+              <th className="px-3 py-3 rounded-tl-lg">#</th>
+              <th className="px-3 py-3">Poziție</th>
+              <th className="px-3 py-3">Dept.</th>
+              {hasLetters && (
+                <>
+                  <th className="px-3 py-3 text-center" title="Cunoștințe și deprinderi profesionale">Cunoșt.</th>
+                  <th className="px-3 py-3 text-center" title="Efort intelectual și/sau fizic">Efort</th>
+                  <th className="px-3 py-3 text-center" title="Responsabilități">Resp.</th>
+                  <th className="px-3 py-3 text-center" title="Condiții de muncă">Cond.</th>
+                </>
+              )}
+              <th className="px-3 py-3 text-right rounded-tr-lg">Scor</th>
             </tr>
           </thead>
           <tbody>
-            {je.map((j, i) => (
-              <tr key={i} className={t.tableRow}>
-                <td className="px-4 py-3 text-xs text-slate-400">{i + 1}</td>
-                <td className="px-4 py-3 font-medium text-slate-800">{j.position}</td>
-                <td className="px-4 py-3 text-slate-500">{j.department}</td>
-                <td className="px-4 py-3 text-right font-mono">{j.score}</td>
-              </tr>
-            ))}
+            {je.map((j, i) => {
+              const legal = getLegalLetters(j)
+              return (
+                <tr key={i} className={t.tableRow}>
+                  <td className="px-3 py-3 text-xs text-slate-400">{i + 1}</td>
+                  <td className="px-3 py-3 font-medium text-slate-800">{j.position}</td>
+                  <td className="px-3 py-3 text-slate-500 text-xs">{j.department}</td>
+                  {legal && (
+                    <>
+                      <td className="px-3 py-3 text-center font-mono text-sm text-indigo-600">{legal.cunostinte}</td>
+                      <td className="px-3 py-3 text-center font-mono text-sm text-indigo-600">{legal.efort}</td>
+                      <td className="px-3 py-3 text-center font-mono text-sm text-indigo-600">{legal.responsabilitati}</td>
+                      <td className="px-3 py-3 text-center font-mono text-sm text-indigo-600">{legal.conditii}</td>
+                    </>
+                  )}
+                  <td className="px-3 py-3 text-right font-mono">{j.score}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
 
@@ -665,12 +724,12 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru" }: P
             Profesional
           </button>
           <button
-            onClick={() => setTheme("magazine")}
+            onClick={() => setTheme("modern")}
             className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-              theme === "magazine" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              theme === "modern" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            Magazine
+            Modern
           </button>
         </div>
 
