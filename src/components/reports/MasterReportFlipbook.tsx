@@ -373,8 +373,7 @@ function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof th
               <th className="px-4 py-3 text-right">Minim</th>
               <th className="px-4 py-3 text-right">Median</th>
               <th className="px-4 py-3 text-right">Maxim</th>
-              <th className="px-4 py-3">Posturi</th>
-              <th className="px-4 py-3 rounded-tr-lg">Trepte</th>
+              <th className="px-4 py-3 rounded-tr-lg">Posturi încadrate</th>
             </tr>
           </thead>
           <tbody>
@@ -385,11 +384,44 @@ function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof th
                 <td className="px-4 py-3 text-right font-mono font-semibold">{g.mid}</td>
                 <td className="px-4 py-3 text-right font-mono">{g.max}</td>
                 <td className="px-4 py-3 text-xs text-slate-500">{g.positions}</td>
-                <td className="px-4 py-3 text-xs text-slate-500">{g.steps.length} trepte</td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        <p className={`${t.body} mt-6 mb-4`}>
+          <strong>Detaliere per clasă</strong> — treptele de salarizare din cadrul fiecărei clase,
+          cu alinierea salariului curent al angajaților la treapta corespunzătoare.
+        </p>
+
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          {sg.filter(g => g.steps.length > 0).map((g, i) => {
+            const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-orange-400", "border-l-emerald-500"]
+            const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
+            return (
+              <div key={g.grade} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
+                <p className="text-xs font-bold text-slate-900 mb-1">{g.grade}</p>
+                <p className="text-[10px] text-slate-400 mb-3">Interval: {g.min} – {g.max} RON</p>
+                <div className="space-y-1">
+                  {g.steps.map(s => (
+                    <div key={s.step} className="flex items-center justify-between text-[10px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded bg-white border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{s.step}</span>
+                        <span className="text-slate-600">{s.name}</span>
+                      </div>
+                      <span className="font-semibold text-slate-800">{s.salary}</span>
+                    </div>
+                  ))}
+                </div>
+                {g.positions && g.positions !== "—" && (
+                  <p className="mt-2 pt-2 border-t border-slate-200/50 text-[9px] text-slate-400">
+                    {g.positions}
+                  </p>
+                )}
+              </div>
+            )
+          })}
+        </div>
 
         <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
           <p className="text-xs text-slate-500">

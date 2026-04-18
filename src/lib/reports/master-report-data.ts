@@ -60,6 +60,15 @@ export interface MasterSalaryGrade {
   max: string
   positions: string
   steps: Array<{ step: number; name: string; salary: string }>
+  /** Posturi cu salariu curent, clasă, treaptă aliniată, flag */
+  jobDetails?: Array<{
+    position: string
+    currentSalary: number
+    step?: number
+    stepFlag?: "OK" | "BELOW" | "ABOVE" | "BETWEEN"
+    adjustedSalary?: number
+    adjustedStep?: number
+  }>
 }
 
 export interface MasterPayGapCategory {
