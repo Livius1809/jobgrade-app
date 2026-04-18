@@ -1,7 +1,12 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useMemo } from "react"
+import dynamic from "next/dynamic"
 import type { MasterReportData } from "@/lib/reports/master-report-data"
+import { buildPitariuGrades, autoDetectClassCount, type ClassDetection } from "@/lib/evaluation/pitariu-grades"
+
+const SalaryGradeChart = dynamic(() => import("@/components/sessions/SalaryGradeChart"), { ssr: false })
+const ClassCountSelector = dynamic(() => import("@/components/sessions/ClassCountSelector"), { ssr: false })
 
 // ─── Tipuri ────────────────────────────────────────────────────────────────
 
@@ -343,7 +348,53 @@ function JESection({ data, t }: { data: MasterReportData; t: typeof themes.sobru
 }
 
 function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
-  const sg = data.layers.layer1.salaryGrades
+  const je = data.layers.baza.jobEvaluations
+
+  // Construim punctele scor+salariu din datele JE
+  const salaryPoints = useMemo(() =>
+    je.filter(j => j.salary && j.salary !== "—")
+      .map(j => ({
+        score: j.score,
+        salary: parseInt(j.salary.replace(/[^\d]/g, "")),
+        label: j.position,
+      })),
+  [je])
+
+  const hasSalaryData = salaryPoints.length >= 2
+
+  // Auto-detect nr clase
+  const classDetection = useMemo<ClassDetection | null>(() => {
+    if (!hasSalaryData) return null
+    return autoDetectClassCount(salaryPoints.map(p => p.score))
+  }, [salaryPoints, hasSalaryData])
+
+  const [userClassCount, setUserClassCount] = useState<number | null>(null)
+  const effectiveClassCount = userClassCount ?? classDetection?.suggested ?? 5
+
+  const [userStepCount, setUserStepCount] = useState<number | null>(null)
+  const effectiveStepCount = userStepCount ?? 4
+
+  // Construim clasele Pitariu
+  const pitariuGrades = useMemo(() => {
+    if (!hasSalaryData) return null
+    const computed = buildPitariuGrades(salaryPoints, effectiveClassCount, effectiveStepCount)
+    return computed.length > 0 ? computed : null
+  }, [salaryPoints, effectiveClassCount, effectiveStepCount, hasSalaryData])
+
+  // Datele pentru grafic
+  const gradeData = useMemo(() =>
+    pitariuGrades?.map(g => ({
+      name: g.name,
+      scoreMin: g.scoreMin,
+      scoreMax: g.scoreMax,
+      salaryMin: g.salaryMin,
+      salaryMax: g.salaryMax,
+    })) ?? [],
+  [pitariuGrades])
+
+  const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-orange-400", "border-l-emerald-500"]
+  const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
+
   return (
     <PageSheet id={SECTION_IDS.salary} pageNum={4} totalPages={9}>
       <div className="relative">
@@ -366,62 +417,97 @@ function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof th
           </p>
         </div>
 
-        <table className="w-full text-left">
-          <thead>
-            <tr className={t.tableHead}>
-              <th className="px-4 py-3 rounded-tl-lg">Clasă</th>
-              <th className="px-4 py-3 text-right">Minim</th>
-              <th className="px-4 py-3 text-right">Median</th>
-              <th className="px-4 py-3 text-right">Maxim</th>
-              <th className="px-4 py-3 rounded-tr-lg">Posturi încadrate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sg.map((g, i) => (
-              <tr key={i} className={t.tableRow}>
-                <td className="px-4 py-3 font-semibold text-slate-800">{g.grade}</td>
-                <td className="px-4 py-3 text-right font-mono">{g.min}</td>
-                <td className="px-4 py-3 text-right font-mono font-semibold">{g.mid}</td>
-                <td className="px-4 py-3 text-right font-mono">{g.max}</td>
-                <td className="px-4 py-3 text-xs text-slate-500">{g.positions}</td>
+        {/* Selector clase și trepte */}
+        {classDetection && (
+          <ClassCountSelector
+            classDetection={classDetection}
+            effectiveClassCount={effectiveClassCount}
+            userClassCount={userClassCount}
+            onClassCountChange={setUserClassCount}
+            effectiveStepCount={effectiveStepCount}
+            userStepCount={userStepCount}
+            onStepCountChange={setUserStepCount}
+          />
+        )}
+
+        {/* Grafic Pitariu */}
+        {gradeData.length > 0 && (
+          <div className="my-6">
+            <SalaryGradeChart
+              grades={gradeData}
+              salaryPoints={salaryPoints}
+            />
+          </div>
+        )}
+
+        {/* Tabel clase */}
+        {pitariuGrades && pitariuGrades.length > 0 && (
+          <table className="w-full text-left mb-6">
+            <thead>
+              <tr className={t.tableHead}>
+                <th className="px-4 py-3 rounded-tl-lg">Clasă</th>
+                <th className="px-4 py-3 text-right">Minim</th>
+                <th className="px-4 py-3 text-right">Median</th>
+                <th className="px-4 py-3 text-right">Maxim</th>
+                <th className="px-4 py-3 rounded-tr-lg">Posturi încadrate</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pitariuGrades.map((g, i) => {
+                const positionsInGrade = je
+                  .filter(j => j.score >= g.scoreMin && j.score <= g.scoreMax)
+                  .map(j => j.position)
+                  .join(", ") || "—"
+                return (
+                  <tr key={i} className={t.tableRow}>
+                    <td className="px-4 py-3 font-semibold text-slate-800">{g.name}</td>
+                    <td className="px-4 py-3 text-right font-mono">{g.salaryMin.toLocaleString("ro-RO")}</td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold">{Math.round((g.salaryMin + g.salaryMax) / 2).toLocaleString("ro-RO")}</td>
+                    <td className="px-4 py-3 text-right font-mono">{g.salaryMax.toLocaleString("ro-RO")}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{positionsInGrade}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
 
-        <p className={`${t.body} mt-6 mb-4`}>
-          <strong>Detaliere per clasă</strong> — treptele de salarizare din cadrul fiecărei clase,
-          cu alinierea salariului curent al angajaților la treapta corespunzătoare.
-        </p>
-
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {sg.filter(g => g.steps.length > 0).map((g, i) => {
-            const colors = ["border-l-indigo-500", "border-l-violet-500", "border-l-fuchsia-500", "border-l-orange-400", "border-l-emerald-500"]
-            const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
-            return (
-              <div key={g.grade} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
-                <p className="text-xs font-bold text-slate-900 mb-1">{g.grade}</p>
-                <p className="text-[10px] text-slate-400 mb-3">Interval: {g.min} – {g.max} RON</p>
-                <div className="space-y-1">
-                  {g.steps.map(s => (
-                    <div key={s.step} className="flex items-center justify-between text-[10px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-4 h-4 rounded bg-white border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{s.step}</span>
-                        <span className="text-slate-600">{s.name}</span>
-                      </div>
-                      <span className="font-semibold text-slate-800">{s.salary}</span>
+        {/* Carduri detaliate per clasă cu trepte */}
+        {pitariuGrades && pitariuGrades.some(g => g.steps.length > 0) && (
+          <>
+            <p className={`${t.body} mb-4`}>
+              <strong>Detaliere per clasă</strong> — treptele de salarizare din cadrul fiecărei clase.
+              Avansarea între trepte se face corelat cu evoluția profesională (performanță, vechime, instruire).
+            </p>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {pitariuGrades.filter(g => g.steps.length > 0).map((g, i) => {
+                const jobsInGrade = je.filter(j => j.score >= g.scoreMin && j.score <= g.scoreMax)
+                return (
+                  <div key={g.name} className={`rounded-lg border border-slate-200 border-l-4 ${colors[i % 5]} ${bgColors[i % 5]} p-4`}>
+                    <p className="text-xs font-bold text-slate-900 mb-1">{g.name}</p>
+                    <p className="text-[10px] text-slate-400 mb-3">Punctaj: {g.scoreMin}–{g.scoreMax} · Salariu: {g.salaryMin.toLocaleString("ro-RO")}–{g.salaryMax.toLocaleString("ro-RO")} RON</p>
+                    <div className="space-y-1">
+                      {g.steps.map(s => (
+                        <div key={s.stepNumber} className="flex items-center justify-between text-[10px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-4 h-4 rounded bg-white border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{s.stepNumber}</span>
+                            <span className="text-slate-600">{s.name}</span>
+                          </div>
+                          <span className="font-semibold text-slate-800">{s.salary.toLocaleString("ro-RO")} RON</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                {g.positions && g.positions !== "—" && (
-                  <p className="mt-2 pt-2 border-t border-slate-200/50 text-[9px] text-slate-400">
-                    {g.positions}
-                  </p>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                    {jobsInGrade.length > 0 && (
+                      <p className="mt-2 pt-2 border-t border-slate-200/50 text-[9px] text-slate-400">
+                        {jobsInGrade.map(j => j.position).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
 
         <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
           <p className="text-xs text-slate-500">
