@@ -15,11 +15,17 @@ interface Props {
 
 // ─── Page wrapper (react-pageflip necesită forwardRef pe children) ──────
 
-const Page = forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string }>(
-  function Page({ children, className = "" }, ref) {
+const Page = forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string; pageNum?: number; totalPages?: number }>(
+  function Page({ children, className = "", pageNum, totalPages }, ref) {
     return (
-      <div ref={ref} className={`bg-white overflow-hidden ${className}`}>
+      <div ref={ref} className={`bg-white overflow-hidden relative ${className}`}>
         {children}
+        {pageNum != null && totalPages != null && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-between px-5 text-[9px] text-slate-300">
+            <span>JobGrade.ro</span>
+            <span>{pageNum} / {totalPages}</span>
+          </div>
+        )}
       </div>
     )
   }
@@ -246,19 +252,19 @@ function JEPage({ data, t }: { data: MasterReportData; t: typeof themes.sobru })
         <table className="w-full text-left">
           <thead>
             <tr className={t.tableHead}>
-              <th className="px-3 py-2 rounded-tl-lg">#</th>
-              <th className="px-3 py-2">Poziție</th>
-              <th className="px-3 py-2">Departament</th>
-              <th className="px-3 py-2 text-right rounded-tr-lg">Scor</th>
+              <th className="px-2 py-1.5 rounded-tl-lg">#</th>
+              <th className="px-2 py-1.5">Poziție</th>
+              <th className="px-2 py-1.5">Departament</th>
+              <th className="px-2 py-1.5 text-right rounded-tr-lg">Scor</th>
             </tr>
           </thead>
           <tbody>
             {je.map((j, i) => (
               <tr key={i} className={t.tableRow}>
-                <td className="px-3 py-2 text-xs text-slate-400">{i + 1}</td>
-                <td className="px-3 py-2 font-medium text-slate-800">{j.position}</td>
-                <td className="px-3 py-2 text-slate-500">{j.department}</td>
-                <td className="px-3 py-2 text-right font-mono text-sm">{j.score}</td>
+                <td className="px-2 py-1.5 text-xs text-slate-400">{i + 1}</td>
+                <td className="px-2 py-1.5 font-medium text-slate-800">{j.position}</td>
+                <td className="px-2 py-1.5 text-slate-500">{j.department}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-sm">{j.score}</td>
               </tr>
             ))}
           </tbody>
@@ -312,23 +318,23 @@ function SalaryGradesPage({ data, t }: { data: MasterReportData; t: typeof theme
         <table className="w-full text-left">
           <thead>
             <tr className={t.tableHead}>
-              <th className="px-3 py-2 rounded-tl-lg">Clasă</th>
-              <th className="px-3 py-2 text-right">Minim</th>
-              <th className="px-3 py-2 text-right">Median</th>
-              <th className="px-3 py-2 text-right">Maxim</th>
-              <th className="px-3 py-2">Posturi</th>
-              <th className="px-3 py-2 rounded-tr-lg">Trepte</th>
+              <th className="px-2 py-1.5 rounded-tl-lg">Clasă</th>
+              <th className="px-2 py-1.5 text-right">Minim</th>
+              <th className="px-2 py-1.5 text-right">Median</th>
+              <th className="px-2 py-1.5 text-right">Maxim</th>
+              <th className="px-2 py-1.5">Posturi</th>
+              <th className="px-2 py-1.5 rounded-tr-lg">Trepte</th>
             </tr>
           </thead>
           <tbody>
             {sg.map((g, i) => (
               <tr key={i} className={t.tableRow}>
-                <td className="px-3 py-2 font-semibold text-slate-800">{g.grade}</td>
-                <td className="px-3 py-2 text-right font-mono text-sm">{g.min}</td>
-                <td className="px-3 py-2 text-right font-mono text-sm font-semibold">{g.mid}</td>
-                <td className="px-3 py-2 text-right font-mono text-sm">{g.max}</td>
-                <td className="px-3 py-2 text-xs text-slate-500 max-w-[200px] truncate">{g.positions}</td>
-                <td className="px-3 py-2 text-xs text-slate-500">{g.steps.length} trepte</td>
+                <td className="px-2 py-1.5 font-semibold text-slate-800">{g.grade}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-sm">{g.min}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-sm font-semibold">{g.mid}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-sm">{g.max}</td>
+                <td className="px-2 py-1.5 text-xs text-slate-500 max-w-[200px] truncate">{g.positions}</td>
+                <td className="px-2 py-1.5 text-xs text-slate-500">{g.steps.length} trepte</td>
               </tr>
             ))}
           </tbody>
@@ -431,25 +437,25 @@ function BenchmarkPage({ data, t }: { data: MasterReportData; t: typeof themes.s
         <table className="w-full text-left">
           <thead>
             <tr className={t.tableHead}>
-              <th className="px-3 py-2 rounded-tl-lg">Poziție</th>
-              <th className="px-3 py-2 text-right">Intern</th>
-              <th className="px-3 py-2 text-right">P25</th>
-              <th className="px-3 py-2 text-right">P50</th>
-              <th className="px-3 py-2 text-right">P75</th>
-              <th className="px-3 py-2 text-right">Index</th>
-              <th className="px-3 py-2 rounded-tr-lg">Status</th>
+              <th className="px-2 py-1.5 rounded-tl-lg">Poziție</th>
+              <th className="px-2 py-1.5 text-right">Intern</th>
+              <th className="px-2 py-1.5 text-right">P25</th>
+              <th className="px-2 py-1.5 text-right">P50</th>
+              <th className="px-2 py-1.5 text-right">P75</th>
+              <th className="px-2 py-1.5 text-right">Index</th>
+              <th className="px-2 py-1.5 rounded-tr-lg">Status</th>
             </tr>
           </thead>
           <tbody>
             {bm.map((b, i) => (
               <tr key={i} className={t.tableRow}>
-                <td className="px-3 py-2 font-medium text-slate-800">{b.position}</td>
-                <td className="px-3 py-2 text-right font-mono text-sm font-semibold">{b.internal}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">{b.marketP25}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{b.marketP50}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">{b.marketP75}</td>
-                <td className="px-3 py-2 text-right font-mono text-sm">{b.index}</td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-1.5 font-medium text-slate-800">{b.position}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-sm font-semibold">{b.internal}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-xs text-slate-400">{b.marketP25}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-xs">{b.marketP50}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-xs text-slate-400">{b.marketP75}</td>
+                <td className="px-2 py-1.5 text-right font-mono text-sm">{b.index}</td>
+                <td className="px-2 py-1.5">
                   <span className={`${t.badge} ${
                     b.status === "Competitiv" ? "bg-emerald-100 text-emerald-700"
                     : b.status === "Peste piață" ? "bg-amber-100 text-amber-700"
@@ -738,13 +744,13 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru" }: P
       {/* Flipbook */}
       <HTMLFlipBook
         ref={bookRef}
-        width={550}
-        height={733}
+        width={700}
+        height={900}
         size="stretch"
-        minWidth={315}
-        maxWidth={1000}
-        minHeight={420}
-        maxHeight={1333}
+        minWidth={400}
+        maxWidth={1200}
+        minHeight={520}
+        maxHeight={1500}
         showCover={true}
         mobileScrollSupport={true}
         onFlip={onFlip}
@@ -764,14 +770,14 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru" }: P
         startPage={0}
       >
         <Page><CoverPage data={data} t={t} /></Page>
-        <Page><TOCPage data={data} t={t} onNavigate={goToPage} /></Page>
-        <Page><JEPage data={data} t={t} /></Page>
-        <Page><SalaryGradesPage data={data} t={t} /></Page>
-        <Page><PayGapPage data={data} t={t} /></Page>
-        <Page><BenchmarkPage data={data} t={t} /></Page>
-        <Page><DevelopmentPage data={data} t={t} /></Page>
-        <Page><AnnexInputsPage data={data} t={t} /></Page>
-        <Page><AnnexLegalPage t={t} /></Page>
+        <Page pageNum={2} totalPages={totalPages}><TOCPage data={data} t={t} onNavigate={goToPage} /></Page>
+        <Page pageNum={3} totalPages={totalPages}><JEPage data={data} t={t} /></Page>
+        <Page pageNum={4} totalPages={totalPages}><SalaryGradesPage data={data} t={t} /></Page>
+        <Page pageNum={5} totalPages={totalPages}><PayGapPage data={data} t={t} /></Page>
+        <Page pageNum={6} totalPages={totalPages}><BenchmarkPage data={data} t={t} /></Page>
+        <Page pageNum={7} totalPages={totalPages}><DevelopmentPage data={data} t={t} /></Page>
+        <Page pageNum={8} totalPages={totalPages}><AnnexInputsPage data={data} t={t} /></Page>
+        <Page pageNum={9} totalPages={totalPages}><AnnexLegalPage t={t} /></Page>
       </HTMLFlipBook>
     </div>
   )
