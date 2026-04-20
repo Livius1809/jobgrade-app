@@ -367,13 +367,16 @@ export default async function OwnerDashboard() {
 
             {/* ══════════ SECȚIUNEA 2: Decizii Owner (doar CRITICAL + HIGH) ══════════ */}
             {(() => {
-              // Owner vede DOAR deciziile strategice (CRITICAL + HIGH)
-              // Exclude disfuncțiile operaționale care se rezolvă automat de COG
-              const OPERATIONAL_PATTERNS = /no_activity|no_cycles|no_actions|monotony|dormant/i
+              // Owner vede DOAR deciziile STRATEGICE:
+              // - Incapacitate de punere în practică a strategiei
+              // - Nevoi de finanțare / buget
+              // - Decizii de business, priorități, direcție
+              // NU vede: tehnic, cod, operațional, învățare, configurare
+              const COG_COA_PATTERNS = /no_activity|no_cycles|no_actions|monotony|dormant|error|bug|fix|deploy|config|cron|timeout|crash|memory|cpu|disk|latency|cache|migration|schema|build|test.*fail|refactor|endpoint|api.*error|database|redis|queue/i
               const ownerDecisions = data.decisions.filter(
                 d => (d.severity === "CRITICAL" || d.severity === "HIGH") &&
-                  !OPERATIONAL_PATTERNS.test(d.signal || "") &&
-                  !OPERATIONAL_PATTERNS.test(d.description || "")
+                  !COG_COA_PATTERNS.test(d.signal || "") &&
+                  !COG_COA_PATTERNS.test(d.description || "")
               )
               const cogDecisions = data.decisions.length - ownerDecisions.length
 
