@@ -186,14 +186,14 @@ interface Props {
 }
 
 export default function JESimulator({ jobs, companyName = "—" }: Props) {
-  const { addJeModification, state, antiGaming, checkAntiGaming, setJeParcurs, validateJE } = useSimulator()
+  const { addJeModification, state, antiGaming, checkAntiGaming, setJeParcurs, validateJE, revalidateJE } = useSimulator()
   const [selectedJob, setSelectedJob] = useState<number>(0)
   const [showValidateConfirm, setShowValidateConfirm] = useState(false)
+  const [showRevalidateConfirm, setShowRevalidateConfirm] = useState(false)
 
   const currentJob = jobs[selectedJob]
   if (!currentJob?.letters) return <p className="text-sm text-slate-400">Nu există date de evaluare.</p>
 
-  // Aplicăm modificările existente
   const currentLetters = { ...currentJob.letters }
   const mods = state.jeModifications[selectedJob]
   if (mods) {
@@ -207,18 +207,15 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
   const handleLetterChange = useCallback((criterionKey: string, newLetter: string) => {
     const oldLetter = (currentLetters as any)[criterionKey]
     if (oldLetter === newLetter) return
-
     const allowed = checkAntiGaming(currentJob.position, criterionKey, newLetter)
     if (!allowed) return
-
     addJeModification(selectedJob, criterionKey, oldLetter, newLetter, currentJob.position)
   }, [selectedJob, currentJob, currentLetters, checkAntiGaming, addJeModification])
 
-  // Anti-gaming calibrat per parcurs
   const isPostComisie = state.jeParcurs === "ai_comisie" || state.jeParcurs === "comisie_pura"
   const isDisabled = state.jeValidated || antiGaming.status === "BLOCKED" || antiGaming.status === "COOLDOWN"
 
-  // Post-validare: totul read-only
+  // Post-validare: read-only + buton Revalidează
   if (state.jeValidated) {
     return (
       <div className="space-y-4">
@@ -245,6 +242,42 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
             ))}
           </div>
         </div>
+
+        {/* Buton Revalidează */}
+        {!showRevalidateConfirm ? (
+          <button
+            onClick={() => setShowRevalidateConfirm(true)}
+            className="w-full py-2.5 rounded-lg border-2 border-dashed border-amber-300 text-amber-700 text-sm font-medium hover:bg-amber-50 transition-colors"
+          >
+            Revalidează configurația
+          </button>
+        ) : (
+          <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 space-y-3">
+            <p className="text-xs text-slate-700 leading-relaxed">
+              <strong>Atenție:</strong> Modificarea configurației validate consumă credite
+              proporțional cu amploarea modificărilor.
+            </p>
+            <ul className="text-[10px] text-slate-500 space-y-1">
+              <li>Ajustare minoră (1-2 litere, 1-2 posturi) — puține credite</li>
+              <li>Modificare moderată (&lt;20% posturi) — credite moderate</li>
+              <li>Restructurare majoră (&gt;20% posturi) — preț evaluare completă</li>
+            </ul>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { revalidateJE(); setShowRevalidateConfirm(false) }}
+                className="flex-1 py-2 rounded-lg bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors"
+              >
+                Deblochează pentru modificare
+              </button>
+              <button
+                onClick={() => setShowRevalidateConfirm(false)}
+                className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
+              >
+                Renunță
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

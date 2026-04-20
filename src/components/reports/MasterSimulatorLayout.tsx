@@ -38,6 +38,7 @@ interface SimulatorContextType {
   setActiveSection: (section: string | null) => void
   setJeParcurs: (parcurs: JEParcurs) => void
   validateJE: (companyName: string) => void
+  revalidateJE: () => void
   addJeModification: (jobIndex: number, criterionKey: string, oldLetter: string, newLetter: string, jobTitle: string) => void
   getModifiedJE: (originalJE: MasterJobEvaluation[]) => MasterJobEvaluation[]
   /** Anti-gaming state — persistat la nivel de sesiune, NU se resetează la close */
@@ -162,6 +163,24 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
     }))
   }, [isDemo, sessionId])
 
+  const revalidateJE = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      jeValidated: false,
+      jeValidatedAt: null,
+      journal: [
+        ...prev.journal,
+        {
+          timestamp: Date.now(),
+          section: "JE",
+          description: "Evaluare deblocată pentru revalidare (consumă credite)",
+          oldValue: "validat",
+          newValue: "deblocat",
+        },
+      ],
+    }))
+  }, [])
+
   const addJeModification = useCallback((
     jobIndex: number,
     criterionKey: string,
@@ -281,6 +300,7 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
     setActiveSection,
     setJeParcurs,
     validateJE,
+    revalidateJE,
     addJeModification,
     getModifiedJE,
     antiGaming,
