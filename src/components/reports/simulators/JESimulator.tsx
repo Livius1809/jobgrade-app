@@ -260,7 +260,10 @@ export default function JESimulator({ jobs }: Props) {
           })}
         </div>
         <p className="text-center text-xs text-slate-400 mt-2">
-          Scor total: <span className="font-mono font-bold text-slate-700">{currentJob.score}</span>
+          Scor total: <span className="font-mono font-bold text-slate-700">{state.recalculatedScores[selectedJob] ?? currentJob.score}</span>
+          {state.recalculatedScores[selectedJob] !== undefined && state.recalculatedScores[selectedJob] !== currentJob.score && (
+            <span className="text-[10px] text-slate-400 ml-2">(inițial: {currentJob.score})</span>
+          )}
         </p>
       </div>
 
