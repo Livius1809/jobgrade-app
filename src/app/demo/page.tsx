@@ -12,7 +12,7 @@ export default async function DemoPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 py-8">
-      <div className="mx-auto px-6">
+      <div className="flex justify-center px-6">
         <div className="h-4" />
         <MasterReportWrapper data={data} initialTheme="sobru" />
       </div>
