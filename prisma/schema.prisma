@@ -79,6 +79,7 @@ model User {
   overrides              ScoreOverride[]
   notifications          Notification[]
   representedJobs        Job[]                   @relation("JobRepresentative")
+  validatedSessions      EvaluationSession[]     @relation("sessionValidator")
 
   @@unique([tenantId, email])
   @@map("users")
@@ -252,20 +253,24 @@ model Subfactor {
 // ─────────────────────────────────────────
 
 model EvaluationSession {
-  id                 String        @id @default(cuid())
+  id                 String             @id @default(cuid())
   tenantId           String
   name               String
-  status             SessionStatus @default(DRAFT)
-  currentRound       Int           @default(1)
-  consensusThreshold Float         @default(0.75)
+  status             SessionStatus      @default(DRAFT)
+  evaluationType     EvaluationType     @default(AI_GENERATED)
+  currentRound       Int                @default(1)
+  consensusThreshold Float              @default(0.75)
   deadline           DateTime?
   startedAt          DateTime?
   completedAt        DateTime?
-  createdById        String        @default("")
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  validatedAt        DateTime?
+  validatedBy        String?
+  createdById        String             @default("")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  validator User?  @relation("sessionValidator", fields: [validatedBy], references: [id])
 
   sessionJobs          SessionJob[]
   participants         SessionParticipant[]
@@ -903,6 +908,13 @@ enum SessionStatus {
   SLOTTING // Non-benchmarks se clasifică rapid (Sprint 6)
   OWNER_VALIDATION // Owner revizuiește, ajustează din MVV (Sprint 7)
   COMPLETED
+  VALIDATED // Validare finală de Director General / reprezentant legal
+}
+
+enum EvaluationType {
+  AI_GENERATED     // Parcurs A: evaluare generată integral de AI
+  AI_COMMITTEE     // Parcurs B: AI generează T0, comisia dezbate și ajustează
+  COMMITTEE_ONLY   // Parcurs C: comisie pură, fără AI
 }
 
 enum ConsensusState {

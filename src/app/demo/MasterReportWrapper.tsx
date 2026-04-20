@@ -35,10 +35,11 @@ function SimulatorPanel({ data }: { data: MasterReportData }) {
   }
 }
 
-export function MasterReportWrapper({ data, initialTheme }: { data: MasterReportData; initialTheme: "sobru" | "modern" }) {
+export function MasterReportWrapper({ data, initialTheme, isDemo = true }: { data: MasterReportData; initialTheme: "sobru" | "modern"; isDemo?: boolean }) {
   return (
     <MasterSimulatorLayout
       data={data}
+      isDemo={isDemo}
       masterContent={<MasterPanel data={data} />}
       simulatorContent={<SimulatorPanel data={data} />}
     />

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useRef, createContext, useContext } from "react"
+import React, { useState, useCallback, useRef, useEffect, createContext, useContext } from "react"
 import type { MasterReportData, MasterJobEvaluation } from "@/lib/reports/master-report-data"
 import { createAntiGamingState, checkModification, type AntiGamingState } from "@/lib/evaluation/anti-gaming"
 
@@ -57,11 +57,12 @@ export function useSimulator() {
 
 interface Props {
   data: MasterReportData
+  isDemo?: boolean
   masterContent: React.ReactNode
   simulatorContent: React.ReactNode
 }
 
-export default function MasterSimulatorLayout({ data, masterContent, simulatorContent }: Props) {
+export default function MasterSimulatorLayout({ data, isDemo = false, masterContent, simulatorContent }: Props) {
   const [state, setState] = useState<SimulatorState>({
     activeSection: null,
     jeParcurs: "ai_pur",
@@ -71,6 +72,31 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
     recalculatedScores: {},
     journal: [],
   })
+
+  // Fetch JE status din DB la mount (doar producție, nu demo)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  useEffect(() => {
+    if (isDemo) return
+    fetch("/api/v1/master/je-status")
+      .then(r => r.json())
+      .then(status => {
+        if (status.hasSession) {
+          setSessionId(status.sessionId)
+          const parcursMap: Record<string, JEParcurs> = {
+            AI_GENERATED: "ai_pur",
+            AI_COMMITTEE: "ai_comisie",
+            COMMITTEE_ONLY: "comisie_pura",
+          }
+          setState(prev => ({
+            ...prev,
+            jeParcurs: parcursMap[status.parcurs] || "ai_pur",
+            jeValidated: status.validated,
+            jeValidatedAt: status.validatedAt ? new Date(status.validatedAt).getTime() : null,
+          }))
+        }
+      })
+      .catch(() => {})
+  }, [isDemo])
 
   // Anti-gaming persistat cu useRef (supraviețuiește close/reopen simulator)
   const antiGamingRef = useRef<AntiGamingState>(createAntiGamingState())
@@ -105,6 +131,20 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
   }, [])
 
   const validateJE = useCallback((companyName: string) => {
+    // Persistare în DB (producție)
+    if (!isDemo && sessionId) {
+      fetch("/api/v1/master/validate-je", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      })
+        .then(r => r.json())
+        .then(result => {
+          if (!result.ok) console.error("[validate-je]", result.error)
+        })
+        .catch(err => console.error("[validate-je]", err))
+    }
+
     setState(prev => ({
       ...prev,
       jeValidated: true,
@@ -120,7 +160,7 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
         },
       ],
     }))
-  }, [])
+  }, [isDemo, sessionId])
 
   const addJeModification = useCallback((
     jobIndex: number,

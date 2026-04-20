@@ -1,0 +1,3523 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../src/generated/prisma"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// TENANCY & AUTH
+// ─────────────────────────────────────────
+
+model Tenant {
+  id               String       @id @default(cuid())
+  name             String
+  slug             String       @unique
+  plan             Plan         @default(STARTER)
+  isPilot          Boolean      @default(false)
+  locale           String       @default("ro")
+  status           TenantStatus @default(ACTIVE)
+  stripeCustomerId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  users                 User[]
+  company               CompanyProfile?
+  departments           Department[]
+  jobs                  Job[]
+  sessions              EvaluationSession[]
+  compensationPkgs      CompensationPackage[]
+  kpiDefinitions        KpiDefinition[]
+  simulations           SimulationScenario[]
+  aiGenerations         AiGeneration[]
+  reports               Report[]
+  credits               CreditBalance?
+  creditTxns            CreditTransaction[]
+  salaryGrades          SalaryGrade[]
+  employeeSalaryRecords EmployeeSalaryRecord[]
+  payGapReports         PayGapReport[]
+  jointAssessments      JointPayAssessment[]
+  employeeRequests      EmployeeRequest[]
+  clientMemories        ClientMemory[]
+  payrollEntries        PayrollEntry[]
+  payrollImportBatches  PayrollImportBatch[]
+  revenueEntries        RevenueEntry[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String?
+  firstName    String
+  lastName     String
+  jobTitle     String?
+  role         UserRole   @default(REPRESENTATIVE)
+  locale       String     @default("ro")
+  lastLogin    DateTime?
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
+
+  accounts               Account[]
+  authSessions           AuthSession[]
+  sessionParticipants    SessionParticipant[]
+  jobAssignments         JobAssignment[]
+  votes                  Vote[]
+  facilitatorDecisions   FacilitatorDecision[]
+  clarificationQuestions ClarificationQuestion[]
+  clarificationAnswers   ClarificationAnswer[]
+  overrides              ScoreOverride[]
+  notifications          Notification[]
+  representedJobs        Job[]                   @relation("JobRepresentative")
+  validatedSessions      EvaluationSession[]     @relation("sessionValidator")
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────
+// COMPANY PROFILE
+// ─────────────────────────────────────────
+
+model CompanyProfile {
+  id           String    @id @default(cuid())
+  tenantId     String    @unique
+  mission      String?   @db.Text
+  vision       String?   @db.Text
+  values       String[]
+  description  String?   @db.Text
+  industry     String?
+  size         String?
+  website      String?
+  cui          String?
+  regCom       String?
+  address      String?
+  county       String?
+  caenCode     String?
+  caenName     String?
+  isVATPayer   Boolean?
+  logoUrl      String?
+  extractedAt  DateTime?
+  anafSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("company_profiles")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users  User[]
+  jobs   Job[]
+
+  @@unique([tenantId, name])
+  @@map("departments")
+}
+
+// ─────────────────────────────────────────
+// FIȘE DE POST
+// ─────────────────────────────────────────
+
+model Job {
+  id               String    @id @default(cuid())
+  tenantId         String
+  departmentId     String?
+  representativeId String?
+  title            String
+  code             String?
+  purpose          String?   @db.Text
+  description      String?   @db.Text
+  responsibilities String?   @db.Text
+  requirements     String?   @db.Text
+  status           JobStatus @default(DRAFT)
+  isActive         Boolean   @default(true)
+  aiAnalyzed       Boolean   @default(false)
+  aiAnalysis       Json?
+  createdBy        String    @default("")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department     Department? @relation(fields: [departmentId], references: [id])
+  representative User?       @relation("JobRepresentative", fields: [representativeId], references: [id])
+
+  sessionJobs          SessionJob[]
+  compensationPackages CompensationPackage[]
+  kpiDefinitions       KpiDefinition[]
+  simulations          SimulationScenario[]
+  jobResults           JobResult[]
+
+  @@map("jobs")
+}
+
+// ─────────────────────────────────────────
+// CRITERII (GLOBALE — definite de platformă)
+// ─────────────────────────────────────────
+
+model Criterion {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String? @db.Text
+  category    String?
+  order       Int
+  isActive    Boolean @default(true)
+
+  subfactors           Subfactor[]
+  evaluations          Evaluation[]
+  consensusStatuses    ConsensusStatus[]
+  votes                Vote[]
+  facilitatorDecisions FacilitatorDecision[]
+  overrides            ScoreOverride[]
+
+  @@map("criteria")
+}
+
+model Subfactor {
+  id          String @id @default(cuid())
+  criterionId String
+  code        String
+  description String @db.Text
+  points      Int
+  order       Int
+
+  criterion            Criterion             @relation(fields: [criterionId], references: [id])
+  evaluations          Evaluation[]
+  votes                Vote[]
+  facilitatorDecisions FacilitatorDecision[]
+  overrides            ScoreOverride[]
+  consensuses          ConsensusStatus[]
+
+  @@unique([criterionId, code])
+  @@map("subfactors")
+}
+
+// ─────────────────────────────────────────
+// SESIUNI DE EVALUARE
+// ─────────────────────────────────────────
+
+model EvaluationSession {
+  id                 String         @id @default(cuid())
+  tenantId           String
+  name               String
+  status             SessionStatus  @default(DRAFT)
+  evaluationType     EvaluationType @default(AI_GENERATED)
+  currentRound       Int            @default(1)
+  consensusThreshold Float          @default(0.75)
+  deadline           DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  validatedAt        DateTime?
+  validatedBy        String?
+  createdById        String         @default("")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  validator User?  @relation("sessionValidator", fields: [validatedBy], references: [id])
+
+  sessionJobs          SessionJob[]
+  participants         SessionParticipant[]
+  evaluations          Evaluation[]
+  consensusStatuses    ConsensusStatus[]
+  votes                Vote[]
+  facilitatorDecisions FacilitatorDecision[]
+  clarifications       ClarificationQuestion[]
+  jobResults           JobResult[]
+  salaryGrades         SalaryGrade[]
+  overrides            ScoreOverride[]
+
+  @@map("evaluation_sessions")
+}
+
+model SessionJob {
+  id        String   @id @default(cuid())
+  sessionId String
+  jobId     String
+  createdAt DateTime @default(now())
+
+  session     EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  job         Job               @relation(fields: [jobId], references: [id])
+  assignments JobAssignment[]
+
+  @@unique([sessionId, jobId])
+  @@map("session_jobs")
+}
+
+model SessionParticipant {
+  id          String    @id @default(cuid())
+  sessionId   String
+  userId      String
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  session EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [userId], references: [id])
+
+  @@unique([sessionId, userId])
+  @@map("session_participants")
+}
+
+model JobAssignment {
+  id           String    @id @default(cuid())
+  sessionJobId String
+  userId       String
+  submittedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  sessionJob  SessionJob   @relation(fields: [sessionJobId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id])
+  evaluations Evaluation[]
+
+  @@unique([sessionJobId, userId])
+  @@map("job_assignments")
+}
+
+// ─────────────────────────────────────────
+// EVALUARE / SCORARE
+// ─────────────────────────────────────────
+
+model Evaluation {
+  id            String   @id @default(cuid())
+  sessionId     String
+  assignmentId  String
+  criterionId   String
+  subfactorId   String
+  justification String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  session    EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  assignment JobAssignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  criterion  Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor  Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@unique([assignmentId, criterionId])
+  @@map("evaluations")
+}
+
+// ─────────────────────────────────────────
+// CLARIFICĂRI
+// ─────────────────────────────────────────
+
+model ClarificationQuestion {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  question    String   @db.Text
+  askedBy     String
+  createdAt   DateTime @default(now())
+
+  session EvaluationSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  asker   User                 @relation(fields: [askedBy], references: [id])
+  answer  ClarificationAnswer?
+
+  @@map("clarification_questions")
+}
+
+model ClarificationAnswer {
+  id         String   @id @default(cuid())
+  questionId String   @unique
+  answer     String   @db.Text
+  answeredBy String
+  createdAt  DateTime @default(now())
+
+  question ClarificationQuestion @relation(fields: [questionId], references: [id])
+  answerer User                  @relation(fields: [answeredBy], references: [id])
+
+  @@map("clarification_answers")
+}
+
+// ─────────────────────────────────────────
+// CONSENS
+// ─────────────────────────────────────────
+
+model ConsensusStatus {
+  id               String         @id @default(cuid())
+  sessionId        String
+  jobId            String
+  criterionId      String
+  status           ConsensusState @default(PENDING)
+  round1Cv         Float?
+  round2Cv         Float?
+  finalSubfactorId String?
+  updatedAt        DateTime       @updatedAt
+
+  session        EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  criterion      Criterion         @relation(fields: [criterionId], references: [id])
+  finalSubfactor Subfactor?        @relation(fields: [finalSubfactorId], references: [id])
+
+  @@unique([sessionId, jobId, criterionId])
+  @@map("consensus_statuses")
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  userId      String
+  subfactorId String
+  createdAt   DateTime @default(now())
+
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id])
+  criterion Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@unique([sessionId, jobId, criterionId, userId])
+  @@map("votes")
+}
+
+model FacilitatorDecision {
+  id            String   @id @default(cuid())
+  sessionId     String
+  jobId         String
+  criterionId   String
+  facilitatorId String
+  subfactorId   String
+  rationale     String   @db.Text
+  createdAt     DateTime @default(now())
+
+  session     EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  facilitator User              @relation(fields: [facilitatorId], references: [id])
+  criterion   Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor   Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@unique([sessionId, jobId, criterionId])
+  @@map("facilitator_decisions")
+}
+
+// ─────────────────────────────────────────
+// REZULTATE & CLASIFICARE
+// ─────────────────────────────────────────
+
+model JobResult {
+  id              String   @id @default(cuid())
+  sessionId       String
+  jobId           String
+  totalScore      Int
+  normalizedScore Float
+  rank            Int
+  salaryGradeId   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  session     EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  job         Job               @relation(fields: [jobId], references: [id])
+  salaryGrade SalaryGrade?      @relation(fields: [salaryGradeId], references: [id])
+
+  @@unique([sessionId, jobId])
+  @@map("job_results")
+}
+
+model SalaryGrade {
+  id        String   @id @default(cuid())
+  tenantId  String
+  sessionId String
+  name      String
+  scoreMin  Int
+  scoreMax  Int
+  salaryMin Float?
+  salaryMax Float?
+  currency  String   @default("RON")
+  order     Int
+  createdAt DateTime @default(now())
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session               EvaluationSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  jobResults            JobResult[]
+  employeeSalaryRecords EmployeeSalaryRecord[]
+  employeeRequests      EmployeeRequest[]
+  steps                 SalaryStep[]
+
+  @@map("salary_grades")
+}
+
+model SalaryStep {
+  id            String   @id @default(cuid())
+  salaryGradeId String
+  step          Int
+  name          String
+  salary        Decimal
+  criteria      String?
+  createdAt     DateTime @default(now())
+
+  grade SalaryGrade @relation(fields: [salaryGradeId], references: [id], onDelete: Cascade)
+
+  @@unique([salaryGradeId, step])
+  @@index([salaryGradeId, step])
+  @@map("salary_steps")
+}
+
+// ─────────────────────────────────────────
+// PAY GAP ANALYTICS (EU 2023/970 Art. 9)
+// ─────────────────────────────────────────
+
+model EmployeeSalaryRecord {
+  id            String   @id @default(cuid())
+  tenantId      String
+  salaryGradeId String?
+  employeeCode  String
+  gender        Gender
+  baseSalary    Float
+  variableComp  Float    @default(0)
+  department    String?
+  jobCategory   String?
+  periodYear    Int
+  periodMonth   Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  salaryGrade SalaryGrade? @relation(fields: [salaryGradeId], references: [id])
+
+  @@unique([tenantId, employeeCode, periodYear])
+  @@map("employee_salary_records")
+}
+
+model PayGapReport {
+  id            String       @id @default(cuid())
+  tenantId      String
+  reportYear    Int
+  indicators    Json
+  employeeCount Int
+  status        ReportStatus @default(DRAFT)
+  publishedAt   DateTime?
+  generatedAt   DateTime     @default(now())
+  generatedBy   String
+
+  tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jointAssessments JointPayAssessment[]
+
+  @@unique([tenantId, reportYear])
+  @@map("pay_gap_reports")
+}
+
+model JointPayAssessment {
+  id            String           @id @default(cuid())
+  tenantId      String
+  reportId      String?
+  triggeredAt   DateTime         @default(now())
+  triggerReason String           @db.Text
+  status        AssessmentStatus @default(OPEN)
+  rootCause     String?          @db.Text
+  actionPlan    Json?
+  dueDate       DateTime?
+  resolvedAt    DateTime?
+  createdBy     String
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  report PayGapReport? @relation(fields: [reportId], references: [id])
+
+  @@map("joint_pay_assessments")
+}
+
+// ─────────────────────────────────────────
+// EMPLOYEE PORTAL (EU 2023/970 Art. 7)
+// ─────────────────────────────────────────
+
+model EmployeeRequest {
+  id             String        @id @default(cuid())
+  tenantId       String
+  requestedBy    String
+  requestEmail   String
+  salaryGradeId  String?
+  requestType    String        @default("ART7")
+  status         RequestStatus @default(PENDING)
+  requestDetails String?       @db.Text
+  response       String?       @db.Text
+  respondedAt    DateTime?
+  respondedBy    String?
+  dueDate        DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  salaryGrade SalaryGrade? @relation(fields: [salaryGradeId], references: [id])
+
+  @@map("employee_requests")
+}
+
+model ScoreOverride {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  ownerId     String
+  subfactorId String
+  rationale   String   @db.Text
+  createdAt   DateTime @default(now())
+
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  owner     User              @relation(fields: [ownerId], references: [id])
+  criterion Criterion         @relation(fields: [criterionId], references: [id])
+  subfactor Subfactor         @relation(fields: [subfactorId], references: [id])
+
+  @@map("score_overrides")
+}
+
+// ─────────────────────────────────────────
+// COMPENSAȚII & SIMULĂRI
+// ─────────────────────────────────────────
+
+model CompensationPackage {
+  id         String   @id @default(cuid())
+  tenantId   String
+  jobId      String
+  baseSalary Float
+  currency   String   @default("RON")
+  components Json
+  benefits   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job         Job                  @relation(fields: [jobId], references: [id])
+  simulations SimulationScenario[]
+
+  @@map("compensation_packages")
+}
+
+model KpiDefinition {
+  id              String       @id @default(cuid())
+  tenantId        String
+  jobId           String
+  name            String
+  weight          Float
+  targetValue     Float
+  measurementUnit String
+  frequency       KpiFrequency @default(MONTHLY)
+  createdAt       DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job    Job    @relation(fields: [jobId], references: [id])
+
+  @@map("kpi_definitions")
+}
+
+model SimulationScenario {
+  id               String   @id @default(cuid())
+  tenantId         String
+  jobId            String
+  packageId        String
+  name             String
+  kpiAchievements  Json
+  calculatedResult Json
+  createdBy        String
+  createdAt        DateTime @default(now())
+
+  tenant  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job     Job                 @relation(fields: [jobId], references: [id])
+  package CompensationPackage @relation(fields: [packageId], references: [id])
+
+  @@map("simulation_scenarios")
+}
+
+// ─────────────────────────────────────────
+// AI GENERĂRI
+// ─────────────────────────────────────────
+
+model AiGeneration {
+  id         String           @id @default(cuid())
+  tenantId   String
+  type       AiGenerationType
+  sourceId   String?
+  sourceType String?
+  prompt     String           @db.Text
+  output     String           @db.Text
+  model      String
+  tokensUsed Int
+  credits    Int
+  createdAt  DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("ai_generations")
+}
+
+// ─────────────────────────────────────────
+// RAPOARTE
+// ─────────────────────────────────────────
+
+model Report {
+  id          String       @id @default(cuid())
+  tenantId    String
+  sessionId   String?
+  type        ReportType
+  format      ReportFormat
+  sections    String[]
+  locale      String       @default("ro")
+  filePath    String?
+  generatedBy String
+  createdAt   DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, type])
+  @@map("reports")
+}
+
+// ─────────────────────────────────────────
+// CREDITE & BILLING
+// ─────────────────────────────────────────
+
+model CreditBalance {
+  id        String   @id @default(cuid())
+  tenantId  String   @unique
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("credit_balances")
+}
+
+model CreditTransaction {
+  id          String        @id @default(cuid())
+  tenantId    String
+  type        CreditTxnType
+  amount      Int
+  description String
+  sourceId    String?
+  createdAt   DateTime      @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("credit_transactions")
+}
+
+// ─────────────────────────────────────────
+// BUGET OPERAȚIONAL
+// ─────────────────────────────────────────
+
+model BudgetLine {
+  id         String         @id @default(cuid())
+  businessId String
+  category   BudgetCategory
+  month      DateTime // primul zi a lunii (ex: 2026-07-01)
+  planned    Decimal        @default(0)
+  actual     Decimal        @default(0)
+  notes      String?
+  approvedBy String? // userId care a aprobat
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([businessId, category, month])
+  @@index([businessId, month])
+  @@map("budget_lines")
+}
+
+model RevenueEntry {
+  id              String      @id @default(cuid())
+  tenantId        String
+  type            RevenueType
+  amount          Decimal
+  currency        String      @default("RON")
+  description     String?
+  stripePaymentId String? // legătură cu Stripe
+  periodMonth     DateTime // luna la care se referă
+  createdAt       DateTime    @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, periodMonth])
+  @@map("revenue_entries")
+}
+
+enum BudgetCategory {
+  INFRA // Vercel, Neon, domenii
+  API_AI // Claude API (Haiku/Sonnet)
+  MARKETING // Campanii, materiale
+  PERSONAL // Psihologi, DPO, colaboratori
+  REVENUE // Venituri (planned vs actual)
+  DIVERSE // Contingency, neprevăzut
+}
+
+enum RevenueType {
+  SUBSCRIPTION // Abonament lunar/anual
+  CREDITS // Achiziție pachete credite
+  SERVICE // Plată per serviciu/proiect
+  REFUND // Rambursare
+}
+
+// ─────────────────────────────────────────
+// NOTIFICĂRI
+// ─────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────
+// KNOWLEDGE BASE (KB)
+// ─────────────────────────────────────────
+
+model KBEntry {
+  id             String                       @id @default(cuid())
+  agentRole      String // ex: "HR_COUNSELOR", "PSYCHOLINGUIST"
+  kbType         KBType
+  content        String                       @db.Text
+  embedding      Unsupported("vector(1024)")?
+  source         KBSource
+  confidence     Float                        @default(0)
+  usageCount     Int                          @default(0)
+  successRate    Float?
+  status         KBStatus                     @default(BUFFER)
+  tags           String[]
+  createdAt      DateTime                     @default(now())
+  validatedAt    DateTime?
+  propagatedFrom String? // agentRole sursă dacă e propagat
+
+  @@index([agentRole, status])
+  @@index([agentRole, kbType])
+  @@map("kb_entries")
+}
+
+model KBBuffer {
+  id               String    @id @default(cuid())
+  agentRole        String
+  rawContent       String    @db.Text
+  sessionRef       String?
+  occurrences      Int       @default(1)
+  positiveOutcomes Int       @default(0)
+  totalOutcomes    Int       @default(0)
+  status           String    @default("PENDING") // PENDING|APPROVED|REJECTED
+  createdAt        DateTime  @default(now())
+  reviewedAt       DateTime?
+
+  @@index([agentRole, status])
+  @@map("kb_buffers")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Plan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  OWNER
+  FACILITATOR
+  REPRESENTATIVE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SessionStatus {
+  DRAFT
+  BENCHMARK_SELECTION // AI sugerează, admin ajustează (Sprint 6)
+  PRE_SCORING // Evaluatori scorează individual, asincron (Sprint 5)
+  IN_PROGRESS // Sesiune grup: comparare, consens, mediere
+  RECALIBRATION
+  VOTING
+  FACILITATION
+  SLOTTING // Non-benchmarks se clasifică rapid (Sprint 6)
+  OWNER_VALIDATION // Owner revizuiește, ajustează din MVV (Sprint 7)
+  COMPLETED
+  VALIDATED // Validare finală de Director General / reprezentant legal
+}
+
+enum EvaluationType {
+  AI_GENERATED // Parcurs A: evaluare generată integral de AI
+  AI_COMMITTEE // Parcurs B: AI generează T0, comisia dezbate și ajustează
+  COMMITTEE_ONLY // Parcurs C: comisie pură, fără AI
+}
+
+enum ConsensusState {
+  PENDING
+  CONSENSUS
+  RECALIBRATING
+  VOTING
+  FACILITATED
+  RESOLVED
+}
+
+enum KpiFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+enum AiGenerationType {
+  JOB_AD
+  SOCIAL_MEDIA
+  KPI_SHEET
+  SESSION_ANALYSIS
+  JOB_ANALYSIS
+  COMPANY_EXTRACT
+}
+
+enum ReportType {
+  HIERARCHY
+  SALARY_GRADES
+  KPI
+  BUDGET
+  FULL
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+}
+
+enum CreditTxnType {
+  PURCHASE
+  SUBSCRIPTION_MONTHLY
+  USAGE
+  REFUND
+}
+
+enum NotificationType {
+  SESSION_LAUNCHED
+  EVALUATOR_COMPLETED
+  ALL_COMPLETED
+  CONSENSUS_REACHED
+  RECALIBRATION_STARTED
+  VOTE_STARTED
+  FACILITATOR_NEEDED
+  CLARIFICATION_RECEIVED
+  CLARIFICATION_ANSWERED
+  REPORT_GENERATED
+  CREDITS_LOW
+  INVOICE_ISSUED
+  EMPLOYEE_REQUEST_RECEIVED
+  EMPLOYEE_REQUEST_OVERDUE
+  PAY_GAP_THRESHOLD_EXCEEDED
+  COG_MESSAGE
+  AGENT_MESSAGE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ReportStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssessmentStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum RequestStatus {
+  PENDING
+  IN_REVIEW
+  RESPONDED
+  OVERDUE
+}
+
+enum KBType {
+  PERMANENT // KB personal al agentului
+  SHARED_DOMAIN // KB domeniu partajat (ex: HR general)
+  CLIENT_LEXICON // lexicon extras din docs client
+  METHODOLOGY // metodologia JobGrade — read-only
+}
+
+enum KBSource {
+  SELF_INTERVIEW // pre-populare via Claude self-interview
+  EXPERT_HUMAN // input direct de la fondatori
+  DISTILLED_INTERACTION // distilat din sesiuni reale
+  PROPAGATED // primit de la alt agent
+}
+
+enum KBStatus {
+  BUFFER // nevalidat încă
+  PERMANENT // validat, activ
+  ARCHIVED // deprecat
+}
+
+// ── Proactive Management ──────────────────────────────────────────────────────
+
+model CycleLog {
+  id           String    @id @default(cuid())
+  managerRole  String
+  targetRole   String
+  actionType   String // TRACK, INTERVENE, ESCALATE
+  description  String    @db.Text
+  details      String?   @db.Text
+  escalationId String?
+  resolved     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  @@index([managerRole, resolved])
+  @@index([targetRole, actionType])
+  @@map("cycle_logs")
+}
+
+model Escalation {
+  id              String    @id @default(cuid())
+  externalId      String    @unique // ESC-timestamp-random
+  sourceRole      String
+  targetRole      String
+  aboutRole       String
+  reason          String    @db.Text
+  details         String?   @db.Text
+  priority        String // CRITICAL, HIGH, MEDIUM, LOW
+  status          String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, ESCALATED_UP, TIMEOUT
+  resolution      String?   @db.Text
+  timeoutHours    Int       @default(24)
+  escalatedFromId String? // ID escalare anterioară
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  resolvedAt      DateTime?
+
+  @@index([targetRole, status])
+  @@index([sourceRole, status])
+  @@index([status])
+  @@map("escalations")
+}
+
+// ── Agent Registry (dynamic org chart) ───────────────────────────────────────
+
+model AgentDefinition {
+  id          String     @id @default(cuid())
+  agentRole   String     @unique
+  displayName String
+  description String     @db.Text
+  level       AgentLevel
+  isManager   Boolean    @default(false)
+  isActive    Boolean    @default(true)
+
+  // Mod de activitate — folosit de detectorul de disfuncții pentru a calibra
+  // ce înseamnă "lipsă de activitate" pentru fiecare agent. Vezi
+  // project_disfunction_detection_principle.md (05.04.2026).
+  activityMode AgentActivityMode @default(PROACTIVE_CYCLIC)
+
+  // Manager-specific
+  cycleIntervalHours Int?
+  objectives         String[]
+  thresholds         Json?
+
+  // Cold start config
+  coldStartDescription String?  @db.Text
+  coldStartPrompts     String[]
+
+  // Propagation rules (outgoing edges)
+  propagationTargets Json?
+
+  // Metadata
+  createdBy String   @default("SYSTEM")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentRelations AgentRelationship[] @relation("ChildAgent")
+  childRelations  AgentRelationship[] @relation("ParentAgent")
+  proposals       OrgProposal[]       @relation("ProposalAgent")
+  metrics         AgentMetric[]
+
+  @@index([level, isActive])
+  @@map("agent_definitions")
+}
+
+model AgentRelationship {
+  id           String       @id @default(cuid())
+  parentRole   String
+  childRole    String
+  relationType RelationType @default(REPORTS_TO)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  parent AgentDefinition @relation("ParentAgent", fields: [parentRole], references: [agentRole])
+  child  AgentDefinition @relation("ChildAgent", fields: [childRole], references: [agentRole])
+
+  @@unique([parentRole, childRole])
+  @@index([parentRole, isActive])
+  @@map("agent_relationships")
+}
+
+model OrgProposal {
+  id           String         @id @default(cuid())
+  proposalType ProposalType
+  status       ProposalStatus @default(DRAFT)
+  proposedBy   String
+  title        String
+  description  String         @db.Text
+  rationale    String         @db.Text
+  impact       Json?
+  changeSpec   Json
+
+  reviewedByCog Boolean        @default(false)
+  cogComment    String?        @db.Text
+  ownerDecision OwnerDecision?
+  ownerComment  String?        @db.Text
+
+  executedAt DateTime?
+  rollbackAt DateTime?
+
+  agentRole String?
+  agent     AgentDefinition? @relation("ProposalAgent", fields: [agentRole], references: [agentRole])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([proposedBy])
+  @@map("org_proposals")
+}
+
+model AgentMetric {
+  id          String   @id @default(cuid())
+  agentRole   String
+  periodStart DateTime
+  periodEnd   DateTime
+
+  tasksCompleted    Int    @default(0)
+  tasksEscalated    Int    @default(0)
+  avgResponseTimeMs Int?
+  kbEntriesAdded    Int    @default(0)
+  kbEntriesUsed     Int    @default(0)
+  propagationsOut   Int    @default(0)
+  propagationsIn    Int    @default(0)
+  healthScoreAvg    Float?
+  cycleActions      Int    @default(0)
+  performanceScore  Float?
+
+  createdAt DateTime @default(now())
+
+  agent AgentDefinition @relation(fields: [agentRole], references: [agentRole])
+
+  @@unique([agentRole, periodStart, periodEnd])
+  @@index([agentRole, periodStart])
+  @@map("agent_metrics")
+}
+
+// ── Agent Registry Enums ─────────────────────────────────────────────────────
+
+enum AgentLevel {
+  STRATEGIC
+  TACTICAL
+  OPERATIONAL
+}
+
+/// Mod de activitate așteptat al unui agent.
+///
+/// Folosit de FLUX-045 (role-activity monitor) pentru a calibra ce înseamnă
+/// "lipsă de activitate" pentru fiecare agent. Diferite moduri implică praguri
+/// și semnale diferite — un agent REACTIVE_TRIGGERED care stă 72h fără activitate
+/// e comportament normal, nu disfuncție.
+enum AgentActivityMode {
+  /// Agent cu ciclu propriu de activitate (cron la cycleIntervalHours).
+  /// Detectorul raportează `no_cycles_in_Xh` dacă nu rulează la ritmul așteptat.
+  /// Ex: COG, manageri proactivi (CCO, COCSA, PMA, CFO, CMA...).
+  PROACTIVE_CYCLIC
+
+  /// Agent activat la trigger extern (cerere client, alertă, audit, escaladare).
+  /// Detectorul NU raportează `no_activity_in_Xh` — absența e starea normală.
+  /// Pe viitor, va măsura latența de răspuns la triggere (dar nu acum).
+  /// Ex: DPO, CJA, CIA, CCIA, SAFETY_MONITOR, echipa L2 Suport (PSE, PSYCHOLINGUIST, PPMO, STA, SOC, SCA, PPA).
+  REACTIVE_TRIGGERED
+
+  /// Agent executor care așteaptă delegare funcțională de la managerul său.
+  /// Detectorul NU raportează absența — e stare așteptată până la activarea
+  /// mecanismului de delegare (Calea 1, sprint viitor de orchestrare execuție).
+  /// Ex: ACA, BCA, BDA, FDA, MAA, QAA, SQA etc. (agenți operaționali executori).
+  DORMANT_UNTIL_DELEGATED
+
+  /// Agent cu comportament mixt (are cicluri proprii DAR și răspunde la triggere).
+  /// Detectorul aplică ambele verificări; rezerva pentru cazuri speciale.
+  /// Ex: SOA (are cicluri proprii de prospecting ȘI răspunde la lead-uri primite).
+  HYBRID
+
+  /// Agent pauzat explicit de Owner până la rezolvarea unui gap cunoscut.
+  /// Endpoint-ul /agents/cycle NU rulează ciclul lui. Detectorul NU raportează.
+  /// Motivul trebuie documentat în memorie (ce gap, când se reia).
+  /// Ex: EMA/CCO/QLA pauzați 05.04.2026 pending Calea 1 (delegare executor).
+  PAUSED_KNOWN_GAP
+}
+
+enum RelationType {
+  REPORTS_TO
+  COLLABORATES_WITH
+}
+
+enum ProposalType {
+  ADD_AGENT
+  REMOVE_AGENT
+  MERGE_AGENTS
+  MODIFY_HIERARCHY
+  MODIFY_OBJECTIVES
+  MODIFY_PROPAGATION
+}
+
+enum ProposalStatus {
+  DRAFT
+  PROPOSED
+  COG_REVIEWED
+  OWNER_PENDING
+  APPROVED
+  REJECTED
+  EXECUTING
+  EXECUTED
+  ROLLED_BACK
+}
+
+enum OwnerDecision {
+  APPROVED
+  REJECTED
+  DEFERRED
+}
+
+// ── Brainstorming ────────────────────────────────────────────────────────────
+
+model BrainstormSession {
+  id               String           @id @default(cuid())
+  initiatedBy      String // agentRole care a inițiat
+  level            AgentLevel // OPERATIONAL, TACTICAL, STRATEGIC
+  topic            String           @db.Text // problema/obiectivul de rezolvat
+  context          String?          @db.Text // context adițional (obiective, constrângeri)
+  status           BrainstormStatus @default(GENERATING)
+  participantRoles String[] // agenții care participă
+
+  // Agregare
+  aggregatedFromId String? // dacă e sesiune agregată, ID-ul sesiunii sursă
+  aggregatedToId   String? // dacă a fost agregată într-o sesiune superioară
+  proposalId       String? // OrgProposal generat (dacă există)
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  ideas BrainstormIdea[]
+
+  @@index([initiatedBy, status])
+  @@index([level, status])
+  @@map("brainstorm_sessions")
+}
+
+model BrainstormIdea {
+  id          String  @id @default(cuid())
+  sessionId   String
+  generatedBy String // agentRole care a generat ideea
+  title       String
+  description String  @db.Text
+  category    String? // feature, process, restructure, tool, etc.
+
+  // Scoruri pe 6 criterii (0-100)
+  viability   Float? // viabilitate implementare
+  alignment   Float? // aliniere cu obiectivele
+  marketFit   Float? // oportunitate de piață
+  costBenefit Float? // raport cost/beneficii
+  easeOfImpl  Float? // ușurință implementare
+  timeToValue Float? // rapiditate (time-to-value)
+
+  // Scor agregat (media ponderată)
+  compositeScore   Float?
+  rank             Int? // poziția în sesiune
+  scoringRationale String? @db.Text // explicația AI a scorurilor
+
+  // Status
+  status          IdeaStatus @default(PROPOSED)
+  promotedToLevel String? // dacă a fost promovată la nivel superior
+
+  createdAt DateTime @default(now())
+
+  session BrainstormSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, compositeScore])
+  @@index([generatedBy])
+  @@map("brainstorm_ideas")
+}
+
+enum BrainstormStatus {
+  GENERATING // se generează idei
+  EVALUATING // se evaluează/scorează
+  EVALUATED // scorare completă
+  AGGREGATING // se agregează la nivel superior
+  AGGREGATED // trimisă la nivel superior
+  OWNER_REVIEW // la Owner pentru decizie
+  CLOSED // finalizată
+}
+
+enum IdeaStatus {
+  PROPOSED // generată
+  SCORED // evaluată pe criterii
+  SHORTLISTED // selectată pentru nivel superior
+  PROMOTED // promovată la nivel superior
+  APPROVED // aprobată de Owner
+  REJECTED // respinsă
+  IMPLEMENTED // implementată (legată de OrgProposal)
+}
+
+// ── Client Memory (relație personalizată per client) ─────────────────────────
+
+model ClientMemory {
+  id         String               @id @default(cuid())
+  tenantId   String // clientul (Tenant)
+  category   ClientMemoryCategory
+  content    String               @db.Text // ce s-a observat/învățat
+  source     String // agentRole care a generat
+  importance Float                @default(0.5) // 0-1, cât de relevant e
+  tags       String[]
+  expiresAt  DateTime? // unele memorii expiră (ex: "e în vacanță")
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, category])
+  @@index([tenantId, importance])
+  @@map("client_memories")
+}
+
+// ── External Resources (dependențe Owner) ────────────────────────────────────
+
+model ExternalResource {
+  id       String           @id @default(cuid())
+  name     String // "Anthropic API", "Neon.tech DB", "Domeniu jobgrade.ro"
+  category ResourceCategory
+  provider String // "Anthropic", "Neon.tech", "Namecheap"
+  status   ResourceStatus   @default(ACTIVE)
+
+  // Cost & billing
+  monthlyCost     Float? // EUR
+  billingCycle    String? // "monthly", "annual"
+  nextPaymentDate DateTime?
+
+  // Expiry & renewal
+  expiresAt       DateTime? // când expiră (domeniu, certificat, API key)
+  alertDaysBefore Int       @default(14) // cu câte zile înainte alertăm
+
+  // Status
+  lastCheckedAt DateTime?
+  notes         String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([nextPaymentDate])
+  @@map("external_resources")
+}
+
+enum ResourceCategory {
+  API_SERVICE // Anthropic, Resend, Stripe
+  INFRASTRUCTURE // Neon.tech, Vercel, Docker
+  DOMAIN // jobgrade.ro
+  CERTIFICATE // SSL
+  SUBSCRIPTION // n8n cloud, monitoring
+  LICENSE // software licenses
+  OTHER
+}
+
+enum ResourceStatus {
+  ACTIVE
+  EXPIRING_SOON // < alertDaysBefore
+  EXPIRED
+  SUSPENDED
+  CANCELLED
+}
+
+enum ClientMemoryCategory {
+  PREFERENCE // cum preferă să comunice, ce formate vrea
+  RELATIONSHIP // cine e contactul principal, decidentul, influencerul
+  CONTEXT // restructurare, M&A, sezon de buget, etc.
+  PAIN_POINT // nemulțumiri, frustrări, probleme recurente
+  OPPORTUNITY // upsell, cross-sell, expansiune
+  HISTORY // ce s-a discutat, ce s-a promis, ce s-a livrat
+  STYLE // formal/informal, detaliat/sumar, RO/EN
+}
+
+// ─────────────────────────────────────────
+// PAYROLL IMPORT — Stat de plată (21 câmpuri)
+// ─────────────────────────────────────────
+
+model PayrollEntry {
+  id            String @id @default(cuid())
+  tenantId      String
+  importBatchId String // grup de import (un upload = un batch)
+
+  // Identificare post
+  jobCode        String // cod post intern companie
+  jobTitle       String // denumire post
+  department     String // departament
+  hierarchyLevel String // N, N-1, N-2, N-3, N-4, N-5+
+  jobFamily      String // familie posturi (Financiar, IT, Vânzări)
+
+  // Grad/Clasă — dual: calculat + evaluat
+  gradeCalculated Int? // grad auto-calculat din clustering
+  gradeEvaluated  Int? // grad din evaluare 6 criterii (după JE)
+
+  // Remunerație completă
+  baseSalary        Float // salariu bază brut RON/lună
+  fixedAllowances   Float @default(0) // sporuri fixe RON/lună
+  annualBonuses     Float @default(0) // bonusuri/prime RON/an
+  annualCommissions Float @default(0) // comisioane RON/an
+  benefitsInKind    Float @default(0) // beneficii natură RON echiv/lună
+  mealVouchers      Float @default(0) // tichete masă/vacanță RON/lună
+
+  // Date angajat (anonimizate — fără nume/CNP)
+  gender         Gender // MALE / FEMALE
+  workSchedule   WorkSchedule // 2h, 4h, 6h, 8h
+  contractType   ContractType // CIM determinat/nedeterminat/convenție
+  tenureOrg      Float        @default(0) // vechime organizație (ani)
+  tenureRole     Float        @default(0) // vechime post (ani)
+  workLocation   WorkLocation // sediu/remote/hibrid
+  city           String // localitate
+  education      Education // studii
+  certifications String? // certificări/atestări profesionale
+
+  // Calculat automat
+  totalMonthlyGross Float? // salariu total lunar brut (normalizat la 8h)
+  salaryQuartile    Int? // cuartila 1-4
+
+  // Metadata
+  createdAt  DateTime @default(now())
+  importedAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, importBatchId])
+  @@index([tenantId, jobFamily])
+  @@index([tenantId, gender])
+  @@index([tenantId, hierarchyLevel])
+}
+
+model PayrollImportBatch {
+  id          String   @id @default(cuid())
+  tenantId    String
+  fileName    String
+  totalRows   Int
+  validRows   Int
+  invalidRows Int      @default(0)
+  errors      Json?
+  status      String   @default("COMPLETED") // COMPLETED, PARTIAL, FAILED
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// Mapare 6 criterii JobGrade → 4 criterii Lege
+model CriteriaMapping {
+  id             String         @id @default(cuid())
+  legalCriterion LegalCriterion
+  jobgradeFactor String // Knowledge, Communications, etc.
+  description    String
+
+  @@unique([legalCriterion, jobgradeFactor])
+}
+
+enum WorkSchedule {
+  H2 // 2 ore/zi
+  H4 // 4 ore/zi
+  H6 // 6 ore/zi
+  H8 // 8 ore/zi (norma întreagă)
+}
+
+enum ContractType {
+  CIM_NEDETERMINAT // contract pe durată nedeterminată
+  CIM_DETERMINAT // contract pe durată determinată
+  CONVENTIE // convenție civilă
+}
+
+enum WorkLocation {
+  SEDIU
+  REMOTE
+  HIBRID
+}
+
+enum Education {
+  MEDII // studii medii / liceu
+  SUPERIOARE // licență
+  MASTER // master
+  DOCTORAT // doctorat
+}
+
+enum LegalCriterion {
+  CUNOSTINTE_DEPRINDERI // Knowledge + Communications
+  EFORT_INTELECTUAL_FIZIC // Problem Solving
+  RESPONSABILITATI // Decision Making + Business Impact
+  CONDITII_MUNCA // Working Conditions
+}
+
+// ─────────────────────────────────────────
+// SALARY BENCHMARK — Date piață salarială
+// ─────────────────────────────────────────
+
+model SalaryBenchmark {
+  id           String          @id @default(cuid())
+  source       BenchmarkSource
+  sourceDetail String? // "INS 2025 Q4", "Glassdoor Jan 2026"
+  year         Int // anul datelor
+  quarter      Int? // Q1-Q4 (opțional)
+  country      String          @default("RO") // ISO 3166-1 alpha-2
+
+  // Identificare ocupație
+  jobFamily      String // "IT", "Financiar", "Vanzari", "HR", etc.
+  jobTitle       String? // titlu specific (opțional)
+  corCode        String? // Cod COR (Clasificarea Ocupatiilor din Romania)
+  iscoCode       String? // Cod ISCO-08 (international)
+  seniorityLevel SeniorityLevel // ENTRY, MID, SENIOR, LEAD, EXECUTIVE
+
+  // Grade mapping — legătura cu sistemul intern JobGrade
+  gradeMin Int? // gradul minim echivalent (1-8)
+  gradeMax Int? // gradul maxim echivalent (1-8)
+
+  // Date salariale (brut lunar RON)
+  salaryP10    Float? // percentila 10
+  salaryP25    Float // percentila 25 (Q1)
+  salaryMedian Float // mediana (P50)
+  salaryP75    Float // percentila 75 (Q3)
+  salaryP90    Float? // percentila 90
+  salaryMean   Float? // media aritmetică
+  sampleSize   Int? // dimensiune eșantion
+
+  // Metadata
+  region   String? // "București", "Transilvania", "National"
+  industry String? // "IT&C", "Banking", "Manufacturing"
+  currency String  @default("RON")
+  notes    String? @db.Text
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jobFamily, seniorityLevel, year])
+  @@index([country, year, quarter])
+  @@index([gradeMin, gradeMax])
+  @@index([corCode])
+  @@map("salary_benchmarks")
+}
+
+enum BenchmarkSource {
+  INS_TEMPO // Institutul Național de Statistică — baza TEMPO online
+  EUROSTAT // Eurostat Structure of Earnings Survey
+  GLASSDOOR // Glassdoor salary data (public)
+  UNDELUCRAM // Undelucram.ro salary reports
+  BESTJOBS // BestJobs salary index
+  HAYS // Hays Salary Guide Romania
+  PWCRO // PwC PayWell Romania
+  KPMGRO // KPMG Salary Survey
+  MERCER // Mercer Total Remuneration Survey
+  CUSTOM // Date proprii / import manual
+}
+
+enum SeniorityLevel {
+  ENTRY // 0-2 ani experiență
+  MID // 2-5 ani
+  SENIOR // 5-10 ani
+  LEAD // 10+ ani, conducere echipă
+  EXECUTIVE // C-level, director
+}
+
+// ── Dialog-Centric Engine ──────────────────────────────────────────────────
+
+/// Conversation thread — persistent chat history (COG, Team, Assistant)
+model ConversationThread {
+  id          String     @id @default(cuid())
+  tenantId    String
+  userId      String
+  agentRole   String // COG, HR_COUNSELOR, MEDIATOR, etc.
+  threadType  ThreadType @default(ASSISTANT)
+  title       String? // Auto-generated summary
+  pageContext String? // Page where conversation started
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  messages ConversationMessage[]
+
+  @@index([tenantId, userId, isActive])
+  @@index([userId, agentRole])
+  @@map("conversation_threads")
+}
+
+/// Single message in a conversation thread
+model ConversationMessage {
+  id        String      @id @default(cuid())
+  threadId  String
+  role      MessageRole
+  content   String      @db.Text
+  metadata  Json? // flags, suggestions, internal notes
+  createdAt DateTime    @default(now())
+
+  thread ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@map("conversation_messages")
+}
+
+/// User interaction log — tracks everything for context building
+model InteractionLog {
+  id         String          @id @default(cuid())
+  tenantId   String
+  userId     String
+  eventType  InteractionType
+  pageRoute  String? // /jobs, /sessions/[id], etc.
+  entityType String? // job, session, report, document
+  entityId   String? // ID of the entity interacted with
+  detail     String? // search query, button clicked, etc.
+  durationMs Int? // time spent on page/action
+  createdAt  DateTime        @default(now())
+
+  @@index([tenantId, userId, createdAt])
+  @@index([userId, eventType])
+  @@index([tenantId, entityType, entityId])
+  @@map("interaction_logs")
+}
+
+enum ThreadType {
+  COG_CHAT // Owner ↔ COG
+  TEAM_CHAT // Owner ↔ any agent
+  ASSISTANT // Contextual assistant (any user)
+  HR_COUNSELOR // B2B HR interface
+  B2C_GUIDE // B2C Călăuza (Card 1)
+  B2C_PROFILER // B2C Profiler (Card 6)
+  B2C_CAREER // B2C Consilier Carieră (Card 3)
+  B2C_RELATIONS // B2C Consilier Dezvoltare Personală (Card 2)
+  B2C_COACH // B2C Coach (Card 4-5)
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum InteractionType {
+  PAGE_VIEW // User visited a page
+  PAGE_LEAVE // User left a page (with duration)
+  FEATURE_USE // Used a specific feature (AI generate, export, etc.)
+  DOCUMENT_VIEW // Viewed a document
+  DOCUMENT_DOWNLOAD // Downloaded a document/report
+  REPORT_GENERATE // Generated a report
+  SEARCH // Searched for something
+  EVALUATION_START // Started evaluating a job
+  EVALUATION_SUBMIT // Submitted an evaluation
+  SESSION_JOIN // Joined a session
+  CHAT_START // Started a conversation
+  CHAT_MESSAGE // Sent a message
+  SETTINGS_CHANGE // Changed a setting
+  HELP_REQUEST // Clicked help / opened assistant
+}
+
+// ─────────────────────────────────────────
+// DISFUNCTION DETECTION (functional-only, per principle 05.04.2026)
+// Scope: canale / ritm / tranziții. NICIODATĂ conținut semantic.
+// ─────────────────────────────────────────
+
+model DisfunctionEvent {
+  id String @id @default(cuid())
+
+  // Clasificare
+  class    DisfunctionClass // D1 tehnic / D2 funcțional managerial / D3 proces business
+  severity DisfunctionSeverity @default(MEDIUM)
+  status   DisfunctionStatus   @default(OPEN)
+
+  // Subiect (ce e afectat) — metadata pură, zero conținut
+  targetType DisfunctionTarget // SERVICE / WORKFLOW / ROLE / FLUX_STEP
+  targetId   String // ex: "nextjs-app", "FLUX-024", "COG", "FLUX-001:step3"
+
+  // Detecție
+  detectorSource String // ex: "FLUX-041-healthcheck", "metric-diversity", "flux-sla-monitor"
+  detectedAt     DateTime @default(now())
+  signal         String // etichetă scurtă: "ECONNREFUSED", "cycle_missed_24h", "sla_exceeded_2x"
+  durationMs     Int? // cât timp e în disfuncție (dacă aplicabil)
+
+  // Remediere
+  remediationLevel  RemediationLevel? // AUTO / AGENT / OWNER
+  remediationAction String? // etichetă acțiune: "restart", "retry", "re-trigger", "notify"
+  remediationAt     DateTime?
+  remediationOk     Boolean?
+
+  // Închidere
+  resolvedAt DateTime?
+  resolvedBy String? // ex: "auto", "SA", "COG", "owner"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([class, status])
+  @@index([targetType, targetId])
+  @@index([detectedAt])
+  @@map("disfunction_events")
+}
+
+enum DisfunctionClass {
+  D1_TECHNICAL // Infrastructură / servicii / workflow-uri
+  D2_FUNCTIONAL_MGMT // Rol care nu execută funcțiile sale
+  D3_BUSINESS_PROCESS // Flux business blocat / oprit / în buclă
+}
+
+enum DisfunctionSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DisfunctionStatus {
+  OPEN
+  REMEDIATING
+  RESOLVED
+  ESCALATED
+}
+
+enum DisfunctionTarget {
+  SERVICE // infra: Next.js, Postgres, Redis, n8n etc.
+  WORKFLOW // n8n workflow: FLUX-XXX
+  ROLE // rol organigramă: COG, CFO, CCO, etc.
+  FLUX_STEP // pas specific într-un flux business
+}
+
+enum RemediationLevel {
+  AUTO // Nivel 1: idempotent, reversibil (restart, retry, re-trigger)
+  AGENT // Nivel 2: agent responsabil preia sarcina
+  OWNER // Nivel 3: escaladare la Owner
+}
+
+// ─────────────────────────────────────────
+// FLUX ↔ ROLE MAPPING (Sprint 3 Faza 3b, 05.04.2026)
+// Mapează pașii din fluxurile business la rolurile care îi dețin.
+// Folosit pentru:
+//  - când un rol e D2, găsim fluxurile afectate (/related)
+//  - când un flux e D3 la un pas, escalăm la managerul rolului care deține pasul
+// Principiu: metadata pură a proprietății funcționale, zero conținut semantic.
+// ─────────────────────────────────────────
+
+model FluxStepRole {
+  id         String  @id @default(cuid())
+  fluxId     String // ex: "FLUX-001-job-evaluation"
+  stepId     String // ex: "score_committee" | "approve_structure"
+  roleCode   String // agentRole din AgentDefinition (nu FK — poate include roluri umane viitoare)
+  raci       String // OWNER | CONTRIBUTOR | REVIEWER | NOTIFIED
+  slaMinutes Int? // cât timp e permis rolului să țină pasul
+  isCritical Boolean @default(false) // single point of failure
+  notes      String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fluxId, stepId, roleCode, raci])
+  @@index([fluxId])
+  @@index([roleCode])
+  @@map("flux_step_roles")
+}
+
+// ─────────────────────────────────────────
+// REORGANIZATION EVENTS (Sprint 3 Faza 3c, schema stub 05.04.2026)
+// Înregistrează reorganizările temporare auto-aplicate de sistem când un rol e D2.
+// Sunt TOATE reversibile automat la pragul configurat (default 24h).
+// Dacă se repetă ≥3 ori pe același rol în 30 zile → propunere schimbare permanentă.
+// Principiu: atingem DOAR structura temporară (canal, nu fond). KB rămâne neatins.
+// ─────────────────────────────────────────
+
+model ReorganizationEvent {
+  id String @id @default(cuid())
+
+  // Subiect: rolul D2 care a declanșat reorganizarea
+  triggeredByRole    String // ex: "CCO"
+  triggeredByEventId String? // DisfunctionEvent.id care a cauzat
+
+  // Tipul reorganizării
+  reorgType ReorganizationType
+
+  // Configurația înainte vs după (JSON pentru flexibilitate)
+  // originalConfig: snapshot înainte (pentru revert)
+  // newConfig: snapshot după reorganizare
+  originalConfig Json
+  newConfig      Json
+
+  // Ciclul de viață
+  status       ReorgStatus @default(ACTIVE)
+  appliedAt    DateTime    @default(now())
+  autoRevertAt DateTime // momentul automat de revert (default +24h)
+  revertedAt   DateTime?
+  revertReason String? // "auto_timeout" | "role_recovered" | "owner_override" | "conflict"
+
+  // Pattern detection (pentru StructuralChangeProposal)
+  // Semnalat true când aceeași reorganizare s-a aplicat ≥3 ori în 30 zile.
+  isRepeatedPattern Boolean @default(false)
+  patternSignature  String? // hash stabil pt detectarea pattern-ului
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([triggeredByRole, status])
+  @@index([status, autoRevertAt])
+  @@index([patternSignature])
+  @@map("reorganization_events")
+}
+
+enum ReorganizationType {
+  SUBORDINATE_REASSIGN // subordonați mutați temporar la peer
+  TASK_REASSIGN // task specific re-asignat la peer
+  ROLE_COLLAPSE // rol absorbit temporar în părinte
+  PEER_PROMOTION // peer preia atribuțiile rolului D2
+}
+
+enum ReorgStatus {
+  ACTIVE // în curs, reorganizarea e aplicată
+  REVERTED // revocată automat sau manual
+  ESCALATED // persistă >72h → escaladat la Owner pentru decizie permanentă
+  CONFLICTED // peer e și el D2 → nu se poate executa
+}
+
+// ─────────────────────────────────────────
+// BUSINESS — top-level organism (Increment A0 "Living Organization", 05.04.2026)
+//
+// Reprezintă un "organism viu" complet — un business de sine-stătător cu propriile
+// obiective, granițe, homeostazie, ciclu de viață. JobGrade e Business #1, viitorul
+// Business #2 (antreprenoriat transformațional) e al doilea organism care va
+// coexista și sinergiza cu primul.
+//
+// Awareness layer (ExternalSignal, EmergentTheme, StrategicTheme) e PARTAJAT
+// între businesses. Totul de la Goals în sus (A-G) e scoped per Business prin FK.
+//
+// Vezi project_living_org_architecture.md pentru arhitectura completă.
+// ─────────────────────────────────────────
+
+model Business {
+  id             String                 @id @default(cuid())
+  code           String                 @unique // ex: "jobgrade", "b2-antreprenoriat"
+  name           String // display name
+  description    String?                @db.Text
+  status         BusinessStatus         @default(ACTIVE)
+  lifecyclePhase BusinessLifecyclePhase @default(GROWTH) // folosit de E3 Lifecycle
+  mvvStatement   String?                @db.Text // linkback la identitate/purpose
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([status])
+  @@map("businesses")
+}
+
+enum BusinessStatus {
+  PRE_LAUNCH // în construcție
+  PILOT // testare cu clienți limitați
+  ACTIVE // operațional full
+  CONSOLIDATING // pauză de creștere, rafinare internă
+  SUSPENDED // pauză temporară
+  ARCHIVED // oprit permanent
+}
+
+enum BusinessLifecyclePhase {
+  GROWTH // expansiune, mai multă brainstorming, toleranță mare la experiment
+  MATURE // execuție, stabilitate, eficiență
+  CONSOLIDATION // rafinare, prunning, eliminare risipă
+  PIVOT // schimbare direcție majoră, re-explorare
+}
+
+// ─────────────────────────────────────────
+// ORGANIZATIONAL OBJECTIVES (Increment A1 "Living Organization", 05.04.2026)
+//
+// Obiectivele operaționale ale organismului — ce vrea să atingă Business-ul, cum
+// se măsoară, până când, cu ce prioritate. Fundament pentru tot ce urmează:
+//  - ObjectiveHealth (A2) calculează sănătatea fiecăruia
+//  - AgentBehaviorPatch (B1) poate fi triggered când un obiectiv devine AT_RISK
+//  - HomeostaticTarget (C1) se leagă la obiective
+//  - ResourceBudget (E2) se alocă în funcție de priority + health
+//
+// Fiecare obiectiv e scoped la un Business specific. Awareness layer e shared
+// între businesses, dar obiectivele sunt individuale.
+//
+// Vezi project_living_org_architecture.md pentru context complet.
+// ─────────────────────────────────────────
+
+model OrganizationalObjective {
+  id         String @id @default(cuid())
+  businessId String // FK la Business — scope fundamental
+
+  // Identitate
+  code        String // slug intern, unic per business
+  title       String // titlu uman scurt
+  description String @db.Text
+
+  // Metric de succes
+  metricName   String // ex: "clienti_b2b_activi", "nps_b2c", "kb_validity_avg"
+  metricUnit   String? // ex: "numar", "%", "zile"
+  targetValue  Float // valoarea țintă
+  currentValue Float? // ultima măsurătoare cunoscută (opțional — poate fi calculată din surse)
+  direction    ObjectiveDirection @default(INCREASE) // țintim creștere sau scădere
+
+  // Timing
+  startDate   DateTime  @default(now())
+  deadlineAt  DateTime? // opțional — unele obiective sunt continue
+  completedAt DateTime?
+
+  // Prioritate & Status
+  priority ObjectivePriority @default(MEDIUM)
+  status   ObjectiveStatus   @default(ACTIVE)
+
+  // Relații la rolurile responsabile (agenți / departamente)
+  // Nu FK strict — agentRole e string, pentru compatibilitate cu AgentDefinition
+  ownerRoles       String[] @default([]) // ex: ["COCSA", "CCO"]
+  contributorRoles String[] @default([]) // ex: ["MKA", "SOA"]
+
+  // Context / tags pentru pattern matching (folosit de A2 ObjectiveHealth)
+  tags String[] @default([]) // ex: ["b2b", "growth", "sales"]
+
+  // Linkback la surse (opțional — unele obiective au documente asociate)
+  sourceDocUrl String?
+
+  // ── Cascadă ierarhică (adăugat pentru COG top-down decomposition) ────────
+  // Obiectiv părinte din care a fost derivat (null = top-level strategic)
+  parentObjectiveId String?
+  // Nivel organizațional
+  level             ObjectiveLevel @default(STRATEGIC)
+  // Cine a creat cascada (null = manual/owner, "COG" = auto-propus de COG)
+  cascadedBy        String? // "COG" | "owner" | agentRole
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // "owner" | agentRole | userId
+
+  @@unique([businessId, code])
+  @@index([businessId, status])
+  @@index([businessId, priority])
+  @@index([deadlineAt])
+  @@index([parentObjectiveId])
+  @@map("organizational_objectives")
+}
+
+enum ObjectiveLevel {
+  STRATEGIC // Owner — direcție de business
+  TACTICAL // Department head — descompunere pe funcții
+  OPERATIONAL // Executor — metrica concretă, zilnică
+}
+
+enum ObjectiveDirection {
+  INCREASE // țintim valoare MAI MARE (ex: nr clienți, satisfacție)
+  DECREASE // țintim valoare MAI MICĂ (ex: churn, latency, cost)
+  MAINTAIN // menținem într-o bandă (ex: KB validity în [80%, 95%])
+  REACH // atingem o valoare specifică o dată (ex: lansare în 30 zile)
+}
+
+enum ObjectivePriority {
+  CRITICAL // blocker existențial, orice sub-optim e roșu
+  HIGH
+  MEDIUM
+  LOW // nice-to-have, rareori cere acțiune
+}
+
+enum ObjectiveStatus {
+  DRAFT // în lucru, nu e încă activ
+  ACTIVE // urmărit activ
+  AT_RISK // deviere semnificativă față de traiectorie — cere atenție
+  MET // atins
+  FAILED // termenul a expirat fără atingere
+  SUSPENDED // pauză temporară
+  ARCHIVED // închis permanent (fără succes/eșec)
+}
+
+// ─────────────────────────────────────────
+// EXTERNAL SIGNALS (Increment #1 "Living Organization" roadmap, 05.04.2026)
+// Ochi spre mediul extern: ingerăm semnale brute din surse externe (RSS, API-uri
+// publice, feed-uri legal/piață) și le păstrăm normalizat pentru ca observatorul
+// strategic (COSO, Increment #3) să le interpreteze ulterior.
+// Principiu: acest strat e doar INGESTIE + NORMALIZARE. Zero interpretare aici.
+// ─────────────────────────────────────────
+
+model ExternalSignal {
+  id String @id @default(cuid())
+
+  // Sursa
+  source    String // ex: "wall-street.ro", "eur-lex.europa.eu"
+  sourceUrl String // URL direct la articol/document
+  category  ExternalSignalCategory
+
+  // Conținut (raw — aggregatorul strategic îl consumă ulterior)
+  title      String @db.Text
+  rawContent String @db.Text
+
+  // Timing
+  capturedAt  DateTime  @default(now())
+  publishedAt DateTime? // data din sursă, dacă disponibilă
+
+  // Dedup: hash stabil (ex: sha1(source + sourceUrl)) setat de ingestor.
+  // Upsert pe acest câmp → rulări repetate sunt idempotente.
+  fingerprint String @unique
+
+  // Populat de COSO (Increment #3) după procesare strategică.
+  // Null = încă neprocesat; setat = deja interpretat în teme.
+  processedAt DateTime?
+  themes      String[]  @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, capturedAt])
+  @@index([processedAt])
+  @@index([source, capturedAt])
+  @@map("external_signals")
+}
+
+enum ExternalSignalCategory {
+  MARKET_HR // Piața muncii, HR, salarii, tendințe recrutare
+  LEGAL_REG // Legislativ / reglementar (extinde monitorizarea existentă)
+  TECH_AI // Tehnologii, AI, platforme relevante
+  CULTURAL_SOCIAL // Schimbări culturale, demografice, comportamentale
+  COMPETITOR // Mișcări ale jucătorilor adiacenți / concurență
+  MACRO_ECONOMIC // Indicatori macro RO / EU
+}
+
+// ─────────────────────────────────────────
+// AGENT BEHAVIOR PATCHES (Increment B1 "Living Organization", 06.04.2026)
+//
+// Primul strat de ACȚIUNE — sistemul nu doar observă ci propune schimbări
+// reversibile pe comportamentul agenților. Fiecare patch:
+//  - E PROPUS (de COSO, ObjectiveHealth, sau manual) → Owner aprobă
+//  - Se APLICĂ pe un agent specific (schimbă config temporar)
+//  - Se AUTO-REVERT-EAZĂ la expirare (default 24h) dacă nu e CONFIRMAT
+//  - Are AUDIT TRAIL complet (cine, de ce, când, ce s-a schimbat)
+//
+// patchSpec e JSON flexibil — fiecare patchType are structură proprie.
+// Exemplu PRIORITY_SHIFT: { "from": "MEDIUM", "to": "CRITICAL", "context": "..." }
+// Exemplu ACTIVITY_MODE: { "from": "DORMANT_UNTIL_DELEGATED", "to": "PROACTIVE_CYCLIC" }
+// Exemplu CYCLE_INTERVAL: { "from": 24, "to": 4 }
+//
+// Relație cu alte straturi:
+//  - COSO (#3) propune patches când StrategicTheme.confidence=HIGH
+//  - ObjectiveHealth (A2) propune patches când objective.riskLevel=CRITICAL/HIGH
+//  - C2 Self-regulation refolosește acest mecanism pentru corecții automate
+// ─────────────────────────────────────────
+
+model AgentBehaviorPatch {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Agent afectat
+  targetRole String // agentRole din AgentDefinition
+
+  // Ce se schimbă
+  patchType PatchType
+  patchSpec Json // config type-specific (structură variabilă per patchType)
+
+  // De ce (audit trail complet)
+  triggeredBy     String // "owner" | "COSO" | "ObjectiveHealth" | "Homeostasis" | agentRole
+  triggerSourceId String? // ID-ul sursei: StrategicTheme.id, ObjectiveHealthReport.objectiveId, etc.
+  rationale       String  @db.Text
+
+  // Ciclu de viață
+  status       PatchStatus @default(PROPOSED)
+  appliedAt    DateTime?
+  expiresAt    DateTime? // auto-revert la acest moment (null = fără expirare, necesită confirm/revert manual)
+  confirmedAt  DateTime? // Owner confirmă → nu mai expiră automat
+  revertedAt   DateTime?
+  revertReason String? // "auto_expired" | "owner_reverted" | "owner_rejected" | "superseded"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId, status])
+  @@index([targetRole, status])
+  @@index([expiresAt])
+  @@map("agent_behavior_patches")
+}
+
+enum PatchType {
+  PRIORITY_SHIFT // schimbă prioritatea de focus a agentului
+  ATTENTION_SHIFT // redirecționează atenția pe tags/topics specifice
+  SCOPE_EXPAND // adaugă temporar responsabilități
+  SCOPE_NARROW // reduce temporar responsabilități
+  ACTIVITY_MODE // schimbă activityMode (ex: DORMANT → PROACTIVE)
+  CYCLE_INTERVAL // schimbă frecvența ciclului (ex: 24h → 4h)
+}
+
+enum PatchStatus {
+  PROPOSED // propus de COSO/ObjectiveHealth/owner, în așteptare
+  APPROVED // Owner a aprobat, nu încă aplicat
+  ACTIVE // aplicat pe agent, în vigoare
+  EXPIRED // auto-revert după timeout (expiresAt depășit)
+  CONFIRMED // Owner a confirmat permanent — nu mai expiră
+  REVERTED // revertat manual de Owner
+  REJECTED // Owner a respins propunerea
+}
+
+// ─────────────────────────────────────────
+// HOMEOSTATIC TARGETS (Increment C1 "Living Organization", 06.04.2026)
+//
+// Auto-reglare proactivă — menține parametrii interni ai organismului în
+// bandă sănătoasă. Diferit de disfuncții (reactive: "s-a rupt") — acesta
+// e proactiv: "menții pH-ul în [7.35, 7.45], nu aștepta acidoză".
+//
+// Fiecare target e scoped per Business, cu bandă (min, max) sau prag unic.
+// Readings se colectează periodic (cron sau la cerere) și se compară cu target.
+// Devierea produce alert + opțional propunere AgentBehaviorPatch (prin B1).
+//
+// Exemple concrete:
+//  - response_latency_p95 ≤ 2000ms (SERVICE)
+//  - kb_validity_avg ≥ 75% (SYSTEM)
+//  - agent_cycle_success_rate ≥ 90% (ROLE)
+//  - decision_throughput ≥ 3/zi (SYSTEM)
+// ─────────────────────────────────────────
+
+model HomeostaticTarget {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Identitate
+  code        String // slug unic per business
+  name        String // display name uman
+  description String? @db.Text
+
+  // Ce se măsoară
+  metricName     String // ex: "response_latency_p95", "kb_validity_avg"
+  metricUnit     String? // ex: "ms", "%", "count/day"
+  targetType     HomeostaticTargetType // SERVICE, ROLE, SYSTEM
+  targetEntityId String? // dacă e pe un serviciu/rol specific (null = system-wide)
+
+  // Bandă sănătoasă
+  minValue     Float? // sub asta = deviation LOW (dacă direcție INCREASE)
+  maxValue     Float? // peste asta = deviation HIGH (dacă direcție DECREASE)
+  optimalValue Float? // valoarea ideală (centrul benzii)
+
+  // Configurare alerte
+  warningPct  Float @default(10) // % deviere de la optimal care declanșează WARNING
+  criticalPct Float @default(25) // % deviere care declanșează CRITICAL
+
+  // Stare curentă (last reading)
+  lastReading   Float?
+  lastReadingAt DateTime?
+  currentStatus HomeostaticStatus @default(UNKNOWN)
+
+  // Auto-acțiune: dacă true, generează AgentBehaviorPatch automat la CRITICAL
+  autoCorrect Boolean @default(false)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, code])
+  @@index([businessId, isActive])
+  @@index([currentStatus])
+  @@map("homeostatic_targets")
+}
+
+enum HomeostaticTargetType {
+  SERVICE // infrastructură specifică (ex: latency Next.js)
+  ROLE // agent specific (ex: success rate CCO)
+  SYSTEM // cross-cutting (ex: KB validity medie, decision throughput)
+}
+
+enum HomeostaticStatus {
+  UNKNOWN // fără reading
+  OPTIMAL // în bandă, aproape de optimal
+  NORMAL // în bandă, ușor deviat
+  WARNING // deviat > warningPct de la optimal
+  CRITICAL // deviat > criticalPct de la optimal
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CALEA 1 — DELEGARE MANAGER → EXECUTOR
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Mecanismul care deblochează agenții DORMANT_UNTIL_DELEGATED.
+// Managerii creează task-uri, executorii le primesc și le execută.
+// Flow: INTERVENE → AgentTask → executor acceptă → execuție → feedback.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AgentTask {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Cine delegă
+  assignedBy String // managerRole care a creat task-ul
+  cycleLogId String? // legătura cu CycleLog care a generat task-ul
+
+  // Către cine
+  assignedTo String // agentRole executor
+
+  // Ce trebuie făcut
+  title       String // rezumat scurt
+  description String            @db.Text // detalii complete
+  taskType    AgentTaskType
+  priority    AgentTaskPriority @default(MEDIUM)
+
+  // Context
+  objectiveId String? // legat de un OrganizationalObjective
+  tags        String[] // pentru pattern matching
+
+  // Deadline
+  deadlineAt       DateTime?
+  estimatedMinutes Int?
+
+  // Lifecycle
+  status      AgentTaskStatus @default(ASSIGNED)
+  acceptedAt  DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+
+  // Blocaje
+  blockerType        BlockerType? // tipul blocajului (dacă e blocat)
+  blockerDescription String?      @db.Text // descriere text liber a blocajului
+  blockerAgentRole   String? // rolul agentului/resursei care blochează
+  blockerTaskId      String? // task-ul de care depinde (dacă e dependență)
+  blockedAt          DateTime? // când a fost raportat blocajul
+  unblockedAt        DateTime? // când a fost rezolvat
+
+  // Rezultat
+  result        String? @db.Text // ce a produs executorul
+  resultQuality Int? // 0-100, evaluat de manager la review
+  failureReason String? @db.Text
+
+  // Feedback loop
+  reviewedBy String? // managerul care a evaluat rezultatul
+  reviewedAt DateTime?
+  reviewNote String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId, assignedTo, status])
+  @@index([businessId, assignedBy, status])
+  @@index([assignedTo, status])
+  @@index([status, priority])
+  @@index([status, blockerType])
+  @@index([deadlineAt])
+  @@map("agent_tasks")
+}
+
+enum AgentTaskType {
+  KB_RESEARCH // cercetare și adăugare în KB
+  KB_VALIDATION // validare entries existente
+  DATA_ANALYSIS // analiză date/metrici
+  CONTENT_CREATION // creare conținut (rapoarte, documente)
+  PROCESS_EXECUTION // execuție proces predefinit
+  REVIEW // review artefact
+  INVESTIGATION // investigare problemă/anomalie
+  OUTREACH // contactare externă (clienți, parteneri)
+}
+
+enum AgentTaskPriority {
+  CRITICAL // deadline <2h
+  HIGH // deadline <8h
+  MEDIUM // deadline <24h
+  LOW // deadline >24h sau fără deadline
+}
+
+enum AgentTaskStatus {
+  ASSIGNED // creat, în așteptare acceptare
+  ACCEPTED // executorul a confirmat
+  IN_PROGRESS // în lucru
+  BLOCKED // blocat — vezi blockerType + blockerDescription
+  COMPLETED // finalizat cu succes
+  FAILED // eșuat (cu motiv)
+  CANCELLED // anulat de manager
+  EXPIRED // deadline depășit fără completare
+  REVIEW_PENDING // completat, în așteptare review manager
+}
+
+enum BlockerType {
+  DEPENDENCY // depinde de alt task (blockerTaskId)
+  WAITING_INPUT // așteaptă input de la alt agent/rol (blockerAgentRole)
+  WAITING_OWNER // așteaptă decizie Owner
+  EXTERNAL // factor extern (furnizor, API, legislație)
+  RESOURCE // lipsă resurse (buget, credite, capacitate)
+  TECHNICAL // impediment tehnic (bug, infrastructură)
+  UNCLEAR_SCOPE // cerință neclară, necesită clarificare
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRATUL D — IMMUNE (granițe + carantină)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// D1: Reguli de graniță — moral core, scope, consistency.
+//     Verifică cereri client, directive interne, date intrate.
+// D2: Carantină + memorie imună — pattern detection pe violări repetate.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model BoundaryRule {
+  id         String  @id @default(cuid())
+  businessId String? // null = shared (moral core)
+
+  code        String           @unique // slug unic global
+  name        String
+  description String?          @db.Text
+  ruleType    BoundaryRuleType
+  severity    BoundarySeverity @default(HIGH)
+
+  // Condiție (JSON): ce pattern activează regula
+  // Ex: { "keywords": ["discriminare", "hărțuire"], "context": "client_input" }
+  // Ex: { "roleScope": "CJA", "forbiddenActions": ["modify_salary"] }
+  condition Json
+
+  // Acțiune la violație
+  action          BoundaryAction @default(BLOCK)
+  notifyRoles     String[] // cine primește notificare
+  escalateToOwner Boolean        @default(false)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  violations BoundaryViolation[]
+
+  @@index([businessId, ruleType, isActive])
+  @@map("boundary_rules")
+}
+
+model BoundaryViolation {
+  id         String       @id @default(cuid())
+  ruleId     String
+  rule       BoundaryRule @relation(fields: [ruleId], references: [id])
+  businessId String?
+
+  // Context violației
+  sourceType    String // "client_input" | "agent_action" | "data_import" | "directive"
+  sourceId      String? // ID-ul sursei (conversationId, patchId, etc.)
+  sourceRole    String? // agentul care a produs violația
+  inputSnapshot String  @db.Text // snapshot-ul care a violat regula
+
+  // Rezultat
+  actionTaken    BoundaryAction // ce s-a făcut
+  wasOverridden  Boolean        @default(false) // Owner a override-uit
+  overrideBy     String?
+  overrideReason String?        @db.Text
+
+  createdAt DateTime @default(now())
+
+  // Legătură cu carantina
+  quarantineEntry QuarantineEntry?
+
+  @@index([ruleId, createdAt])
+  @@index([businessId, createdAt])
+  @@map("boundary_violations")
+}
+
+model QuarantineEntry {
+  id          String            @id @default(cuid())
+  violationId String            @unique
+  violation   BoundaryViolation @relation(fields: [violationId], references: [id])
+  businessId  String?
+
+  // Ce e în carantină
+  contentType String // "message" | "file" | "data_row" | "directive"
+  contentHash String // fingerprint pentru dedup
+  content     String @db.Text // conținutul izolat
+
+  // Status
+  status        QuarantineStatus @default(QUARANTINED)
+  reviewedBy    String? // "owner" | agentRole
+  reviewedAt    DateTime?
+  releaseReason String?          @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([contentHash])
+  @@map("quarantine_entries")
+}
+
+model ImmunePattern {
+  id         String  @id @default(cuid())
+  businessId String? // null = shared
+
+  // Pattern detectat
+  patternType String // "repeated_keyword" | "source_abuse" | "role_overreach" | "data_anomaly"
+  patternKey  String // cheia unică a pattern-ului (ex: hash keywords)
+  description String @db.Text
+
+  // Statistici
+  occurrenceCount Int      @default(1)
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+  violationIds    String[] // IDs ale violărilor care l-au format
+
+  // Răspuns automatic
+  autoBlock Boolean @default(false) // activat după threshold
+  threshold Int     @default(3) // de câte ori trebuie detectat înainte de autoBlock
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, patternType, patternKey])
+  @@index([isActive, autoBlock])
+  @@map("immune_patterns")
+}
+
+enum BoundaryRuleType {
+  MORAL_CORE // violează principiile morale (CÂMP, Hawkins <200)
+  SCOPE_VIOLATION // agent acționează în afara competențelor
+  CONSISTENCY // contradicție cu decizii/politici existente
+  DATA_INTEGRITY // date corupte, format invalid, valori imposibile
+  PRIVACY // GDPR, date personale, pseudonimizare
+}
+
+enum BoundarySeverity {
+  CRITICAL // blocare imediată, escalare Owner
+  HIGH // blocare, notificare
+  MEDIUM // avertisment, log
+  LOW // doar log
+}
+
+enum BoundaryAction {
+  BLOCK // oprește acțiunea
+  QUARANTINE // izolează pentru review
+  WARN // permite dar avertizează
+  LOG // doar înregistrează
+}
+
+enum QuarantineStatus {
+  QUARANTINED // izolat, în așteptare review
+  RELEASED // Owner a aprobat
+  DESTROYED // Owner a respins definitiv
+  AUTO_RELEASED // pattern recunoscut ca false positive
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRATUL E — METABOLISM & LIFECYCLE (resurse + faze)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// E1: Metering — cost energetic per agent/decizie (API calls, DB, timp)
+// E2: Resource market — agenți negociază capacitate la load shift
+// E3: Lifecycle phases — business-ul trece prin faze cu comportament diferit
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ResourceUsage {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Cine consumă
+  agentRole  String
+  actionType String // "cycle" | "evaluation" | "brainstorm" | "kb_query" | "client_chat"
+
+  // Ce consumă
+  llmTokensIn  Int   @default(0)
+  llmTokensOut Int   @default(0)
+  llmCostUsd   Float @default(0)
+  dbQueries    Int   @default(0)
+  durationMs   Int   @default(0)
+
+  // Context
+  triggerSource String? // objectiveId, patchId, escalationId
+  metadata      Json? // detalii suplimentare
+
+  measuredAt DateTime @default(now())
+
+  @@index([businessId, agentRole, measuredAt])
+  @@index([businessId, measuredAt])
+  @@index([agentRole, actionType])
+  @@map("resource_usage")
+}
+
+model ResourceBudget {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Cine primește buget
+  agentRole String
+
+  // Limite per perioadă (24h rolling)
+  maxLlmTokensPerDay  Int   @default(100000)
+  maxLlmCostPerDay    Float @default(5.0) // USD
+  maxCyclesPerDay     Int   @default(50)
+  maxDurationMsPerDay Int   @default(300000) // 5 min
+
+  // Stare curentă (rolling, recalculat periodic)
+  usedLlmTokens  Int      @default(0)
+  usedLlmCost    Float    @default(0)
+  usedCycles     Int      @default(0)
+  usedDurationMs Int      @default(0)
+  lastResetAt    DateTime @default(now())
+
+  // Prioritate (influențează alocarea la negociere)
+  priority Int @default(50) // 0-100
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, agentRole])
+  @@index([businessId, isActive])
+  @@map("resource_budgets")
+}
+
+model ResourceNegotiation {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Cerere
+  requestorRole   String // agentul care cere mai mult
+  donorRole       String? // agentul care cedează (null = pool comun)
+  resourceType    String // "llm_tokens" | "cycles" | "duration"
+  amountRequested Int
+  amountGranted   Int     @default(0)
+
+  // Motivație
+  reason      String  @db.Text
+  objectiveId String? // legat de un obiectiv
+
+  // Status
+  status    NegotiationStatus @default(PENDING)
+  decidedBy String? // "auto" | "owner" | agentRole
+  decidedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([businessId, status])
+  @@index([requestorRole])
+  @@map("resource_negotiations")
+}
+
+enum NegotiationStatus {
+  PENDING // în așteptare
+  GRANTED // aprobat (parțial sau total)
+  DENIED // respins
+  AUTO_GRANTED // aprobat automat (sub threshold)
+  EXPIRED // timeout fără decizie
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRATUL F — EVOLUTION (pruning + propagare selectivă)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// F1: KB pruning — entries cu usage 0 pe 90 zile → review → Owner aprobă
+// F2: Selective propagation — comportament de succes → propagat la agenți similari
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model PruneCandidate {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Ce e candidat la pruning
+  entityType  String // "kb_entry" | "brainstorm_idea" | "boundary_rule" | "homeostatic_target"
+  entityId    String
+  entityTitle String // snapshot titlu pentru review fără join
+
+  // De ce
+  reason  PruneReason
+  score   Float // 0-100, mai mare = mai candidat la ștergere
+  metrics Json // { usageCount, daysSinceUsed, successRate, ... }
+
+  // Status
+  status     PruneStatus @default(FLAGGED)
+  reviewedBy String?
+  reviewedAt DateTime?
+  reviewNote String?     @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([businessId, status])
+  @@index([status, score])
+  @@map("prune_candidates")
+}
+
+model PropagationEvent {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Ce se propagă
+  sourceRole String // agentul cu comportamentul de succes
+  sourceType String // "kb_entry" | "behavior_patch" | "action_pattern"
+  sourceId   String // ID-ul entității sursă
+
+  // Către cine
+  targetRoles     String[] // agenții care primesc
+  propagationType PropagationType
+
+  // Motivație (bazat pe outcome, nu pe broadcast)
+  outcomeId      String? // ServiceOutcome care a demonstrat succesul
+  successMetric  String // ce metric a fost îmbunătățit
+  improvementPct Float // cu cât %
+
+  // Status
+  status      PropagationStatus @default(PROPOSED)
+  appliedAt   DateTime?
+  confirmedAt DateTime?
+  revertedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([businessId, status])
+  @@index([sourceRole])
+  @@map("propagation_events")
+}
+
+enum PruneReason {
+  UNUSED_90D // 0 usage în 90 zile
+  LOW_SUCCESS_RATE // successRate < 20%
+  SUPERSEDED // înlocuit de entry mai nou cu aceleași tags
+  CONTRADICTED // contrazis de entries mai noi
+  EXPIRED // date expirate (ex: legislație veche)
+}
+
+enum PruneStatus {
+  FLAGGED // identificat automat
+  APPROVED // Owner a aprobat ștergerea
+  KEPT // Owner a decis să păstreze
+  PRUNED // șters efectiv
+  DEFERRED // amânat pentru review ulterior
+}
+
+enum PropagationType {
+  KB_CLONE // entry KB clonat la alți agenți
+  PATCH_TEMPLATE // behavior patch reutilizat
+  PATTERN_SHARE // pattern de acțiune documentat și partajat
+}
+
+enum PropagationStatus {
+  PROPOSED // propus pe baza outcome
+  APPROVED // Owner aprobat
+  APPLIED // propagat efectiv
+  CONFIRMED // target agents confirmă utilitatea
+  REVERTED // revertat — nu a funcționat la target
+  REJECTED // Owner respins
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRATUL G — RHYTHM & META (cadență + auto-observare)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// G1: Service Outcomes — metric singular de rezultat real per serviciu
+// G2: Wild Cards — prompt ieșit din rutină, 1x/săpt per agent
+// G3: Rituals — retrospectivă, post-incident review, review lunar
+// G4: Meta-metrics — OODA timing, KB velocity, theme-to-action latency
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ServiceOutcome {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Ce serviciu
+  serviceCode String // ex: "b2b_s1_evaluare", "b2c_card1", "b2b_s3_calitate"
+  serviceName String
+
+  // Metric singular de rezultat real
+  metricName   String // ex: "client_retention_6m", "evaluation_accuracy_vs_expert"
+  metricUnit   String // ex: "%", "score", "days"
+  targetValue  Float // ce vrem să atingem
+  currentValue Float? // ultimă măsurătoare
+
+  // Cum colectăm
+  collectionMethod    String // "client_feedback" | "automated" | "manual_review" | "a_b_test"
+  collectionFrequency String // "per_session" | "monthly" | "quarterly"
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  measurements OutcomeMeasurement[]
+
+  @@unique([businessId, serviceCode])
+  @@index([businessId, isActive])
+  @@map("service_outcomes")
+}
+
+model OutcomeMeasurement {
+  id        String         @id @default(cuid())
+  outcomeId String
+  outcome   ServiceOutcome @relation(fields: [outcomeId], references: [id])
+
+  // Măsurătoare
+  value      Float
+  measuredAt DateTime @default(now())
+  source     String // "client_survey" | "system_auto" | "owner_manual" | "a_b_result"
+  notes      String?  @db.Text
+
+  // Context
+  tenantId  String? // per client (dacă relevant)
+  sessionId String? // per sesiune (dacă relevant)
+
+  createdAt DateTime @default(now())
+
+  @@index([outcomeId, measuredAt])
+  @@map("outcome_measurements")
+}
+
+model WildCard {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Ținta
+  targetRole String // agentul care primește provocarea
+  weekOf     DateTime // săptămâna (luni) — un wild card per agent per săptămână
+
+  // Provocarea
+  prompt     String       @db.Text // provocarea generată
+  promptType WildCardType
+
+  // Răspunsul
+  response    String?   @db.Text
+  respondedAt DateTime?
+
+  // Evaluarea COG
+  cogReview        String? @db.Text
+  cogScore         Int? // 0-100 (originalitate + fezabilitate)
+  promotedToIdea   Boolean @default(false) // dacă devine BrainstormIdea
+  brainstormIdeaId String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([targetRole, weekOf])
+  @@index([businessId, weekOf])
+  @@map("wild_cards")
+}
+
+model Ritual {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Identitate
+  code        String // slug unic per business
+  name        String
+  description String?    @db.Text
+  ritualType  RitualType
+
+  // Programare
+  cronExpression String // ex: "0 17 * * 5" (vineri 17:00)
+  timezone       String @default("Europe/Bucharest")
+
+  // Template
+  templatePrompt   String   @db.Text // prompt-ul care se execută
+  participantRoles String[] // agenții care participă
+  outputTarget     String // "ntfy" | "kb" | "brainstorm" | "report"
+
+  // Stare
+  lastRunAt     DateTime?
+  lastRunStatus String? // "success" | "failed" | "skipped"
+  runCount      Int       @default(0)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, code])
+  @@index([isActive, ritualType])
+  @@map("rituals")
+}
+
+model AdaptationMetric {
+  id         String @id @default(cuid())
+  businessId String
+
+  // Ce se măsoară
+  metricCode String // "ooda_loop_time" | "kb_change_velocity" | "theme_to_action_latency" | "patch_effectiveness"
+  metricName String
+
+  // Valoare
+  value      Float
+  unit       String // "hours" | "entries/day" | "ms" | "%"
+  measuredAt DateTime @default(now())
+
+  // Context
+  windowDays Int   @default(7) // fereastră de calcul
+  breakdown  Json? // detalii per agent/serviciu
+
+  createdAt DateTime @default(now())
+
+  @@index([businessId, metricCode, measuredAt])
+  @@index([measuredAt])
+  @@map("adaptation_metrics")
+}
+
+enum WildCardType {
+  CONTRARIAN // "Ce-ar fi dacă faci exact opusul a ce faci acum?"
+  CROSS_DOMAIN // "Cum ar rezolva problema X un [alt domeniu]?"
+  FUTURE_SELF // "Cum va arăta munca ta peste 2 ani? Ce faci acum care nu va mai fi relevant?"
+  CONSTRAINT // "Dacă ai avea doar 10% din resurse, ce ai păstra?"
+  ABSURD // "Cel mai nebunesc lucru pe care l-ai putea propune?"
+}
+
+enum RitualType {
+  RETROSPECTIVE // review săptămânal
+  POST_INCIDENT // post-mortem după incident
+  STRATEGIC // review lunar strategic
+  CELEBRATION // celebrare outcomes atinse
+  CALIBRATION // recalibrare praguri + reguli
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SALES PIPELINE — Lead tracking B2B
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Lead {
+  id           String  @id @default(cuid())
+  companyName  String
+  contactName  String
+  contactEmail String
+  contactRole  String?
+  contactPhone String?
+  companySize  String? // "10-50", "50-200", "200-500", "500+"
+  industry     String?
+  website      String?
+
+  // Pipeline
+  stage  LeadStage  @default(NEW)
+  source LeadSource @default(MANUAL)
+  score  Int        @default(0) // BANT score 0-100
+
+  // BANT qualification
+  bantBudget    Boolean?
+  bantAuthority Boolean?
+  bantNeed      Boolean?
+  bantTimeline  Boolean?
+  bantNotes     String?  @db.Text
+
+  // Assignment
+  assignedAgent String  @default("SOA")
+  tenantId      String? // NULL until CLOSED_WON
+  threadId      String? // ConversationThread link
+
+  // Email sequence tracking
+  lastEmailSentAt   DateTime?
+  emailSequenceStep Int       @default(0) // 0=none, 1=outreach, 2=followup1, 3=followup2
+  nextFollowUpAt    DateTime?
+
+  // Pipeline timestamps
+  qualifiedAt    DateTime?
+  demoAt         DateTime?
+  proposalSentAt DateTime?
+  closedAt       DateTime?
+  lostReason     String?
+  notes          String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage])
+  @@index([contactEmail])
+  @@index([nextFollowUpAt])
+  @@index([assignedAgent])
+  @@map("leads")
+}
+
+enum LeadStage {
+  NEW
+  QUALIFIED
+  DEMO_SCHEDULED
+  DEMO_DONE
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  ONBOARDING
+  ACTIVE
+  CLOSED_LOST
+}
+
+enum LeadSource {
+  OUTBOUND_EMAIL
+  INBOUND_WEBSITE
+  REFERRAL
+  LINKEDIN
+  EVENT
+  MANUAL
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// B2C — Platforma de evoluție personală
+// Pseudonim default (GDPR by design), profil legat de alias nu identitate reală
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Client B2C — cont anonim bazat pe pseudonim
+model B2CUser {
+  id            String        @id @default(cuid())
+  alias         String        @unique // "numele de crisalidă"
+  email         String        @unique // alias@jobgrade.ro (generat automat)
+  passwordHash  String?
+  age           Int?
+  gender        Gender?
+  lastJobTitle  String? // ultimul job avut
+  hasCurrentJob Boolean? // job curent da/nu
+  locale        String        @default("ro")
+  status        B2CUserStatus @default(ONBOARDING)
+  lastLoginAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // GDPR Art.17 — soft delete (VUL-027)
+  deletedAt          DateTime? // marcaj ștergere soft
+  deleteScheduledFor DateTime? // data hard delete (deletedAt + 30 zile)
+
+  // Profil evolutiv
+  profile        B2CProfile?
+  // Carduri și progres
+  cards          B2CCardProgress[]
+  // Sesiuni dialog
+  sessions       B2CSession[]
+  // Credite
+  creditBalance  B2CCreditBalance?
+  creditTxns     B2CCreditTransaction[]
+  // Comunități
+  memberships    B2CCommunityMember[]
+  // Teste parcurse
+  testResults    B2CTestResult[]
+  // Traseu evolutiv
+  evolutionLog   B2CEvolutionEntry[]
+  // Jurnal
+  journalEntries B2CJournalEntry[]
+
+  @@index([deleteScheduledFor])
+  @@index([status])
+  @@map("b2c_users")
+}
+
+/// Profilul evolutiv — agregat din toate cele 5 fluxuri de profilare
+model B2CProfile {
+  id     String  @id @default(cuid())
+  userId String  @unique
+  user   B2CUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Herrmann HBDI — cadranele (0-100 fiecare)
+  herrmannA Float? // Analitic (stânga-sus, albastru)
+  herrmannB Float? // Secvențial (stânga-jos, verde)
+  herrmannC Float? // Interpersonal (dreapta-jos, roșu)
+  herrmannD Float? // Imaginativ (dreapta-sus, galben)
+
+  // Hawkins — nivel estimat pe scala conștiinței (observat, nu declarat)
+  hawkinsEstimate   Int? // 0-1000
+  hawkinsConfidence Float? // 0-1, cât de sigur e estimarea
+
+  // VIA Character Strengths — top 5 signature + bottom 3 necultivate
+  viaSignature   String[] // ex: ["curiosity", "honesty", "kindness"]
+  viaUndeveloped String[] // ex: ["prudence", "self-regulation"]
+
+  // Coordonata spirală globală (cel mai avansat nivel atins pe orice card)
+  spiralLevel Int @default(1) // 1=crisalidă, 2=fluture, 3=zbor, 4=salt
+  spiralStage Int @default(1) // etapa competenței 1-4
+
+  // Profilare din dialog (insights agregate)
+  dialogInsights Json? // structured insights din conversații
+  // Profilare din teste externe (licențiate)
+  externalTests  Json? // rezultate din teste parteneri, cu referință licență
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("b2c_profiles")
+}
+
+/// Progresul clientului pe fiecare card
+model B2CCardProgress {
+  id     String  @id @default(cuid())
+  userId String
+  user   B2CUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card   B2CCard // cardul (CARD_1..CARD_6)
+
+  status B2CCardStatus  @default(LOCKED) // LOCKED, ACTIVE, COMPLETED
+  // Spirala per card
+  phase  B2CSpiralPhase @default(CHRYSALIS) // faza pe acest card
+  stage  Int            @default(1) // etapa competenței 1-4
+
+  // Chestionar completat la activare card
+  questionnaireData Json? // răspunsurile la mini-chestionarul cardului
+
+  // Comunitate
+  communityReady     Boolean   @default(false) // agentul evaluează readiness
+  communityGrantedAt DateTime?
+
+  // CV (doar Card 3)
+  cvFileUrl       String? // S3/Blob URL
+  cvExtractedData Json? // extracție AI din CV → format fișă post
+
+  activatedAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, card])
+  @@index([userId, status])
+  @@map("b2c_card_progress")
+}
+
+/// Sesiune de dialog B2C — o conversație cu un agent pe un card
+model B2CSession {
+  id        String  @id @default(cuid())
+  userId    String
+  user      B2CUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card      B2CCard // pe ce card se desfășoară
+  agentRole String // CALAUZA, PROFILER, CAREER_COUNSELOR, etc.
+
+  // Jaloane sesiune (J0-J7)
+  milestones Json? // array de { milestone: "J0".."J7", reachedAt: timestamp }
+
+  // Context invizibil — ce a primit agentul la start
+  contextSnapshot Json? // snapshot profil + interacțiuni relevante
+
+  status    B2CSessionStatus @default(ACTIVE)
+  startedAt DateTime         @default(now())
+  endedAt   DateTime?
+
+  // Link la ConversationThread (reutilizăm infrastructure existentă)
+  threadId String?
+
+  @@index([userId, card])
+  @@index([userId, agentRole])
+  @@map("b2c_sessions")
+}
+
+/// Rezultat test — din L2 intern sau de la parteneri externi
+model B2CTestResult {
+  id       String        @id @default(cuid())
+  userId   String
+  user     B2CUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testType B2CTestType // HERRMANN, VIA, HAWKINS, EXTERNAL_LICENSED
+  testName String // numele testului (ex: "HBDI Full", "VIA-IS 120", "NEO-PI-R")
+  source   B2CTestSource // INTERNAL_L2, EXTERNAL_PARTNER
+
+  // Rezultate
+  rawScore  Json // scorul brut complet
+  normScore Json? // scorul normalizat/interpretat
+  scoring   Json? // metoda de scorare aplicată
+
+  // Licență (pentru teste externe)
+  partnerId  String? // identificator partener licențiat
+  licenseRef String? // referință contract/licență
+
+  // Supervizare
+  supervisedBy String? // psiholog CPR care supervizează
+
+  administeredAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([userId, testType])
+  @@map("b2c_test_results")
+}
+
+/// Intrare în traseul evolutiv — fiecare moment semnificativ
+model B2CEvolutionEntry {
+  id     String           @id @default(cuid())
+  userId String
+  user   B2CUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card   B2CCard // pe ce card s-a întâmplat
+  type   B2CEvolutionType // ce tip de moment
+
+  // Detalii
+  title       String // titlu scurt vizibil clientului
+  description String?        @db.Text // descriere extinsă
+  phase       B2CSpiralPhase // faza la momentul evenimentului
+  stage       Int // etapa competenței
+
+  // Metadata
+  sessionId String? // sesiunea în care s-a întâmplat
+  agentRole String? // agentul care a observat
+  metadata  Json? // date suplimentare (scor, detalii test, etc.)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, card, createdAt])
+  @@index([userId, createdAt])
+  @@map("b2c_evolution_entries")
+}
+
+/// Comunitate B2C — una per card, acces condiționat
+model B2CCommunity {
+  id          String  @id @default(cuid())
+  card        B2CCard @unique // o singură comunitate per card
+  name        String // ex: "Drumul către mine — Comunitatea"
+  description String? @db.Text
+  isActive    Boolean @default(true)
+
+  members  B2CCommunityMember[]
+  messages B2CCommunityMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("b2c_communities")
+}
+
+/// Membru comunitate — prin pseudonim, acces condiționat de agent
+model B2CCommunityMember {
+  id          String       @id @default(cuid())
+  communityId String
+  community   B2CCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String
+  user        B2CUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Acces condiționat
+  grantedBy   String // agentRole care a acordat accesul
+  grantReason String? // motivul acordării
+
+  role     B2CCommunityRole @default(MEMBER)
+  joinedAt DateTime         @default(now())
+
+  @@unique([communityId, userId])
+  @@map("b2c_community_members")
+}
+
+/// Mesaj în comunitate — prin pseudonim
+model B2CCommunityMessage {
+  id          String       @id @default(cuid())
+  communityId String
+  community   B2CCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  authorId    String // B2CUser.id (afișat ca alias, nu identitate)
+  content     String       @db.Text
+  metadata    Json? // flaguri moderare, etc.
+
+  // Moderare
+  flaggedBy  String? // SAFETY_MONITOR, agent, etc.
+  flagReason String?
+  isVisible  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([communityId, createdAt])
+  @@map("b2c_community_messages")
+}
+
+/// Credite B2C — separate de B2B
+model B2CCreditBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      B2CUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("b2c_credit_balances")
+}
+
+/// Tranzacții credite B2C
+model B2CCreditTransaction {
+  id          String           @id @default(cuid())
+  userId      String
+  user        B2CUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        B2CCreditTxnType
+  amount      Int // pozitiv = adăugare, negativ = consum
+  description String
+  card        B2CCard? // cardul pentru care s-au consumat creditele
+  sourceId    String? // referință Stripe payment, etc.
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@map("b2c_credit_transactions")
+}
+
+/// Intrare de jurnal — scrisă de client, adaptată la profilul cognitiv
+model B2CJournalEntry {
+  id     String  @id @default(cuid())
+  userId String
+  user   B2CUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card   B2CCard // pe ce card a fost generat prompt-ul
+
+  // Prompt-ul adaptat (ce a primit clientul)
+  promptText       String  @db.Text
+  // Răspunsul clientului
+  content          String? @db.Text
+  // Durata sugerată vs. reală
+  suggestedMinutes Int
+  actualMinutes    Int?
+
+  // Calibrare cognitivă (snapshot la momentul generării)
+  herrmannDominance String? // A, B, C, D, AB, CD, etc.
+  dosageLevel       String? // SEED, SPROUT, GROWING, DEEPENING, FULL
+  spiralPhase       B2CSpiralPhase @default(CHRYSALIS)
+  competenceStage   Int            @default(1)
+
+  // Scop intern (invizibil clientului)
+  internalPurpose String?
+  targetDimension String? // dimensiunea din Evolution Engine
+
+  status    B2CJournalStatus @default(PROMPT_SENT)
+  createdAt DateTime         @default(now())
+  writtenAt DateTime? // când a scris clientul
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, card, createdAt])
+  @@index([userId, status])
+  @@map("b2c_journal_entries")
+}
+
+enum B2CJournalStatus {
+  PROMPT_SENT // prompt-ul a fost trimis, clientul nu a scris încă
+  WRITING // clientul a început să scrie
+  COMPLETED // clientul a terminat
+  SKIPPED // clientul a sărit (nu a vrut să scrie — informativ, nu punitiv)
+}
+
+// ── B2C Enums ────────────────────────────────────────────────────────────────
+
+enum B2CUserStatus {
+  ONBOARDING // alias creat, nu a terminat onboarding-ul
+  ACTIVE // cont activ, interacționează
+  INACTIVE // nu s-a logat >60 zile
+  SUSPENDED // suspendat (incident, plată, etc.)
+  DELETED // marcat pentru ștergere GDPR (soft delete, 30 zile grație)
+}
+
+enum B2CCard {
+  CARD_1 // "Drumul către mine" — Călăuza (nucleu)
+  CARD_2 // "Eu și ceilalți, adică NOI" — Consilier Dezvoltare Personală (relații)
+  CARD_3 // "Îmi asum un rol profesional" — Consilier Carieră (profesie)
+  CARD_4 // "Oameni de succes / Oameni de valoare" — Coach (tranziție)
+  CARD_5 // "Eu și antreprenoriatul transformațional" — Coach (integrare)
+  CARD_6 // "Spune-mi despre mine" — Profiler (transversal)
+}
+
+enum B2CCardStatus {
+  LOCKED // invizibil sau gri, neactivat
+  ACTIVE // activat (gratuit sau plătit)
+  COMPLETED // parcurs complet (rare — spirala e continuă)
+}
+
+enum B2CSpiralPhase {
+  CHRYSALIS // Crisalidă — "Sunt cine cred că sunt"
+  BUTTERFLY // Fluture — "Văd că sunt mai mult decât credeam"
+  FLIGHT // Zbor — "Sunt cine sunt, fără mască"
+  LEAP // Salt — "Vreau să duc asta mai departe"
+}
+
+enum B2CSessionStatus {
+  ACTIVE // sesiune în desfășurare
+  PAUSED // client a pus pauză (revine)
+  COMPLETED // sesiune încheiată natural
+  ESCALATED // escaladată la SAFETY_MONITOR
+}
+
+enum B2CEvolutionType {
+  MILESTONE // jalon atins pe spirală (J0-J7)
+  INSIGHT // moment de claritate / revelație
+  REGRESSION // regresie temporară (normală pe drum)
+  TRANSITION // tranziție între carduri
+  HANDOFF // predare ștafetă către alt agent/călăuză umană
+  TEST_RESULT // rezultat test integrat în profil
+  COMMUNITY // acces acordat la comunitate
+}
+
+enum B2CTestType {
+  HERRMANN // HBDI — profilul cognitiv
+  VIA // Character Strengths
+  HAWKINS // Scala conștiinței (estimat)
+  EXTERNAL_LICENSED // test extern, licențiat de la partener
+}
+
+enum B2CTestSource {
+  INTERNAL_L2 // instrumente din echipa de resurse suport
+  EXTERNAL_PARTNER // teste licențiate de la parteneri terți
+  OWNER_PROVIDED // teste încărcate de Owner cu metodă de scorare
+}
+
+enum B2CCreditTxnType {
+  PURCHASE // achiziție credite
+  CARD_ACTIVATION // consum la activare card
+  SERVICE // consum serviciu plătit (raport, consiliere, etc.)
+  REFUND // rambursare
+}
+
+enum B2CCommunityRole {
+  MEMBER // membru standard
+  MENTOR // fluture care ghidează crisalide
+  MODERATOR // moderator (agent AI sau uman)
+}
+
+// ── System Config (runtime toggles, no redeploy needed) ──────────────────────
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  label     String?
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+// ─────────────────────────────────────────
+// PRICING & TELEMETRY (16.04.2026)
+// Algoritm: cost real → cost acoperitor → BNR+buffer → marjă
+// Vezi: project_pricing_methodology.md
+// Valorile concrete (cost, marjă, buffer) populate de COG după
+// răspunsul la cele 8 întrebări strategice.
+// ─────────────────────────────────────────
+
+model ProviderCost {
+  id              String   @id @default(cuid())
+  provider        String // "anthropic", "vercel", "neon", "resend", etc.
+  resourceType    String // "haiku-4-5-input-tokens", "vercel-pro-monthly", "neon-launch-monthly", etc.
+  unitMeasure     String // "1M tokens", "1 month subscription", "1 client/month", "1 minute compute"
+  costCategory    String   @default("OPEX_PER_EXECUTION")
+  // CAPEX: lunar fix indiferent de volum (plan Vercel Pro, Neon Launch, salarii, marketing)
+  // OPEX_PER_CLIENT: incremental per cont nou activat (storage profil, backup, notificări baseline)
+  // OPEX_PER_EXECUTION: variabil per rulare/sesiune (tokens AI, compute, email, blob)
+  currentCostUSD  Decimal  @db.Decimal(20, 8) // preț real curent (informativ)
+  coveringCostUSD Decimal  @db.Decimal(20, 8) // preț acoperitor (folosit la calcul — worst case)
+  notes           String?  @db.Text // de ce e ales acest covering
+  effectiveFrom   DateTime @default(now())
+  updatedBy       String? // OWNER, COG, AUTOMATED_JOB
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, resourceType, effectiveFrom])
+  @@index([provider, resourceType])
+  @@index([costCategory])
+  @@map("provider_costs")
+}
+
+model AIOperationTier {
+  id                       String   @id @default(cuid())
+  operationType            String   @unique // "intent-classification", "report-generation-je", etc.
+  description              String?  @db.Text
+  currentModel             String // "claude-haiku-4-5-20251001"
+  coveringModel            String // "claude-opus-4-6" (folosit la calcul cost)
+  tokenAmplificationFactor Decimal  @default(1.0) @db.Decimal(5, 2) // 1.0-2.0 (Opus poate genera mai mult)
+  notes                    String?  @db.Text
+  effectiveFrom            DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("ai_operation_tiers")
+}
+
+model ServiceUsageLog {
+  id               String  @id @default(cuid())
+  tenantId         String
+  userId           String?
+  serviceCode      String // ID serviciu (ex: "je-evaluate", "consultant-hr-chat")
+  executionVariant String  @default("AUTO") // "AUTO" | "HYBRID_AI_MEDIATED" | "HYBRID_HUMAN_MEDIATED"
+  executionId      String? // ID execuție (sesiune chat, raport, etc.)
+  operationType    String? // mapare la AIOperationTier (dacă e operație AI)
+
+  // Telemetry brut
+  modelUsed      String? // model AI efectiv folosit
+  tokensInput    Int     @default(0)
+  tokensOutput   Int     @default(0)
+  computeMs      Int     @default(0)
+  dbReadBytes    Int     @default(0)
+  dbWriteBytes   Int     @default(0)
+  bandwidthBytes Int     @default(0)
+  emailsSent     Int     @default(0)
+  blobBytes      Int     @default(0)
+  humanMinutes   Decimal @default(0) @db.Decimal(8, 2) // pentru servicii mixte cu uman
+
+  // Cost calculat
+  costRealRON     Decimal? @db.Decimal(12, 4) // costul real (informativ)
+  costCoveringRON Decimal? @db.Decimal(12, 4) // costul acoperitor (folosit pentru margin)
+  creditsCharged  Decimal? @db.Decimal(10, 4) // credite debitate efectiv
+
+  metadata  Json? // payload suplimentar (ex: durata sesiune chat)
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([serviceCode, createdAt])
+  @@index([userId, createdAt])
+  @@map("service_usage_logs")
+}
+
+model ServicePricing {
+  id               String   @id @default(cuid())
+  serviceCode      String // "je-evaluate", "pay-gap-report", "consultant-hr-chat", etc.
+  serviceName      String
+  serviceType      String // "REPORT" | "ASSISTANCE" | "PROCESS"
+  // Variantă execuție — același serviciu poate avea 1-3 variante cu cost și
+  // preț distinct (AUTO, HYBRID_AI_MEDIATED, HYBRID_HUMAN_MEDIATED).
+  // Folosit de servicii de tip evaluare (JE, evaluare comună, mediere decalaj).
+  executionVariant String   @default("AUTO") // "AUTO" | "HYBRID_AI_MEDIATED" | "HYBRID_HUMAN_MEDIATED"
+  unitMeasure      String // "rulare", "minut", "intrebare", "sesiune", "angajat", "pozitie"
+  // Tarifare mixtă CAPEX+OPEX:
+  // costInCredits = baza fixă (componenta CAPEX — setup, framework, infrastructură)
+  // perUnitCredits = variabila per unitate (componenta OPEX — scalează cu volumul)
+  // Formula: total = costInCredits + perUnitCredits × cantitate
+  // Dacă costInCredits = 0 → pur OPEX (doar per unitate)
+  // Dacă perUnitCredits = 0/null → preț fix per proiect (pur CAPEX sau preț flat)
+  costInCredits    Decimal  @db.Decimal(10, 4) // baza fixă (credite)
+  perUnitCredits   Decimal? @db.Decimal(10, 4) // variabil per unitate (credite) — null = preț fix
+  perUnitLabel     String? // denumire unitate variabilă (ex: "angajat", "poziție") — pt afișare
+  marginMultiplier Decimal? @db.Decimal(5, 2) // factor multiplicare cost intern → preț (informativ)
+  chatTier         String? // "FAMILIARIZARE" | "CONSULTANTA" (doar pentru ASSISTANCE)
+  isFreeTier       Boolean  @default(false)
+  freeTierLimit    Int?
+  freeTierUnit     String?
+  effectiveFrom    DateTime @default(now())
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([serviceCode, executionVariant, chatTier, effectiveFrom])
+  @@index([serviceCode])
+  @@index([serviceCode, executionVariant])
+  @@map("service_pricing")
+}
+
+model CreditValue {
+  id                  String   @id @default(cuid())
+  bnrUsdRonRate       Decimal  @db.Decimal(10, 4) // cursul BNR USD→RON la data efectiva
+  bnrEurRonRate       Decimal? @db.Decimal(10, 4) // cursul BNR EUR→RON (pentru furnizori EUR)
+  bufferPercent       Decimal  @default(5.0) @db.Decimal(5, 2) // buffer peste BNR (decizie COG)
+  effectiveUsdRonRate Decimal  @db.Decimal(10, 4) // BNR × (1 + buffer/100) — folosit la conversie
+  valuePerCreditRON   Decimal  @db.Decimal(8, 4) // RON per 1 credit (decizie COG)
+  effectiveFrom       DateTime @default(now())
+  notes               String?  @db.Text
+  createdAt           DateTime @default(now())
+
+  @@map("credit_values")
+}
+
+// ─────────────────────────────────────────
+// ORGANISM INTELLIGENT — CRONURI INTELIGENTE
+// Arhitectura: threshold → KB-first → alignment → cost-gate → executor → learning → telemetry
+// ─────────────────────────────────────────
+
+model ExecutionTelemetry {
+  id                String   @id @default(cuid())
+  taskId            String?
+  agentRole         String
+  taskType          String?
+  modelUsed         String // "haiku" | "sonnet" | "opus"
+  tokensInput       Int      @default(0)
+  tokensOutput      Int      @default(0)
+  estimatedCostUSD  Float    @default(0)
+  kbHit             Boolean  @default(false)
+  kbSimilarityScore Float?
+  alignmentResult   String   @default("SKIPPED") // ALIGNED | UNCERTAIN | MISALIGNED | SKIPPED
+  alignmentLevel    Int? // 1-5 la ce nivel s-a rezolvat alinierea
+  thresholdPassed   Boolean  @default(true)
+  durationMs        Int      @default(0)
+  webSearchCount    Int      @default(0)
+  learningCreated   Boolean  @default(false)
+  isInternal        Boolean  @default(true) // true = consum organism, false = consum client
+  createdAt         DateTime @default(now())
+
+  @@index([agentRole, createdAt])
+  @@index([createdAt])
+  @@map("execution_telemetry")
+}
+
+model LearningArtifact {
+  id                 String    @id @default(cuid())
+  problemClass       String // clasificare problema (ex: "alignment-check", "kb-gap", "escalation-pattern")
+  rule               String    @db.Text // regula extrasa
+  example            String    @db.Text // exemplu concret
+  antiPattern        String?   @db.Text // ce NU trebuie facut
+  sourceEscalationId String? // task-ul care a generat artefactul
+  teacherRole        String // cine a produs artefactul (agentul care a rezolvat)
+  studentRole        String // cui i-a fost livrat (agentul care a escalat)
+  sourceType         String    @default("ESCALATION") // ESCALATION | POST_EXECUTION | EXTRAPOLATION
+  appliedCount       Int       @default(0) // de cate ori a fost aplicat cu succes
+  effectivenessScore Float     @default(0) // 0-1, creste cu fiecare aplicare reusita
+  expiresAt          DateTime? // expirare daca nu e folosit >90 zile
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([studentRole, problemClass])
+  @@index([teacherRole])
+  @@map("learning_artifacts")
+}
+
+model AgentBudget {
+  id                 String   @id @default(cuid())
+  agentRole          String   @unique
+  dailyLimitTokens   Int      @default(20000)
+  monthlyLimitTokens Int      @default(500000)
+  alertThreshold     Float    @default(0.8) // 80% din limita
+  currentDailyUsed   Int      @default(0)
+  currentMonthlyUsed Int      @default(0)
+  lastResetDaily     DateTime @default(now())
+  lastResetMonthly   DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("agent_budgets")
+}
+
+model AlignmentLog {
+  id              String   @id @default(cuid())
+  taskId          String?
+  agentRole       String
+  actionSummary   String   @db.Text // ce voia sa faca
+  level           Int // 1-5: la ce nivel s-a rezolvat
+  result          String // ALIGNED | UNCERTAIN | MISALIGNED | EXTRAPOLATED
+  resolvedBy      String? // agentRole care a rezolvat (daca escalat/extrapolat)
+  reasoning       String?  @db.Text // justificare
+  artifactCreated Boolean  @default(false) // a generat LearningArtifact
+  costTokens      Int      @default(0) // tokens consumate pentru verificare (0 la Nivel 1-3)
+  createdAt       DateTime @default(now())
+
+  @@index([agentRole, createdAt])
+  @@index([level, result])
+  @@map("alignment_logs")
+}

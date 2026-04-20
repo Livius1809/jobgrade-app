@@ -24,7 +24,7 @@ export default async function MasterReportPage() {
           Dosarul complet al organizației — toate straturile conform serviciilor active
         </p>
       </div>
-      <MasterReportWrapper data={data} initialTheme="sobru" />
+      <MasterReportWrapper data={data} initialTheme="sobru" isDemo={false} />
     </div>
   )
 }
