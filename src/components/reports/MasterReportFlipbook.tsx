@@ -11,6 +11,13 @@ const ClassCountSelector = dynamic(() => import("@/components/sessions/ClassCoun
 // ─── Tipuri ────────────────────────────────────────────────────────────────
 
 type Theme = "sobru" | "modern"
+type Density = "compact" | "normal" | "comfortable"
+
+const DENSITY_CONFIG: Record<Density, { label: string; pageClass: string; bodyScale: string; headingScale: string; spacing: string }> = {
+  compact: { label: "Compact", pageClass: "px-8 py-6", bodyScale: "text-sm", headingScale: "text-xl", spacing: "space-y-2" },
+  normal: { label: "Normal", pageClass: "px-12 py-10", bodyScale: "text-base", headingScale: "text-2xl", spacing: "space-y-4" },
+  comfortable: { label: "Confortabil", pageClass: "px-16 py-14", bodyScale: "text-lg", headingScale: "text-3xl", spacing: "space-y-6" },
+}
 
 interface Props {
   data: MasterReportData
@@ -37,9 +44,9 @@ const themes: Record<Theme, {
   separator: string
 }> = {
   sobru: {
-    heading: "text-slate-900 font-serif text-2xl font-bold",
-    subheading: "text-slate-700 font-serif text-base font-semibold",
-    body: "text-slate-600 text-sm leading-relaxed",
+    heading: "text-slate-900 font-serif text-3xl font-bold",
+    subheading: "text-slate-700 font-serif text-lg font-semibold",
+    body: "text-slate-600 text-base leading-relaxed",
     accent: "text-indigo-700",
     card: "border border-slate-200 rounded-lg p-5 bg-white",
     badge: "text-[11px] font-medium px-2.5 py-0.5 rounded",
@@ -51,9 +58,9 @@ const themes: Record<Theme, {
     separator: "border-slate-200",
   },
   modern: {
-    heading: "text-slate-900 text-2xl font-black tracking-tight",
-    subheading: "text-indigo-600 text-base font-bold",
-    body: "text-slate-600 text-sm leading-relaxed",
+    heading: "text-slate-900 text-3xl font-black tracking-tight",
+    subheading: "text-indigo-600 text-lg font-bold",
+    body: "text-slate-600 text-base leading-relaxed",
     accent: "text-indigo-500",
     card: "border border-indigo-100 rounded-xl p-5 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm",
     badge: "text-[11px] font-bold px-2.5 py-1 rounded-full",
@@ -92,17 +99,18 @@ function Separator() {
 
 // ─── Page wrapper — simulare pagină A4 ────────────────────────────────────
 
-function PageSheet({ children, id, pageNum, totalPages, banner }: {
+function PageSheet({ children, id, pageNum, totalPages, banner, densityClass = "px-12 py-10" }: {
   children: React.ReactNode
   id?: string
   pageNum?: number
   totalPages?: number
   banner?: string
+  densityClass?: string
 }) {
   return (
     <section
       id={id}
-      className="bg-white rounded-lg shadow-lg border border-slate-100 px-12 py-10 relative"
+      className={`bg-white rounded-lg shadow-lg border border-slate-100 ${densityClass} relative`}
       style={{ minHeight: "60vh", backgroundImage: "linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(/images/brand/paper-texture.png)", backgroundSize: "auto, 400px", backgroundRepeat: "no-repeat, repeat" }}
     >
       {banner && (
@@ -889,7 +897,9 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
 
 export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator, modifiedJE }: Props) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
+  const [density, setDensity] = useState<Density>("normal")
   const t = themes[theme]
+  const d = DENSITY_CONFIG[density]
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -913,6 +923,22 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
           >
             Modern
           </button>
+        </div>
+
+        {/* Selector densitate */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-500 font-medium">Afișare:</label>
+          {(["compact", "normal", "comfortable"] as Density[]).map(d => (
+            <button
+              key={d}
+              onClick={() => setDensity(d)}
+              className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                density === d ? "bg-slate-700 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              {DENSITY_CONFIG[d].label}
+            </button>
+          ))}
         </div>
 
         {/* Mini TOC navigation */}
@@ -941,7 +967,7 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
       </div>
 
       {/* Pagini — scroll vertical, fiecare ca o foaie separată */}
-      <div className="pb-16">
+      <div className={`pb-16 ${d.bodyScale}`}>
         <CoverSection data={data} t={t} />
         <Separator />
         <TOCSection data={data} t={t} />
