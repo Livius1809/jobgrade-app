@@ -362,9 +362,6 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
         </select>
       </div>
 
-      {/* Buton consilier — mereu vizibil */}
-      <CounselorButton />
-
       {/* Criterii grupate pe cele 4 legale — cu dropdown + descrieri */}
       <div className="space-y-3">
         {LEGAL_GROUPS.map(group => (
