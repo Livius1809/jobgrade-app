@@ -398,7 +398,7 @@ function JESection({ data, t, onOpenSimulator, modifiedJE }: { data: MasterRepor
 
         <div className={`mt-6 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
           <p className="text-xs text-slate-500">
-            <strong>Concluzie:</strong> Ierarhia reflectă complexitatea reală a fiecărui post, independent de
+            <strong>Concluzie:</strong> Ierarhia reflectă complexitatea estimată a fiecărui post pe baza criteriilor obiective aplicate, independent de
             persoana care îl ocupă. Acest clasament constituie fundamentul pe care se construiește
             structura salarială — clasele și treptele de salarizare se obțin într-o etapă ulterioară,
             după încărcarea statului de funcții și normalizarea seriei de scoruri și salarii.
@@ -476,8 +476,10 @@ function SalaryGradesSection({ data, t, readOnly = false }: { data: MasterReport
             complexitate similară și definește un interval salarial minim–maxim.
           </p>
           <p>
-            Conform <strong>Art. 4 alin. (4) din Directiva (UE) 2023/970</strong>, structurile de remunerare
-            trebuie să fie transparente și bazate pe criterii obiective. Treptele din cadrul fiecărei clase
+            Conform <strong>Art. 4 alin. (4)</strong> și <strong>Art. 6 din Directiva (UE) 2023/970</strong>,
+            structurile de remunerare trebuie să fie transparente și bazate pe criterii obiective,
+            iar angajatorul pune la dispoziția lucrătorilor criteriile utilizate pentru determinarea
+            nivelurilor de remunerare și a progresiei salariale. Treptele din cadrul fiecărei clase
             permit avansarea salarială corelată cu evoluția profesională — performanță, vechime, nivel de instruire.
           </p>
           <p className="text-sm text-indigo-600 font-medium bg-indigo-50 rounded-lg px-4 py-2 border border-indigo-100">
@@ -610,13 +612,14 @@ function PayGapSection({ data, t }: { data: MasterReportData; t: typeof themes.s
 
         <div className={`${t.body} mb-6 space-y-3`}>
           <p>
-            Analiza decalajului salarial a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>.
-            Comparația se face exclusiv între angajații de gen diferit care ocupă <strong>aceeași poziție</strong> și
-            lucrează cu <strong>aceeași normă de lucru</strong>.
+            Analiza decalajului de remunerare de gen a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>.
+            Comparația se face între lucrătorii de gen diferit care prestează <strong>aceeași muncă sau muncă
+            de valoare egală</strong> (conform Art. 3(1)(e) coroborat cu Art. 4), la <strong>aceeași normă de lucru</strong>.
           </p>
           <p>
-            Un decalaj de peste <strong>5%</strong> care nu poate fi justificat prin criterii obiective (vechime,
-            performanță) necesită documentare și eventual măsuri corective.
+            Un decalaj de peste <strong>5%</strong> care nu poate fi justificat prin criterii obiective și neutre
+            din perspectiva genului impune <strong>măsuri corective obligatorii</strong>, inclusiv efectuarea unei
+            evaluări comune a remunerării în cooperare cu reprezentanții lucrătorilor (Art. 10).
           </p>
         </div>
 
@@ -639,12 +642,30 @@ function PayGapSection({ data, t }: { data: MasterReportData; t: typeof themes.s
           ))}
         </div>
 
-        <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
-          <p className="text-xs text-slate-500">
-            <strong>Concluzie:</strong> Decalajele identificate au fost analizate și justificate pe baza
-            diferențelor obiective de complexitate, experiență și nivel ierarhic. Categoriile marcate
-            „ATENȚIE" necesită monitorizare periodică.
-          </p>
+        <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-2`}>
+          {pg.every(c => c.flag === "OK") ? (
+            <p className="text-xs text-emerald-700">
+              <strong>Concluzie:</strong> Nu au fost identificate decalaje semnificative de remunerare
+              de gen. Toate categoriile analizate se încadrează sub pragul de 5%.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500">
+                <strong>Concluzie:</strong> Au fost identificate {pg.filter(c => c.flag !== "OK").length} categorii
+                cu decalaje care necesită atenție.
+                {pg.some(c => c.flag === "SEMNIFICATIV") && (
+                  <span className="text-red-600 font-medium"> Categoriile marcate „SEMNIFICATIV" impun
+                  efectuarea unei evaluări comune conform Art. 10 al Directivei (UE) 2023/970.</span>
+                )}
+              </p>
+              {pg.some(c => c.flag === "ATENȚIE") && (
+                <p className="text-xs text-amber-600">
+                  Categoriile marcate „ATENȚIE" necesită monitorizare periodică și documentarea
+                  criteriilor obiective care justifică diferența.
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
     </PageSheet>
@@ -836,7 +857,7 @@ function AnnexInputsSection({ data, t }: { data: MasterReportData; t: typeof the
             </li>
             <li className="flex items-start gap-2">
               <span className="text-indigo-500 mt-0.5">④</span>
-              <span><strong>Analiza decalajelor</strong> — salariile au fost comparate F/M pe aceeași poziție și normă, conform Art. 9 din Directiva EU 2023/970</span>
+              <span><strong>Analiza decalajelor</strong> — salariile au fost comparate F/M pe categorii de muncă de valoare egală, la aceeași normă de lucru (Art. 9, Directiva 2023/970)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-indigo-500 mt-0.5">⑤</span>
@@ -850,7 +871,9 @@ function AnnexInputsSection({ data, t }: { data: MasterReportData; t: typeof the
           <p className={`${t.body} mt-3`}>
             Rezultatele au fost generate cu asistență AI și validate de echipa
             dumneavoastră înainte de finalizare. Metodologia este conformă cu standardele ILO și
-            cu cerințele Directivei (UE) 2023/970 privind transparența salarială.
+            cu principiile Directivei (UE) 2023/970 privind transparența salarială.
+            Toate salariile analizate sunt exprimate ca <strong>salariu brut lunar de încadrare</strong>,
+            normalizat la normă completă (8h).
           </p>
         </div>
       </div>
@@ -868,47 +891,59 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
           <ul className={`${t.body} mt-3 space-y-2`}>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">§</span>
-              <span><strong>Directiva (UE) 2023/970</strong> — privind consolidarea aplicării principiului egalității de remunerare între femei și bărbați pentru aceeași muncă sau pentru o muncă de aceeași valoare, prin transparență salarială</span>
+              <span><strong>Directiva (UE) 2023/970</strong> — privind consolidarea aplicării principiului egalității de remunerare între femei și bărbați pentru aceeași muncă sau pentru o muncă de aceeași valoare, prin transparență salarială (Art. 3, 4, 6, 9, 10)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">§</span>
-              <span><strong>Legea nr. 53/2003</strong> — Codul Muncii, republicat, cu modificările și completările ulterioare (Art. 159–163 privind salariul)</span>
+              <span><strong>Legea nr. 53/2003</strong> — Codul Muncii, republicat, cu modificările și completările ulterioare (Art. 6 alin. (2)-(3) — principiul „la muncă egală, salariu egal"; Art. 159–163 privind salariul)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">§</span>
-              <span><strong>OUG nr. 137/2000</strong> — privind prevenirea și sancționarea tuturor formelor de discriminare, republicată</span>
+              <span><strong>OUG nr. 137/2000</strong> — privind prevenirea și sancționarea tuturor formelor de discriminare, republicată (Art. 1, Art. 7 lit. (d))</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">§</span>
-              <span><strong>Legea nr. 202/2002</strong> — privind egalitatea de șanse și de tratament între femei și bărbați, republicată</span>
+              <span><strong>Legea nr. 202/2002</strong> — privind egalitatea de șanse și de tratament între femei și bărbați, republicată (Art. 8-9)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-slate-400">§</span>
+              <span><strong>Regulamentul (UE) 2016/679 (GDPR)</strong> — prelucrarea datelor salariale se realizează în temeiul Art. 6 alin. (1) lit. (f) — interes legitim al angajatorului pentru conformitatea cu legislația muncii</span>
             </li>
           </ul>
+          <p className="text-[11px] text-amber-600 mt-3 bg-amber-50 rounded px-3 py-2 border border-amber-100">
+            <strong>Notă:</strong> Directiva (UE) 2023/970 urmează a fi transpusă în legislația națională
+            până la 7 iunie 2026. Prezentul raport aplică anticipat principiile Directivei pentru a facilita
+            conformitatea la momentul transpunerii.
+          </p>
         </div>
         <div className={t.card}>
           <h3 className={t.subheading}>E. Metodologie</h3>
           <ul className={`${t.body} mt-3 space-y-2`}>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">•</span>
-              <span>Evaluare analitică bazată pe 6 criterii neutre din perspectiva genului (conform ILO, „Guide to gender-neutral job evaluation", 2008)</span>
+              <span>Evaluare analitică bazată pe 6 dimensiuni de evaluare, agregate în 4 criterii neutre din perspectiva genului conform Art. 3(1)(g) al Directivei (ILO, „Guide to gender-neutral job evaluation", 2008)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">•</span>
-              <span>Clase salariale cu progresie geometrică și trepte de salarizare (metodologie validată)</span>
+              <span>Clase salariale cu progresie geometrică și trepte de salarizare — metodologie bazată pe literatura de specialitate (Pitariu H.D., „Proiectarea fișelor de post", 2003)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">•</span>
-              <span>Calcul decalaj salarial conform Art. 9, Directiva (UE) 2023/970 — comparație pe categorii de muncă de valoare egală</span>
+              <span>Calcul decalaj de remunerare de gen conform Art. 9, Directiva (UE) 2023/970 — comparație pe categorii de lucrători care prestează muncă de valoare egală</span>
             </li>
           </ul>
         </div>
         <div className={t.card}>
           <h3 className={t.subheading}>F. Glosar</h3>
           <ul className={`${t.body} mt-3 space-y-2`}>
-            <li><strong>Clasă salarială</strong> — interval de punctaj care grupează posturi cu complexitate similară, cu limite salariale minim/maxim asociate</li>
+            <li><strong>Remunerare</strong> — salariul de bază plus orice alte avantaje plătite direct sau indirect de angajator (conform Art. 3(1)(a) Directiva 2023/970)</li>
+            <li><strong>Muncă de valoare egală</strong> — muncă evaluată ca având aceeași valoare conform criteriilor obiective și neutre din perspectiva genului (Art. 3(1)(e))</li>
+            <li><strong>Clasă salarială</strong> — instrument intern de structurare a remunerării; interval de punctaj care grupează posturi cu complexitate similară</li>
             <li><strong>Treaptă de salarizare</strong> — nivel salarial în cadrul unei clase; avansarea reflectă evoluția profesională (performanță, vechime, instruire)</li>
-            <li><strong>Scor de evaluare</strong> — punctajul total rezultat din evaluarea analitică pe cele 6 criterii</li>
-            <li><strong>Index de competitivitate</strong> — raportul dintre salariul intern și mediana de piață (P50)</li>
-            <li><strong>Pay gap</strong> — diferența procentuală dintre medianele salariale pe gen, calculată per categorie de muncă echivalentă</li>
+            <li><strong>Scor de evaluare</strong> — punctajul total rezultat din evaluarea analitică pe 6 dimensiuni agregate în 4 criterii legale</li>
+            <li><strong>Compa-ratio (Index de competitivitate)</strong> — raportul dintre salariul intern și mediana de piață (P50), exprimat procentual</li>
+            <li><strong>Decalaj de remunerare de gen (pay gap)</strong> — diferența procentuală dintre medianele salariale pe gen, calculată per categorie de muncă de valoare egală</li>
+            <li><strong>Normă de lucru</strong> — programul de lucru convenit (normă întreagă = 8h/zi); salariile sunt normalizate la normă completă pentru comparabilitate</li>
           </ul>
         </div>
       </div>
