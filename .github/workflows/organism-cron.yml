@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Detect dysfunctions (monitor role-activity)
+        run: |
+          curl -sf -m 60 \
+            "https://jobgrade.ro/api/v1/monitors/role-activity" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "monitor skipped"
+
       - name: Process signals (cron/signals)
         run: |
           curl -sf -m 60 \
