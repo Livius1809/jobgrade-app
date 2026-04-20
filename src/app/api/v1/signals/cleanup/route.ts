@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       SET "processedAt" = NOW()
       WHERE "processedAt" IS NULL
       AND ("category" NOT IN ('LEGAL_REG', 'COMPETITOR', 'MARKET_HR', 'TECH_AI')
-           OR "capturedAt" < NOW() - INTERVAL '3 days')
+           OR "capturedAt" < NOW() - INTERVAL '1 hour')
     `)
 
     return NextResponse.json({
