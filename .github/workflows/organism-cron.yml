@@ -34,3 +34,11 @@ jobs:
           curl -sf -m 120 \
             "https://jobgrade.ro/api/cron/retry" \
             -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "retry skipped"
+
+      - name: Evolution cycle (consciousness)
+        run: |
+          curl -sf -m 120 -X POST \
+            "https://jobgrade.ro/api/v1/evolution" \
+            -H "Content-Type: application/json" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
+            -d '{"context":"INTERNAL","subjectId":"system"}' || echo "evolution skipped"
