@@ -141,31 +141,40 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
       <div className={`${t.coverBg} rounded-lg -mx-12 -mt-10 px-12 pt-16 pb-16 mb-0 relative overflow-hidden`}
         style={{ backgroundImage: "url(/images/master/cover.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "soft-light" }}
       >
+        {/* Logo top-left */}
+        <div className="absolute top-6 left-8">
+          <img src="/logo-white.svg" alt="JobGrade" className="h-8 opacity-90" />
+        </div>
+
         {data.isDemo && (
           <div className="absolute top-6 right-6 bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1 rounded-full rotate-12 shadow-lg">
             DEMO
           </div>
         )}
-        <div className="text-center text-white space-y-8 flex flex-col items-center">
-          {/* Logo JobGrade */}
-          <img src="/logo-white.svg" alt="JobGrade" className="h-10 opacity-80" />
-          <div>
-            <h1 className="text-4xl font-bold mb-3">Raport Master</h1>
-            <p className="text-white/70 text-base font-medium">Analiza completă a structurii organizaționale și salariale</p>
-            <p className="text-white/40 text-sm mt-2">Evaluare · Ierarhizare · Conformitate · Recomandări</p>
+
+        {/* Conținut distribuit pe toată înălțimea */}
+        <div className="text-white flex flex-col justify-between min-h-[400px] pt-16">
+          {/* Titlu — sus */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Raport de evaluare și ierarhizare a posturilor de lucru</h1>
+            <p className="text-white/60 text-base">Structura organizațională · Criterii obiective · Conformitate EU</p>
           </div>
-          <div className="border-t border-white/20 pt-8 space-y-2 w-full">
-            <p className="text-2xl font-semibold">{data.company.name}</p>
+
+          {/* Companie — centru */}
+          <div className="text-center space-y-3 py-8">
+            <p className="text-3xl font-semibold">{data.company.name}</p>
             <p className="text-white/50 text-sm">CUI: {data.company.cui}</p>
             <p className="text-white/50 text-sm">{data.company.industry}</p>
+            <div className="flex gap-8 justify-center text-white/60 text-sm pt-4">
+              <span>{data.company.employees} angajați</span>
+              <span>{data.company.positions} posturi evaluate</span>
+              <span>{data.company.departments.length} departamente</span>
+            </div>
           </div>
-          <div className="flex gap-8 justify-center text-white/70 text-sm">
-            <span>{data.company.employees} angajați</span>
-            <span>{data.company.positions} posturi evaluate</span>
-            <span>{data.company.departments.length} departamente</span>
-          </div>
-          <div className="pt-4 flex flex-col items-center gap-2">
-            <img src="/logo-symbol.svg" alt="" className="h-8 opacity-30" />
+
+          {/* Footer — jos */}
+          <div className="text-center space-y-2">
+            <img src="/logo-symbol.svg" alt="" className="h-6 opacity-20 mx-auto" />
             <p className="text-white/30 text-xs">
               Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")} · JobGrade.ro · Document confidențial
             </p>
@@ -369,7 +378,10 @@ function JESection({ data, t, onOpenSimulator, modifiedJE }: { data: MasterRepor
         {/* Buton simulator */}
         {onOpenSimulator && (
           <button
-            onClick={() => onOpenSimulator("je")}
+            onClick={() => {
+              onOpenSimulator("je")
+              setTimeout(() => document.getElementById("section-je")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
+            }}
             className="mt-6 w-full py-3 rounded-lg border-2 border-dashed border-indigo-200 text-indigo-600 text-sm font-medium hover:bg-indigo-50 hover:border-indigo-300 transition-colors flex items-center justify-center gap-2"
           >
             <span>🔧</span> Deschide simulatorul — modifică evaluarea criteriilor
