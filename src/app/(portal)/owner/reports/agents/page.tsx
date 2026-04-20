@@ -55,26 +55,42 @@ export default async function AgentsReportPage() {
     }
 
     // ═══ DIAGNOZĂ: de ce alocate ≠ realizate ═══
-    const [postponedTasks, ownerTasks] = await Promise.all([
+    const [postponedTasks, overdueTasks, ownerBlockedTasks, ownerTasks] = await Promise.all([
+      // Task-uri amânate (BLOCKED)
       p.agentTask.findMany({
-        where: { status: "BLOCKED", createdAt: { gte: oneWeekAgo } },
-        select: { title: true, assignedTo: true, blockerDescription: true, blockerType: true, blockerAgentRole: true, deadlineAt: true },
+        where: { status: "BLOCKED" },
+        select: { title: true, assignedTo: true, blockerDescription: true, blockerType: true, blockerAgentRole: true, deadlineAt: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 15,
+      }).catch(() => []),
+      // Task-uri cu termen depășit (deadline < acum și necompletate)
+      p.agentTask.findMany({
+        where: { deadlineAt: { lt: now }, status: { notIn: ["COMPLETED", "FAILED"] } },
+        select: { title: true, assignedTo: true, assignedBy: true, deadlineAt: true, status: true, blockerDescription: true },
+        orderBy: { deadlineAt: "asc" },
+        take: 15,
+      }).catch(() => []),
+      // Task-uri amânate din cauza Owner (blockerAgentRole = OWNER)
+      p.agentTask.findMany({
+        where: { OR: [{ blockerAgentRole: "OWNER" }, { assignedBy: "OWNER", status: { notIn: ["COMPLETED", "FAILED"] } }] },
+        select: { title: true, assignedTo: true, status: true, blockerDescription: true, deadlineAt: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
         take: 10,
       }).catch(() => []),
+      // Task-uri Owner total
       p.agentTask.findMany({
-        where: { assignedBy: "OWNER", createdAt: { gte: oneWeekAgo } },
+        where: { assignedBy: "OWNER" },
         select: { status: true },
       }).catch(() => []),
     ])
 
     const ownerTotal = ownerTasks.length
     const ownerCompleted = ownerTasks.filter((t: any) => t.status === "COMPLETED").length
-    const ownerPending = ownerTotal - ownerCompleted
 
     diagnosis = {
       onTime: pipeline.completed,
       postponed: pipeline.postponed,
-      ownerDependent: ownerPending,
+      ownerDependent: ownerBlockedTasks.length,
       reasons: postponedTasks.map((t: any) => ({
         task: t.title?.slice(0, 60),
         agent: t.assignedTo,
@@ -82,7 +98,23 @@ export default async function AgentsReportPage() {
         deadline: t.deadlineAt ? new Date(t.deadlineAt).toLocaleDateString("ro-RO") : "—",
         dependsOn: t.blockerAgentRole || "—",
       })),
-    }
+      overdue: overdueTasks.map((t: any) => ({
+        task: t.title?.slice(0, 60),
+        agent: t.assignedTo,
+        assignedBy: t.assignedBy,
+        deadline: new Date(t.deadlineAt).toLocaleDateString("ro-RO"),
+        daysOverdue: Math.ceil((now.getTime() - new Date(t.deadlineAt).getTime()) / (24 * 60 * 60 * 1000)),
+        status: t.status,
+        reason: t.blockerDescription?.slice(0, 60) || "—",
+      })),
+      ownerBlocked: ownerBlockedTasks.map((t: any) => ({
+        task: t.title?.slice(0, 60),
+        agent: t.assignedTo,
+        status: t.status,
+        reason: t.blockerDescription?.slice(0, 80) || "Necesită decizie Owner",
+        deadline: t.deadlineAt ? new Date(t.deadlineAt).toLocaleDateString("ro-RO") : "—",
+      })),
+    } as any
 
     // ═══ ÎNVĂȚARE + KB total ═══
     const [kbThisWeek, kbPrevWeek, kbTotal] = await Promise.all([
@@ -230,6 +262,44 @@ export default async function AgentsReportPage() {
           <SC label="Depind de Owner" value={diagnosis.ownerDependent} accent={diagnosis.ownerDependent > 0 ? "red" : undefined} />
         </div>
 
+        {/* Task-uri cu termen depășit */}
+        {(diagnosis as any).overdue?.length > 0 && (
+          <div className="bg-red-50 rounded-xl border border-red-200 p-4 mb-4">
+            <h3 className="text-xs font-bold text-red-700 mb-2">Termen depășit</h3>
+            <div className="space-y-2">
+              {(diagnosis as any).overdue.map((r: any, i: number) => (
+                <div key={i} className="flex items-start gap-3 text-xs border-b border-red-100 pb-2">
+                  <span className="text-red-600 font-bold shrink-0 w-6 text-center">+{r.daysOverdue}z</span>
+                  <span className="text-red-500 font-medium shrink-0">{r.agent}</span>
+                  <div className="flex-1">
+                    <p className="text-slate-700">{r.task}</p>
+                    <p className="text-slate-400 mt-0.5">Termen: {r.deadline} · Alocat de: {r.assignedBy} · Status: {r.status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Task-uri care depind de Owner */}
+        {(diagnosis as any).ownerBlocked?.length > 0 && (
+          <div className="bg-violet-50 rounded-xl border border-violet-200 p-4 mb-4">
+            <h3 className="text-xs font-bold text-violet-700 mb-2">Necesită atenția ta (Owner)</h3>
+            <div className="space-y-2">
+              {(diagnosis as any).ownerBlocked.map((r: any, i: number) => (
+                <div key={i} className="flex items-start gap-3 text-xs border-b border-violet-100 pb-2">
+                  <span className="text-violet-500 font-bold shrink-0">{r.agent}</span>
+                  <div className="flex-1">
+                    <p className="text-slate-700">{r.task}</p>
+                    <p className="text-slate-400 mt-0.5">{r.reason} · Termen: {r.deadline}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Task-uri amânate — motive */}
         {diagnosis.reasons.length > 0 && (
           <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
             <h3 className="text-xs font-bold text-amber-700 mb-2">Task-uri amânate — motive</h3>
