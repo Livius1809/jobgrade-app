@@ -3,23 +3,9 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 
-export const metadata = { title: "Evoluție agenți — Owner Dashboard" }
+export const metadata = { title: "Evoluție organism — Owner Dashboard" }
 
-interface AgentReport {
-  agentRole: string
-  displayName: string
-  level: string
-  activityMode: string
-  kbEntries: number
-  embeddingCoverage: number
-  cyclesLast7d: number
-  tasksAssigned: number
-  tasksCompleted: number
-  escalationsOpen: number
-  avgPerformance: number | null
-  lastActive: string | null
-  depth?: number
-}
+export const dynamic = "force-dynamic"
 
 export default async function AgentsReportPage() {
   const session = await auth()
@@ -27,253 +13,347 @@ export default async function AgentsReportPage() {
   if (session.user.role !== "SUPER_ADMIN" && session.user.role !== "OWNER") redirect("/portal")
 
   const p = prisma as any
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const now = new Date()
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  let agents: AgentReport[] = []
+  let pipeline = { total: 0, completed: 0, escalated: 0, blocked: 0, claudeCalls: 0, byDept: [] as any[] }
+  let learning = { total: 0, prevTotal: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromExternal: 0 }
+  let agents: any[] = []
+
   try {
+    // ═══════════════════════════════════════════════════════════════
+    // BLOC 1: Pipeline task-uri (ultima săptămână)
+    // ═══════════════════════════════════════════════════════════════
+
+    const [taskStats, tasksByDept, escalationCount, claudeCallCount] = await Promise.all([
+      // Task-uri totale și completate
+      p.$queryRaw`
+        SELECT
+          count(*) as total,
+          count(*) FILTER (WHERE status = 'COMPLETED') as completed,
+          count(*) FILTER (WHERE status = 'BLOCKED') as blocked
+        FROM agent_tasks
+        WHERE "createdAt" > ${oneWeekAgo}
+      ` as Promise<any[]>,
+
+      // Distribuție pe departamente (assignedBy = managerul/departamentul)
+      p.$queryRaw`
+        SELECT "assignedBy" as dept, count(*) as total,
+          count(*) FILTER (WHERE status = 'COMPLETED') as completed
+        FROM agent_tasks
+        WHERE "createdAt" > ${oneWeekAgo}
+        GROUP BY "assignedBy"
+        ORDER BY total DESC
+        LIMIT 10
+      ` as Promise<any[]>,
+
+      // Escalări
+      p.escalation.count({
+        where: { createdAt: { gte: oneWeekAgo } },
+      }).catch(() => 0),
+
+      // Apeluri Claude (estimăm din task-uri completate cu result != null)
+      p.agentTask.count({
+        where: {
+          createdAt: { gte: oneWeekAgo },
+          status: "COMPLETED",
+          result: { not: null },
+        },
+      }).catch(() => 0),
+    ])
+
+    pipeline = {
+      total: Number(taskStats[0]?.total || 0),
+      completed: Number(taskStats[0]?.completed || 0),
+      blocked: Number(taskStats[0]?.blocked || 0),
+      escalated: escalationCount,
+      claudeCalls: claudeCallCount,
+      byDept: tasksByDept.map((d: any) => ({
+        dept: d.dept,
+        total: Number(d.total),
+        completed: Number(d.completed),
+      })),
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // BLOC 2: Învățare (creștere KB per sursă)
+    // ═══════════════════════════════════════════════════════════════
+
+    const [kbThisWeek, kbPrevWeek] = await Promise.all([
+      p.$queryRaw`
+        SELECT
+          count(*) as total,
+          count(*) FILTER (WHERE source = 'PROPAGATED' OR source = 'EXPERT_HUMAN') as from_internal,
+          count(*) FILTER (WHERE source = 'DISTILLED_INTERACTION') as from_clients,
+          count(*) FILTER (WHERE source = 'SELF_INTERVIEW') as from_claude
+        FROM kb_entries
+        WHERE "createdAt" > ${oneWeekAgo}
+      ` as Promise<any[]>,
+
+      p.kBEntry.count({
+        where: { createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } },
+      }).catch(() => 0),
+    ])
+
+    const kbRow = kbThisWeek[0] || {}
+    const totalThisWeek = Number(kbRow.total || 0)
+    const fromInternal = Number(kbRow.from_internal || 0)
+    const fromClients = Number(kbRow.from_clients || 0)
+    const fromClaude = Number(kbRow.from_claude || 0)
+    const fromExternal = totalThisWeek - fromInternal - fromClients - fromClaude
+
+    learning = {
+      total: totalThisWeek,
+      prevTotal: Number(kbPrevWeek || 0),
+      fromInternal,
+      fromClients,
+      fromClaude,
+      fromExternal: Math.max(0, fromExternal),
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // BLOC 3: Per agent — rezumat
+    // ═══════════════════════════════════════════════════════════════
+
     const definitions = await p.agentDefinition.findMany({
       where: { isActive: true },
       orderBy: { agentRole: "asc" },
-      select: { agentRole: true, displayName: true, level: true, activityMode: true },
+      select: { agentRole: true, displayName: true, level: true, isManager: true },
     })
 
-    // Hierarchy — use Prisma Client (handles enum casting) instead of raw SQL.
-    // The previous raw query failed because Postgres rejects text = enum
-    // comparison without an explicit ::"RelationType" cast, causing the whole
-    // report to throw and render the empty state.
-    const hierarchy = await p.agentRelationship.findMany({
-      where: { relationType: "REPORTS_TO", isActive: true },
-      select: { childRole: true, parentRole: true },
-    }) as { childRole: string; parentRole: string }[]
-
-    // Batch queries for all metrics
-    const [kbStats, cycleStats, taskStats, escalationStats, metricStats] = await Promise.all([
-      // KB entries + embeddings per agent
-      p.$queryRaw`
-        SELECT "agentRole", count(*) as total, count(embedding) as embedded
-        FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus"
-        GROUP BY "agentRole"
-      ` as Promise<{ agentRole: string; total: bigint; embedded: bigint }[]>,
-
-      // Cycles last 7 days per manager
-      p.$queryRaw`
-        SELECT "managerRole" as role, count(*) as cycles
-        FROM cycle_logs WHERE "createdAt" > ${sevenDaysAgo}
-        GROUP BY "managerRole"
-      ` as Promise<{ role: string; cycles: bigint }[]>,
-
-      // Tasks per agent
+    const [agentTasks, agentKB] = await Promise.all([
       p.$queryRaw`
         SELECT "assignedTo" as role,
-               count(*) as total,
-               count(*) FILTER (WHERE status = 'COMPLETED') as completed
+          count(*) as total,
+          count(*) FILTER (WHERE status = 'COMPLETED') as completed,
+          count(*) FILTER (WHERE status = 'BLOCKED') as blocked
         FROM agent_tasks
+        WHERE "createdAt" > ${oneWeekAgo}
         GROUP BY "assignedTo"
-      ` as Promise<{ role: string; total: bigint; completed: bigint }[]>,
+      ` as Promise<any[]>,
 
-      // Open escalations per agent
       p.$queryRaw`
-        SELECT "aboutRole" as role, count(*) as open
-        FROM escalations WHERE status = 'OPEN'
-        GROUP BY "aboutRole"
-      ` as Promise<{ role: string; open: bigint }[]>,
-
-      // Latest performance score per agent
-      p.agentMetric.findMany({
-        orderBy: { periodEnd: "desc" },
-        distinct: ["agentRole"],
-        select: { agentRole: true, performanceScore: true, periodEnd: true },
-      }),
+        SELECT "agentRole" as role, count(*) as learned
+        FROM kb_entries
+        WHERE "createdAt" > ${oneWeekAgo}
+        GROUP BY "agentRole"
+      ` as Promise<any[]>,
     ])
 
-    // Index results
-    const kbMap = new Map(kbStats.map(r => [r.agentRole, { total: Number(r.total), embedded: Number(r.embedded) }]))
-    const cycleMap = new Map(cycleStats.map(r => [r.role, Number(r.cycles)]))
-    const taskMap = new Map(taskStats.map(r => [r.role, { total: Number(r.total), completed: Number(r.completed) }]))
-    const escalationMap = new Map(escalationStats.map(r => [r.role, Number(r.open)]))
-    const metricMap = new Map<string, { score: number; date: string }>(metricStats.map((r: any) => [r.agentRole, { score: r.performanceScore, date: r.periodEnd }]))
+    const taskMap = new Map(agentTasks.map((r: any) => [r.role, { total: Number(r.total), completed: Number(r.completed), blocked: Number(r.blocked) }]))
+    const kbMap = new Map(agentKB.map((r: any) => [r.role, Number(r.learned)]))
 
     agents = definitions.map((d: any) => {
-      const kb = kbMap.get(d.agentRole) ?? { total: 0, embedded: 0 }
-      const tasks = taskMap.get(d.agentRole) ?? { total: 0, completed: 0 }
-      const metric = metricMap.get(d.agentRole)
-
+      const t = taskMap.get(d.agentRole) || { total: 0, completed: 0, blocked: 0 }
       return {
-        agentRole: d.agentRole,
-        displayName: d.displayName ?? d.agentRole,
+        role: d.agentRole,
+        name: d.displayName || d.agentRole,
         level: d.level,
-        activityMode: d.activityMode,
-        kbEntries: kb.total,
-        embeddingCoverage: kb.total > 0 ? kb.embedded / kb.total : 0,
-        cyclesLast7d: cycleMap.get(d.agentRole) ?? 0,
-        tasksAssigned: tasks.total,
-        tasksCompleted: tasks.completed,
-        escalationsOpen: escalationMap.get(d.agentRole) ?? 0,
-        avgPerformance: metric?.score ?? null,
-        lastActive: metric?.date ? new Date(metric.date).toLocaleDateString("ro-RO") : null,
+        isManager: d.isManager,
+        tasks: t.total,
+        completed: t.completed,
+        blocked: t.blocked,
+        completionRate: t.total > 0 ? Math.round(t.completed / t.total * 100) : null,
+        learned: kbMap.get(d.agentRole) || 0,
       }
-    })
-    // Build hierarchy tree with depth levels
-    const parentOf = new Map<string, string>()
-    const childrenOf = new Map<string, string[]>()
-    for (const rel of hierarchy) {
-      parentOf.set(rel.childRole, rel.parentRole)
-      if (!childrenOf.has(rel.parentRole)) childrenOf.set(rel.parentRole, [])
-      childrenOf.get(rel.parentRole)!.push(rel.childRole)
-    }
+    }).filter((a: any) => a.tasks > 0 || a.learned > 0)
 
-    // Compute depth for each agent
-    function getDepth(role: string): number {
-      let depth = 0
-      let current = role
-      const seen = new Set<string>()
-      while (parentOf.has(current) && !seen.has(current)) {
-        seen.add(current)
-        current = parentOf.get(current)!
-        depth++
-      }
-      return depth
-    }
-
-    // Sort agents by tree order (DFS)
-    function treeOrder(role: string, result: string[]) {
-      result.push(role)
-      const children = childrenOf.get(role) ?? []
-      children.sort().forEach(c => treeOrder(c, result))
-    }
-
-    const roots = agents
-      .map(a => a.agentRole)
-      .filter(r => !parentOf.has(r))
-    const ordered: string[] = []
-    roots.sort().forEach(r => treeOrder(r, ordered))
-
-    // Re-sort agents by tree order and add depth
-    const agentMap = new Map(agents.map(a => [a.agentRole, a]))
-    agents = ordered
-      .filter(r => agentMap.has(r))
-      .map(r => ({ ...agentMap.get(r)!, depth: getDepth(r) }))
-
-  } catch (e: any) {
-    console.error("[AGENTS REPORT]", e.message)
+  } catch (e) {
+    console.error("[agents-report]", e)
   }
 
-  const modeColors: Record<string, string> = {
-    PROACTIVE_CYCLIC: "bg-emerald-100 text-emerald-700",
-    HYBRID: "bg-blue-100 text-blue-700",
-    REACTIVE_TRIGGERED: "bg-amber-100 text-amber-700",
-    PAUSED_KNOWN_GAP: "bg-red-100 text-red-600",
-    DORMANT_UNTIL_DELEGATED: "bg-slate-50 text-slate-400",
-  }
-
-  const levelColors: Record<string, string> = {
-    STRATEGIC: "text-indigo-600",
-    TACTICAL: "text-amber-600",
-    OPERATIONAL: "text-slate-500",
-  }
-
-  // Summary stats
-  const totalKB = agents.reduce((s, a) => s + a.kbEntries, 0)
-  const totalCycles = agents.reduce((s, a) => s + a.cyclesLast7d, 0)
-  const activeAgents = agents.filter(a => a.cyclesLast7d > 0 || a.tasksCompleted > 0).length
+  // Calcule derivate
+  const completionRate = pipeline.total > 0 ? Math.round(pipeline.completed / pipeline.total * 100) : 0
+  const escalationRate = pipeline.total > 0 ? Math.round(pipeline.escalated / pipeline.total * 100) : 0
+  const learningGrowth = learning.prevTotal > 0
+    ? Math.round((learning.total - learning.prevTotal) / learning.prevTotal * 100)
+    : learning.total > 0 ? 100 : 0
+  const learningTotal = learning.total || 1 // evit /0
+  const pctInternal = Math.round(learning.fromInternal / learningTotal * 100)
+  const pctClients = Math.round(learning.fromClients / learningTotal * 100)
+  const pctClaude = Math.round(learning.fromClaude / learningTotal * 100)
+  const pctExternal = Math.round(learning.fromExternal / learningTotal * 100)
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/owner" className="text-sm text-indigo hover:underline">← Dashboard</Link>
-        <h1 className="text-xl font-bold text-foreground">Evoluție agenți</h1>
-        <span className="text-xs text-text-secondary">{agents.length} agenți</span>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryCard label="Agenți activi (7 zile)" value={`${activeAgents}/${agents.length}`} />
-        <SummaryCard label="KB total" value={totalKB.toLocaleString()} />
-        <SummaryCard label="Cicluri (7 zile)" value={totalCycles.toString()} />
-        <SummaryCard label="Escaladări deschise" value={agents.reduce((s, a) => s + a.escalationsOpen, 0).toString()} accent={agents.some(a => a.escalationsOpen > 0)} />
-      </div>
-
-      {agents.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white p-5">
-          <p className="text-sm text-text-secondary">Nu s-au putut încărca datele agenților.</p>
+    <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Evoluție organism</h1>
+          <p className="text-sm text-slate-500">Ultima săptămână — pipeline, învățare, direcție de creștere</p>
         </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-white shadow-sm overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-slate-50/50">
-                <th className="text-left px-3 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agent</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nivel</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mod</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">KB</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Emb%</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cicluri 7d</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tasks</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Esc.</th>
-                <th className="text-center px-2 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Perf.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {agents.map((a) => (
-                <tr key={a.agentRole} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-3 py-2">
-                    <div className="flex items-center" style={{ paddingLeft: `${(a.depth ?? 0) * 16}px` }}>
-                      {(a.depth ?? 0) > 0 && <span className="text-slate-300 mr-1.5 text-[10px]">└</span>}
-                      <span className="font-mono font-bold text-indigo text-xs">{a.agentRole}</span>
-                      <span className="text-slate-400 ml-1.5 text-[10px]">{a.displayName}</span>
-                      <span className="text-slate-300 ml-1 text-[9px]">N{a.depth ?? 0}</span>
-                    </div>
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    <span className={`text-[10px] font-bold ${levelColors[a.level] ?? "text-slate-500"}`}>{a.level}</span>
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${modeColors[a.activityMode] ?? "bg-slate-100 text-slate-500"}`}>
-                      {a.activityMode.replace(/_/g, " ")}
-                    </span>
-                  </td>
-                  <td className="px-2 py-2 text-center text-xs font-mono text-slate-600">{a.kbEntries}</td>
-                  <td className="px-2 py-2 text-center">
-                    <span className={`text-xs font-mono ${a.embeddingCoverage >= 0.9 ? "text-emerald-600" : a.embeddingCoverage >= 0.5 ? "text-amber-600" : "text-red-500"}`}>
-                      {(a.embeddingCoverage * 100).toFixed(0)}%
-                    </span>
-                  </td>
-                  <td className="px-2 py-2 text-center text-xs font-mono text-slate-600">{a.cyclesLast7d || "—"}</td>
-                  <td className="px-2 py-2 text-center text-xs font-mono">
-                    {a.tasksAssigned > 0 ? (
-                      <span className={a.tasksCompleted === a.tasksAssigned ? "text-emerald-600" : "text-slate-600"}>
-                        {a.tasksCompleted}/{a.tasksAssigned}
-                      </span>
-                    ) : "—"}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    {a.escalationsOpen > 0 ? (
-                      <span className="text-xs font-bold text-red-500">{a.escalationsOpen}</span>
-                    ) : <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    {a.avgPerformance !== null ? (
-                      <span className={`text-xs font-bold ${
-                        a.avgPerformance >= 70 ? "text-emerald-600" :
-                        a.avgPerformance >= 40 ? "text-amber-600" : "text-red-600"
-                      }`}>{a.avgPerformance}</span>
-                    ) : <span className="text-slate-300">—</span>}
-                  </td>
+        <Link href="/owner" className="text-xs text-indigo-600 hover:underline">← Dashboard</Link>
+      </div>
+
+      {/* ═══ PIPELINE ═══ */}
+      <section>
+        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Pipeline task-uri</h2>
+        <div className="grid grid-cols-5 gap-4">
+          <StatCard label="Total alocate" value={pipeline.total} />
+          <StatCard label="Completate" value={pipeline.completed} accent="emerald" />
+          <StatCard label="Blocate" value={pipeline.blocked} accent={pipeline.blocked > 0 ? "red" : undefined} />
+          <StatCard label="Rata escalare" value={`${escalationRate}%`} accent={escalationRate > 30 ? "amber" : undefined} />
+          <StatCard label="Apeluri Claude" value={pipeline.claudeCalls} accent="indigo" />
+        </div>
+
+        {/* Bară progres completare */}
+        <div className="mt-4 bg-slate-100 rounded-full h-3 overflow-hidden">
+          <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${completionRate}%` }} />
+        </div>
+        <p className="text-xs text-slate-400 mt-1">{completionRate}% rata de completare</p>
+
+        {/* Per departament */}
+        {pipeline.byDept.length > 0 && (
+          <div className="mt-4 grid grid-cols-5 gap-2">
+            {pipeline.byDept.slice(0, 10).map((d: any) => (
+              <div key={d.dept} className="bg-slate-50 rounded-lg p-2 text-center">
+                <p className="text-[10px] text-slate-400 truncate">{d.dept}</p>
+                <p className="text-sm font-bold text-slate-700">{d.completed}/{d.total}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ═══ ÎNVĂȚARE ═══ */}
+      <section>
+        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Învățare organism</h2>
+        <div className="grid grid-cols-5 gap-4">
+          <StatCard
+            label="Total învățare"
+            value={`${learning.total} entries`}
+            subtitle={learningGrowth > 0 ? `+${learningGrowth}% vs. săpt. anterioară` : learningGrowth < 0 ? `${learningGrowth}%` : "—"}
+            accent={learningGrowth > 0 ? "emerald" : learningGrowth < 0 ? "red" : undefined}
+          />
+          <StatCard label="Din structura internă" value={`${pctInternal}%`} subtitle={`${learning.fromInternal} entries`} accent="indigo" />
+          <StatCard label="De la clienți" value={`${pctClients}%`} subtitle={`${learning.fromClients} entries`} accent="violet" />
+          <StatCard label="De la Claude" value={`${pctClaude}%`} subtitle={`${learning.fromClaude} entries`} accent="amber" />
+          <StatCard label="Surse externe" value={`${pctExternal}%`} subtitle={`${learning.fromExternal} entries`} accent="slate" />
+        </div>
+
+        {/* Bară distribuție învățare */}
+        <div className="mt-4 flex rounded-full h-3 overflow-hidden">
+          {pctInternal > 0 && <div className="bg-indigo-500 h-full" style={{ width: `${pctInternal}%` }} title="Intern" />}
+          {pctClients > 0 && <div className="bg-violet-500 h-full" style={{ width: `${pctClients}%` }} title="Clienți" />}
+          {pctClaude > 0 && <div className="bg-amber-400 h-full" style={{ width: `${pctClaude}%` }} title="Claude" />}
+          {pctExternal > 0 && <div className="bg-slate-400 h-full" style={{ width: `${pctExternal}%` }} title="Extern" />}
+        </div>
+        <div className="flex gap-4 mt-2 text-[10px] text-slate-400">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-indigo-500" /> Intern</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-violet-500" /> Clienți</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" /> Claude</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-400" /> Extern</span>
+        </div>
+      </section>
+
+      {/* ═══ INDICATORI DIRECȚIE ═══ */}
+      <section>
+        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Direcție de creștere</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <DirectionCard
+            label="Autonomie"
+            description="Rata rezolvare internă fără escalare"
+            value={100 - escalationRate}
+            target={80}
+            unit="%"
+          />
+          <DirectionCard
+            label="Dependență Claude"
+            description="Cât din învățare vine de la Claude"
+            value={pctClaude}
+            target={30}
+            inverted
+            unit="%"
+          />
+          <DirectionCard
+            label="Experiență clienți"
+            description="Învățare din interacțiuni reale"
+            value={pctClients}
+            target={40}
+            unit="%"
+          />
+        </div>
+      </section>
+
+      {/* ═══ TABEL AGENȚI ACTIVI ═══ */}
+      {agents.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Agenți activi această săptămână</h2>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-xs text-slate-500">
+                <tr>
+                  <th className="text-left px-4 py-2">Agent</th>
+                  <th className="text-left px-4 py-2">Nivel</th>
+                  <th className="text-right px-4 py-2">Tasks</th>
+                  <th className="text-right px-4 py-2">Done</th>
+                  <th className="text-right px-4 py-2">Blocat</th>
+                  <th className="text-right px-4 py-2">Rata</th>
+                  <th className="text-right px-4 py-2">Învățat</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {agents.map((a: any) => (
+                  <tr key={a.role} className="border-t border-slate-100 hover:bg-slate-50/50">
+                    <td className="px-4 py-2">
+                      <span className="font-medium text-slate-800">{a.name}</span>
+                      {a.isManager && <span className="ml-1 text-[9px] text-indigo-500 font-bold">MGR</span>}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-slate-400">{a.level}</td>
+                    <td className="px-4 py-2 text-right font-mono">{a.tasks}</td>
+                    <td className="px-4 py-2 text-right font-mono text-emerald-600">{a.completed}</td>
+                    <td className="px-4 py-2 text-right font-mono text-red-500">{a.blocked || "—"}</td>
+                    <td className="px-4 py-2 text-right">
+                      {a.completionRate !== null ? (
+                        <span className={`font-bold ${a.completionRate >= 70 ? "text-emerald-600" : a.completionRate >= 40 ? "text-amber-600" : "text-red-600"}`}>
+                          {a.completionRate}%
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-4 py-2 text-right font-mono text-indigo-600">{a.learned || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   )
 }
 
-function SummaryCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+// ─── Componente helper ─────────────────────────────────────────────────────
+
+function StatCard({ label, value, subtitle, accent }: { label: string; value: string | number; subtitle?: string; accent?: string }) {
+  const colors: Record<string, string> = {
+    emerald: "text-emerald-600",
+    red: "text-red-600",
+    amber: "text-amber-600",
+    indigo: "text-indigo-600",
+    violet: "text-violet-600",
+    slate: "text-slate-600",
+  }
   return (
-    <div className={`rounded-xl border p-4 ${accent ? "border-coral/30 bg-coral/5" : "border-border bg-white"}`}>
-      <div className={`text-xl font-bold ${accent ? "text-coral" : "text-foreground"}`}>{value}</div>
-      <div className="text-[10px] text-text-secondary mt-1 uppercase tracking-wider">{label}</div>
+    <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <p className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className={`text-2xl font-bold mt-1 ${accent ? colors[accent] || "text-slate-800" : "text-slate-800"}`}>{value}</p>
+      {subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{subtitle}</p>}
+    </div>
+  )
+}
+
+function DirectionCard({ label, description, value, target, inverted, unit }: {
+  label: string; description: string; value: number; target: number; inverted?: boolean; unit: string
+}) {
+  const isGood = inverted ? value <= target : value >= target
+  return (
+    <div className={`rounded-xl border p-4 ${isGood ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+      <p className="text-xs font-bold text-slate-700">{label}</p>
+      <p className="text-[10px] text-slate-400 mt-0.5">{description}</p>
+      <div className="flex items-end justify-between mt-3">
+        <p className={`text-3xl font-bold ${isGood ? "text-emerald-600" : "text-amber-600"}`}>{value}{unit}</p>
+        <p className="text-[10px] text-slate-400">țintă: {target}{unit}</p>
+      </div>
     </div>
   )
 }
