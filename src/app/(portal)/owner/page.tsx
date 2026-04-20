@@ -208,33 +208,27 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
     const totalExecTasks = tasksExecuted24h.completed + tasksExecuted24h.blocked
     const estimatedCost24hUsd = Math.round(totalExecTasks * 0.10 * 100) / 100
 
-    // NEW: Vital signs latest — citire din docs/vital-signs/ (dacă există)
-    // Include cele 10 teste cu status + notes pentru meta-panel "Organism Pulse"
+    // Vital signs — citire din DB (salvat de GitHub Actions via /api/v1/vital-signs)
     let vitalSignsLatest: any = undefined
     try {
-      const fs = await import("node:fs")
-      const path = await import("node:path")
-      const vsDir = path.resolve(process.cwd(), "docs", "vital-signs")
-      if (fs.existsSync(vsDir)) {
-        const files = fs.readdirSync(vsDir).filter((f: string) => f.endsWith(".json")).sort().reverse()
-        if (files.length > 0) {
-          const latest = JSON.parse(fs.readFileSync(path.join(vsDir, files[0]), "utf-8"))
-          vitalSignsLatest = {
-            verdict: latest.overallStatus || "UNKNOWN",
-            pass: latest.summary?.pass || 0,
-            warn: latest.summary?.warn || 0,
-            fail: latest.summary?.fail || 0,
-            skip: latest.summary?.skip || 0,
-            runAt: latest.reportDate || null,
-            tests: Array.isArray(latest.tests)
-              ? latest.tests.map((t: any) => ({
-                  name: t.name,
-                  status: t.status,
-                  notes: t.notes || "",
-                  metrics: t.metrics || {},
-                }))
-              : [],
-          }
+      const vsConfig = await prisma.systemConfig.findUnique({ where: { key: "VITAL_SIGNS_LATEST" } })
+      if (vsConfig) {
+        const latest = JSON.parse(vsConfig.value)
+        vitalSignsLatest = {
+          verdict: latest.overallStatus || "UNKNOWN",
+          pass: latest.summary?.pass || 0,
+          warn: latest.summary?.warn || 0,
+          fail: latest.summary?.fail || 0,
+          skip: latest.summary?.skip || 0,
+          runAt: latest.reportDate || null,
+          tests: Array.isArray(latest.tests)
+            ? latest.tests.map((t: any) => ({
+                name: t.name,
+                status: t.status,
+                notes: t.notes || "",
+                metrics: t.metrics || {},
+              }))
+            : [],
         }
       }
     } catch {
