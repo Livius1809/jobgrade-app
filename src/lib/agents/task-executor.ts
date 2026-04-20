@@ -557,6 +557,29 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
         blockedAt: now,
       },
     })
+    // Notificare Owner dacă blocajul depinde de conducere
+    const blockerDesc = payload.blocker?.description || payload.summary || ""
+    if (/owner|conducere|decizie.*strategic|buget|finanț/i.test(blockerDesc)) {
+      try {
+        // Găsim Owner user
+        const ownerUser = await (prisma as any).user.findFirst({
+          where: { role: { in: ["OWNER", "SUPER_ADMIN"] } },
+          select: { id: true },
+        })
+        if (ownerUser) {
+          await (prisma as any).notification.create({
+            data: {
+              userId: ownerUser.id,
+              type: "AGENT_MESSAGE",
+              title: `${task.assignedTo}: necesită decizia conducerii`,
+              body: `Task: ${task.title}\nMotiv: ${blockerDesc.slice(0, 200)}`,
+              read: false,
+            },
+          })
+        }
+      } catch { /* notification non-blocking */ }
+    }
+
     return { outcome: "BLOCKED", subTaskIds }
   }
 
