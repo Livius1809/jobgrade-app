@@ -613,8 +613,10 @@ function PayGapSection({ data, t }: { data: MasterReportData; t: typeof themes.s
         <div className={`${t.body} mb-6 space-y-3`}>
           <p>
             Analiza decalajului de remunerare de gen a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>.
-            Comparația se face între lucrătorii de gen diferit care prestează <strong>aceeași muncă sau muncă
-            de valoare egală</strong> (conform Art. 3(1)(e) coroborat cu Art. 4), la <strong>aceeași normă de lucru</strong>.
+            Comparația se face între lucrătorii de gen diferit care prestează <strong>muncă de valoare egală</strong> —
+            adică posturi cu <strong>același punctaj de evaluare</strong> (încadrate în aceeași clasă salarială),
+            indiferent de denumirea poziției sau departamentul de apartenență,
+            la <strong>aceeași normă de lucru</strong> (normalizată la 8h).
           </p>
           <p>
             Un decalaj de peste <strong>5%</strong> care nu poate fi justificat prin criterii obiective și neutre
@@ -857,7 +859,7 @@ function AnnexInputsSection({ data, t }: { data: MasterReportData; t: typeof the
             </li>
             <li className="flex items-start gap-2">
               <span className="text-indigo-500 mt-0.5">④</span>
-              <span><strong>Analiza decalajelor</strong> — salariile au fost comparate F/M pe categorii de muncă de valoare egală, la aceeași normă de lucru (Art. 9, Directiva 2023/970)</span>
+              <span><strong>Analiza decalajelor</strong> — salariile au fost comparate F/M pe categorii de muncă de valoare egală (posturi cu același scor de evaluare, indiferent de denumire sau departament), normalizate la 8h (Art. 9, Directiva 2023/970)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-indigo-500 mt-0.5">⑤</span>
@@ -937,7 +939,7 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
           <h3 className={t.subheading}>F. Glosar</h3>
           <ul className={`${t.body} mt-3 space-y-2`}>
             <li><strong>Remunerare</strong> — salariul de bază plus orice alte avantaje plătite direct sau indirect de angajator (conform Art. 3(1)(a) Directiva 2023/970)</li>
-            <li><strong>Muncă de valoare egală</strong> — muncă evaluată ca având aceeași valoare conform criteriilor obiective și neutre din perspectiva genului (Art. 3(1)(e))</li>
+            <li><strong>Muncă de valoare egală</strong> — posturi care obțin același scor total din evaluarea analitică, indiferent de denumirea poziției sau departament (conform Art. 3(1)(e), Directiva 2023/970)</li>
             <li><strong>Clasă salarială</strong> — instrument intern de structurare a remunerării; interval de punctaj care grupează posturi cu complexitate similară</li>
             <li><strong>Treaptă de salarizare</strong> — nivel salarial în cadrul unei clase; avansarea reflectă evoluția profesională (performanță, vechime, instruire)</li>
             <li><strong>Scor de evaluare</strong> — punctajul total rezultat din evaluarea analitică pe 6 dimensiuni agregate în 4 criterii legale</li>
