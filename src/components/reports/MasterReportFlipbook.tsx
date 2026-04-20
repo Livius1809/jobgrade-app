@@ -13,10 +13,10 @@ const ClassCountSelector = dynamic(() => import("@/components/sessions/ClassCoun
 type Theme = "sobru" | "modern"
 type Density = "compact" | "normal" | "comfortable"
 
-const DENSITY_CONFIG: Record<Density, { label: string; pageClass: string; bodyScale: string; headingScale: string; spacing: string }> = {
-  compact: { label: "Compact", pageClass: "px-8 py-6", bodyScale: "text-sm", headingScale: "text-xl", spacing: "space-y-2" },
-  normal: { label: "Normal", pageClass: "px-12 py-10", bodyScale: "text-base", headingScale: "text-2xl", spacing: "space-y-4" },
-  comfortable: { label: "Confortabil", pageClass: "px-16 py-14", bodyScale: "text-lg", headingScale: "text-3xl", spacing: "space-y-6" },
+const DENSITY_CONFIG: Record<Density, { label: string; zoom: number }> = {
+  compact: { label: "Compact", zoom: 0.85 },
+  normal: { label: "Normal", zoom: 1 },
+  comfortable: { label: "Confortabil", zoom: 1.15 },
 }
 
 interface Props {
@@ -967,7 +967,7 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
       </div>
 
       {/* Pagini — scroll vertical, fiecare ca o foaie separată */}
-      <div className={`pb-16 ${d.bodyScale}`}>
+      <div className="pb-16 transition-all duration-200" style={{ zoom: d.zoom }}>
         <CoverSection data={data} t={t} />
         <Separator />
         <TOCSection data={data} t={t} />
