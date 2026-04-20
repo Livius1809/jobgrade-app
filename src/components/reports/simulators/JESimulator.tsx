@@ -158,15 +158,37 @@ function CounselorMessage({ status, criterionKey }: { status: string; criterionK
   )
 }
 
+// ─── Parcurs descriptions ──────────────────────────────────────────────────
+
+const PARCURS_OPTIONS = [
+  {
+    value: "ai_pur" as const,
+    label: "Evaluare generată AI",
+    description: "Clasamentul a fost generat automat din fișele de post. Puteți ajusta evaluarea criteriilor.",
+  },
+  {
+    value: "ai_comisie" as const,
+    label: "AI → Comisie JE",
+    description: "Clasamentul AI a fost dezbătut și ajustat de comisia de evaluare.",
+  },
+  {
+    value: "comisie_pura" as const,
+    label: "Comisie JE",
+    description: "Clasamentul a fost stabilit integral de comisia de evaluare prin consens.",
+  },
+]
+
 // ─── Componenta principală ─────────────────────────────────────────────────
 
 interface Props {
   jobs: MasterJobEvaluation[]
+  companyName?: string
 }
 
-export default function JESimulator({ jobs }: Props) {
-  const { addJeModification, state, antiGaming, checkAntiGaming } = useSimulator()
+export default function JESimulator({ jobs, companyName = "—" }: Props) {
+  const { addJeModification, state, antiGaming, checkAntiGaming, setJeParcurs, validateJE } = useSimulator()
   const [selectedJob, setSelectedJob] = useState<number>(0)
+  const [showValidateConfirm, setShowValidateConfirm] = useState(false)
 
   const currentJob = jobs[selectedJob]
   if (!currentJob?.letters) return <p className="text-sm text-slate-400">Nu există date de evaluare.</p>
@@ -192,12 +214,77 @@ export default function JESimulator({ jobs }: Props) {
     addJeModification(selectedJob, criterionKey, oldLetter, newLetter, currentJob.position)
   }, [selectedJob, currentJob, currentLetters, checkAntiGaming, addJeModification])
 
-  const isDisabled = antiGaming.status === "BLOCKED" || antiGaming.status === "COOLDOWN"
+  // Anti-gaming calibrat per parcurs
+  const isPostComisie = state.jeParcurs === "ai_comisie" || state.jeParcurs === "comisie_pura"
+  const isDisabled = state.jeValidated || antiGaming.status === "BLOCKED" || antiGaming.status === "COOLDOWN"
+
+  // Post-validare: totul read-only
+  if (state.jeValidated) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">✅</span>
+            <h4 className="text-sm font-bold text-emerald-800">Evaluare validată</h4>
+          </div>
+          <p className="text-xs text-emerald-700">
+            Configurația a fost validată la {new Date(state.jeValidatedAt!).toLocaleString("ro-RO")}.
+            Evaluarea este blocată. Straturile ulterioare (structura salarială, pay gap) sunt acum active.
+          </p>
+        </div>
+
+        {/* Rezumat read-only */}
+        <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+          <h4 className="text-xs font-bold text-slate-700 mb-2">Clasament validat</h4>
+          <div className="space-y-1">
+            {jobs.map((j, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span className="text-slate-600">#{i + 1} {j.position}</span>
+                <span className="font-mono text-slate-500">{state.recalculatedScores[i] ?? j.score}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
-      {/* Consilier (în loc de mesaj sec) */}
-      <CounselorMessage status={antiGaming.status} />
+      {/* Selector parcurs */}
+      <div>
+        <label className="text-xs font-medium text-slate-500 block mb-1">Parcurs evaluare</label>
+        <div className="space-y-1.5">
+          {PARCURS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setJeParcurs(opt.value)}
+              className={`w-full text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
+                state.jeParcurs === opt.value
+                  ? "border-indigo-400 bg-indigo-50 text-indigo-800"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              <span className="font-medium">{opt.label}</span>
+              <p className="text-[10px] text-slate-400 mt-0.5">{opt.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Buton inițiere comisie (doar pe parcurs AI pur) */}
+      {state.jeParcurs === "ai_pur" && (
+        <button
+          onClick={() => setJeParcurs("ai_comisie")}
+          className="w-full py-2 rounded-lg border-2 border-dashed border-violet-200 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors"
+        >
+          Inițiază proces JE mediat (Comisie) →
+        </button>
+      )}
+
+      {/* Consilier (calibrat — mai relaxat post-comisie) */}
+      {!isPostComisie && <CounselorMessage status={antiGaming.status} />}
+      {isPostComisie && antiGaming.status !== "OK" && <CounselorMessage status={antiGaming.status} />}
 
       {/* Selector post */}
       <div>
@@ -205,7 +292,8 @@ export default function JESimulator({ jobs }: Props) {
         <select
           value={selectedJob}
           onChange={(e) => setSelectedJob(Number(e.target.value))}
-          className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+          disabled={isDisabled}
+          className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 disabled:opacity-50"
         >
           {jobs.map((j, i) => (
             <option key={i} value={i}>
@@ -267,11 +355,37 @@ export default function JESimulator({ jobs }: Props) {
         </p>
       </div>
 
-      {/* Info */}
-      <p className="text-[10px] text-slate-400 italic">
-        Selectați nivelul care reflectă cel mai fidel complexitatea reală a postului.
-        Modificările se reflectă în raportul din stânga.
-      </p>
+      {/* Buton validare finală */}
+      {!showValidateConfirm ? (
+        <button
+          onClick={() => setShowValidateConfirm(true)}
+          className="w-full py-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+        >
+          Validez configurația evaluării
+        </button>
+      ) : (
+        <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 space-y-3">
+          <p className="text-xs text-slate-700 leading-relaxed">
+            Subsemnatul, în calitate de Director General / reprezentant legal al <strong>{companyName}</strong>,
+            validez configurația actuală a evaluării posturilor ca fiind conformă cu misiunea, viziunea, valorile,
+            structura organizațională și complexitatea reală a posturilor evaluate din compania noastră.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { validateJE(companyName); setShowValidateConfirm(false) }}
+              className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
+            >
+              Validez configurația
+            </button>
+            <button
+              onClick={() => setShowValidateConfirm(false)}
+              className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
+            >
+              Revin la modificări
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -6,9 +6,17 @@ import { createAntiGamingState, checkModification, type AntiGamingState } from "
 
 // ─── Shared state context ──────────────────────────────────────────────────
 
+export type JEParcurs = "ai_pur" | "ai_comisie" | "comisie_pura"
+
 export interface SimulatorState {
   /** Secțiunea activă din master (determină ce simulator apare) */
   activeSection: string | null
+  /** Parcursul JE ales */
+  jeParcurs: JEParcurs
+  /** Dacă evaluarea a fost validată final */
+  jeValidated: boolean
+  /** Timestamp validare */
+  jeValidatedAt: number | null
   /** Modificări JE: jobIndex → criterionKey → newLetter */
   jeModifications: Record<number, Record<string, string>>
   /** Scoruri recalculate: jobIndex → newScore */
@@ -28,6 +36,8 @@ export interface JournalEntry {
 interface SimulatorContextType {
   state: SimulatorState
   setActiveSection: (section: string | null) => void
+  setJeParcurs: (parcurs: JEParcurs) => void
+  validateJE: (companyName: string) => void
   addJeModification: (jobIndex: number, criterionKey: string, oldLetter: string, newLetter: string, jobTitle: string) => void
   getModifiedJE: (originalJE: MasterJobEvaluation[]) => MasterJobEvaluation[]
   /** Anti-gaming state — persistat la nivel de sesiune, NU se resetează la close */
@@ -54,6 +64,9 @@ interface Props {
 export default function MasterSimulatorLayout({ data, masterContent, simulatorContent }: Props) {
   const [state, setState] = useState<SimulatorState>({
     activeSection: null,
+    jeParcurs: "ai_pur",
+    jeValidated: false,
+    jeValidatedAt: null,
     jeModifications: {},
     recalculatedScores: {},
     journal: [],
@@ -72,6 +85,41 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
 
   const setActiveSection = useCallback((section: string | null) => {
     setState(prev => ({ ...prev, activeSection: section }))
+  }, [])
+
+  const setJeParcurs = useCallback((parcurs: JEParcurs) => {
+    setState(prev => ({
+      ...prev,
+      jeParcurs: parcurs,
+      journal: [
+        ...prev.journal,
+        {
+          timestamp: Date.now(),
+          section: "JE",
+          description: `Parcurs schimbat: ${parcurs === "ai_pur" ? "AI pur" : parcurs === "ai_comisie" ? "AI → Comisie" : "Comisie pură"}`,
+          oldValue: prev.jeParcurs,
+          newValue: parcurs,
+        },
+      ],
+    }))
+  }, [])
+
+  const validateJE = useCallback((companyName: string) => {
+    setState(prev => ({
+      ...prev,
+      jeValidated: true,
+      jeValidatedAt: Date.now(),
+      journal: [
+        ...prev.journal,
+        {
+          timestamp: Date.now(),
+          section: "JE",
+          description: `Evaluare validată de reprezentantul legal al ${companyName}`,
+          oldValue: "nevalidat",
+          newValue: "validat",
+        },
+      ],
+    }))
   }, [])
 
   const addJeModification = useCallback((
@@ -191,6 +239,8 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
   const contextValue: SimulatorContextType = {
     state,
     setActiveSection,
+    setJeParcurs,
+    validateJE,
     addJeModification,
     getModifiedJE,
     antiGaming,

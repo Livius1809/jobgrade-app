@@ -25,7 +25,7 @@ function SimulatorPanel({ data }: { data: MasterReportData }) {
 
   switch (state.activeSection) {
     case "je":
-      return <JESimulator jobs={data.layers.baza.jobEvaluations} />
+      return <JESimulator jobs={data.layers.baza.jobEvaluations} companyName={data.company.name} />
     default:
       return (
         <div className="text-center text-slate-400 text-sm py-12">
