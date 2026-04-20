@@ -300,7 +300,7 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
         {/* Simulator — dreapta (slide-in) */}
         {isSimulatorOpen && (
           <div className="w-2/5 shrink-0 sticky top-16 h-[calc(100vh-5rem)] overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6" style={{ backgroundImage: "url(/images/brand/hex-pattern.png)", backgroundSize: "300px", backgroundRepeat: "repeat", backgroundBlendMode: "soft-light", backgroundPosition: "center" }}>
+            <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url(/images/brand/hex-pattern.png)", backgroundSize: "auto, 250px", backgroundRepeat: "no-repeat, repeat" }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">
                   Simulator

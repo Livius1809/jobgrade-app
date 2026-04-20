@@ -103,7 +103,7 @@ function PageSheet({ children, id, pageNum, totalPages, banner }: {
     <section
       id={id}
       className="bg-white rounded-lg shadow-lg border border-slate-100 px-12 py-10 relative"
-      style={{ minHeight: "60vh", backgroundImage: "url(/images/brand/paper-texture.png)", backgroundSize: "400px", backgroundRepeat: "repeat", backgroundBlendMode: "multiply" }}
+      style={{ minHeight: "60vh", backgroundImage: "linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(/images/brand/paper-texture.png)", backgroundSize: "auto, 400px", backgroundRepeat: "no-repeat, repeat" }}
     >
       {banner && (
         <div className="rounded-lg overflow-hidden -mx-4 mb-8 h-32 relative">
@@ -113,8 +113,11 @@ function PageSheet({ children, id, pageNum, totalPages, banner }: {
       )}
       {children}
       {pageNum != null && totalPages != null && (
-        <div className="absolute bottom-4 left-12 right-12 flex justify-between text-[10px] text-slate-300 border-t border-slate-100 pt-3 mt-8">
-          <span>JobGrade.ro — Document confidențial</span>
+        <div className="absolute bottom-4 left-12 right-12 flex items-center justify-between text-[10px] text-slate-300 border-t border-slate-100 pt-3 mt-8">
+          <div className="flex items-center gap-2">
+            <img src="/logo-symbol.svg" alt="" className="h-3.5 opacity-30" />
+            <span>JobGrade.ro — Document confidențial</span>
+          </div>
           <span>Pagina {pageNum} din {totalPages}</span>
         </div>
       )}
@@ -135,16 +138,15 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
             DEMO
           </div>
         )}
-        <div className="text-center text-white space-y-8">
-          <div className="w-20 h-20 mx-auto rounded-2xl bg-white/10 flex items-center justify-center">
-            <span className="text-4xl">📊</span>
-          </div>
+        <div className="text-center text-white space-y-8 flex flex-col items-center">
+          {/* Logo JobGrade */}
+          <img src="/logo-white.svg" alt="JobGrade" className="h-10 opacity-80" />
           <div>
             <h1 className="text-4xl font-bold mb-3">Raport Master</h1>
             <p className="text-white/70 text-base font-medium">Analiza completă a structurii organizaționale și salariale</p>
             <p className="text-white/40 text-sm mt-2">Evaluare · Ierarhizare · Conformitate · Recomandări</p>
           </div>
-          <div className="border-t border-white/20 pt-8 space-y-2">
+          <div className="border-t border-white/20 pt-8 space-y-2 w-full">
             <p className="text-2xl font-semibold">{data.company.name}</p>
             <p className="text-white/50 text-sm">CUI: {data.company.cui}</p>
             <p className="text-white/50 text-sm">{data.company.industry}</p>
@@ -154,9 +156,12 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
             <span>{data.company.positions} posturi evaluate</span>
             <span>{data.company.departments.length} departamente</span>
           </div>
-          <p className="text-white/30 text-xs pt-4">
-            Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")} · JobGrade.ro · Document confidențial
-          </p>
+          <div className="pt-4 flex flex-col items-center gap-2">
+            <img src="/logo-symbol.svg" alt="" className="h-8 opacity-30" />
+            <p className="text-white/30 text-xs">
+              Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")} · JobGrade.ro · Document confidențial
+            </p>
+          </div>
         </div>
       </div>
     </PageSheet>
