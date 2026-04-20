@@ -72,7 +72,7 @@ export default async function SessionsPage() {
         <div className="bg-white rounded-xl border border-gray-200 text-center py-16">
           <p className="text-gray-400 text-lg mb-2">Nicio sesiune de evaluare</p>
           <p className="text-gray-400 text-sm mb-6">
-            Creează prima sesiune pentru a începe evaluarea joburilor
+            Creează prima sesiune pentru a începe evaluarea posturilor
           </p>
           <Link
             href="/sessions/new"
@@ -100,7 +100,7 @@ export default async function SessionsPage() {
                   <div>
                     <h2 className="font-semibold text-gray-900">{s.name}</h2>
                     <p className="text-sm text-gray-500 mt-0.5">
-                      {s._count.sessionJobs} joburi · {total} evaluatori
+                      {s._count.sessionJobs} posturi · {total} evaluatori
                     </p>
                   </div>
                   <span

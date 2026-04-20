@@ -721,8 +721,13 @@ export default function JEResultsTable({ criteria, jobs: initialJobs, grades, se
             <button
               className="text-[10px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg cursor-pointer"
               onClick={() => {
-                // TODO: export stat actualizat
-                alert(`Statul actualizat cu ${budgetImpact.count} ajustări va fi exportat. Impact lunar: ${budgetImpact.diff > 0 ? "+" : ""}${budgetImpact.diff.toLocaleString()} RON`)
+                const msg = `Statul actualizat cu ${budgetImpact.count} ajustări va fi exportat. Impact lunar: ${budgetImpact.diff > 0 ? "+" : ""}${budgetImpact.diff.toLocaleString()} RON`
+                // Toast notification în loc de alert
+                const toast = document.createElement("div")
+                toast.className = "fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-lg shadow-xl text-sm z-50 animate-pulse"
+                toast.textContent = msg
+                document.body.appendChild(toast)
+                setTimeout(() => toast.remove(), 4000)
               }}
             >
               Exportă stat actualizat

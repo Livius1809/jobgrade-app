@@ -286,7 +286,7 @@ function SituationLegend({ points, grades }: { points: Array<{ score: number; sa
           <div className="text-[10px] text-slate-600">
             <span className="font-semibold text-red-600">Sub toate clasele salariale</span>
             <span className="text-slate-400"> ({analysis.underAll.length})</span>
-            <p className="text-slate-500 mt-0.5">Salariul este sub minimul primei clase. Se recomanda o creștere salarială pentru alinierea la structura de salarizare.</p>
+            <p className="text-slate-500 mt-0.5">Salariul este sub minimul primei clase. Se recomandă o creștere salarială pentru alinierea la structura de salarizare.</p>
           </div>
         </div>
       )}

@@ -278,7 +278,7 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
           onClick={() => setJeParcurs("ai_comisie")}
           className="w-full py-2 rounded-lg border-2 border-dashed border-violet-200 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors"
         >
-          Inițiază proces JE mediat (Comisie) →
+          Inițiază procesul de evaluare mediat (Comisie) →
         </button>
       )}
 

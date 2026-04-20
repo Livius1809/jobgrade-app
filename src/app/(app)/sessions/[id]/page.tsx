@@ -121,7 +121,7 @@ export default async function SessionDetailPage({
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="text-sm text-gray-500 mb-1">Joburi evaluate</div>
+          <div className="text-sm text-gray-500 mb-1">Posturi evaluate</div>
           <div className="text-2xl font-bold text-gray-900">
             {completedJobs}/{totalJobs}
           </div>
@@ -136,7 +136,7 @@ export default async function SessionDetailPage({
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="text-sm text-gray-500 mb-1">Evaluatori completat</div>
+          <div className="text-sm text-gray-500 mb-1">Evaluatori finalizați</div>
           <div className="text-2xl font-bold text-gray-900">
             {completedParticipants}/{totalParticipants}
           </div>
@@ -157,7 +157,7 @@ export default async function SessionDetailPage({
           <div className="text-sm text-gray-500 mb-1">Status consens</div>
           <div className="text-sm font-medium text-gray-900 mt-2">
             {0}{" "}
-            / {totalJobs} joburi rezolvate
+            / {totalJobs} posturi rezolvate
           </div>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default async function SessionDetailPage({
         {/* Jobs list */}
         <div className="col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">Joburi în sesiune</h2>
+            <h2 className="font-semibold text-gray-900">Posturi în sesiune</h2>
           </div>
           <table className="w-full">
             <thead className="bg-gray-50">

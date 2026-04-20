@@ -499,7 +499,7 @@ export default function HomePage() {
                 <li><Link href="/privacy" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Confidențialitate</Link></li>
                 <li><Link href="/cookies" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Cookies</Link></li>
                 <li><Link href="/gdpr" className="text-sm text-white/50 hover:text-white transition-colors duration-200">GDPR</Link></li>
-                <li><Link href="/transparenta-ai" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Transparenta AI</Link></li>
+                <li><Link href="/transparenta-ai" className="text-sm text-white/50 hover:text-white transition-colors duration-200">Transparența AI</Link></li>
               </ul>
             </div>
 

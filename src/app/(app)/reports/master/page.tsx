@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function MasterReportPage() {
   const session = await auth()
-  if (!session?.user?.tenantId) redirect("/auth/signin")
+  if (!session?.user?.tenantId) redirect("/login")
 
   const data = await getMasterReportData(session.user.tenantId)
 
