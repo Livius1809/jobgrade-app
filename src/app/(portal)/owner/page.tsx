@@ -375,8 +375,9 @@ export default async function OwnerDashboard() {
               const COG_COA_PATTERNS = /no_activity|no_cycles|no_actions|monotony|dormant|error|bug|fix|deploy|config|cron|timeout|crash|memory|cpu|disk|latency|cache|migration|schema|build|test.*fail|refactor|endpoint|api.*error|database|redis|queue/i
               const ownerDecisions = data.decisions.filter(
                 d => (d.severity === "CRITICAL" || d.severity === "HIGH") &&
-                  !COG_COA_PATTERNS.test(d.signal || "") &&
-                  !COG_COA_PATTERNS.test(d.description || "")
+                  !COG_COA_PATTERNS.test(d.title || "") &&
+                  !COG_COA_PATTERNS.test(d.cause || "") &&
+                  !COG_COA_PATTERNS.test(d.classification || "")
               )
               const cogDecisions = data.decisions.length - ownerDecisions.length
 
