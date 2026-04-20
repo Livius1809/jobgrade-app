@@ -13,12 +13,7 @@ export default async function DemoPage() {
   return (
     <main className="min-h-screen bg-slate-50 py-8">
       <div className="mx-auto px-6">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Raport Master — Demo</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Date fictive AgroVision SRL · Toate straturile vizibile
-          </p>
-        </div>
+        <div className="h-4" />
         <MasterReportWrapper data={data} initialTheme="sobru" />
       </div>
     </main>

@@ -152,15 +152,17 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
           {/* Titlu — sus, adaptabil la lățime */}
           <div className="text-center pt-8 px-4">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
-              {data.isDemo
-                ? "Raport de evaluare și ierarhizare a posturilor de lucru"
-                : `Raport ${[
-                    data.layers.baza.unlocked && "evaluare și ierarhizare posturi",
-                    data.layers.layer1.unlocked && "structură salarială și conformitate",
-                    data.layers.layer2.unlocked && "competitivitate",
-                    data.layers.layer3.unlocked && "dezvoltare organizațională",
-                  ].filter(Boolean).join(" · ")}`
-              }
+              {(() => {
+                const parts = [
+                  data.layers.baza.unlocked && "evaluare și ierarhizare posturi",
+                  data.layers.layer1.unlocked && "remunerare și conformitate",
+                  data.layers.layer2.unlocked && "competitivitate",
+                  data.layers.layer3.unlocked && "dezvoltare organizațională",
+                ].filter(Boolean)
+                return parts.length > 0
+                  ? `Raport de ${parts.join(", ")}`
+                  : "Raport de evaluare a posturilor de lucru"
+              })()}
             </h1>
           </div>
 
@@ -914,93 +916,127 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
 export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator, modifiedJE }: Props) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [density, setDensity] = useState<Density>("normal")
+  const [currentPage, setCurrentPage] = useState<string | null>(null) // null = toate paginile
   const t = themes[theme]
   const d = DENSITY_CONFIG[density]
 
+  const pages = [
+    { id: SECTION_IDS.cover, label: "Copertă", icon: "📋" },
+    { id: SECTION_IDS.toc, label: "Cuprins", icon: "📑" },
+    { id: SECTION_IDS.je, label: "Evaluare", icon: "📊" },
+    { id: SECTION_IDS.salary, label: "Clase salariale", icon: "💰" },
+    { id: SECTION_IDS.payGap, label: "Decalaj salarial", icon: "⚖️" },
+    { id: SECTION_IDS.benchmark, label: "Benchmark", icon: "🎯" },
+    { id: SECTION_IDS.development, label: "Dezvoltare", icon: "🌱" },
+    { id: SECTION_IDS.annexInputs, label: "Anexe — Date", icon: "📎" },
+    { id: SECTION_IDS.annexLegal, label: "Anexe — Legislație", icon: "§" },
+  ]
+
+  const allSections = [
+    <CoverSection key="cover" data={data} t={t} />,
+    <TOCSection key="toc" data={data} t={t} />,
+    <JESection key="je" data={data} t={t} onOpenSimulator={onOpenSimulator} modifiedJE={modifiedJE} />,
+    <SalaryGradesSection key="salary" data={data} t={t} />,
+    <PayGapSection key="paygap" data={data} t={t} />,
+    <BenchmarkSection key="benchmark" data={data} t={t} />,
+    <DevelopmentSection key="dev" data={data} t={t} />,
+    <AnnexInputsSection key="annex1" data={data} t={t} />,
+    <AnnexLegalSection key="annex2" t={t} />,
+  ]
+
   return (
     <div className="max-w-6xl mx-auto w-full">
-      {/* Toolbar sticky */}
-      <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 px-4 py-3 mb-8 rounded-b-lg flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-slate-500 font-medium">Format:</label>
-          <button
-            onClick={() => setTheme("sobru")}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-              theme === "sobru" ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-            }`}
-          >
-            Profesional
-          </button>
-          <button
-            onClick={() => setTheme("modern")}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-              theme === "modern" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-            }`}
-          >
-            Modern
-          </button>
-        </div>
+      {/* Header demo */}
+      {data.isDemo && (
+        <p className="text-center text-sm text-slate-400 mb-6">
+          Raport versiune demo, include și serviciile aflate în dezvoltare
+        </p>
+      )}
 
-        {/* Selector densitate */}
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 font-medium">Afișare:</label>
-          {(["compact", "normal", "comfortable"] as Density[]).map(d => (
+      {/* Toolbar sticky */}
+      <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 px-4 py-3 rounded-b-lg">
+        {/* Rândul 1: Format + Afișare */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-slate-500 font-medium">Format:</label>
             <button
-              key={d}
-              onClick={() => setDensity(d)}
-              className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
-                density === d ? "bg-slate-700 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+              onClick={() => setTheme("sobru")}
+              className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                theme === "sobru" ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              {DENSITY_CONFIG[d].label}
+              Profesional
             </button>
-          ))}
+            <button
+              onClick={() => setTheme("modern")}
+              className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                theme === "modern" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              Modern
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">Afișare:</label>
+            {(["compact", "normal", "comfortable"] as Density[]).map(dd => (
+              <button
+                key={dd}
+                onClick={() => setDensity(dd)}
+                className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                  density === dd ? "bg-slate-700 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {DENSITY_CONFIG[dd].label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Mini TOC navigation */}
-        <div className="flex items-center gap-1">
-          {[
-            { icon: "📋", id: SECTION_IDS.cover, label: "Copertă" },
-            { icon: "📑", id: SECTION_IDS.toc, label: "Cuprins" },
-            { icon: "📊", id: SECTION_IDS.je, label: "Evaluare" },
-            { icon: "💰", id: SECTION_IDS.salary, label: "Clase" },
-            { icon: "⚖️", id: SECTION_IDS.payGap, label: "Pay gap" },
-            { icon: "🎯", id: SECTION_IDS.benchmark, label: "Benchmark" },
-            { icon: "🌱", id: SECTION_IDS.development, label: "Dezvoltare" },
-            { icon: "📎", id: SECTION_IDS.annexInputs, label: "Anexe" },
-            { icon: "§", id: SECTION_IDS.annexLegal, label: "Legislație" },
-          ].map(nav => (
-            <a
-              key={nav.id}
-              href={`#${nav.id}`}
-              className="w-7 h-7 rounded text-xs flex items-center justify-center hover:bg-slate-100 transition-colors"
-              title={nav.label}
+        {/* Rândul 2: Selector pagină */}
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-slate-100">
+          <button
+            onClick={() => setCurrentPage(null)}
+            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+              currentPage === null ? "bg-indigo-600 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            Toate
+          </button>
+          {pages.map(p => (
+            <button
+              key={p.id}
+              onClick={() => {
+                setCurrentPage(p.id)
+                document.getElementById(p.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }}
+              className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+                currentPage === p.id ? "bg-indigo-600 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+              }`}
             >
-              {nav.icon}
-            </a>
+              <span>{p.icon}</span> {p.label}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Pagini — scroll vertical, fiecare ca o foaie separată */}
+      {/* Spațiu între toolbar și conținut */}
+      <div className="h-6" />
+
+      {/* Pagini */}
       <div className="pb-16 transition-all duration-200" style={{ zoom: d.zoom }}>
-        <CoverSection data={data} t={t} />
-        <Separator />
-        <TOCSection data={data} t={t} />
-        <Separator />
-        <JESection data={data} t={t} onOpenSimulator={onOpenSimulator} modifiedJE={modifiedJE} />
-        <Separator />
-        <SalaryGradesSection data={data} t={t} />
-        <Separator />
-        <PayGapSection data={data} t={t} />
-        <Separator />
-        <BenchmarkSection data={data} t={t} />
-        <Separator />
-        <DevelopmentSection data={data} t={t} />
-        <Separator />
-        <AnnexInputsSection data={data} t={t} />
-        <Separator />
-        <AnnexLegalSection t={t} />
+        {currentPage === null ? (
+          // Toate paginile cu separatoare
+          allSections.map((section, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <Separator />}
+              {section}
+            </React.Fragment>
+          ))
+        ) : (
+          // Pagina individuală selectată
+          allSections[pages.findIndex(p => p.id === currentPage)] || allSections[0]
+        )}
       </div>
     </div>
   )

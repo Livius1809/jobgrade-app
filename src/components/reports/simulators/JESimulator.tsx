@@ -161,15 +161,15 @@ function CounselorMessage({ status }: { status: string }) {
 function CounselorButton() {
   const [showChat, setShowChat] = useState(false)
   return (
-    <div>
+    <div className="bg-indigo-50/50 rounded-xl border border-indigo-100 p-3">
       <button
         onClick={() => setShowChat(!showChat)}
-        className="w-full py-2 rounded-lg border border-indigo-200 text-indigo-600 text-xs font-medium hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+        className="w-full py-2.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
       >
         <span>💬</span> Solicită asistența consilierului
       </button>
       {showChat && (
-        <div className="mt-2 bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+        <div className="mt-3 bg-white rounded-lg p-4 border border-indigo-100 shadow-inner">
           <p className="text-xs text-indigo-700 mb-2">
             <strong>Consilier evaluare:</strong> Cu ce vă pot ajuta? Pot clarifica semnificația
             fiecărui nivel sau vă pot recomanda nivelul potrivit pe baza descrierii postului.
