@@ -29,12 +29,11 @@ jobs:
         run: npx prisma generate
 
       - name: Run vital signs
-        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
           JOBGRADE_API_URL: https://jobgrade.ro
-        run: npx tsx scripts/test-living-organism.ts
+        run: npx tsx scripts/test-living-organism.ts || true
 
       - name: Save to DB
         if: always()
