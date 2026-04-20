@@ -293,7 +293,7 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
     <SimulatorContext.Provider value={contextValue}>
       <div className={`transition-all duration-300 ${isSimulatorOpen ? "flex gap-6 max-w-[1600px] mx-auto px-4" : ""}`}>
         {/* Master — stânga */}
-        <div className={`transition-all duration-300 ${isSimulatorOpen ? "w-3/5 shrink-0" : "w-full max-w-4xl mx-auto"}`}>
+        <div className={`transition-all duration-300 overflow-x-hidden ${isSimulatorOpen ? "w-3/5 shrink-0 min-w-0" : "w-full max-w-6xl mx-auto"}`}>
           {masterContent}
         </div>
 
