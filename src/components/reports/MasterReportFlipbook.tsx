@@ -15,6 +15,7 @@ type Theme = "sobru" | "modern"
 interface Props {
   data: MasterReportData
   initialTheme?: Theme
+  onOpenSimulator?: (section: string) => void
 }
 
 // ─── Teme ──────────────────────────────────────────────────────────────────
@@ -226,7 +227,7 @@ function LockedOverlay({ layerName, t }: { layerName: string; t: typeof themes.s
   )
 }
 
-function JESection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
+function JESection({ data, t, onOpenSimulator }: { data: MasterReportData; t: typeof themes.sobru; onOpenSimulator?: (section: string) => void }) {
   const je = data.layers.baza.jobEvaluations
 
   // Agregare litere 6→4 criterii legale
@@ -331,7 +332,17 @@ function JESection({ data, t }: { data: MasterReportData; t: typeof themes.sobru
           </tbody>
         </table>
 
-        <div className={`mt-8 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
+        {/* Buton simulator */}
+        {onOpenSimulator && (
+          <button
+            onClick={() => onOpenSimulator("je")}
+            className="mt-6 w-full py-3 rounded-lg border-2 border-dashed border-indigo-200 text-indigo-600 text-sm font-medium hover:bg-indigo-50 hover:border-indigo-300 transition-colors flex items-center justify-center gap-2"
+          >
+            <span>🔧</span> Deschide simulatorul — modifică evaluarea criteriilor
+          </button>
+        )}
+
+        <div className={`mt-6 p-4 rounded-lg bg-slate-50 border border-slate-100`}>
           <p className="text-xs text-slate-500">
             <strong>Concluzie:</strong> Ierarhia reflectă complexitatea reală a fiecărui post, independent de
             persoana care îl ocupă. Acest clasament constituie fundamentul pe care se construiește
@@ -850,7 +861,7 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
 
 // ─── Componentul principal ─────────────────────────────────────────────────
 
-export default function MasterReportFlipbook({ data, initialTheme = "sobru" }: Props) {
+export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator }: Props) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const t = themes[theme]
 
@@ -907,7 +918,7 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru" }: P
       <div className="space-y-8 pb-16">
         <CoverSection data={data} t={t} />
         <TOCSection data={data} t={t} />
-        <JESection data={data} t={t} />
+        <JESection data={data} t={t} onOpenSimulator={onOpenSimulator} />
         <SalaryGradesSection data={data} t={t} />
         <PayGapSection data={data} t={t} />
         <BenchmarkSection data={data} t={t} />
