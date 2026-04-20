@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from "react"
 import { useSimulator } from "../MasterSimulatorLayout"
-import { createAntiGamingState, checkModification, type AntiGamingState } from "@/lib/evaluation/anti-gaming"
 import type { MasterJobEvaluation } from "@/lib/reports/master-report-data"
 
 // Literele disponibile per criteriu (fără a dezvălui punctajele)
@@ -38,9 +37,8 @@ interface Props {
 }
 
 export default function JESimulator({ jobs }: Props) {
-  const { addJeModification, state } = useSimulator()
+  const { addJeModification, state, antiGaming, checkAntiGaming } = useSimulator()
   const [selectedJob, setSelectedJob] = useState<number>(0)
-  const [antiGaming, setAntiGaming] = useState<AntiGamingState>(createAntiGamingState)
 
   const currentJob = jobs[selectedJob]
   if (!currentJob?.letters) return <p className="text-sm text-slate-400">Nu există date de evaluare.</p>
@@ -60,19 +58,12 @@ export default function JESimulator({ jobs }: Props) {
     const oldLetter = (currentLetters as any)[criterionKey]
     if (oldLetter === newLetter) return
 
-    // Anti-gaming check
-    const { newState, allowed } = checkModification(
-      antiGaming,
-      currentJob.position,
-      criterionKey,
-      newLetter,
-    )
-    setAntiGaming(newState)
-
+    // Anti-gaming check (persistat la nivel de sesiune)
+    const allowed = checkAntiGaming(currentJob.position, criterionKey, newLetter)
     if (!allowed) return
 
     addJeModification(selectedJob, criterionKey, oldLetter, newLetter, currentJob.position)
-  }, [selectedJob, currentJob, currentLetters, antiGaming, addJeModification])
+  }, [selectedJob, currentJob, currentLetters, checkAntiGaming, addJeModification])
 
   return (
     <div className="space-y-4">

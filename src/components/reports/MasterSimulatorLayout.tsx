@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useState, useCallback, createContext, useContext } from "react"
+import React, { useState, useCallback, useRef, createContext, useContext } from "react"
 import type { MasterReportData, MasterJobEvaluation } from "@/lib/reports/master-report-data"
+import { createAntiGamingState, checkModification, type AntiGamingState } from "@/lib/evaluation/anti-gaming"
 
 // ─── Shared state context ──────────────────────────────────────────────────
 
@@ -27,6 +28,9 @@ interface SimulatorContextType {
   setActiveSection: (section: string | null) => void
   addJeModification: (jobIndex: number, criterionKey: string, oldLetter: string, newLetter: string, jobTitle: string) => void
   getModifiedJE: (originalJE: MasterJobEvaluation[]) => MasterJobEvaluation[]
+  /** Anti-gaming state — persistat la nivel de sesiune, NU se resetează la close */
+  antiGaming: AntiGamingState
+  checkAntiGaming: (jobId: string, criterionKey: string, newLetter: string) => boolean
 }
 
 const SimulatorContext = createContext<SimulatorContextType | null>(null)
@@ -51,6 +55,17 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
     jeModifications: {},
     journal: [],
   })
+
+  // Anti-gaming persistat cu useRef (supraviețuiește close/reopen simulator)
+  const antiGamingRef = useRef<AntiGamingState>(createAntiGamingState())
+  const [antiGaming, setAntiGaming] = useState<AntiGamingState>(antiGamingRef.current)
+
+  const checkAntiGaming = useCallback((jobId: string, criterionKey: string, newLetter: string): boolean => {
+    const { newState, allowed } = checkModification(antiGamingRef.current, jobId, criterionKey, newLetter)
+    antiGamingRef.current = newState
+    setAntiGaming(newState)
+    return allowed
+  }, [])
 
   const setActiveSection = useCallback((section: string | null) => {
     setState(prev => ({ ...prev, activeSection: section }))
@@ -110,21 +125,23 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
     setActiveSection,
     addJeModification,
     getModifiedJE,
+    antiGaming,
+    checkAntiGaming,
   }
 
   const isSimulatorOpen = state.activeSection !== null
 
   return (
     <SimulatorContext.Provider value={contextValue}>
-      <div className={`flex gap-6 transition-all duration-300 ${isSimulatorOpen ? "" : ""}`}>
+      <div className={`transition-all duration-300 ${isSimulatorOpen ? "flex gap-6 max-w-[1600px] mx-auto px-4" : ""}`}>
         {/* Master — stânga */}
-        <div className={`transition-all duration-300 ${isSimulatorOpen ? "w-1/2" : "w-full max-w-4xl mx-auto"}`}>
+        <div className={`transition-all duration-300 ${isSimulatorOpen ? "w-3/5 shrink-0" : "w-full max-w-4xl mx-auto"}`}>
           {masterContent}
         </div>
 
         {/* Simulator — dreapta (slide-in) */}
         {isSimulatorOpen && (
-          <div className="w-1/2 sticky top-16 h-[calc(100vh-5rem)] overflow-y-auto">
+          <div className="w-2/5 shrink-0 sticky top-16 h-[calc(100vh-5rem)] overflow-y-auto">
             <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">
