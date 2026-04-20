@@ -82,11 +82,12 @@ const SECTION_IDS = {
 
 // ─── Page wrapper — simulare pagină A4 ────────────────────────────────────
 
-function PageSheet({ children, id, pageNum, totalPages }: {
+function PageSheet({ children, id, pageNum, totalPages, banner }: {
   children: React.ReactNode
   id?: string
   pageNum?: number
   totalPages?: number
+  banner?: string
 }) {
   return (
     <section
@@ -94,6 +95,12 @@ function PageSheet({ children, id, pageNum, totalPages }: {
       className="bg-white rounded-lg shadow-lg border border-slate-100 px-12 py-10 relative"
       style={{ minHeight: "60vh" }}
     >
+      {banner && (
+        <div className="rounded-lg overflow-hidden -mx-4 mb-8 h-32 relative">
+          <img src={banner} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
+        </div>
+      )}
       {children}
       {pageNum != null && totalPages != null && (
         <div className="absolute bottom-4 left-12 right-12 flex justify-between text-[10px] text-slate-300 border-t border-slate-100 pt-3 mt-8">
@@ -110,7 +117,9 @@ function PageSheet({ children, id, pageNum, totalPages }: {
 function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
   return (
     <PageSheet id={SECTION_IDS.cover}>
-      <div className={`${t.coverBg} rounded-lg -mx-12 -mt-10 px-12 pt-16 pb-16 mb-0 relative`}>
+      <div className={`${t.coverBg} rounded-lg -mx-12 -mt-10 px-12 pt-16 pb-16 mb-0 relative overflow-hidden`}
+        style={{ backgroundImage: "url(/images/master/cover.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "soft-light" }}
+      >
         {data.isDemo && (
           <div className="absolute top-6 right-6 bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1 rounded-full rotate-12 shadow-lg">
             DEMO
@@ -246,7 +255,7 @@ function JESection({ data, t, onOpenSimulator, modifiedJE }: { data: MasterRepor
   const hasLetters = je.some(j => j.letters)
 
   return (
-    <PageSheet id={SECTION_IDS.je} pageNum={3} totalPages={9}>
+    <PageSheet id={SECTION_IDS.je} pageNum={3} totalPages={9} banner="/images/master/baza.jpg">
       <div className="relative">
         {!data.layers.baza.unlocked && <LockedOverlay layerName="BAZA — Ordine internă" t={t} />}
         <div className="flex items-center gap-3 mb-2">
@@ -409,7 +418,7 @@ function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof th
   const bgColors = ["bg-indigo-50/30", "bg-violet-50/30", "bg-fuchsia-50/30", "bg-orange-50/30", "bg-emerald-50/30"]
 
   return (
-    <PageSheet id={SECTION_IDS.salary} pageNum={4} totalPages={9}>
+    <PageSheet id={SECTION_IDS.salary} pageNum={4} totalPages={9} banner="/images/master/conformitate.jpg">
       <div className="relative">
         {!data.layers.layer1.unlocked && <LockedOverlay layerName="LAYER 1 — Conformitate" t={t} />}
         <div className="flex items-center gap-3 mb-2">
@@ -545,7 +554,7 @@ function PayGapSection({ data, t }: { data: MasterReportData; t: typeof themes.s
   }
 
   return (
-    <PageSheet id={SECTION_IDS.payGap} pageNum={5} totalPages={9}>
+    <PageSheet id={SECTION_IDS.payGap} pageNum={5} totalPages={9} banner="/images/master/conformitate.jpg">
       <div className="relative">
         {!data.layers.layer1.unlocked && <LockedOverlay layerName="LAYER 1 — Conformitate" t={t} />}
         <div className="flex items-center gap-3 mb-2">
@@ -610,7 +619,7 @@ function BenchmarkSection({ data, t }: { data: MasterReportData; t: typeof theme
   }
 
   return (
-    <PageSheet id={SECTION_IDS.benchmark} pageNum={6} totalPages={9}>
+    <PageSheet id={SECTION_IDS.benchmark} pageNum={6} totalPages={9} banner="/images/master/competitivitate.jpg">
       <div className="relative">
         {!data.layers.layer2.unlocked && <LockedOverlay layerName="LAYER 2 — Competitivitate" t={t} />}
         <div className="flex items-center gap-3 mb-2">
@@ -694,7 +703,7 @@ function BenchmarkSection({ data, t }: { data: MasterReportData; t: typeof theme
 function DevelopmentSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
   const available = data.layers.layer3.available
   return (
-    <PageSheet id={SECTION_IDS.development} pageNum={7} totalPages={9}>
+    <PageSheet id={SECTION_IDS.development} pageNum={7} totalPages={9} banner="/images/master/dezvoltare.jpg">
       <div className="relative">
         {!data.layers.layer3.unlocked && <LockedOverlay layerName="LAYER 3 — Dezvoltare" t={t} />}
         <div className="flex items-center gap-3 mb-2">
@@ -733,7 +742,7 @@ function DevelopmentSection({ data, t }: { data: MasterReportData; t: typeof the
 
 function AnnexInputsSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
   return (
-    <PageSheet id={SECTION_IDS.annexInputs} pageNum={8} totalPages={9}>
+    <PageSheet id={SECTION_IDS.annexInputs} pageNum={8} totalPages={9} banner="/images/master/anexe.png">
       <h2 className={t.heading}>Anexe — Datele analizei</h2>
       <p className={`${t.body} mt-3 mb-6`}>
         Transparența procesului este esențială. Mai jos este prezentat parcursul complet al analizei:
