@@ -55,24 +55,30 @@ export default async function AgentsReportPage() {
     }
 
     // ═══ DIAGNOZĂ: de ce alocate ≠ realizate ═══
+    // Pattern-uri de filtrat (tehnice, zgomot, irelevante)
+    const NOISE = /no_activity|no_cycles|no_actions|monotony|dormant|austria|putin|trump|NATO|alegeri|bursier|fotbal|Eurovision/i
+
     const [postponedTasks, overdueTasks, ownerBlockedTasks, ownerTasks] = await Promise.all([
-      // Task-uri amânate (BLOCKED)
+      // Task-uri amânate (BLOCKED) — doar active, fără cancelled/failed
       p.agentTask.findMany({
         where: { status: "BLOCKED" },
         select: { title: true, assignedTo: true, blockerDescription: true, blockerType: true, blockerAgentRole: true, deadlineAt: true, createdAt: true },
         orderBy: { createdAt: "desc" },
-        take: 15,
+        take: 30,
       }).catch(() => []),
-      // Task-uri cu termen depășit (deadline < acum și necompletate)
+      // Task-uri cu termen depășit — exclude COMPLETED, FAILED, CANCELLED
       p.agentTask.findMany({
-        where: { deadlineAt: { lt: now }, status: { notIn: ["COMPLETED", "FAILED"] } },
+        where: { deadlineAt: { lt: now }, status: { notIn: ["COMPLETED", "FAILED", "CANCELLED"] } },
         select: { title: true, assignedTo: true, assignedBy: true, deadlineAt: true, status: true, blockerDescription: true },
         orderBy: { deadlineAt: "asc" },
-        take: 15,
+        take: 30,
       }).catch(() => []),
-      // Task-uri amânate din cauza Owner (blockerAgentRole = OWNER)
+      // Task-uri care depind de Owner — doar cele cu decizie reală necesară
       p.agentTask.findMany({
-        where: { OR: [{ blockerAgentRole: "OWNER" }, { assignedBy: "OWNER", status: { notIn: ["COMPLETED", "FAILED"] } }] },
+        where: {
+          blockerAgentRole: "OWNER",
+          status: { notIn: ["COMPLETED", "FAILED", "CANCELLED"] },
+        },
         select: { title: true, assignedTo: true, status: true, blockerDescription: true, deadlineAt: true, createdAt: true },
         orderBy: { createdAt: "desc" },
         take: 10,
@@ -84,34 +90,49 @@ export default async function AgentsReportPage() {
       }).catch(() => []),
     ])
 
+    // Filtrare zgomot
+    const filterNoise = (items: any[]) => items.filter((t: any) =>
+      !NOISE.test(t.title || "") && !NOISE.test(t.blockerDescription || "") && !NOISE.test(t.reason || "")
+    )
+
     const ownerTotal = ownerTasks.length
     const ownerCompleted = ownerTasks.filter((t: any) => t.status === "COMPLETED").length
+
+    // Funcție de curățare text (scoate limbaj tehnic)
+    const cleanText = (s: string) => s
+      .replace(/nivel\s*\d+/gi, "conducere")
+      .replace(/OWNER/g, "conducere")
+      .replace(/escalat/gi, "necesită decizie")
+
+    const filteredPostponed = filterNoise(postponedTasks)
+    const filteredOverdue = filterNoise(overdueTasks)
+    const filteredOwnerBlocked = filterNoise(ownerBlockedTasks)
 
     diagnosis = {
       onTime: pipeline.completed,
       postponed: pipeline.postponed,
-      ownerDependent: ownerBlockedTasks.length,
-      reasons: postponedTasks.map((t: any) => ({
+      ownerDependent: filteredOwnerBlocked.length,
+      reasons: filteredPostponed.map((t: any) => ({
         task: t.title?.slice(0, 60),
         agent: t.assignedTo,
-        reason: t.blockerDescription?.slice(0, 80) || t.blockerType || "condiții neîndeplinite",
+        reason: cleanText(t.blockerDescription?.slice(0, 80) || t.blockerType || "condiții neîndeplinite"),
         deadline: t.deadlineAt ? new Date(t.deadlineAt).toLocaleDateString("ro-RO") : "—",
-        dependsOn: t.blockerAgentRole || "—",
+        dependsOn: t.blockerAgentRole === "OWNER" ? "conducere" : t.blockerAgentRole || "—",
       })),
-      overdue: overdueTasks.map((t: any) => ({
+      overdue: filteredOverdue.map((t: any) => ({
         task: t.title?.slice(0, 60),
         agent: t.assignedTo,
-        assignedBy: t.assignedBy,
+        assignedBy: t.assignedBy === "OWNER" ? "conducere" : t.assignedBy,
         deadline: new Date(t.deadlineAt).toLocaleDateString("ro-RO"),
         daysOverdue: Math.ceil((now.getTime() - new Date(t.deadlineAt).getTime()) / (24 * 60 * 60 * 1000)),
-        status: t.status,
-        reason: t.blockerDescription?.slice(0, 60) || "—",
+        status: t.status === "BLOCKED" ? "amânat" : t.status === "ASSIGNED" ? "alocat" : t.status === "IN_PROGRESS" ? "în lucru" : t.status,
+        reason: cleanText(t.blockerDescription?.slice(0, 60) || "—"),
       })),
-      ownerBlocked: ownerBlockedTasks.map((t: any) => ({
+      ownerBlocked: filteredOwnerBlocked.map((t: any) => ({
         task: t.title?.slice(0, 60),
         agent: t.assignedTo,
-        status: t.status,
-        reason: t.blockerDescription?.slice(0, 80) || "Necesită decizie Owner",
+        status: t.status === "BLOCKED" ? "amânat" : t.status,
+        reason: cleanText(t.blockerDescription?.slice(0, 80) || "Necesită decizia conducerii"),
         deadline: t.deadlineAt ? new Date(t.deadlineAt).toLocaleDateString("ro-RO") : "—",
       })),
     } as any
