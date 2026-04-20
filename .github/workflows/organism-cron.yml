@@ -1,0 +1,34 @@
+name: Organism Cron (backup for Vercel)
+
+on:
+  schedule:
+    # Executor: la fiecare 2 ore, L-V 06-20 UTC (08-22 EET)
+    - cron: '0 6,8,10,12,14,16,18,20 * * 1-5'
+  workflow_dispatch: # permite rulare manuala
+
+jobs:
+  organism-pulse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Execute tasks (max 3)
+        run: |
+          curl -sf -m 120 -X POST \
+            "https://jobgrade.ro/api/v1/agents/execute-task" \
+            -H "Content-Type: application/json" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
+            -d '{"limit":1}' || echo "executor timeout/error"
+
+      - name: Cleanup irrelevant signals
+        run: |
+          curl -sf -m 30 -X POST \
+            "https://jobgrade.ro/api/v1/signals/cleanup" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "cleanup skipped"
+
+      - name: Retry failed tasks
+        run: |
+          curl -sf -m 120 -X POST \
+            "https://jobgrade.ro/api/v1/agents/execute-task" \
+            -H "Content-Type: application/json" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
+            -d '{"limit":1,"bypassFilters":true}' || echo "retry skipped"
