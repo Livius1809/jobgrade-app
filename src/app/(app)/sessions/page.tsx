@@ -17,6 +17,7 @@ const STATUS_LABELS: Record<SessionStatus, string> = {
   SLOTTING: "Clasificare posturi",
   OWNER_VALIDATION: "Validare Owner",
   COMPLETED: "Finalizată",
+  VALIDATED: "Validată",
 }
 
 const STATUS_STYLES: Record<SessionStatus, string> = {
@@ -30,6 +31,7 @@ const STATUS_STYLES: Record<SessionStatus, string> = {
   SLOTTING: "bg-cyan-100 text-cyan-700",
   OWNER_VALIDATION: "bg-amber-100 text-amber-700",
   COMPLETED: "bg-green-100 text-green-700",
+  VALIDATED: "bg-emerald-100 text-emerald-800",
 }
 
 export default async function SessionsPage() {
