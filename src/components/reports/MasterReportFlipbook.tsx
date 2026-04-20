@@ -612,11 +612,11 @@ function PayGapSection({ data, t }: { data: MasterReportData; t: typeof themes.s
 
         <div className={`${t.body} mb-6 space-y-3`}>
           <p>
-            Analiza decalajului de remunerare de gen a fost realizată conform <strong>Art. 9 al Directivei (UE) 2023/970</strong>.
-            Comparația se face între lucrătorii de gen diferit care prestează <strong>muncă de valoare egală</strong> —
-            adică posturi cu <strong>același punctaj de evaluare</strong> (încadrate în aceeași clasă salarială),
-            indiferent de denumirea poziției sau departamentul de apartenență,
-            la <strong>aceeași normă de lucru</strong> (normalizată la 8h).
+            Analiza decalajelor salariale identifică toate diferențele de remunerare între posturi
+            cu <strong>același scor de evaluare</strong> (muncă de valoare egală), indiferent de denumirea
+            poziției sau departament. Se analizează toate combinațiile: diferențe între
+            bărbați (M-M), între femei (F-F) și între genuri (M-F), la <strong>aceeași normă de lucru</strong> (normalizată la 8h).
+            Diferențele corelate cu genul sunt supuse cerințelor <strong>Art. 9 al Directivei (UE) 2023/970</strong>.
           </p>
           <p>
             Un decalaj de peste <strong>5%</strong> care nu poate fi justificat prin criterii obiective și neutre
