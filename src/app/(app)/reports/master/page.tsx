@@ -17,13 +17,7 @@ export default async function MasterReportPage() {
   const data = await getMasterReportData(session.user.tenantId)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Raport Master</h1>
-        <p className="text-sm text-slate-500">
-          Dosarul complet al organizației — toate straturile conform serviciilor active
-        </p>
-      </div>
+    <div className="flex justify-center px-6">
       <MasterReportWrapper data={data} initialTheme="sobru" isDemo={false} />
     </div>
   )

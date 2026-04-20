@@ -333,12 +333,21 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
 
       {/* Buton inițiere comisie (doar pe parcurs AI pur) */}
       {state.jeParcurs === "ai_pur" && (
-        <button
-          onClick={() => setJeParcurs("ai_comisie")}
-          className="w-full py-2 rounded-lg border-2 border-dashed border-violet-200 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors"
-        >
-          Inițiază procesul de evaluare mediat (Comisie) →
-        </button>
+        <div className="bg-violet-50 rounded-xl border border-violet-200 p-4 space-y-2">
+          <p className="text-xs text-violet-700">
+            <strong>Opțional:</strong> Puteți valida rezultatul AI printr-o comisie de evaluare.
+            Clasamentul generat AI devine punct de plecare — comisia dezbate și ajustează.
+          </p>
+          <button
+            onClick={() => setJeParcurs("ai_comisie")}
+            className="w-full py-2.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 transition-colors"
+          >
+            Inițiază procesul de evaluare mediat (Comisie)
+          </button>
+          <p className="text-[10px] text-violet-400 text-center">
+            Consumă credite suplimentare proporțional cu nr. evaluatori și posturi
+          </p>
+        </div>
       )}
 
       {/* Consilier (calibrat — mai relaxat post-comisie) */}
