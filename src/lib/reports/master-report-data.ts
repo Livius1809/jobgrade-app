@@ -122,6 +122,15 @@ export interface MasterReportData {
     }
   }
   generatedAt: string
+  /** Metadate validare — populate din DB la producție */
+  validation?: {
+    validatedAt: string
+    validatedBy: string
+    validatorRole: string
+    evaluationType: string
+    evaluationDate: string
+    committee?: Array<{ name: string; role: string }>
+  }
 }
 
 // ─── Date fictive AgroVision SRL ──────────────────────────────────────────
@@ -297,7 +306,7 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
     }),
     prisma.payrollEntry.findMany({ where: { tenantId } }),
     prisma.evaluationSession.findMany({
-      where: { tenantId, status: "COMPLETED" },
+      where: { tenantId, status: { in: ["COMPLETED", "VALIDATED"] } },
       include: {
         jobResults: {
           include: {
@@ -306,6 +315,10 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
           },
         },
         salaryGrades: { include: { steps: true } },
+        participants: {
+          include: { user: { select: { firstName: true, lastName: true, jobTitle: true } } },
+        },
+        validator: { select: { firstName: true, lastName: true, jobTitle: true } },
       },
       orderBy: { completedAt: "desc" },
       take: 1,
@@ -405,5 +418,18 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
       },
     },
     generatedAt: new Date().toISOString(),
+    validation: latestSession?.validatedAt ? {
+      validatedAt: latestSession.validatedAt.toISOString(),
+      validatedBy: (latestSession as any).validator
+        ? `${(latestSession as any).validator.firstName} ${(latestSession as any).validator.lastName}`
+        : "—",
+      validatorRole: (latestSession as any).validator?.jobTitle ?? "Director General",
+      evaluationType: (latestSession as any).evaluationType ?? "AI_GENERATED",
+      evaluationDate: (latestSession.completedAt ?? latestSession.startedAt ?? latestSession.createdAt).toISOString(),
+      committee: ((latestSession as any).participants ?? []).map((p: any) => ({
+        name: `${p.user.firstName} ${p.user.lastName}`,
+        role: p.user.jobTitle ?? "Evaluator",
+      })),
+    } : undefined,
   }
 }

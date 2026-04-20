@@ -953,6 +953,104 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
   )
 }
 
+function ValidationSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
+  const v = data.validation
+  if (!v) return null
+
+  const parcursLabels: Record<string, string> = {
+    AI_GENERATED: "Evaluare generată AI",
+    AI_COMMITTEE: "Evaluare AI validată de comisie",
+    COMMITTEE_ONLY: "Evaluare prin comisie de evaluare",
+  }
+
+  return (
+    <PageSheet id="section-validation" pageNum={10} totalPages={10}>
+      <h2 className={t.heading}>Validare și aprobare</h2>
+
+      <div className="mt-8 space-y-6">
+        {/* Metadate evaluare */}
+        <div className={t.card}>
+          <h3 className={t.subheading}>Date evaluare</h3>
+          <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-slate-400 text-xs">Data evaluării</p>
+              <p className="text-slate-800 font-medium">{new Date(v.evaluationDate).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs">Tip evaluare</p>
+              <p className="text-slate-800 font-medium">{parcursLabels[v.evaluationType] || v.evaluationType}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs">Data validării</p>
+              <p className="text-slate-800 font-medium">{new Date(v.validatedAt).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs">Nr. posturi evaluate</p>
+              <p className="text-slate-800 font-medium">{data.company.positions}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Componența comisiei */}
+        {v.committee && v.committee.length > 0 && (
+          <div className={t.card}>
+            <h3 className={t.subheading}>Componența comisiei de evaluare</h3>
+            <div className="mt-3 space-y-2">
+              {v.committee.map((m, i) => (
+                <div key={i} className="flex items-center justify-between text-sm border-b border-slate-100 pb-2">
+                  <span className="text-slate-800 font-medium">{m.name}</span>
+                  <span className="text-slate-500 text-xs">{m.role}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Declarație de validare */}
+        <div className="bg-emerald-50 rounded-xl border-2 border-emerald-200 p-6 space-y-4">
+          <h3 className={`${t.subheading} text-emerald-800`}>Declarație de validare</h3>
+          <p className="text-sm text-slate-700 leading-relaxed">
+            Subsemnatul/a, <strong>{v.validatedBy}</strong>, în calitate
+            de <strong>{v.validatorRole}</strong> al companiei <strong>{data.company.name}</strong>,
+            validez configurația actuală a evaluării posturilor ca fiind conformă cu misiunea,
+            viziunea, valorile, structura organizațională și complexitatea reală a posturilor
+            evaluate din compania noastră.
+          </p>
+          <div className="grid grid-cols-2 gap-8 pt-4 border-t border-emerald-200">
+            {/* Semnătură electronică */}
+            <div>
+              <p className="text-xs text-emerald-600 font-medium mb-1">Semnătură electronică</p>
+              <div className="bg-white rounded-lg border border-emerald-200 p-3 text-center">
+                <p className="text-sm font-semibold text-slate-800">{v.validatedBy}</p>
+                <p className="text-xs text-slate-500">{v.validatorRole}</p>
+                <p className="text-[10px] text-emerald-600 mt-2 font-mono">
+                  Validat digital: {new Date(v.validatedAt).toISOString()}
+                </p>
+              </div>
+            </div>
+            {/* Loc pentru semnătură olografă */}
+            <div>
+              <p className="text-xs text-emerald-600 font-medium mb-1">Semnătură olografă (la imprimare)</p>
+              <div className="bg-white rounded-lg border border-dashed border-emerald-300 p-3 text-center min-h-[80px] flex flex-col justify-end">
+                <div className="border-t border-slate-300 pt-2 mt-auto">
+                  <p className="text-xs text-slate-400">Numele, funcția și semnătura</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ștampila / Nr înregistrare */}
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <span>Nr. înregistrare: ________________</span>
+          <span>Data: {new Date(v.validatedAt).toLocaleDateString("ro-RO")}</span>
+          <span>L.S.</span>
+        </div>
+      </div>
+    </PageSheet>
+  )
+}
+
 // ─── Componentul principal ─────────────────────────────────────────────────
 
 export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator, modifiedJE, readOnly = false }: Props) {
@@ -972,6 +1070,7 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
     { id: SECTION_IDS.development, label: "Dezvoltare", icon: "🌱" },
     { id: SECTION_IDS.annexInputs, label: "Anexe — Date", icon: "📎" },
     { id: SECTION_IDS.annexLegal, label: "Anexe — Legislație", icon: "§" },
+    ...(data.validation ? [{ id: "section-validation", label: "Validare", icon: "✅" }] : []),
   ]
 
   const allSections = [
@@ -984,6 +1083,7 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
     <DevelopmentSection key="dev" data={data} t={t} />,
     <AnnexInputsSection key="annex1" data={data} t={t} />,
     <AnnexLegalSection key="annex2" t={t} />,
+    ...(data.validation ? [<ValidationSection key="validation" data={data} t={t} />] : []),
   ]
 
   return (
