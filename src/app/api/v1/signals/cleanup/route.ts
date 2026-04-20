@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const RELEVANT_CATEGORIES = new Set(["LEGAL_REG", "COMPETITIVE", "MARKET", "TECHNOLOGY", "TALENT"])
+const RELEVANT_CATEGORIES = ["LEGAL_REG", "COMPETITIVE", "MARKET", "TECHNOLOGY", "TALENT"] as const
 
 export async function POST(req: NextRequest) {
   const key = req.headers.get("x-internal-key")
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const result = await prisma.externalSignal.updateMany({
     where: {
       processedAt: null,
-      category: { notIn: [...RELEVANT_CATEGORIES] },
+      category: { notIn: RELEVANT_CATEGORIES as any },
     },
     data: {
       processedAt: new Date(),
