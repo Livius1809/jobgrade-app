@@ -165,22 +165,19 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
           </div>
 
           {/* Companie — centru, 3 rânduri spațiate */}
-          <div className="text-center py-10 space-y-4">
+          <div className="text-center py-10">
             <p className="text-3xl sm:text-4xl font-bold tracking-wide">{data.company.name}</p>
-            <p className="text-white/60 text-base">
+            <p className="text-white/60 text-base mt-6">
               {data.company.industry}, CUI: {data.company.cui}
             </p>
-            <p className="text-white/50 text-sm">
+            <p className="text-white/50 text-sm mt-4">
               {data.company.positions} posturi evaluate · {data.company.employees} angajați · {data.company.departments.length} departamente
             </p>
           </div>
 
-          {/* Footer — logo stânga-jos + dată */}
+          {/* Footer — logo stânga-jos + dată dreapta-jos */}
           <div className="flex items-end justify-between pb-2">
-            <div className="flex items-center gap-3">
-              <img src="/logo-symbol.svg" alt="" className="h-8 opacity-40" />
-              <img src="/logo-white.svg" alt="JobGrade" className="h-5 opacity-50" />
-            </div>
+            <img src="/logo-white.svg" alt="JobGrade" className="h-6 opacity-60" />
             <p className="text-white/30 text-xs text-right">
               Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")}<br />
               Document confidențial
