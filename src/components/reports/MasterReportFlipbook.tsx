@@ -437,7 +437,7 @@ function SalaryGradesSection({ data, t, readOnly = false }: { data: MasterReport
   const effectiveClassCount = userClassCount ?? classDetection?.suggested ?? 5
 
   const [userStepCount, setUserStepCount] = useState<number | null>(null)
-  const effectiveStepCount = userStepCount ?? 4
+  const effectiveStepCount = userStepCount ?? (data.isDemo ? 8 : 4)
 
   // Construim clasele Pitariu
   const pitariuGrades = useMemo(() => {
@@ -479,6 +479,9 @@ function SalaryGradesSection({ data, t, readOnly = false }: { data: MasterReport
             Conform <strong>Art. 4 alin. (4) din Directiva (UE) 2023/970</strong>, structurile de remunerare
             trebuie să fie transparente și bazate pe criterii obiective. Treptele din cadrul fiecărei clase
             permit avansarea salarială corelată cu evoluția profesională — performanță, vechime, nivel de instruire.
+          </p>
+          <p className="text-sm text-indigo-600 font-medium bg-indigo-50 rounded-lg px-4 py-2 border border-indigo-100">
+            Numărul claselor și treptelor de salarizare este configurabil de către utilizator.
           </p>
         </div>
 
