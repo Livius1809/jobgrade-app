@@ -11,24 +11,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Execute tasks (max 3)
+      - name: Process signals (cron/signals)
         run: |
-          curl -sf -m 120 -X POST \
-            "https://jobgrade.ro/api/v1/agents/execute-task" \
-            -H "Content-Type: application/json" \
-            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
-            -d '{"limit":1}' || echo "executor timeout/error"
+          curl -sf -m 60 \
+            "https://jobgrade.ro/api/cron/signals" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "signals skipped"
 
-      - name: Cleanup irrelevant signals
+      - name: Cleanup old signals
         run: |
           curl -sf -m 30 -X POST \
             "https://jobgrade.ro/api/v1/signals/cleanup" \
             -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "cleanup skipped"
 
-      - name: Retry failed tasks
+      - name: Execute tasks (cron/executor)
         run: |
-          curl -sf -m 120 -X POST \
-            "https://jobgrade.ro/api/v1/agents/execute-task" \
-            -H "Content-Type: application/json" \
-            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
-            -d '{"limit":1,"bypassFilters":true}' || echo "retry skipped"
+          curl -sf -m 120 \
+            "https://jobgrade.ro/api/cron/executor" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "executor skipped"
+
+      - name: Retry failed tasks (cron/retry)
+        run: |
+          curl -sf -m 120 \
+            "https://jobgrade.ro/api/cron/retry" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "retry skipped"

@@ -20,9 +20,12 @@ import { runIntelligentBatch } from "@/lib/agents/intelligent-executor"
 export const maxDuration = 300 // 5 min — matches execute-task route
 
 export async function GET(request: NextRequest) {
-  // Verify Vercel Cron auth
+  // Auth: CRON_SECRET (Vercel) SAU x-internal-key (n8n/GitHub Actions)
   const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const internalKey = request.headers.get("x-internal-key")
+  const isAuthorized = authHeader === `Bearer ${process.env.CRON_SECRET}` ||
+    internalKey === process.env.INTERNAL_API_KEY
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
