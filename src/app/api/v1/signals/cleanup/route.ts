@@ -20,17 +20,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // SQL raw — instant, fără overhead Prisma
-  const result = await prisma.$executeRawUnsafe(`
-    UPDATE "external_signals"
-    SET "processedAt" = NOW()
-    WHERE "processedAt" IS NULL
-    AND "category" NOT IN ('LEGAL_REG', 'COMPETITIVE', 'MARKET', 'TECHNOLOGY', 'TALENT')
-  `)
+  try {
+    const result = await prisma.$executeRawUnsafe(`
+      UPDATE "external_signals"
+      SET "processedAt" = NOW()
+      WHERE "processedAt" IS NULL
+      AND "category" NOT IN ('LEGAL_REG', 'COMPETITIVE', 'MARKET', 'TECHNOLOGY', 'TALENT')
+    `)
 
-  return NextResponse.json({
-    ok: true,
-    cleaned: result,
-    message: `${result} semnale irelevante marcate ca processed`,
-  })
+    return NextResponse.json({
+      ok: true,
+      cleaned: Number(result),
+      message: `${result} semnale irelevante marcate ca processed`,
+    })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "cleanup failed" }, { status: 500 })
+  }
 }
