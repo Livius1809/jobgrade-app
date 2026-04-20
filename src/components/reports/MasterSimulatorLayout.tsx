@@ -317,10 +317,21 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
           {masterContent}
         </div>
 
-        {/* Simulator — dreapta (scrollează cu secțiunea asociată) */}
+        {/* Simulator — dreapta, ancorat la secțiunea relevantă */}
         {isSimulatorOpen && (
-          <div className="w-[380px] shrink-0">
-            <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url(/images/brand/hex-pattern.png)", backgroundSize: "auto, 250px", backgroundRepeat: "no-repeat, repeat" }}>
+          <div className="w-[380px] shrink-0" ref={(el) => {
+            if (el && state.activeSection) {
+              const section = document.getElementById(`section-${state.activeSection}`)
+              if (section) {
+                const masterContainer = el.parentElement?.querySelector(":first-child") as HTMLElement
+                if (masterContainer) {
+                  const sectionTop = section.offsetTop - masterContainer.offsetTop
+                  el.style.marginTop = `${sectionTop}px`
+                }
+              }
+            }
+          }}>
+            <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)), url(/images/brand/hex-pattern.png)", backgroundSize: "auto, 250px", backgroundRepeat: "no-repeat, repeat" }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">
                   Simulator

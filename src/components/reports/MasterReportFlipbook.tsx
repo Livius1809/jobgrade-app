@@ -111,7 +111,7 @@ function PageSheet({ children, id, pageNum, totalPages, banner, densityClass = "
     <section
       id={id}
       className={`bg-white rounded-lg shadow-lg border border-slate-100 ${densityClass} relative`}
-      style={{ minHeight: "60vh", backgroundImage: "linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(/images/brand/paper-texture.png)", backgroundSize: "auto, 400px", backgroundRepeat: "no-repeat, repeat" }}
+      style={{ minHeight: "60vh", backgroundImage: "linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url(/images/brand/paper-texture.png)", backgroundSize: "auto, 400px", backgroundRepeat: "no-repeat, repeat" }}
     >
       {banner && (
         <div className="rounded-lg overflow-hidden -mx-4 mb-8 h-32 relative">
