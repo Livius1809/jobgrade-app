@@ -1,36 +1,164 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useRef, useEffect } from "react"
 import { useSimulator } from "../MasterSimulatorLayout"
+import { CRITERION_DESCRIPTIONS, CRITERION_LABELS, LEGAL_GROUPS } from "@/lib/evaluation/criterion-descriptions"
 import type { MasterJobEvaluation } from "@/lib/reports/master-report-data"
 
-// Literele disponibile per criteriu (fără a dezvălui punctajele)
-const CRITERION_LEVELS: Record<string, string[]> = {
-  Knowledge: ["A", "B", "C", "D", "E", "F", "G"],
-  Communications: ["A", "B", "C", "D", "E"],
-  ProblemSolving: ["A", "B", "C", "D", "E", "F", "G"],
-  DecisionMaking: ["A", "B", "C", "D", "E", "F", "G"],
-  BusinessImpact: ["A", "B", "C", "D"],
-  WorkingConditions: ["A", "B", "C"],
+// ─── Dropdown cu fade overlay (ca în portal) ───────────────────────────────
+
+function CriterionDropdown({
+  criterionKey,
+  currentLetter,
+  isModified,
+  disabled,
+  onChange,
+}: {
+  criterionKey: string
+  currentLetter: string
+  isModified: boolean
+  disabled: boolean
+  onChange: (letter: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  const descriptions = CRITERION_DESCRIPTIONS[criterionKey] || []
+  const label = CRITERION_LABELS[criterionKey] || criterionKey
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        const panel = document.getElementById(`sim-dropdown-${criterionKey}`)
+        if (panel && !panel.contains(e.target as Node)) setOpen(false)
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open, criterionKey])
+
+  function handleOpen() {
+    if (disabled) return
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const panelWidth = Math.min(500, window.innerWidth * 0.85)
+      let left = rect.left
+      if (left + panelWidth > window.innerWidth - 10) left = window.innerWidth - panelWidth - 10
+      if (left < 10) left = 10
+      const midScreen = window.innerHeight / 2
+      const top = rect.top > midScreen ? rect.top - 280 : rect.bottom + 4
+      setPos({ top, left })
+    }
+    setOpen(!open)
+  }
+
+  return (
+    <div className="inline-block">
+      <button
+        ref={btnRef}
+        onClick={handleOpen}
+        disabled={disabled}
+        className={`px-2 py-1 rounded text-xs font-bold border transition-all cursor-pointer ${
+          open
+            ? "border-indigo-500 bg-indigo-100 text-indigo-700 ring-2 ring-indigo-200 shadow-lg z-50 relative"
+            : isModified
+              ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+              : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+        } disabled:opacity-30 disabled:cursor-not-allowed`}
+      >
+        {currentLetter}
+        <svg className="inline-block ml-1 w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          {/* Fade background */}
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            id={`sim-dropdown-${criterionKey}`}
+            className="fixed z-50 bg-white rounded-xl shadow-2xl border-2 border-indigo-500 overflow-hidden"
+            style={{ top: pos.top, left: pos.left, width: "min(500px, 85vw)", maxHeight: "280px" }}
+          >
+            <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-100">
+              <p className="text-xs font-bold text-indigo-700">{label}</p>
+              <p className="text-[10px] text-indigo-400">Selectați nivelul care reflectă complexitatea reală a postului</p>
+            </div>
+            <div className="overflow-y-auto" style={{ maxHeight: "230px" }}>
+              {descriptions.map(desc => (
+                <button
+                  key={desc.letter}
+                  onClick={() => { onChange(desc.letter); setOpen(false) }}
+                  className={`w-full text-left px-3 py-2.5 text-xs transition-colors cursor-pointer flex items-start gap-2 ${
+                    desc.letter === currentLetter
+                      ? "bg-indigo-50 text-indigo-900"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <span className={`flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                    desc.letter === currentLetter ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"
+                  }`}>
+                    {desc.letter}
+                  </span>
+                  <span className="leading-relaxed">{desc.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
 }
 
-// Descrieri per criteriu (ce vede clientul)
-const CRITERION_LABELS: Record<string, string> = {
-  Knowledge: "Educație și experiență",
-  Communications: "Comunicare",
-  ProblemSolving: "Rezolvarea problemelor",
-  DecisionMaking: "Luarea deciziilor",
-  BusinessImpact: "Impact asupra afacerii",
-  WorkingConditions: "Condiții de muncă",
+// ─── Mesaj consilier (în loc de block sec) ─────────────────────────────────
+
+function CounselorMessage({ status, criterionKey }: { status: string; criterionKey?: string }) {
+  if (status === "OK") return null
+
+  const messages = {
+    WARNING: {
+      icon: "💬",
+      title: "Consilier evaluare",
+      text: `Observ că explorați intensiv acest criteriu. Pot să vă ajut să înțelegeți ce nivel reflectă cel mai bine complexitatea postului? Fiecare nivel are o semnificație precisă — selectați-l pe cel care corespunde cel mai fidel realității.`,
+      color: "bg-amber-50 border-amber-200 text-amber-800",
+    },
+    COOLDOWN: {
+      icon: "⏸️",
+      title: "Pauză de reflecție",
+      text: "Prea multe modificări în timp scurt. Vă recomandăm să analizați cu atenție descrierile nivelurilor înainte de a continua. Simulatorul va fi disponibil din nou în câteva secunde.",
+      color: "bg-blue-50 border-blue-200 text-blue-800",
+    },
+    BLOCKED: {
+      icon: "🛡️",
+      title: "Acces suspendat temporar",
+      text: "Am detectat un pattern neobișnuit de modificări. Pentru protecția integrității evaluării, simulatorul este temporar indisponibil. Contactați echipa de suport pentru asistență.",
+      color: "bg-red-50 border-red-200 text-red-800",
+    },
+  }
+
+  const msg = messages[status as keyof typeof messages]
+  if (!msg) return null
+
+  return (
+    <div className={`p-4 rounded-lg border ${msg.color}`}>
+      <div className="flex items-start gap-2">
+        <span className="text-lg">{msg.icon}</span>
+        <div>
+          <p className="text-xs font-bold mb-1">{msg.title}</p>
+          <p className="text-xs leading-relaxed">{msg.text}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-// Maparea la cele 4 criterii legale
-const LEGAL_GROUPS = [
-  { label: "Cunoștințe", keys: ["Knowledge", "Communications"] },
-  { label: "Efort", keys: ["ProblemSolving"] },
-  { label: "Responsabilități", keys: ["DecisionMaking", "BusinessImpact"] },
-  { label: "Condiții", keys: ["WorkingConditions"] },
-]
+// ─── Componenta principală ─────────────────────────────────────────────────
 
 interface Props {
   jobs: MasterJobEvaluation[]
@@ -58,29 +186,22 @@ export default function JESimulator({ jobs }: Props) {
     const oldLetter = (currentLetters as any)[criterionKey]
     if (oldLetter === newLetter) return
 
-    // Anti-gaming check (persistat la nivel de sesiune)
     const allowed = checkAntiGaming(currentJob.position, criterionKey, newLetter)
     if (!allowed) return
 
     addJeModification(selectedJob, criterionKey, oldLetter, newLetter, currentJob.position)
   }, [selectedJob, currentJob, currentLetters, checkAntiGaming, addJeModification])
 
+  const isDisabled = antiGaming.status === "BLOCKED" || antiGaming.status === "COOLDOWN"
+
   return (
     <div className="space-y-4">
-      {/* Anti-gaming warning */}
-      {antiGaming.message && (
-        <div className={`p-3 rounded-lg text-xs ${
-          antiGaming.status === "BLOCKED" ? "bg-red-50 text-red-700 border border-red-200" :
-          antiGaming.status === "COOLDOWN" ? "bg-amber-50 text-amber-700 border border-amber-200" :
-          "bg-amber-50 text-amber-600 border border-amber-100"
-        }`}>
-          {antiGaming.message}
-        </div>
-      )}
+      {/* Consilier (în loc de mesaj sec) */}
+      <CounselorMessage status={antiGaming.status} />
 
       {/* Selector post */}
       <div>
-        <label className="text-xs font-medium text-slate-500 block mb-1">Poziție</label>
+        <label className="text-xs font-medium text-slate-500 block mb-1">Poziție evaluată</label>
         <select
           value={selectedJob}
           onChange={(e) => setSelectedJob(Number(e.target.value))}
@@ -94,38 +215,27 @@ export default function JESimulator({ jobs }: Props) {
         </select>
       </div>
 
-      {/* Criterii grupate pe cele 4 legale */}
+      {/* Criterii grupate pe cele 4 legale — cu dropdown + descrieri */}
       <div className="space-y-3">
         {LEGAL_GROUPS.map(group => (
-          <div key={group.label} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-            <h4 className="text-xs font-bold text-slate-700 mb-2">{group.label}</h4>
+          <div key={group.shortLabel} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+            <h4 className="text-xs font-bold text-slate-700 mb-0.5">{group.label}</h4>
+            <p className="text-[10px] text-slate-400 mb-2">{group.shortLabel}</p>
             <div className="space-y-2">
               {group.keys.map(key => {
-                const levels = CRITERION_LEVELS[key]
                 const currentLetter = (currentLetters as any)[key] || "—"
                 const isModified = mods?.[key] !== undefined
 
                 return (
                   <div key={key} className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{CRITERION_LABELS[key]}</span>
-                    <div className="flex items-center gap-1">
-                      {levels.map(letter => (
-                        <button
-                          key={letter}
-                          onClick={() => handleLetterChange(key, letter)}
-                          disabled={antiGaming.status === "BLOCKED" || antiGaming.status === "COOLDOWN"}
-                          className={`w-6 h-6 rounded text-[10px] font-bold transition-colors ${
-                            currentLetter === letter
-                              ? isModified
-                                ? "bg-indigo-600 text-white ring-2 ring-indigo-300"
-                                : "bg-slate-800 text-white"
-                              : "bg-white border border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-600"
-                          } disabled:opacity-30 disabled:cursor-not-allowed`}
-                        >
-                          {letter}
-                        </button>
-                      ))}
-                    </div>
+                    <span className="text-xs text-slate-600">{CRITERION_LABELS[key]}</span>
+                    <CriterionDropdown
+                      criterionKey={key}
+                      currentLetter={currentLetter}
+                      isModified={isModified}
+                      disabled={isDisabled}
+                      onChange={(letter) => handleLetterChange(key, letter)}
+                    />
                   </div>
                 )
               })}
@@ -136,25 +246,28 @@ export default function JESimulator({ jobs }: Props) {
 
       {/* Rezumat litere pe 4 criterii legale */}
       <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-        <h4 className="text-xs font-bold text-indigo-700 mb-2">Rezumat evaluare</h4>
+        <h4 className="text-xs font-bold text-indigo-700 mb-2">Rezumat evaluare — {currentJob.position}</h4>
         <div className="grid grid-cols-4 gap-2 text-center">
           {LEGAL_GROUPS.map(group => {
             const letters = group.keys.map(k => (currentLetters as any)[k] || "—")
             const display = letters.length > 1 ? letters.join("·") : letters[0]
             return (
-              <div key={group.label}>
-                <p className="text-[10px] text-indigo-400">{group.label}</p>
+              <div key={group.shortLabel}>
+                <p className="text-[10px] text-indigo-400">{group.shortLabel}</p>
                 <p className="text-lg font-mono font-bold text-indigo-700">{display}</p>
               </div>
             )
           })}
         </div>
+        <p className="text-center text-xs text-slate-400 mt-2">
+          Scor total: <span className="font-mono font-bold text-slate-700">{currentJob.score}</span>
+        </p>
       </div>
 
       {/* Info */}
       <p className="text-[10px] text-slate-400 italic">
-        Modificările se reflectă în raportul din stânga. Scorul se recalculează automat.
-        Evaluarea trebuie să reflecte complexitatea reală a postului.
+        Selectați nivelul care reflectă cel mai fidel complexitatea reală a postului.
+        Modificările se reflectă în raportul din stânga.
       </p>
     </div>
   )
