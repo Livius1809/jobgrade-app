@@ -41,6 +41,14 @@ jobs:
             "https://jobgrade.ro/api/cron/retry" \
             -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" || echo "retry skipped"
 
+      - name: Collect agent metrics
+        run: |
+          curl -sf -m 60 -X POST \
+            "https://jobgrade.ro/api/v1/agents/metrics/collect" \
+            -H "Content-Type: application/json" \
+            -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
+            -d '{"period":"daily"}' || echo "metrics skipped"
+
       - name: Evolution cycle (consciousness)
         run: |
           curl -sf -m 120 -X POST \
