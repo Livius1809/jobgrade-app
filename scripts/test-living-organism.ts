@@ -32,7 +32,7 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter, log: ["error"] }) as any
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const API_BASE = process.env.API_BASE || "http://localhost:3000"
+const API_BASE = process.env.API_BASE || process.env.JOBGRADE_API_URL || "http://localhost:3000"
 const WITH_REFLEX = !!process.env.WITH_REFLEX
 const WITH_MEMORY = !!process.env.WITH_MEMORY
 const WITH_IMMUNITY = !!process.env.WITH_IMMUNITY || !!process.env.ALL_SAFE
@@ -77,7 +77,9 @@ async function apiGet(endpoint: string, timeoutMs = 10_000): Promise<any> {
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), timeoutMs)
-    const res = await fetch(API_BASE + endpoint, { signal: ctrl.signal })
+    const headers: Record<string, string> = {}
+    if (process.env.INTERNAL_API_KEY) headers["x-internal-key"] = process.env.INTERNAL_API_KEY
+    const res = await fetch(API_BASE + endpoint, { signal: ctrl.signal, headers })
     clearTimeout(t)
     return await res.json().catch(() => ({}))
   } catch {
@@ -89,9 +91,11 @@ async function apiPost(endpoint: string, body: unknown, timeoutMs = 15_000): Pro
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), timeoutMs)
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (process.env.INTERNAL_API_KEY) headers["x-internal-key"] = process.env.INTERNAL_API_KEY
     const res = await fetch(API_BASE + endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
       signal: ctrl.signal,
     })
