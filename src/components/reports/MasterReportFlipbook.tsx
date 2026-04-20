@@ -141,11 +141,6 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
       <div className={`${t.coverBg} rounded-lg -mx-12 -mt-10 px-12 pt-16 pb-16 mb-0 relative overflow-hidden`}
         style={{ backgroundImage: "url(/images/master/cover.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "soft-light" }}
       >
-        {/* Logo top-left */}
-        <div className="absolute top-6 left-8">
-          <img src="/logo-white.svg" alt="JobGrade" className="h-8 opacity-90" />
-        </div>
-
         {data.isDemo && (
           <div className="absolute top-6 right-6 bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1 rounded-full rotate-12 shadow-lg">
             DEMO
@@ -153,30 +148,42 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
         )}
 
         {/* Conținut distribuit pe toată înălțimea */}
-        <div className="text-white flex flex-col justify-between min-h-[400px] pt-16">
-          {/* Titlu — sus */}
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">Raport de evaluare și ierarhizare a posturilor de lucru</h1>
-            <p className="text-white/60 text-base">Structura organizațională · Criterii obiective · Conformitate EU</p>
+        <div className="text-white flex flex-col justify-between min-h-[450px]">
+          {/* Titlu — sus, adaptabil la lățime */}
+          <div className="text-center pt-8 px-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+              {data.isDemo
+                ? "Raport de evaluare și ierarhizare a posturilor de lucru"
+                : `Raport ${[
+                    data.layers.baza.unlocked && "evaluare și ierarhizare posturi",
+                    data.layers.layer1.unlocked && "structură salarială și conformitate",
+                    data.layers.layer2.unlocked && "competitivitate",
+                    data.layers.layer3.unlocked && "dezvoltare organizațională",
+                  ].filter(Boolean).join(" · ")}`
+              }
+            </h1>
           </div>
 
-          {/* Companie — centru */}
-          <div className="text-center space-y-3 py-8">
-            <p className="text-3xl font-semibold">{data.company.name}</p>
-            <p className="text-white/50 text-sm">CUI: {data.company.cui}</p>
-            <p className="text-white/50 text-sm">{data.company.industry}</p>
-            <div className="flex gap-8 justify-center text-white/60 text-sm pt-4">
-              <span>{data.company.employees} angajați</span>
-              <span>{data.company.positions} posturi evaluate</span>
-              <span>{data.company.departments.length} departamente</span>
+          {/* Companie — centru, 3 rânduri spațiate */}
+          <div className="text-center py-10 space-y-4">
+            <p className="text-3xl sm:text-4xl font-bold tracking-wide">{data.company.name}</p>
+            <p className="text-white/60 text-base">
+              {data.company.industry}, CUI: {data.company.cui}
+            </p>
+            <p className="text-white/50 text-sm">
+              {data.company.positions} posturi evaluate · {data.company.employees} angajați · {data.company.departments.length} departamente
+            </p>
+          </div>
+
+          {/* Footer — logo stânga-jos + dată */}
+          <div className="flex items-end justify-between pb-2">
+            <div className="flex items-center gap-3">
+              <img src="/logo-symbol.svg" alt="" className="h-8 opacity-40" />
+              <img src="/logo-white.svg" alt="JobGrade" className="h-5 opacity-50" />
             </div>
-          </div>
-
-          {/* Footer — jos */}
-          <div className="text-center space-y-2">
-            <img src="/logo-symbol.svg" alt="" className="h-6 opacity-20 mx-auto" />
-            <p className="text-white/30 text-xs">
-              Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")} · JobGrade.ro · Document confidențial
+            <p className="text-white/30 text-xs text-right">
+              Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")}<br />
+              Document confidențial
             </p>
           </div>
         </div>
