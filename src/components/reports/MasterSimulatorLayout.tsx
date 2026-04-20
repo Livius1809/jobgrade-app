@@ -291,15 +291,15 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
 
   return (
     <SimulatorContext.Provider value={contextValue}>
-      <div className={`transition-all duration-300 ${isSimulatorOpen ? "flex gap-6 max-w-[1600px] mx-auto px-4" : ""}`}>
-        {/* Master — stânga */}
-        <div className={`transition-all duration-300 overflow-x-hidden ${isSimulatorOpen ? "w-3/5 shrink-0 min-w-0" : "w-full max-w-6xl mx-auto"}`}>
+      <div className={`transition-all duration-300 ${isSimulatorOpen ? "flex gap-4 max-w-[1800px] mx-auto px-4" : ""}`}>
+        {/* Master — stânga (75%) */}
+        <div className={`transition-all duration-300 overflow-x-hidden ${isSimulatorOpen ? "w-3/4 shrink-0 min-w-0" : "w-full max-w-6xl mx-auto"}`}>
           {masterContent}
         </div>
 
-        {/* Simulator — dreapta (slide-in) */}
+        {/* Simulator — dreapta (25%) */}
         {isSimulatorOpen && (
-          <div className="w-2/5 shrink-0 sticky top-16 h-[calc(100vh-5rem)] overflow-y-auto">
+          <div className="w-1/4 shrink-0 sticky top-16 h-[calc(100vh-5rem)] overflow-y-auto min-w-[320px]">
             <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url(/images/brand/hex-pattern.png)", backgroundSize: "auto, 250px", backgroundRepeat: "no-repeat, repeat" }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">
