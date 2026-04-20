@@ -177,7 +177,7 @@ function CoverSection({ data, t }: { data: MasterReportData; t: typeof themes.so
 
           {/* Footer — logo stânga-jos + dată dreapta-jos */}
           <div className="flex items-end justify-between pb-2">
-            <img src="/logo-white.svg" alt="JobGrade" className="h-6 opacity-60" />
+            <img src="/logo-white.svg" alt="JobGrade" className="h-10 opacity-80" />
             <p className="text-white/30 text-xs text-right">
               Generat: {new Date(data.generatedAt).toLocaleDateString("ro-RO")}<br />
               Document confidențial

@@ -118,27 +118,27 @@ function CriterionDropdown({
 
 // ─── Mesaj consilier (în loc de block sec) ─────────────────────────────────
 
-function CounselorMessage({ status, criterionKey }: { status: string; criterionKey?: string }) {
+function CounselorMessage({ status }: { status: string }) {
   if (status === "OK") return null
 
   const messages = {
     WARNING: {
       icon: "💬",
-      title: "Consilier evaluare",
-      text: `Observ că explorați intensiv acest criteriu. Pot să vă ajut să înțelegeți ce nivel reflectă cel mai bine complexitatea postului? Fiecare nivel are o semnificație precisă — selectați-l pe cel care corespunde cel mai fidel realității.`,
-      color: "bg-amber-50 border-amber-200 text-amber-800",
+      title: "Vă putem ajuta",
+      text: "Alegerea nivelului potrivit poate fi dificilă. Consilierul nostru vă poate ghida — fiecare nivel are o semnificație precisă legată de complexitatea reală a postului.",
+      color: "bg-indigo-50 border-indigo-200 text-indigo-800",
     },
     COOLDOWN: {
-      icon: "⏸️",
-      title: "Pauză de reflecție",
-      text: "Prea multe modificări în timp scurt. Vă recomandăm să analizați cu atenție descrierile nivelurilor înainte de a continua. Simulatorul va fi disponibil din nou în câteva secunde.",
+      icon: "☕",
+      title: "Un moment de reflecție",
+      text: "Vă sugerăm să revedeți descrierile nivelurilor cu atenție. Un specialist vă poate ajuta să identificați nivelul corect. Simulatorul revine imediat.",
       color: "bg-blue-50 border-blue-200 text-blue-800",
     },
     BLOCKED: {
-      icon: "🛡️",
-      title: "Acces suspendat temporar",
-      text: "Am detectat un pattern neobișnuit de modificări. Pentru protecția integrității evaluării, simulatorul este temporar indisponibil. Contactați echipa de suport pentru asistență.",
-      color: "bg-red-50 border-red-200 text-red-800",
+      icon: "🤝",
+      title: "Recomandăm asistența unui specialist",
+      text: "Pentru a asigura acuratețea evaluării, vă recomandăm să continuați împreună cu un consultant specializat. Echipa noastră vă stă la dispoziție.",
+      color: "bg-violet-50 border-violet-200 text-violet-800",
     },
   }
 
@@ -154,6 +154,32 @@ function CounselorMessage({ status, criterionKey }: { status: string; criterionK
           <p className="text-xs leading-relaxed">{msg.text}</p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function CounselorButton() {
+  const [showChat, setShowChat] = useState(false)
+  return (
+    <div>
+      <button
+        onClick={() => setShowChat(!showChat)}
+        className="w-full py-2 rounded-lg border border-indigo-200 text-indigo-600 text-xs font-medium hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+      >
+        <span>💬</span> Solicită asistența consilierului
+      </button>
+      {showChat && (
+        <div className="mt-2 bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+          <p className="text-xs text-indigo-700 mb-2">
+            <strong>Consilier evaluare:</strong> Cu ce vă pot ajuta? Pot clarifica semnificația
+            fiecărui nivel sau vă pot recomanda nivelul potrivit pe baza descrierii postului.
+          </p>
+          <p className="text-[10px] text-indigo-400 italic">
+            Funcționalitate completă disponibilă în curând. Între timp, descrierile din dropdown-uri
+            vă oferă toate informațiile necesare pentru o alegere corectă.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -335,6 +361,9 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
           ))}
         </select>
       </div>
+
+      {/* Buton consilier — mereu vizibil */}
+      <CounselorButton />
 
       {/* Criterii grupate pe cele 4 legale — cu dropdown + descrieri */}
       <div className="space-y-3">
