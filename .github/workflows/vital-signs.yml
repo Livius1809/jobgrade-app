@@ -36,7 +36,19 @@ jobs:
           JOBGRADE_API_URL: https://jobgrade.ro
         run: npx tsx scripts/test-living-organism.ts
 
-      - name: Upload report
+      - name: Save to DB
+        if: always()
+        run: |
+          JSON_FILE=$(ls docs/vital-signs/vital-signs-*.json 2>/dev/null | tail -1)
+          if [ -f "$JSON_FILE" ]; then
+            curl -sf -m 30 -X POST \
+              "https://jobgrade.ro/api/v1/vital-signs" \
+              -H "Content-Type: application/json" \
+              -H "x-internal-key: ${{ secrets.INTERNAL_API_KEY }}" \
+              -d @"$JSON_FILE" || echo "save to DB failed"
+          fi
+
+      - name: Upload report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
