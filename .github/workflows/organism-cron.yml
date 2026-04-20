@@ -1,8 +1,8 @@
-name: Organism Cron (backup for Vercel)
+name: Organism Pulse — Cron Principal
 
 on:
   schedule:
-    # Executor: la fiecare 2 ore, L-V 06-20 UTC (08-22 EET)
+    # La fiecare 2 ore, L-V 06-20 UTC (08-22 EET)
     - cron: '0 6,8,10,12,14,16,18,20 * * 1-5'
   workflow_dispatch: # permite rulare manuala
 
