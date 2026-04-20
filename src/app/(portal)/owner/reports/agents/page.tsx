@@ -4,7 +4,6 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 
 export const metadata = { title: "Evoluție organism — Owner Dashboard" }
-
 export const dynamic = "force-dynamic"
 
 export default async function AgentsReportPage() {
@@ -17,83 +16,86 @@ export default async function AgentsReportPage() {
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  let pipeline = { total: 0, completed: 0, escalated: 0, blocked: 0, claudeCalls: 0, byDept: [] as any[] }
-  let learning = { total: 0, prevTotal: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromExternal: 0 }
-  let agents: any[] = []
+  let pipeline = { total: 0, completed: 0, inProgress: 0, postponed: 0, escalated: 0, claudeCalls: 0, byDept: [] as any[] }
+  let diagnosis = { onTime: 0, postponed: 0, ownerDependent: 0, reasons: [] as any[] }
+  let learning = { total: 0, prevTotal: 0, totalKB: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromSeed: 0, fromExternal: 0 }
+  let objectives = [] as any[]
+  let agents = [] as any[]
 
   try {
-    // ═══════════════════════════════════════════════════════════════
-    // BLOC 1: Pipeline task-uri (ultima săptămână)
-    // ═══════════════════════════════════════════════════════════════
-
+    // ═══ PIPELINE ═══
     const [taskStats, tasksByDept, escalationCount, claudeCallCount] = await Promise.all([
-      // Task-uri totale și completate
       p.$queryRaw`
         SELECT
           count(*) as total,
           count(*) FILTER (WHERE status = 'COMPLETED') as completed,
-          count(*) FILTER (WHERE status = 'BLOCKED') as blocked
+          count(*) FILTER (WHERE status IN ('ASSIGNED','IN_PROGRESS')) as in_progress,
+          count(*) FILTER (WHERE status = 'BLOCKED') as postponed
         FROM agent_tasks
         WHERE "createdAt" > ${oneWeekAgo}
       ` as Promise<any[]>,
-
-      // Distribuție pe departamente (assignedBy = managerul/departamentul)
       p.$queryRaw`
         SELECT "assignedBy" as dept, count(*) as total,
           count(*) FILTER (WHERE status = 'COMPLETED') as completed
-        FROM agent_tasks
-        WHERE "createdAt" > ${oneWeekAgo}
-        GROUP BY "assignedBy"
-        ORDER BY total DESC
-        LIMIT 10
+        FROM agent_tasks WHERE "createdAt" > ${oneWeekAgo}
+        GROUP BY "assignedBy" ORDER BY total DESC LIMIT 10
       ` as Promise<any[]>,
-
-      // Escalări
-      p.escalation.count({
-        where: { createdAt: { gte: oneWeekAgo } },
-      }).catch(() => 0),
-
-      // Apeluri Claude (estimăm din task-uri completate cu result != null)
-      p.agentTask.count({
-        where: {
-          createdAt: { gte: oneWeekAgo },
-          status: "COMPLETED",
-          result: { not: null },
-        },
-      }).catch(() => 0),
+      p.escalation.count({ where: { createdAt: { gte: oneWeekAgo } } }).catch(() => 0),
+      p.agentTask.count({ where: { createdAt: { gte: oneWeekAgo }, status: "COMPLETED", result: { not: null } } }).catch(() => 0),
     ])
 
     pipeline = {
       total: Number(taskStats[0]?.total || 0),
       completed: Number(taskStats[0]?.completed || 0),
-      blocked: Number(taskStats[0]?.blocked || 0),
+      inProgress: Number(taskStats[0]?.in_progress || 0),
+      postponed: Number(taskStats[0]?.postponed || 0),
       escalated: escalationCount,
       claudeCalls: claudeCallCount,
-      byDept: tasksByDept.map((d: any) => ({
-        dept: d.dept,
-        total: Number(d.total),
-        completed: Number(d.completed),
+      byDept: tasksByDept.map((d: any) => ({ dept: d.dept, total: Number(d.total), completed: Number(d.completed) })),
+    }
+
+    // ═══ DIAGNOZĂ: de ce alocate ≠ realizate ═══
+    const [postponedTasks, ownerTasks] = await Promise.all([
+      p.agentTask.findMany({
+        where: { status: "BLOCKED", createdAt: { gte: oneWeekAgo } },
+        select: { title: true, assignedTo: true, blockerDescription: true, blockerType: true, blockerAgentRole: true, deadlineAt: true },
+        take: 10,
+      }).catch(() => []),
+      p.agentTask.findMany({
+        where: { assignedBy: "OWNER", createdAt: { gte: oneWeekAgo } },
+        select: { status: true },
+      }).catch(() => []),
+    ])
+
+    const ownerTotal = ownerTasks.length
+    const ownerCompleted = ownerTasks.filter((t: any) => t.status === "COMPLETED").length
+    const ownerPending = ownerTotal - ownerCompleted
+
+    diagnosis = {
+      onTime: pipeline.completed,
+      postponed: pipeline.postponed,
+      ownerDependent: ownerPending,
+      reasons: postponedTasks.map((t: any) => ({
+        task: t.title?.slice(0, 60),
+        agent: t.assignedTo,
+        reason: t.blockerDescription?.slice(0, 80) || t.blockerType || "condiții neîndeplinite",
+        deadline: t.deadlineAt ? new Date(t.deadlineAt).toLocaleDateString("ro-RO") : "—",
+        dependsOn: t.blockerAgentRole || "—",
       })),
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // BLOC 2: Învățare (creștere KB per sursă)
-    // ═══════════════════════════════════════════════════════════════
-
-    const [kbThisWeek, kbPrevWeek] = await Promise.all([
+    // ═══ ÎNVĂȚARE + KB total ═══
+    const [kbThisWeek, kbPrevWeek, kbTotal] = await Promise.all([
       p.$queryRaw`
         SELECT
           count(*) as total,
           count(*) FILTER (WHERE source = 'PROPAGATED' OR source = 'EXPERT_HUMAN') as from_internal,
           count(*) FILTER (WHERE source = 'DISTILLED_INTERACTION') as from_clients,
           count(*) FILTER (WHERE source = 'SELF_INTERVIEW') as from_claude
-        FROM kb_entries
-        WHERE "createdAt" > ${oneWeekAgo}
+        FROM kb_entries WHERE "createdAt" > ${oneWeekAgo}
       ` as Promise<any[]>,
-
-      p.kBEntry.count({
-        where: { createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } },
-      }).catch(() => 0),
+      p.kBEntry.count({ where: { createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } } }).catch(() => 0),
+      p.kBEntry.count().catch(() => 0),
     ])
 
     const kbRow = kbThisWeek[0] || {}
@@ -101,79 +103,96 @@ export default async function AgentsReportPage() {
     const fromInternal = Number(kbRow.from_internal || 0)
     const fromClients = Number(kbRow.from_clients || 0)
     const fromClaude = Number(kbRow.from_claude || 0)
-    const fromExternal = totalThisWeek - fromInternal - fromClients - fromClaude
 
     learning = {
       total: totalThisWeek,
       prevTotal: Number(kbPrevWeek || 0),
+      totalKB: Number(kbTotal || 0),
       fromInternal,
       fromClients,
       fromClaude,
-      fromExternal: Math.max(0, fromExternal),
+      fromSeed: 0, // seed-ul inițial e inclus în fromClaude (SELF_INTERVIEW)
+      fromExternal: Math.max(0, totalThisWeek - fromInternal - fromClients - fromClaude),
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // BLOC 3: Per agent — rezumat
-    // ═══════════════════════════════════════════════════════════════
+    // ═══ OBIECTIVE ═══
+    const objectiveStats = await p.$queryRaw`
+      SELECT o.title, o.status, o.priority,
+        count(t.id) as total_tasks,
+        count(t.id) FILTER (WHERE t.status = 'COMPLETED') as completed_tasks
+      FROM organizational_objectives o
+      LEFT JOIN agent_tasks t ON t."objectiveId" = o.id AND t."createdAt" > ${oneWeekAgo}
+      WHERE o.status IN ('PROPOSED','APPROVED','ACTIVE')
+      GROUP BY o.id, o.title, o.status, o.priority
+      ORDER BY o.priority ASC, total_tasks DESC
+    `.catch(() => []) as any[]
 
+    objectives = objectiveStats.map((o: any) => ({
+      title: o.title,
+      status: o.status,
+      priority: o.priority,
+      tasks: Number(o.total_tasks || 0),
+      completed: Number(o.completed_tasks || 0),
+      progress: Number(o.total_tasks || 0) > 0 ? Math.round(Number(o.completed_tasks || 0) / Number(o.total_tasks || 0) * 100) : 0,
+    }))
+
+    // ═══ PER AGENT ═══
     const definitions = await p.agentDefinition.findMany({
-      where: { isActive: true },
-      orderBy: { agentRole: "asc" },
+      where: { isActive: true }, orderBy: { agentRole: "asc" },
       select: { agentRole: true, displayName: true, level: true, isManager: true },
     })
 
-    const [agentTasks, agentKB] = await Promise.all([
+    const [agentTasks, agentKB, agentKBTotal] = await Promise.all([
       p.$queryRaw`
         SELECT "assignedTo" as role,
           count(*) as total,
           count(*) FILTER (WHERE status = 'COMPLETED') as completed,
-          count(*) FILTER (WHERE status = 'BLOCKED') as blocked
-        FROM agent_tasks
-        WHERE "createdAt" > ${oneWeekAgo}
+          count(*) FILTER (WHERE status = 'BLOCKED') as postponed
+        FROM agent_tasks WHERE "createdAt" > ${oneWeekAgo}
         GROUP BY "assignedTo"
       ` as Promise<any[]>,
-
       p.$queryRaw`
         SELECT "agentRole" as role, count(*) as learned
-        FROM kb_entries
-        WHERE "createdAt" > ${oneWeekAgo}
+        FROM kb_entries WHERE "createdAt" > ${oneWeekAgo}
+        GROUP BY "agentRole"
+      ` as Promise<any[]>,
+      p.$queryRaw`
+        SELECT "agentRole" as role, count(*) as total
+        FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus"
         GROUP BY "agentRole"
       ` as Promise<any[]>,
     ])
 
-    const taskMap = new Map(agentTasks.map((r: any) => [r.role, { total: Number(r.total), completed: Number(r.completed), blocked: Number(r.blocked) }]))
-    const kbMap = new Map(agentKB.map((r: any) => [r.role, Number(r.learned)]))
+    const taskMap = new Map(agentTasks.map((r: any) => [r.role, { total: Number(r.total), completed: Number(r.completed), postponed: Number(r.postponed) }]))
+    const kbMapWeek = new Map(agentKB.map((r: any) => [r.role, Number(r.learned)]))
+    const kbMapTotal = new Map(agentKBTotal.map((r: any) => [r.role, Number(r.total)]))
 
     agents = definitions.map((d: any) => {
-      const t = taskMap.get(d.agentRole) || { total: 0, completed: 0, blocked: 0 }
+      const t = taskMap.get(d.agentRole) || { total: 0, completed: 0, postponed: 0 }
       return {
-        role: d.agentRole,
-        name: d.displayName || d.agentRole,
-        level: d.level,
-        isManager: d.isManager,
-        tasks: t.total,
-        completed: t.completed,
-        blocked: t.blocked,
+        role: d.agentRole, name: d.displayName || d.agentRole,
+        level: d.level, isManager: d.isManager,
+        tasks: t.total, completed: t.completed, postponed: t.postponed,
         completionRate: t.total > 0 ? Math.round(t.completed / t.total * 100) : null,
-        learned: kbMap.get(d.agentRole) || 0,
+        learnedWeek: kbMapWeek.get(d.agentRole) || 0,
+        kbTotal: kbMapTotal.get(d.agentRole) || 0,
       }
-    }).filter((a: any) => a.tasks > 0 || a.learned > 0)
+    }).filter((a: any) => a.tasks > 0 || a.learnedWeek > 0 || a.kbTotal > 0)
 
   } catch (e) {
     console.error("[agents-report]", e)
   }
 
-  // Calcule derivate
   const completionRate = pipeline.total > 0 ? Math.round(pipeline.completed / pipeline.total * 100) : 0
   const escalationRate = pipeline.total > 0 ? Math.round(pipeline.escalated / pipeline.total * 100) : 0
   const learningGrowth = learning.prevTotal > 0
     ? Math.round((learning.total - learning.prevTotal) / learning.prevTotal * 100)
     : learning.total > 0 ? 100 : 0
-  const learningTotal = learning.total || 1 // evit /0
-  const pctInternal = Math.round(learning.fromInternal / learningTotal * 100)
-  const pctClients = Math.round(learning.fromClients / learningTotal * 100)
-  const pctClaude = Math.round(learning.fromClaude / learningTotal * 100)
-  const pctExternal = Math.round(learning.fromExternal / learningTotal * 100)
+  const lt = learning.total || 1
+  const pctInternal = Math.round(learning.fromInternal / lt * 100)
+  const pctClients = Math.round(learning.fromClients / lt * 100)
+  const pctClaude = Math.round(learning.fromClaude / lt * 100)
+  const pctExternal = Math.round(learning.fromExternal / lt * 100)
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -188,129 +207,144 @@ export default async function AgentsReportPage() {
       {/* ═══ PIPELINE ═══ */}
       <section>
         <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Pipeline task-uri</h2>
-        <div className="grid grid-cols-5 gap-4">
-          <StatCard label="Total alocate" value={pipeline.total} />
-          <StatCard label="Completate" value={pipeline.completed} accent="emerald" />
-          <StatCard label="Blocate" value={pipeline.blocked} accent={pipeline.blocked > 0 ? "red" : undefined} />
-          <StatCard label="Rata escalare" value={`${escalationRate}%`} accent={escalationRate > 30 ? "amber" : undefined} />
-          <StatCard label="Apeluri Claude" value={pipeline.claudeCalls} accent="indigo" />
+        <div className="grid grid-cols-6 gap-3">
+          <SC label="Total alocate" value={pipeline.total} />
+          <SC label="Completate" value={pipeline.completed} accent="emerald" />
+          <SC label="În lucru" value={pipeline.inProgress} accent="indigo" />
+          <SC label="Amânate" value={pipeline.postponed} accent={pipeline.postponed > 0 ? "amber" : undefined} />
+          <SC label="Rata escalare" value={`${escalationRate}%`} accent={escalationRate > 30 ? "red" : undefined} />
+          <SC label="Apeluri Claude" value={pipeline.claudeCalls} accent="violet" />
         </div>
-
-        {/* Bară progres completare */}
-        <div className="mt-4 bg-slate-100 rounded-full h-3 overflow-hidden">
+        <div className="mt-3 bg-slate-100 rounded-full h-3 overflow-hidden">
           <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${completionRate}%` }} />
         </div>
         <p className="text-xs text-slate-400 mt-1">{completionRate}% rata de completare</p>
+      </section>
 
-        {/* Per departament */}
-        {pipeline.byDept.length > 0 && (
-          <div className="mt-4 grid grid-cols-5 gap-2">
-            {pipeline.byDept.slice(0, 10).map((d: any) => (
-              <div key={d.dept} className="bg-slate-50 rounded-lg p-2 text-center">
-                <p className="text-[10px] text-slate-400 truncate">{d.dept}</p>
-                <p className="text-sm font-bold text-slate-700">{d.completed}/{d.total}</p>
-              </div>
-            ))}
+      {/* ═══ DIAGNOZĂ ═══ */}
+      <section>
+        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Diagnoză: de ce alocate ≠ realizate</h2>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <SC label="Finalizate la termen" value={diagnosis.onTime} accent="emerald" />
+          <SC label="Amânate (condiții neîndeplinite)" value={diagnosis.postponed} accent="amber" />
+          <SC label="Depind de Owner" value={diagnosis.ownerDependent} accent={diagnosis.ownerDependent > 0 ? "red" : undefined} />
+        </div>
+
+        {diagnosis.reasons.length > 0 && (
+          <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
+            <h3 className="text-xs font-bold text-amber-700 mb-2">Task-uri amânate — motive</h3>
+            <div className="space-y-2">
+              {diagnosis.reasons.map((r: any, i: number) => (
+                <div key={i} className="flex items-start gap-3 text-xs border-b border-amber-100 pb-2">
+                  <span className="text-amber-500 font-bold shrink-0">{r.agent}</span>
+                  <div className="flex-1">
+                    <p className="text-slate-700">{r.task}</p>
+                    <p className="text-slate-400 mt-0.5">Motiv: {r.reason} · Depinde de: {r.dependsOn} · Termen: {r.deadline}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>
 
+      {/* ═══ OBIECTIVE ═══ */}
+      {objectives.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Progres pe obiective</h2>
+          <div className="space-y-2">
+            {objectives.map((o: any, i: number) => (
+              <div key={i} className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-slate-700 flex-1">{o.title}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded ${o.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{o.status}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${o.progress}%` }} />
+                  </div>
+                  <span className="text-xs text-slate-500 tabular-nums w-20 text-right">{o.completed}/{o.tasks} tasks · {o.progress}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ═══ ÎNVĂȚARE ═══ */}
       <section>
-        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Învățare organism</h2>
-        <div className="grid grid-cols-5 gap-4">
-          <StatCard
-            label="Total învățare"
-            value={`${learning.total} entries`}
-            subtitle={learningGrowth > 0 ? `+${learningGrowth}% vs. săpt. anterioară` : learningGrowth < 0 ? `${learningGrowth}%` : "—"}
-            accent={learningGrowth > 0 ? "emerald" : learningGrowth < 0 ? "red" : undefined}
-          />
-          <StatCard label="Din structura internă" value={`${pctInternal}%`} subtitle={`${learning.fromInternal} entries`} accent="indigo" />
-          <StatCard label="De la clienți" value={`${pctClients}%`} subtitle={`${learning.fromClients} entries`} accent="violet" />
-          <StatCard label="De la Claude" value={`${pctClaude}%`} subtitle={`${learning.fromClaude} entries`} accent="amber" />
-          <StatCard label="Surse externe" value={`${pctExternal}%`} subtitle={`${learning.fromExternal} entries`} accent="slate" />
+        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Învățare organism · KB total: {learning.totalKB.toLocaleString()} entries</h2>
+        <div className="grid grid-cols-5 gap-3">
+          <SC label="Învățat săptămâna asta" value={learning.total}
+            subtitle={learningGrowth > 0 ? `+${learningGrowth}% vs. anterioară` : learningGrowth < 0 ? `${learningGrowth}%` : "—"}
+            accent={learningGrowth > 0 ? "emerald" : learningGrowth < 0 ? "red" : undefined} />
+          <SC label="Structura internă" value={`${pctInternal}%`} subtitle={`${learning.fromInternal} entries`} accent="indigo" />
+          <SC label="Clienți" value={`${pctClients}%`} subtitle={`${learning.fromClients} entries`} accent="violet" />
+          <SC label="Claude (incl. seeduire)" value={`${pctClaude}%`} subtitle={`${learning.fromClaude} entries`} accent="amber" />
+          <SC label="Surse externe" value={`${pctExternal}%`} subtitle={`${learning.fromExternal} entries`} accent="slate" />
         </div>
-
-        {/* Bară distribuție învățare */}
-        <div className="mt-4 flex rounded-full h-3 overflow-hidden">
-          {pctInternal > 0 && <div className="bg-indigo-500 h-full" style={{ width: `${pctInternal}%` }} title="Intern" />}
-          {pctClients > 0 && <div className="bg-violet-500 h-full" style={{ width: `${pctClients}%` }} title="Clienți" />}
-          {pctClaude > 0 && <div className="bg-amber-400 h-full" style={{ width: `${pctClaude}%` }} title="Claude" />}
-          {pctExternal > 0 && <div className="bg-slate-400 h-full" style={{ width: `${pctExternal}%` }} title="Extern" />}
+        <div className="mt-3 flex rounded-full h-3 overflow-hidden">
+          {pctInternal > 0 && <div className="bg-indigo-500 h-full" style={{ width: `${pctInternal}%` }} />}
+          {pctClients > 0 && <div className="bg-violet-500 h-full" style={{ width: `${pctClients}%` }} />}
+          {pctClaude > 0 && <div className="bg-amber-400 h-full" style={{ width: `${pctClaude}%` }} />}
+          {pctExternal > 0 && <div className="bg-slate-400 h-full" style={{ width: `${pctExternal}%` }} />}
         </div>
         <div className="flex gap-4 mt-2 text-[10px] text-slate-400">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-indigo-500" /> Intern</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-violet-500" /> Clienți</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" /> Claude</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" /> Claude (incl. seeduire)</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-400" /> Extern</span>
         </div>
       </section>
 
-      {/* ═══ INDICATORI DIRECȚIE ═══ */}
+      {/* ═══ DIRECȚIE ═══ */}
       <section>
         <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Direcție de creștere</h2>
         <div className="grid grid-cols-3 gap-4">
-          <DirectionCard
-            label="Autonomie"
-            description="Rata rezolvare internă fără escalare"
-            value={100 - escalationRate}
-            target={80}
-            unit="%"
-          />
-          <DirectionCard
-            label="Dependență Claude"
-            description="Cât din învățare vine de la Claude"
-            value={pctClaude}
-            target={30}
-            inverted
-            unit="%"
-          />
-          <DirectionCard
-            label="Experiență clienți"
-            description="Învățare din interacțiuni reale"
-            value={pctClients}
-            target={40}
-            unit="%"
-          />
+          <DC label="Autonomie" desc="Rezolvare fără escalare" value={100 - escalationRate} target={80} unit="%" />
+          <DC label="Dependență Claude" desc="% învățare de la Claude" value={pctClaude} target={30} inverted unit="%" />
+          <DC label="Experiență clienți" desc="Învățare din interacțiuni reale" value={pctClients} target={40} unit="%" />
         </div>
       </section>
 
-      {/* ═══ TABEL AGENȚI ACTIVI ═══ */}
+      {/* ═══ TABEL AGENȚI ═══ */}
       {agents.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Agenți activi această săptămână</h2>
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Agenți — detalii</h2>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-xs text-slate-500">
                 <tr>
-                  <th className="text-left px-4 py-2">Agent</th>
-                  <th className="text-left px-4 py-2">Nivel</th>
-                  <th className="text-right px-4 py-2">Tasks</th>
-                  <th className="text-right px-4 py-2">Done</th>
-                  <th className="text-right px-4 py-2">Blocat</th>
-                  <th className="text-right px-4 py-2">Rata</th>
-                  <th className="text-right px-4 py-2">Învățat</th>
+                  <th className="text-left px-3 py-2">Agent</th>
+                  <th className="text-left px-3 py-2">Nivel</th>
+                  <th className="text-right px-3 py-2">KB total</th>
+                  <th className="text-right px-3 py-2">Învățat 7z</th>
+                  <th className="text-right px-3 py-2">Tasks</th>
+                  <th className="text-right px-3 py-2">Done</th>
+                  <th className="text-right px-3 py-2">Amânat</th>
+                  <th className="text-right px-3 py-2">Rata</th>
                 </tr>
               </thead>
               <tbody>
                 {agents.map((a: any) => (
                   <tr key={a.role} className="border-t border-slate-100 hover:bg-slate-50/50">
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       <span className="font-medium text-slate-800">{a.name}</span>
                       {a.isManager && <span className="ml-1 text-[9px] text-indigo-500 font-bold">MGR</span>}
                     </td>
-                    <td className="px-4 py-2 text-xs text-slate-400">{a.level}</td>
-                    <td className="px-4 py-2 text-right font-mono">{a.tasks}</td>
-                    <td className="px-4 py-2 text-right font-mono text-emerald-600">{a.completed}</td>
-                    <td className="px-4 py-2 text-right font-mono text-red-500">{a.blocked || "—"}</td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-3 py-2 text-xs text-slate-400">{a.level}</td>
+                    <td className="px-3 py-2 text-right font-mono text-slate-600">{a.kbTotal}</td>
+                    <td className="px-3 py-2 text-right font-mono text-indigo-600">{a.learnedWeek || "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono">{a.tasks || "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono text-emerald-600">{a.completed || "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono text-amber-500">{a.postponed || "—"}</td>
+                    <td className="px-3 py-2 text-right">
                       {a.completionRate !== null ? (
                         <span className={`font-bold ${a.completionRate >= 70 ? "text-emerald-600" : a.completionRate >= 40 ? "text-amber-600" : "text-red-600"}`}>
                           {a.completionRate}%
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono text-indigo-600">{a.learned || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -322,36 +356,25 @@ export default async function AgentsReportPage() {
   )
 }
 
-// ─── Componente helper ─────────────────────────────────────────────────────
-
-function StatCard({ label, value, subtitle, accent }: { label: string; value: string | number; subtitle?: string; accent?: string }) {
-  const colors: Record<string, string> = {
-    emerald: "text-emerald-600",
-    red: "text-red-600",
-    amber: "text-amber-600",
-    indigo: "text-indigo-600",
-    violet: "text-violet-600",
-    slate: "text-slate-600",
-  }
+function SC({ label, value, subtitle, accent }: { label: string; value: string | number; subtitle?: string; accent?: string }) {
+  const c: Record<string, string> = { emerald: "text-emerald-600", red: "text-red-600", amber: "text-amber-600", indigo: "text-indigo-600", violet: "text-violet-600", slate: "text-slate-600" }
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4">
+    <div className="bg-white rounded-xl border border-slate-200 p-3">
       <p className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${accent ? colors[accent] || "text-slate-800" : "text-slate-800"}`}>{value}</p>
+      <p className={`text-xl font-bold mt-1 ${accent ? c[accent] || "text-slate-800" : "text-slate-800"}`}>{value}</p>
       {subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
   )
 }
 
-function DirectionCard({ label, description, value, target, inverted, unit }: {
-  label: string; description: string; value: number; target: number; inverted?: boolean; unit: string
-}) {
-  const isGood = inverted ? value <= target : value >= target
+function DC({ label, desc, value, target, inverted, unit }: { label: string; desc: string; value: number; target: number; inverted?: boolean; unit: string }) {
+  const good = inverted ? value <= target : value >= target
   return (
-    <div className={`rounded-xl border p-4 ${isGood ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+    <div className={`rounded-xl border p-4 ${good ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
       <p className="text-xs font-bold text-slate-700">{label}</p>
-      <p className="text-[10px] text-slate-400 mt-0.5">{description}</p>
+      <p className="text-[10px] text-slate-400 mt-0.5">{desc}</p>
       <div className="flex items-end justify-between mt-3">
-        <p className={`text-3xl font-bold ${isGood ? "text-emerald-600" : "text-amber-600"}`}>{value}{unit}</p>
+        <p className={`text-3xl font-bold ${good ? "text-emerald-600" : "text-amber-600"}`}>{value}{unit}</p>
         <p className="text-[10px] text-slate-400">țintă: {target}{unit}</p>
       </div>
     </div>
