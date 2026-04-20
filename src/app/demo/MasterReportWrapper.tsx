@@ -15,8 +15,9 @@ const JESimulator = dynamic(
 )
 
 function MasterPanel({ data }: { data: MasterReportData }) {
-  const { setActiveSection } = useSimulator()
-  return <MasterReportFlipbook data={data} initialTheme="sobru" onOpenSimulator={setActiveSection} />
+  const { setActiveSection, getModifiedJE } = useSimulator()
+  const modifiedJE = getModifiedJE(data.layers.baza.jobEvaluations)
+  return <MasterReportFlipbook data={data} initialTheme="sobru" onOpenSimulator={setActiveSection} modifiedJE={modifiedJE} />
 }
 
 function SimulatorPanel({ data }: { data: MasterReportData }) {

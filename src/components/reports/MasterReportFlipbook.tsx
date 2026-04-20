@@ -16,6 +16,8 @@ interface Props {
   data: MasterReportData
   initialTheme?: Theme
   onOpenSimulator?: (section: string) => void
+  /** JE modificat de simulator (scoruri recalculate, clasament reordonat) */
+  modifiedJE?: MasterJobEvaluation[]
 }
 
 // ─── Teme ──────────────────────────────────────────────────────────────────
@@ -227,8 +229,8 @@ function LockedOverlay({ layerName, t }: { layerName: string; t: typeof themes.s
   )
 }
 
-function JESection({ data, t, onOpenSimulator }: { data: MasterReportData; t: typeof themes.sobru; onOpenSimulator?: (section: string) => void }) {
-  const je = data.layers.baza.jobEvaluations
+function JESection({ data, t, onOpenSimulator, modifiedJE }: { data: MasterReportData; t: typeof themes.sobru; onOpenSimulator?: (section: string) => void; modifiedJE?: MasterJobEvaluation[] }) {
+  const je = modifiedJE || data.layers.baza.jobEvaluations
 
   // Agregare litere 6→4 criterii legale
   function getLegalLetters(j: typeof je[0]) {
@@ -861,7 +863,7 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
 
 // ─── Componentul principal ─────────────────────────────────────────────────
 
-export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator }: Props) {
+export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator, modifiedJE }: Props) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const t = themes[theme]
 
@@ -918,7 +920,7 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
       <div className="space-y-8 pb-16">
         <CoverSection data={data} t={t} />
         <TOCSection data={data} t={t} />
-        <JESection data={data} t={t} onOpenSimulator={onOpenSimulator} />
+        <JESection data={data} t={t} onOpenSimulator={onOpenSimulator} modifiedJE={modifiedJE} />
         <SalaryGradesSection data={data} t={t} />
         <PayGapSection data={data} t={t} />
         <BenchmarkSection data={data} t={t} />

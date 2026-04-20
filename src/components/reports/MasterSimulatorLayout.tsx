@@ -11,6 +11,8 @@ export interface SimulatorState {
   activeSection: string | null
   /** Modificări JE: jobIndex → criterionKey → newLetter */
   jeModifications: Record<number, Record<string, string>>
+  /** Scoruri recalculate: jobIndex → newScore */
+  recalculatedScores: Record<number, number>
   /** Jurnal modificări */
   journal: JournalEntry[]
 }
@@ -53,6 +55,7 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
   const [state, setState] = useState<SimulatorState>({
     activeSection: null,
     jeModifications: {},
+    recalculatedScores: {},
     journal: [],
   })
 
@@ -78,47 +81,85 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
     newLetter: string,
     jobTitle: string,
   ) => {
-    setState(prev => ({
-      ...prev,
-      jeModifications: {
+    setState(prev => {
+      const newMods = {
         ...prev.jeModifications,
         [jobIndex]: {
           ...(prev.jeModifications[jobIndex] || {}),
           [criterionKey]: newLetter,
         },
-      },
-      journal: [
-        ...prev.journal,
-        {
-          timestamp: Date.now(),
-          section: "JE",
-          description: `${jobTitle}: ${criterionKey} ${oldLetter} → ${newLetter}`,
-          oldValue: oldLetter,
-          newValue: newLetter,
-        },
-      ],
-    }))
-  }, [])
-
-  const getModifiedJE = useCallback((originalJE: MasterJobEvaluation[]): MasterJobEvaluation[] => {
-    if (Object.keys(state.jeModifications).length === 0) return originalJE
-
-    return originalJE.map((je, idx) => {
-      const mods = state.jeModifications[idx]
-      if (!mods || !je.letters) return je
-
-      const newLetters = { ...je.letters }
-      for (const [key, letter] of Object.entries(mods)) {
-        if (key in newLetters) {
-          (newLetters as any)[key] = letter
-        }
       }
 
-      // Recalculăm scorul — dar NU expunem tabelul de scorare
-      // Scorul se recalculează server-side prin API
-      return { ...je, letters: newLetters }
+      // Recalculare scor server-side (async, se actualizează când revine)
+      const je = data.layers.baza.jobEvaluations[jobIndex]
+      if (je?.letters) {
+        const mergedLetters = { ...je.letters, ...newMods[jobIndex] }
+        fetch("/api/v1/evaluate/recalculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ letters: mergedLetters }),
+        })
+          .then(r => r.json())
+          .then(({ score }) => {
+            if (typeof score === "number") {
+              setState(s => ({
+                ...s,
+                recalculatedScores: { ...s.recalculatedScores, [jobIndex]: score },
+              }))
+            }
+          })
+          .catch(() => {})
+      }
+
+      return {
+        ...prev,
+        jeModifications: newMods,
+        journal: [
+          ...prev.journal,
+          {
+            timestamp: Date.now(),
+            section: "JE",
+            description: `${jobTitle}: ${criterionKey} ${oldLetter} → ${newLetter}`,
+            oldValue: oldLetter,
+            newValue: newLetter,
+          },
+        ],
+      }
     })
-  }, [state.jeModifications])
+  }, [data])
+
+  const getModifiedJE = useCallback((originalJE: MasterJobEvaluation[]): MasterJobEvaluation[] => {
+    if (Object.keys(state.jeModifications).length === 0 && Object.keys(state.recalculatedScores).length === 0) {
+      return originalJE
+    }
+
+    const modified = originalJE.map((je, idx) => {
+      const mods = state.jeModifications[idx]
+      const newScore = state.recalculatedScores[idx]
+      if (!mods && newScore === undefined) return je
+
+      const result = { ...je }
+
+      if (mods && je.letters) {
+        const newLetters = { ...je.letters }
+        for (const [key, letter] of Object.entries(mods)) {
+          if (key in newLetters) {
+            (newLetters as any)[key] = letter
+          }
+        }
+        result.letters = newLetters
+      }
+
+      if (newScore !== undefined) {
+        result.score = newScore
+      }
+
+      return result
+    })
+
+    // Reordonare descrescătoare după scor (clasamentul se actualizează)
+    return [...modified].sort((a, b) => b.score - a.score)
+  }, [state.jeModifications, state.recalculatedScores])
 
   const contextValue: SimulatorContextType = {
     state,

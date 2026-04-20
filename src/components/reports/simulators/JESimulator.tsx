@@ -83,13 +83,13 @@ function CriterionDropdown({
           <div
             id={`sim-dropdown-${criterionKey}`}
             className="fixed z-50 bg-white rounded-xl shadow-2xl border-2 border-indigo-500 overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: "min(500px, 85vw)", maxHeight: "280px" }}
+            style={{ top: pos.top, left: pos.left, width: "min(500px, 85vw)" }}
           >
             <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-100">
               <p className="text-xs font-bold text-indigo-700">{label}</p>
               <p className="text-[10px] text-indigo-400">Selectați nivelul care reflectă complexitatea reală a postului</p>
             </div>
-            <div className="overflow-y-auto" style={{ maxHeight: "230px" }}>
+            <div>
               {descriptions.map(desc => (
                 <button
                   key={desc.letter}
