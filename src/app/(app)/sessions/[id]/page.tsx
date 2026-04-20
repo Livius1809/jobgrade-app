@@ -136,7 +136,7 @@ export default async function SessionDetailPage({
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="text-sm text-gray-500 mb-1">Evaluatori finalizați</div>
+          <div className="text-sm text-gray-500 mb-1">Evaluare finalizată</div>
           <div className="text-2xl font-bold text-gray-900">
             {completedParticipants}/{totalParticipants}
           </div>
