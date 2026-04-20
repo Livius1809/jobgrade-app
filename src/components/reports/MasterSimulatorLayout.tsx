@@ -307,9 +307,10 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
                 </h3>
                 <button
                   onClick={() => setActiveSection(null)}
-                  className="text-slate-400 hover:text-slate-600 text-sm px-2 py-1 rounded hover:bg-slate-100"
+                  className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1 rounded hover:bg-slate-100"
+                  title="Ascunde simulatorul — modificările rămân salvate"
                 >
-                  Închide
+                  Minimizează
                 </button>
               </div>
               {simulatorContent}

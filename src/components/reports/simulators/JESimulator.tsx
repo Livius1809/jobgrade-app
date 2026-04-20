@@ -355,37 +355,61 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
         </p>
       </div>
 
-      {/* Buton validare finală */}
-      {!showValidateConfirm ? (
-        <button
-          onClick={() => setShowValidateConfirm(true)}
-          className="w-full py-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
-        >
-          Validez configurația evaluării
-        </button>
-      ) : (
-        <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 space-y-3">
-          <p className="text-xs text-slate-700 leading-relaxed">
-            Subsemnatul, în calitate de Director General / reprezentant legal al <strong>{companyName}</strong>,
-            validez configurația actuală a evaluării posturilor ca fiind conformă cu misiunea, viziunea, valorile,
-            structura organizațională și complexitatea reală a posturilor evaluate din compania noastră.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => { validateJE(companyName); setShowValidateConfirm(false) }}
-              className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
-            >
-              Validez configurația
-            </button>
-            <button
-              onClick={() => setShowValidateConfirm(false)}
-              className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
-            >
-              Revin la modificări
-            </button>
+      {/* Acțiuni */}
+      <div className="space-y-2 pt-2 border-t border-slate-100">
+        {/* Salvează progresul */}
+        {Object.keys(state.jeModifications).length > 0 && !showValidateConfirm && (
+          <button
+            onClick={() => {
+              // TODO: persistare server-side (ScoreOverride)
+              const toast = document.createElement("div")
+              toast.className = "fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-lg shadow-xl text-sm z-50"
+              toast.textContent = "Progresul a fost salvat. Puteți reveni oricând."
+              document.body.appendChild(toast)
+              setTimeout(() => toast.remove(), 3000)
+            }}
+            className="w-full py-2.5 rounded-lg border border-indigo-200 text-indigo-600 text-sm font-medium hover:bg-indigo-50 transition-colors"
+          >
+            Salvează progresul
+          </button>
+        )}
+
+        {/* Validare finală */}
+        {!showValidateConfirm ? (
+          <button
+            onClick={() => setShowValidateConfirm(true)}
+            className="w-full py-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+          >
+            Validez configurația evaluării
+          </button>
+        ) : (
+          <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 space-y-3">
+            <p className="text-xs text-slate-700 leading-relaxed">
+              Subsemnatul, în calitate de Director General / reprezentant legal al <strong>{companyName}</strong>,
+              validez configurația actuală a evaluării posturilor ca fiind conformă cu misiunea, viziunea, valorile,
+              structura organizațională și complexitatea reală a posturilor evaluate din compania noastră.
+            </p>
+            <p className="text-[10px] text-slate-500 italic">
+              Validarea blochează această sesiune de evaluare. Pentru modificări ulterioare
+              (restructurare, posturi noi) veți putea crea o sesiune nouă (consumă credite).
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { validateJE(companyName); setShowValidateConfirm(false) }}
+                className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
+              >
+                Validez configurația
+              </button>
+              <button
+                onClick={() => setShowValidateConfirm(false)}
+                className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
+              >
+                Revin la modificări
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
