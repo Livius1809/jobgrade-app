@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useMemo } from "react"
 import dynamic from "next/dynamic"
-import type { MasterReportData } from "@/lib/reports/master-report-data"
+import type { MasterReportData, MasterJobEvaluation } from "@/lib/reports/master-report-data"
 import { buildPitariuGrades, autoDetectClassCount, type ClassDetection } from "@/lib/evaluation/pitariu-grades"
 
 const SalaryGradeChart = dynamic(() => import("@/components/sessions/SalaryGradeChart"), { ssr: false })
