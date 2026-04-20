@@ -102,10 +102,37 @@ export default function MasterSimulatorLayout({ data, masterContent, simulatorCo
           .then(r => r.json())
           .then(({ score }) => {
             if (typeof score === "number") {
-              setState(s => ({
-                ...s,
-                recalculatedScores: { ...s.recalculatedScores, [jobIndex]: score },
-              }))
+              setState(s => {
+                const newScores = { ...s.recalculatedScores, [jobIndex]: score }
+
+                // Calculăm rangul vechi și nou
+                const allJE = data.layers.baza.jobEvaluations
+                const oldRank = allJE
+                  .map((j, i) => ({ score: s.recalculatedScores[i] ?? j.score, idx: i }))
+                  .sort((a, b) => b.score - a.score)
+                  .findIndex(x => x.idx === jobIndex) + 1
+
+                const newRank = allJE
+                  .map((j, i) => ({ score: newScores[i] ?? j.score, idx: i }))
+                  .sort((a, b) => b.score - a.score)
+                  .findIndex(x => x.idx === jobIndex) + 1
+
+                const rankChanged = oldRank !== newRank
+                const journal = rankChanged
+                  ? [
+                      ...s.journal,
+                      {
+                        timestamp: Date.now(),
+                        section: "JE",
+                        description: `${jobTitle}: loc ${oldRank} → loc ${newRank} (scor: ${allJE[jobIndex].score} → ${score})`,
+                        oldValue: String(oldRank),
+                        newValue: String(newRank),
+                      },
+                    ]
+                  : s.journal
+
+                return { ...s, recalculatedScores: newScores, journal }
+              })
             }
           })
           .catch(() => {})
