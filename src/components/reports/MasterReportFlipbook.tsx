@@ -25,6 +25,8 @@ interface Props {
   onOpenSimulator?: (section: string) => void
   /** JE modificat de simulator (scoruri recalculate, clasament reordonat) */
   modifiedJE?: MasterJobEvaluation[]
+  /** Read-only mode (demo public) — ascunde simulator, selector clase interactiv */
+  readOnly?: boolean
 }
 
 // ─── Teme ──────────────────────────────────────────────────────────────────
@@ -410,7 +412,7 @@ function JESection({ data, t, onOpenSimulator, modifiedJE }: { data: MasterRepor
   )
 }
 
-function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof themes.sobru }) {
+function SalaryGradesSection({ data, t, readOnly = false }: { data: MasterReportData; t: typeof themes.sobru; readOnly?: boolean }) {
   const je = data.layers.baza.jobEvaluations
 
   // Construim punctele scor+salariu din datele JE
@@ -480,8 +482,8 @@ function SalaryGradesSection({ data, t }: { data: MasterReportData; t: typeof th
           </p>
         </div>
 
-        {/* Selector clase și trepte */}
-        {classDetection && (
+        {/* Selector clase și trepte (doar producție) */}
+        {!readOnly && classDetection && (
           <ClassCountSelector
             classDetection={classDetection}
             effectiveClassCount={effectiveClassCount}
@@ -913,7 +915,7 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
 
 // ─── Componentul principal ─────────────────────────────────────────────────
 
-export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator, modifiedJE }: Props) {
+export default function MasterReportFlipbook({ data, initialTheme = "sobru", onOpenSimulator, modifiedJE, readOnly = false }: Props) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [density, setDensity] = useState<Density>("normal")
   const [currentPage, setCurrentPage] = useState<string | null>(null) // null = toate paginile
@@ -935,8 +937,8 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
   const allSections = [
     <CoverSection key="cover" data={data} t={t} />,
     <TOCSection key="toc" data={data} t={t} />,
-    <JESection key="je" data={data} t={t} onOpenSimulator={onOpenSimulator} modifiedJE={modifiedJE} />,
-    <SalaryGradesSection key="salary" data={data} t={t} />,
+    <JESection key="je" data={data} t={t} onOpenSimulator={readOnly ? undefined : onOpenSimulator} modifiedJE={modifiedJE} />,
+    <SalaryGradesSection key="salary" data={data} t={t} readOnly={readOnly} />,
     <PayGapSection key="paygap" data={data} t={t} />,
     <BenchmarkSection key="benchmark" data={data} t={t} />,
     <DevelopmentSection key="dev" data={data} t={t} />,
