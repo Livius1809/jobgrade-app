@@ -20,33 +20,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // Procesăm în batch-uri de 100 pentru a evita timeout
-  let totalCleaned = 0
-  const batchSize = 100
-
-  for (let i = 0; i < 10; i++) {
-    const batch = await prisma.externalSignal.findMany({
-      where: {
-        processedAt: null,
-        category: { notIn: RELEVANT_CATEGORIES as any },
-      },
-      select: { id: true },
-      take: batchSize,
-    })
-
-    if (batch.length === 0) break
-
-    await prisma.externalSignal.updateMany({
-      where: { id: { in: batch.map(s => s.id) } },
-      data: { processedAt: new Date() },
-    })
-
-    totalCleaned += batch.length
-  }
+  // SQL raw — instant, fără overhead Prisma
+  const result = await prisma.$executeRawUnsafe(`
+    UPDATE "external_signals"
+    SET "processedAt" = NOW()
+    WHERE "processedAt" IS NULL
+    AND "category" NOT IN ('LEGAL_REG', 'COMPETITIVE', 'MARKET', 'TECHNOLOGY', 'TALENT')
+  `)
 
   return NextResponse.json({
     ok: true,
-    cleaned: totalCleaned,
-    message: `${totalCleaned} semnale irelevante marcate ca processed`,
+    cleaned: result,
+    message: `${result} semnale irelevante marcate ca processed`,
   })
 }
