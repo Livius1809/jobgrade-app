@@ -300,7 +300,7 @@ export default function MasterSimulatorLayout({ data, isDemo = false, masterCont
         {/* Simulator — dreapta (slide-in) */}
         {isSimulatorOpen && (
           <div className="w-2/5 shrink-0 sticky top-16 h-[calc(100vh-5rem)] overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6">
+            <div className="bg-white rounded-lg shadow-lg border border-indigo-100 p-6" style={{ backgroundImage: "url(/images/brand/hex-pattern.png)", backgroundSize: "300px", backgroundRepeat: "repeat", backgroundBlendMode: "soft-light", backgroundPosition: "center" }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">
                   Simulator

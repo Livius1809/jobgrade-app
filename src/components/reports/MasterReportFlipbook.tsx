@@ -80,6 +80,16 @@ const SECTION_IDS = {
   annexLegal: "section-annex-legal",
 } as const
 
+// ─── Separator decorativ între pagini ──────────────────────────────────────
+
+function Separator() {
+  return (
+    <div className="flex items-center justify-center py-4">
+      <img src="/images/brand/separator.png" alt="" className="h-4 w-auto opacity-40" />
+    </div>
+  )
+}
+
 // ─── Page wrapper — simulare pagină A4 ────────────────────────────────────
 
 function PageSheet({ children, id, pageNum, totalPages, banner }: {
@@ -93,7 +103,7 @@ function PageSheet({ children, id, pageNum, totalPages, banner }: {
     <section
       id={id}
       className="bg-white rounded-lg shadow-lg border border-slate-100 px-12 py-10 relative"
-      style={{ minHeight: "60vh" }}
+      style={{ minHeight: "60vh", backgroundImage: "url(/images/brand/paper-texture.png)", backgroundSize: "400px", backgroundRepeat: "repeat", backgroundBlendMode: "multiply" }}
     >
       {banner && (
         <div className="rounded-lg overflow-hidden -mx-4 mb-8 h-32 relative">
@@ -926,15 +936,23 @@ export default function MasterReportFlipbook({ data, initialTheme = "sobru", onO
       </div>
 
       {/* Pagini — scroll vertical, fiecare ca o foaie separată */}
-      <div className="space-y-8 pb-16">
+      <div className="pb-16">
         <CoverSection data={data} t={t} />
+        <Separator />
         <TOCSection data={data} t={t} />
+        <Separator />
         <JESection data={data} t={t} onOpenSimulator={onOpenSimulator} modifiedJE={modifiedJE} />
+        <Separator />
         <SalaryGradesSection data={data} t={t} />
+        <Separator />
         <PayGapSection data={data} t={t} />
+        <Separator />
         <BenchmarkSection data={data} t={t} />
+        <Separator />
         <DevelopmentSection data={data} t={t} />
+        <Separator />
         <AnnexInputsSection data={data} t={t} />
+        <Separator />
         <AnnexLegalSection t={t} />
       </div>
     </div>
