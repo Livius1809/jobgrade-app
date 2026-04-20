@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
       UPDATE "external_signals"
       SET "processedAt" = NOW()
       WHERE "processedAt" IS NULL
-      AND "category" NOT IN ('LEGAL_REG', 'COMPETITOR', 'MARKET_HR', 'TECH_AI')
+      AND ("category" NOT IN ('LEGAL_REG', 'COMPETITOR', 'MARKET_HR', 'TECH_AI')
+           OR "capturedAt" < NOW() - INTERVAL '3 days')
     `)
 
     return NextResponse.json({
