@@ -8,7 +8,7 @@ const schema = z
   .object({
     taskId: z.string().optional(),
     agentRole: z.string().optional(),
-    limit: z.number().int().min(1).max(20).optional(),
+    limit: z.union([z.number(), z.string().transform(Number)]).pipe(z.number().int().min(1).max(20)).optional(),
     cron: z.boolean().optional(), // când true, respectă EXECUTOR_CRON_ENABLED kill-switch
     bypassFilters: z.boolean().optional(), // manual override pentru filtre (istoric, SYSTEM, orphan)
     maxAgeHours: z.number().int().min(1).max(720).optional(),
