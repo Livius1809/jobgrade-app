@@ -157,10 +157,12 @@ export async function runIntelligentBatch(
     }
 
     // ═══ PAS 4: ALIGNMENT CHECK (P6) ═══
-    const isRoutine = task.priority === "LOW" ||
-      task.taskType === "KB_RESEARCH" ||
-      task.taskType === "KB_VALIDATION" ||
-      (task.tags ?? []).includes("routine")
+    // Routine = orice task operațional standard (skip alignment AI costisitor)
+    // Non-routine = doar task-uri cu taguri sensibile explicit
+    const hasSensitiveTag = (task.tags ?? []).some((t: string) =>
+      ["legal", "client-facing", "strategy", "financial", "hr-decision"].includes(t)
+    )
+    const isRoutine = !hasSensitiveTag
 
     const alignment = await checkAlignment(
       task.assignedTo,
@@ -180,7 +182,7 @@ export async function runIntelligentBatch(
         where: { id: task.id },
         data: {
           status: "BLOCKED",
-          blockerType: "RESOURCE",
+          blockerType: "TECHNICAL",
           blockerDescription: `Alignment check: ${alignment.result} (Nivel ${alignment.level}). ${alignment.reasoning}`,
         },
       })
