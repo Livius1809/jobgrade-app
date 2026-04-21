@@ -4,6 +4,52 @@ import { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 
+// Departamente standard + mapare titlu → departament sugerat
+const STANDARD_DEPARTMENTS = [
+  "Management General",
+  "Financiar-Contabil",
+  "Resurse Umane",
+  "IT & Tehnologie",
+  "Producție",
+  "Vânzări",
+  "Marketing",
+  "Logistică",
+  "Juridic",
+  "Calitate",
+  "Achiziții",
+  "Administrativ",
+  "Cercetare & Dezvoltare",
+  "Relații Clienți",
+]
+
+// Cuvinte cheie din titlu → departament sugerat
+const TITLE_DEPT_MAP: Array<{ keywords: string[]; dept: string }> = [
+  { keywords: ["director general", "ceo", "administrator"], dept: "Management General" },
+  { keywords: ["financiar", "contabil", "economist", "cfo", "trezorier", "buget"], dept: "Financiar-Contabil" },
+  { keywords: ["hr", "resurse umane", "recrutare", "personal", "salarizare", "payroll"], dept: "Resurse Umane" },
+  { keywords: ["it", "programator", "developer", "devops", "sysadmin", "software", "cto", "data"], dept: "IT & Tehnologie" },
+  { keywords: ["producție", "inginer", "tehnician", "mecanic", "operator", "montator"], dept: "Producție" },
+  { keywords: ["vânzări", "sales", "comercial", "account", "business develop"], dept: "Vânzări" },
+  { keywords: ["marketing", "comunicare", "pr", "brand", "content", "social media", "cmo"], dept: "Marketing" },
+  { keywords: ["logistică", "transport", "depozit", "warehouse", "curier", "livrare", "supply chain"], dept: "Logistică" },
+  { keywords: ["juridic", "avocat", "legal", "compliance", "conformitate"], dept: "Juridic" },
+  { keywords: ["calitate", "quality", "qc", "qa", "auditor", "inspector"], dept: "Calitate" },
+  { keywords: ["achiziții", "procurement", "cumpărări", "aprovizionare"], dept: "Achiziții" },
+  { keywords: ["administrativ", "secretar", "asistent", "office", "recepți"], dept: "Administrativ" },
+  { keywords: ["cercetare", "r&d", "inovare", "laborator"], dept: "Cercetare & Dezvoltare" },
+  { keywords: ["client", "suport", "helpdesk", "customer", "relații"], dept: "Relații Clienți" },
+]
+
+function suggestDepartment(title: string): string | null {
+  const lower = title.toLowerCase()
+  for (const { keywords, dept } of TITLE_DEPT_MAP) {
+    if (keywords.some(kw => lower.includes(kw))) return dept
+  }
+  return null
+}
+
+const LEVEL_OPTIONS = ["Top Management", "Management", "Specialist / Expert", "Execuție"]
+
 interface TabDef {
   id: string
   label: string
@@ -281,37 +327,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
           {/* ─── Adaugă post manual ─── */}
           {panelOpen === "posturi" && (
-            <>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Introduceți datele postului. Minim titlul și departamentul.
-              </p>
-              <div style={{ height: "20px" }} />
-              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Director Financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                </div>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Departament</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Financiar-Contabil" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                </div>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Nivel ierarhic (opțional)</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Management, Specialist, Execuție" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                </div>
-              </div>
-              <div style={{ height: "20px" }} />
-              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-                Salvează postul
-              </button>
-            </>
+            <AddJobPanel onClose={() => setPanelOpen(null)} />
           )}
 
           {/* ─── Compune fișă AI ─── */}
@@ -427,6 +443,185 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
         </div>,
         document.body
       )}
+    </>
+  )
+}
+
+// ─── Panou adăugare post cu autocomplete ──────────────────────────────
+
+function AddJobPanel({ onClose }: { onClose: () => void }) {
+  const [title, setTitle] = useState("")
+  const [dept, setDept] = useState("")
+  const [customDept, setCustomDept] = useState("")
+  const [level, setLevel] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [suggestion, setSuggestion] = useState<string | null>(null)
+
+  // Sugestie departament la schimbarea titlului
+  const handleTitleChange = (val: string) => {
+    setTitle(val)
+    if (val.length >= 3) {
+      const suggested = suggestDepartment(val)
+      if (suggested && dept !== suggested) {
+        setSuggestion(suggested)
+      } else {
+        setSuggestion(null)
+      }
+    } else {
+      setSuggestion(null)
+    }
+  }
+
+  const acceptSuggestion = () => {
+    if (suggestion) {
+      setDept(suggestion)
+      setSuggestion(null)
+    }
+  }
+
+  const finalDept = dept === "__other__" ? customDept : dept
+
+  const handleSave = async () => {
+    if (!title.trim()) { setError("Titlul postului e obligatoriu."); return }
+    if (!finalDept.trim()) { setError("Departamentul e obligatoriu."); return }
+    setSaving(true); setError(null)
+    try {
+      // Creăm/găsim departamentul mai întâi
+      let departmentId: string | undefined
+      if (finalDept.trim()) {
+        const deptRes = await fetch("/api/v1/departments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: finalDept.trim() }),
+        })
+        if (deptRes.ok) {
+          const deptData = await deptRes.json()
+          departmentId = deptData.id
+        }
+      }
+
+      const res = await fetch("/api/v1/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          departmentId,
+          purpose: level ? `Nivel: ${level}` : undefined,
+        }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => { setTitle(""); setDept(""); setCustomDept(""); setLevel(""); setSaved(false) }, 1500)
+      } else {
+        const data = await res.json()
+        setError(data.message || "Eroare la salvare")
+      }
+    } catch { setError("Eroare de rețea") }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Introduceți datele postului. Departamentul se sugerează automat din titlu.
+      </p>
+      <div style={{ height: "20px" }} />
+      <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+        <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+
+        <div style={{ height: "12px" }} />
+        <div>
+          <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
+          <div style={{ height: "4px" }} />
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="ex: Director Financiar"
+            className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
+          />
+          {suggestion && (
+            <button
+              onClick={acceptSuggestion}
+              className="mt-1 text-[10px] text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Departament sugerat: <span className="font-bold">{suggestion}</span> — click pentru a accepta
+            </button>
+          )}
+        </div>
+
+        <div style={{ height: "12px" }} />
+        <div>
+          <label className="text-xs text-slate-600 font-medium">Departament</label>
+          <div style={{ height: "4px" }} />
+          <select
+            value={dept}
+            onChange={(e) => { setDept(e.target.value); setSuggestion(null) }}
+            className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
+          >
+            <option value="">— Selectează —</option>
+            {STANDARD_DEPARTMENTS.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+            <option value="__other__">Altele...</option>
+          </select>
+          {dept === "__other__" && (
+            <>
+              <div style={{ height: "8px" }} />
+              <input
+                type="text"
+                value={customDept}
+                onChange={(e) => setCustomDept(e.target.value)}
+                placeholder="Numele departamentului"
+                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
+              />
+              <p className="text-[9px] text-slate-400 mt-1">Va fi adăugat automat în lista de departamente.</p>
+            </>
+          )}
+        </div>
+
+        <div style={{ height: "12px" }} />
+        <div>
+          <label className="text-xs text-slate-600 font-medium">Nivel ierarhic</label>
+          <div style={{ height: "4px" }} />
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
+          >
+            <option value="">— Selectează (opțional) —</option>
+            {LEVEL_OPTIONS.map(l => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ height: "16px" }} />
+
+      {error && (
+        <>
+          <p className="text-[10px] text-red-500 font-medium text-center">{error}</p>
+          <div style={{ height: "8px" }} />
+        </>
+      )}
+
+      <div className="flex gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving || saved}
+          className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
+            saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+          }`}
+        >
+          {saved ? "✓ Salvat — poți adăuga altul" : saving ? "Se salvează..." : "Salvează postul"}
+        </button>
+      </div>
+
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">Poți adăuga mai multe posturi fără a închide panoul.</p>
     </>
   )
 }
