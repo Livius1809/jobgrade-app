@@ -139,23 +139,23 @@ export default async function PortalPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <ProblemCard
-              icon="📊"
-              title="Vreau ordine în salarii"
-              description="Evaluare posturi, ierarhizare, clase salariale. Știi exact cine câștigă cât și de ce."
-              solution="Pachet BAZA"
+              icon="🏗️"
+              title="Vreau ordine internă"
+              description="Evaluare și ierarhizare posturi pe criterii obiective. Știi exact care post e mai complex și de ce."
+              solution="Pachet Ordine internă"
               href="/sessions"
             />
             <ProblemCard
               icon="⚖️"
-              title="Am un control / audit"
-              description="Conformitate Directiva EU 2023/970, pay gap, documente legale."
-              solution="Pachet BAZA + Conformitate"
-              href="/pay-gap"
+              title="Vreau structură salarială și conformitate"
+              description="Clase, trepte, pay gap, conformitate Directiva EU 2023/970. Totul documentat."
+              solution="Pachet Remunerare și performanță"
+              href="/sessions"
             />
             <ProblemCard
               icon="🎯"
-              title="Vreau să fiu competitiv"
-              description="Benchmark cu piața, retenție, dezvoltare. Nu mai pierzi oameni buni."
+              title="Vreau competitivitate și dezvoltare"
+              description="Benchmark cu piața, retenție, dezvoltare organizațională. Nu mai pierzi oameni buni."
               solution="Pachet Complet"
               href="/sessions"
             />
@@ -214,16 +214,16 @@ export default async function PortalPage() {
       {/* ═══ CE PRIMEȘTI ═══ */}
       {client.stage !== "NEW" && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Ce primești cu Pachetul BAZA</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Ce primești cu Pachetul Ordine internă</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FeatureCard icon="📊" title="Clasament posturi" description="Ierarhizare obiectivă pe 4 criterii EU" included />
+            <FeatureCard icon="🏗️" title="Clasament posturi" description="Ierarhizare obiectivă pe 4 criterii EU" included />
             <FeatureCard icon="🔧" title="Simulator" description="Modifici, vezi impactul, ajustezi" included />
-            <FeatureCard icon="📄" title="Raport complet" description="PDF profesional, conform legislativ" included />
+            <FeatureCard icon="📄" title="Raport complet" description="Profesional, conform legislativ" included />
             <FeatureCard icon="✅" title="Validare oficială" description="Semnătură electronică + olografă" included />
           </div>
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-xs text-slate-400 text-center">
-              Cu pachetul complet adaugi: structură salarială · pay gap · benchmark piață · dezvoltare organizațională
+              Cu pachetele superioare adaugi: structură salarială · remunerare · pay gap · benchmark piață · dezvoltare organizațională
             </p>
             <div className="flex justify-center mt-3">
               <Link href="/b2b/abonamente" className="text-xs text-indigo-600 hover:underline font-medium">
