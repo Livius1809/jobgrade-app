@@ -146,6 +146,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
       <PortalClientSection
         jobCount={client.jobCount}
         purchasedLayer={purchasedLayer}
+        creditBalance={client.creditBalance}
         clientStage={client.stage}
         cui={client.cui}
         industry={client.industry}

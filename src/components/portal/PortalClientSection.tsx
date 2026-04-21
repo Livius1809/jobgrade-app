@@ -8,12 +8,13 @@ import ClientDataTabs from "./ClientDataTabs"
 interface Props {
   jobCount: number
   purchasedLayer: number
+  creditBalance: number
   clientStage: string
   cui: string | null
   industry: string | null
 }
 
-export default function PortalClientSection({ jobCount, purchasedLayer, clientStage, cui, industry }: Props) {
+export default function PortalClientSection({ jobCount, purchasedLayer, creditBalance, clientStage, cui, industry }: Props) {
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
   const [profilePanel, setProfilePanel] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -169,7 +170,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, clientSt
             <p className="text-sm text-slate-500">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
           </div>
 
-          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} />
+          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} creditBalance={creditBalance} />
 
           {/* ═══ Date intrare client — apare doar după plată ═══ */}
           {purchasedLayer > 0 && (

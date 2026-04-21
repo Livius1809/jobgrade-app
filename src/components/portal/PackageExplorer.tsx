@@ -203,7 +203,7 @@ const PURCHASED_FILLS: Record<string, string> = {
   coral: "rgba(249,115,22,0.2)",
 }
 
-export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number } = {}) {
+export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, creditBalance = 0 }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; creditBalance?: number } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
   const [purchasing, setPurchasing] = useState(false)
 
@@ -347,6 +347,35 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
           <div style={{ height: "16px" }} />
 
           <p className="text-sm text-slate-600 leading-relaxed">{selectedPkg.description}</p>
+
+          {/* Situație curentă — apare doar dacă are deja ceva activ */}
+          {(purchasedLayer > 0 || creditBalance > 0) && (
+            <>
+              <div style={{ height: "16px" }} />
+              <div className="bg-slate-50 rounded-lg border border-slate-200" style={{ padding: "12px" }}>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Situație curentă</p>
+                <div style={{ height: "8px" }} />
+                {purchasedLayer > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600">Pachet activ</span>
+                    <span className="text-xs font-bold text-slate-900">
+                      {PACKAGES.find(p => p.number === purchasedLayer)?.title || "—"} ({PACKAGES.find(p => p.number === purchasedLayer)?.layerLabel || "—"})
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between" style={{ marginTop: purchasedLayer > 0 ? "4px" : "0" }}>
+                  <span className="text-xs text-slate-600">Credite disponibile</span>
+                  <span className="text-xs font-bold text-slate-900">{creditBalance.toLocaleString("ro-RO")} credite</span>
+                </div>
+                {purchasedLayer > 0 && selectedPkg.number > purchasedLayer && (
+                  <>
+                    <div style={{ height: "8px" }} />
+                    <p className="text-[10px] text-indigo-600 font-medium">Upgrade de la {PACKAGES.find(p => p.number === purchasedLayer)?.title} → {selectedPkg.title}</p>
+                  </>
+                )}
+              </div>
+            </>
+          )}
 
           <div style={{ height: "20px" }} />
 
