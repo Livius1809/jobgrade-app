@@ -1,36 +1,40 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 
 export default function AccountMenu() {
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState<"data" | "account" | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   const handleAction = async (action: "data" | "account") => {
     if (confirming !== action) {
       setConfirming(action)
+      setError(null)
       return
     }
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch("/api/v1/account/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       })
+      const data = await res.json()
       if (res.ok) {
         if (action === "account") {
           window.location.href = "/login"
         } else {
-          router.refresh()
-          setOpen(false)
-          setConfirming(null)
+          // Hard reload — router.refresh() nu e suficient
+          window.location.reload()
         }
+      } else {
+        setError(data.message || "Eroare necunoscută")
       }
     } catch (e) {
+      setError("Eroare de rețea")
       console.error("Account action error:", e)
     } finally {
       setLoading(false)
@@ -40,7 +44,7 @@ export default function AccountMenu() {
   return (
     <div className="relative">
       <button
-        onClick={() => { setOpen(!open); setConfirming(null) }}
+        onClick={() => { setOpen(!open); setConfirming(null); setError(null) }}
         className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
       >
         Cont Pilot
@@ -48,7 +52,7 @@ export default function AccountMenu() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setConfirming(null) }} />
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setConfirming(null); setError(null) }} />
           <div className="absolute right-0 top-8 z-50 bg-white rounded-xl border border-slate-200 shadow-lg w-56" style={{ padding: "8px" }}>
             <button
               onClick={() => handleAction("data")}
@@ -64,9 +68,14 @@ export default function AccountMenu() {
             >
               {confirming === "account" ? (loading ? "Se șterge..." : "Confirmă ștergerea contului") : "Șterge contul"}
             </button>
-            {confirming && (
+            {confirming && !error && (
               <p className="text-[9px] text-slate-400 px-3 py-1">
                 Apasă din nou pentru a confirma. Acțiunea este ireversibilă.
+              </p>
+            )}
+            {error && (
+              <p className="text-[9px] text-red-500 px-3 py-1 font-medium">
+                {error}
               </p>
             )}
           </div>

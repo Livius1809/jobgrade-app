@@ -21,16 +21,38 @@ export async function POST(req: NextRequest) {
     if (action === "data") {
       // Șterge datele de test — păstrează contul și profilul
       // Ordine: copiii înainte de părinți (FK constraints)
+      // Ștergere completă — toate tabelele cu FK, ordine corectă (copii → părinți)
       const deletes = [
+        // Dependențe session_jobs
+        "DELETE FROM session_jobs WHERE \"sessionId\" IN (SELECT id FROM evaluation_sessions WHERE \"tenantId\" = $1)",
+        // Dependențe jobs
+        "DELETE FROM kpi_definitions WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)",
+        "DELETE FROM compensation_packages WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)",
+        "DELETE FROM salary_grades WHERE \"tenantId\" = $1",
+        "DELETE FROM salary_steps WHERE \"salaryGradeId\" IN (SELECT id FROM salary_grades WHERE \"tenantId\" = $1)",
+        // Pay gap
+        "DELETE FROM pay_gap_reports WHERE \"tenantId\" = $1",
+        "DELETE FROM joint_pay_assessments WHERE \"tenantId\" = $1",
+        "DELETE FROM employee_salary_records WHERE \"tenantId\" = $1",
+        // Simulations, reports
+        "DELETE FROM simulation_scenarios WHERE \"tenantId\" = $1",
+        "DELETE FROM reports WHERE \"tenantId\" = $1",
+        "DELETE FROM ai_generations WHERE \"tenantId\" = $1",
+        // Sesiuni și evaluări
+        "DELETE FROM evaluation_sessions WHERE \"tenantId\" = $1",
+        // Jobs
+        "DELETE FROM jobs WHERE \"tenantId\" = $1",
+        // Financiar
         "DELETE FROM service_purchases WHERE \"tenantId\" = $1",
         "DELETE FROM credit_transactions WHERE \"tenantId\" = $1",
         "DELETE FROM credit_balances WHERE \"tenantId\" = $1",
         "DELETE FROM revenue_entries WHERE \"tenantId\" = $1",
-        "DELETE FROM session_jobs WHERE \"sessionId\" IN (SELECT id FROM evaluation_sessions WHERE \"tenantId\" = $1)",
-        "DELETE FROM evaluation_sessions WHERE \"tenantId\" = $1",
-        "DELETE FROM jobs WHERE \"tenantId\" = $1",
+        // Payroll
         "DELETE FROM payroll_entries WHERE \"tenantId\" = $1",
-        "DELETE FROM employee_salary_records WHERE \"tenantId\" = $1",
+        "DELETE FROM payroll_import_batches WHERE \"tenantId\" = $1",
+        // Alte date
+        "DELETE FROM employee_requests WHERE \"tenantId\" = $1",
+        "DELETE FROM client_memories WHERE \"tenantId\" = $1",
       ]
 
       for (const sql of deletes) {
