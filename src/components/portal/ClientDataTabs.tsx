@@ -236,9 +236,10 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
   const visibleTabIds = TABS_PER_LAYER[displayLayer] || TABS_PER_LAYER[1]
   const tabs = allTabs.filter(t => visibleTabIds.includes(t.id))
 
-  // Progress per tab (0-100)
+  // Progress per tab (0-100) — folosim jobs.length (live) dacă e disponibil
+  const liveJobCount = jobs.length > 0 ? jobs.length : jobCount
   const tabProgress: Record<string, number> = {
-    posturi: Math.min(100, Math.round((jobCount / Math.max(3, 1)) * 100)),
+    posturi: Math.min(100, Math.round((liveJobCount / Math.max(3, 1)) * 100)),
     fise: 0,
     "stat-functii": employeeCount > 0 ? 100 : 0,
     salarii: hasSalaryData ? 100 : 0,
@@ -312,6 +313,22 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
             <p className="text-sm text-slate-600 leading-relaxed">{activeTabDef.description}</p>
 
+            {/* Lista posturilor existente — doar pe tab Posturi */}
+            {activeTabDef.id === "posturi" && jobs.length > 0 && (
+              <>
+                <div style={{ height: "16px" }} />
+                <div className="bg-white rounded-lg border border-slate-200" style={{ padding: "12px" }}>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">{jobs.length} {jobs.length === 1 ? "post adăugat" : "posturi adăugate"}</p>
+                  <div style={{ height: "8px" }} />
+                  <div className="flex flex-wrap gap-2">
+                    {jobs.map(j => (
+                      <span key={j.id} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-medium">{j.title}</span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             <div style={{ height: "20px" }} />
 
             {/* Acțiuni */}
@@ -382,7 +399,13 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
           {/* ─── Adaugă post manual ─── */}
           {panelOpen === "posturi" && (
-            <AddJobPanel onClose={() => setPanelOpen(null)} />
+            <AddJobPanel onClose={() => setPanelOpen(null)} onJobAdded={() => {
+              // Refresh lista de joburi
+              fetch("/api/v1/jobs").then(r => r.json()).then(data => {
+                const list = Array.isArray(data) ? data : (data.jobs || [])
+                setJobs(list.map((j: any) => ({ id: j.id, title: j.title })))
+              }).catch(() => {})
+            }} />
           )}
 
           {/* ─── Compune fișă AI ─── */}
@@ -520,7 +543,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
 // ─── Panou adăugare post cu autocomplete ──────────────────────────────
 
-function AddJobPanel({ onClose }: { onClose: () => void }) {
+function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?: () => void }) {
   const [title, setTitle] = useState("")
   const [dept, setDept] = useState("")
   const [customDept, setCustomDept] = useState("")
@@ -607,6 +630,7 @@ function AddJobPanel({ onClose }: { onClose: () => void }) {
       })
       if (res.ok) {
         setSaved(true)
+        onJobAdded?.()
         setTimeout(() => { setTitle(""); setDept(""); setCustomDept(""); setLevel(""); setSaved(false) }, 1500)
       } else {
         const data = await res.json()
