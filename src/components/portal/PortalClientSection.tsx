@@ -83,12 +83,10 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                 <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">GRATUIT</span>
               </div>
               <div style={{ height: "4px" }} />
-              <p className="text-sm text-slate-500">Spune-ne despre organizația ta — completăm automat ce putem din ANAF</p>
-              {cui && (
-                <>
-                  <div style={{ height: "8px" }} />
-                  <p className="text-xs text-emerald-600 font-medium">{industry || "Profil completat"} · CUI: {cui}</p>
-                </>
+              {!isDone ? (
+                <p className="text-sm text-slate-500">Spune-ne despre organizația ta — completăm automat ce putem din ANAF</p>
+              ) : (
+                <p className="text-xs text-emerald-600 font-medium">{industry || caenName || "Profil completat"} · CUI: {cui || "–"}</p>
               )}
             </div>
           </div>
