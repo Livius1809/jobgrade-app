@@ -237,9 +237,28 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, cre
   const selectedCreditPkg = CREDIT_PKGS.find(p => p.id === selectedCredits)
 
   const handlePurchase = async () => {
+    if (!selectedPkg) return
     const pos = Number(positions) || 0
     const emp = Number(employees) || 0
-    if (!selectedPkg || pos === 0 || emp === 0) return
+
+    // Doar credite — nu trebuie poziții/salariați
+    if (isCreditsOnly && selectedCredits) {
+      setPurchasing(true)
+      try {
+        const res = await fetch("/api/v1/billing/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "credits", packageId: selectedCredits }),
+        })
+        const data = await res.json()
+        if (data.url) window.location.href = data.url
+      } catch (e) { console.error("Credit checkout error:", e) }
+      finally { setPurchasing(false) }
+      return
+    }
+
+    // Servicii (prima achiziție sau upgrade) — trebuie poziții/salariați
+    if (pos === 0 || emp === 0) return
     setPurchasing(true)
     try {
       const res = await fetch("/api/v1/billing/checkout", {
@@ -255,18 +274,18 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, cre
         }),
       })
       const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch (e) {
-      console.error("Checkout error:", e)
-    } finally {
-      setPurchasing(false)
-    }
+      if (data.url) window.location.href = data.url
+    } catch (e) { console.error("Checkout error:", e) }
+    finally { setPurchasing(false) }
   }
 
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
+
+  // Determină dacă e upgrade sau doar credite
+  const isAlreadyPurchased = selectedPkg ? selectedPkg.number <= purchasedLayer : false
+  const isUpgrade = selectedPkg ? selectedPkg.number > purchasedLayer && purchasedLayer > 0 : false
+  const isCreditsOnly = isAlreadyPurchased && !!selectedCredits
 
   const [mounted, setMounted] = useState(false)
   const cardsRef = useRef<HTMLDivElement>(null)
@@ -419,9 +438,31 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, cre
 
           <div style={{ height: "20px" }} />
 
-          {/* Calculator preț — Date intrare client */}
+          {/* Calculator preț */}
+          {isAlreadyPurchased ? (
+            /* Pachet deja activ — arată doar opțiunea de credite */
+            <div className={`rounded-xl p-4 ${colors.bg} border ${colors.border}`} style={{ borderWidth: "1px" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Pachet activ — cumpără credite suplimentare</p>
+              <div style={{ height: "8px" }} />
+              {selectedCreditPkg ? (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600">Credite ({selectedCreditPkg.name})</span>
+                    <span className="text-sm font-bold text-slate-900">{selectedCreditPkg.price.toLocaleString("ro-RO")} RON</span>
+                  </div>
+                  <div style={{ height: "4px" }} />
+                  <p className="text-[9px] text-slate-400">fără TVA · {selectedCreditPkg.credits.toLocaleString()} credite</p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400">Selectează un pachet de credite din tabelul de mai jos.</p>
+              )}
+            </div>
+          ) : (
+          /* Prima achiziție sau upgrade — trebuie poziții/salariați */
           <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide mb-3">Date intrare client</p>
+            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide mb-3">
+              {isUpgrade ? "Upgrade pachet" : "Date intrare client"}
+            </p>
             <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-2 flex-1">
                 <label className="text-xs text-slate-600">Poziții distincte</label>
@@ -533,6 +574,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, cre
               )
             })()}
           </div>
+          )}
 
           <div style={{ height: "20px" }} />
 
@@ -631,10 +673,20 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, cre
 
           {/* Acțiuni */}
           <div className="flex gap-3">
-            {selectedPkg.number <= purchasedLayer ? (
-              <div className="flex-1 py-2.5 rounded-lg bg-emerald-100 text-emerald-700 text-sm font-semibold text-center">
-                ✓ Activ
-              </div>
+            {isAlreadyPurchased ? (
+              isCreditsOnly ? (
+                <button
+                  onClick={handlePurchase}
+                  disabled={purchasing}
+                  className={`flex-1 py-3 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm disabled:opacity-50 ${colors.btn}`}
+                >
+                  {purchasing ? "Se procesează..." : `Plătește ${selectedCreditPkg?.price.toLocaleString("ro-RO")} RON`}
+                </button>
+              ) : (
+                <div className="flex-1 py-2.5 rounded-lg bg-emerald-100 text-emerald-700 text-sm font-semibold text-center">
+                  ✓ Activ — selectează credite pentru a cumpăra
+                </div>
+              )
             ) : (
               <button
                 onClick={handlePurchase}
