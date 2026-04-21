@@ -5,6 +5,7 @@ import Link from "next/link"
 import SignOutButton from "@/components/auth/SignOutButton"
 import NarrativeGuide from "@/components/guide/NarrativeGuide"
 import AccountMenu from "@/components/portal/AccountMenu"
+import BuyButton from "@/components/portal/BuyButton"
 
 export default async function PortalLayout({
   children,
@@ -26,9 +27,7 @@ export default async function PortalLayout({
           </Link>
 
           <div className="flex items-center gap-4">
-            <Link href="/portal#pachete" className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
-              Cumpără
-            </Link>
+            <BuyButton />
             <Link href="/company" className="text-xs font-medium text-text-warm hover:text-coral transition-colors">
               Detalii companie
             </Link>
