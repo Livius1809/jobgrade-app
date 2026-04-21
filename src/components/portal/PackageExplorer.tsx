@@ -214,6 +214,18 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
   const [positions, setPositions] = useState<string>("")
   const [employees, setEmployees] = useState<string>("")
   const [annual, setAnnual] = useState(false)
+  const [selectedCredits, setSelectedCredits] = useState<string | null>(null)
+
+  const CREDIT_PKGS = [
+    { id: "credits_micro", name: "Micro", credits: 100, price: 800 },
+    { id: "credits_mini", name: "Mini", credits: 250, price: 1875 },
+    { id: "credits_start", name: "Start", credits: 500, price: 3500 },
+    { id: "credits_business", name: "Business", credits: 1500, price: 9750 },
+    { id: "credits_professional", name: "Professional", credits: 5000, price: 30000 },
+    { id: "credits_enterprise", name: "Enterprise", credits: 15000, price: 82500 },
+  ]
+
+  const selectedCreditPkg = CREDIT_PKGS.find(p => p.id === selectedCredits)
 
   const handlePurchase = async () => {
     const pos = Number(positions) || 0
@@ -230,6 +242,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
           positions: pos,
           employees: emp,
           annual,
+          creditPackageId: selectedCredits || undefined,
         }),
       })
       const data = await res.json()
@@ -416,7 +429,8 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
               const abonamentLunar = 399
               const abonamentAnual = 3990
               const abonamentRON = annual ? abonamentAnual : abonamentLunar
-              const totalRON = serviciiRON + abonamentRON
+              const crediteRON = selectedCreditPkg?.price || 0
+              const totalRON = serviciiRON + abonamentRON + crediteRON
 
               return (
                 <div className={`rounded-lg p-4 ${colors.bg}`}>
@@ -455,6 +469,17 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
                     </div>
                   </div>
 
+                  {/* Credite (dacă e selectat un pachet) */}
+                  {selectedCreditPkg && (
+                    <>
+                      <div style={{ height: "12px" }} />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-600">Credite ({selectedCreditPkg.name})</span>
+                        <span className="text-sm font-bold text-slate-900">{crediteRON.toLocaleString("ro-RO")} RON</span>
+                      </div>
+                    </>
+                  )}
+
                   <div style={{ height: "12px", borderBottom: "1px solid rgba(0,0,0,0.1)" }} />
                   <div style={{ height: "12px" }} />
 
@@ -473,56 +498,50 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
 
           <div style={{ height: "20px" }} />
 
-          {/* Pachete credite — cu buton cumpără */}
+          {/* Pachete credite — selector radio */}
           <div className="bg-white rounded-xl p-4 border border-slate-200">
-            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite</p>
-            <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
-              Creditele suplimentare: revalidare, simulări, consultanță HR, rapoarte per angajat.
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-slate-400 uppercase tracking-wide">Credite suplimentare (opțional)</p>
+              {selectedCredits && (
+                <button onClick={() => setSelectedCredits(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Anulează</button>
+              )}
+            </div>
+            <div style={{ height: "4px" }} />
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              Revalidare, simulări adiționale, consultanță HR, rapoarte per angajat.
             </p>
+            <div style={{ height: "12px" }} />
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-slate-400 border-b border-slate-200">
+                  <th className="text-left py-1.5" style={{ width: "20px" }}></th>
                   <th className="text-left py-1.5">Pachet</th>
                   <th className="text-right py-1.5">Credite</th>
                   <th className="text-right py-1.5">RON</th>
                   <th className="text-right py-1.5">Reducere</th>
-                  <th className="text-right py-1.5"></th>
                 </tr>
               </thead>
               <tbody className="text-slate-600">
-                {[
-                  { id: "credits_micro", name: "Micro", credits: 100, price: 800, disc: "—" },
-                  { id: "credits_mini", name: "Mini", credits: 250, price: 1875, disc: "-6%" },
-                  { id: "credits_start", name: "Start", credits: 500, price: 3500, disc: "-12%" },
-                  { id: "credits_business", name: "Business", credits: 1500, price: 9750, disc: "-19%" },
-                  { id: "credits_professional", name: "Professional", credits: 5000, price: 30000, disc: "-25%" },
-                  { id: "credits_enterprise", name: "Enterprise", credits: 15000, price: 82500, disc: "-31%" },
-                ].map(p => (
-                  <tr key={p.name} className="border-t border-slate-100">
+                {CREDIT_PKGS.map(p => {
+                  const isSelected = selectedCredits === p.id
+                  return (
+                  <tr
+                    key={p.id}
+                    onClick={() => setSelectedCredits(isSelected ? null : p.id)}
+                    className={`border-t border-slate-100 cursor-pointer transition-colors ${isSelected ? "bg-indigo-50" : "hover:bg-slate-50"}`}
+                  >
+                    <td className="py-1.5">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? "border-indigo-500" : "border-slate-300"}`}>
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                      </div>
+                    </td>
                     <td className="py-1.5 font-medium">{p.name}</td>
                     <td className="py-1.5 text-right font-mono">{p.credits.toLocaleString()}</td>
                     <td className="py-1.5 text-right font-mono">{p.price.toLocaleString()}</td>
-                    <td className="py-1.5 text-right text-emerald-600 font-medium">{p.disc}</td>
-                    <td className="py-1.5 text-right">
-                      <button
-                        onClick={async () => {
-                          try {
-                            const res = await fetch("/api/v1/billing/checkout", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ type: "credits", packageId: p.id }),
-                            })
-                            const data = await res.json()
-                            if (data.url) window.location.href = data.url
-                          } catch (e) { console.error("Credit checkout error:", e) }
-                        }}
-                        className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded transition-colors"
-                      >
-                        Cumpără
-                      </button>
-                    </td>
+                    <td className="py-1.5 text-right text-emerald-600 font-medium">{p.id === "credits_micro" ? "—" : `-${Math.round((1 - p.price / (p.credits * 8)) * 100)}%`}</td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -582,14 +601,14 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
               <button
                 onClick={handlePurchase}
                 disabled={purchasing || !Number(positions) || !Number(employees)}
-                className={`flex-1 py-2.5 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${colors.btn}`}
+                className={`flex-1 py-3 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${colors.btn}`}
               >
-                {purchasing ? "Se procesează..." : "Cumpără"}
+                {purchasing ? "Se procesează..." : "Plătește"}
               </button>
             )}
             <Link
               href={selectedPkg.demoHref}
-              className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold text-center hover:bg-white/50 transition-colors"
+              className="flex-1 py-3 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold text-center hover:bg-white/50 transition-colors"
             >
               Vezi demo →
             </Link>

@@ -72,7 +72,15 @@ export async function POST(req: NextRequest) {
         console.log(`[WEBHOOK] Service purchase layer ${layer} → tenant ${tenantId}`)
       }
 
-      await createRevenueEntry(tenantId, "SERVICE", session.amount_total, session.currency, `Pachet servicii L${layer}`, session.id)
+      // Credite suplimentare incluse în pachetul service
+      const credits = parseInt(session.metadata?.credits ?? "0", 10)
+      if (credits > 0) {
+        const creditPkgId = session.metadata?.creditPackageId ?? "unknown"
+        await addCredits(tenantId, credits, `Credite ${creditPkgId} — ${credits} credite (incluse în pachet)`, "PURCHASE")
+        console.log(`[WEBHOOK] +${credits} credits (service bundle) → tenant ${tenantId}`)
+      }
+
+      await createRevenueEntry(tenantId, "SERVICE", session.amount_total, session.currency, `Pachet servicii L${layer}${credits > 0 ? ` + ${credits} credite` : ""}`, session.id)
     }
 
     // Credits purchase

@@ -14,6 +14,7 @@ const schema = z.object({
   positions: z.number().min(1).optional(),
   employees: z.number().min(1).optional(),
   annual: z.boolean().optional(),
+  creditPackageId: z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -82,25 +83,45 @@ export async function POST(req: NextRequest) {
 
       const { serviciiRON } = calculateServicePrice(data.layer, data.positions, data.employees)
       const abonamentRON = data.annual ? 3990 : 399
-      const totalRON = serviciiRON + abonamentRON
       const layerName = LAYER_NAMES[data.layer] || `Pachet ${data.layer}`
+
+      // Credite suplimentare (opțional)
+      const creditPkg = data.creditPackageId ? CREDIT_PACKAGES.find(p => p.id === data.creditPackageId) : null
+      const crediteRON = creditPkg ? creditPkg.price : 0
+      const totalRON = serviciiRON + abonamentRON + crediteRON
+
+      const lineItems: any[] = [
+        {
+          price_data: {
+            currency: "ron",
+            product_data: {
+              name: `JobGrade — ${layerName}`,
+              description: `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
+            },
+            unit_amount: (serviciiRON + abonamentRON) * 100,
+          },
+          quantity: 1,
+        },
+      ]
+
+      if (creditPkg) {
+        lineItems.push({
+          price_data: {
+            currency: "ron",
+            product_data: {
+              name: `Credite ${creditPkg.label} — ${creditPkg.credits} credite`,
+              description: `Pachet credite suplimentare`,
+            },
+            unit_amount: creditPkg.price * 100,
+          },
+          quantity: 1,
+        })
+      }
 
       const checkoutSession = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "ron",
-              product_data: {
-                name: `JobGrade — ${layerName}`,
-                description: `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
-              },
-              unit_amount: totalRON * 100,
-            },
-            quantity: 1,
-          },
-        ],
+        line_items: lineItems,
         mode: "payment",
         success_url: `${APP_URL}/portal?success=service&layer=${data.layer}`,
         cancel_url: `${APP_URL}/portal?canceled=1`,
@@ -111,6 +132,8 @@ export async function POST(req: NextRequest) {
           positions: String(data.positions),
           employees: String(data.employees),
           priceRON: String(totalRON),
+          creditPackageId: data.creditPackageId || "",
+          credits: creditPkg ? String(creditPkg.credits) : "0",
         },
       })
 
