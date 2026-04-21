@@ -150,61 +150,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           <div style={{ height: "16px" }} />
 
           {/* Date editabile — MVV + alte info */}
-          <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">CUI (dacă nu e preluat)</label>
-              <div style={{ height: "4px" }} />
-              <input
-                type="text"
-                placeholder="ex: 15790994"
-                defaultValue={cui || ""}
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
-              />
-            </div>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">Misiune</label>
-              <div style={{ height: "4px" }} />
-              <textarea
-                rows={2}
-                placeholder="Care e misiunea companiei? (opțional — se poate genera din obiectul de activitate)"
-                defaultValue={mission || ""}
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
-              />
-            </div>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">Viziune</label>
-              <div style={{ height: "4px" }} />
-              <textarea
-                rows={2}
-                placeholder="Unde vrea compania să ajungă? (opțional)"
-                defaultValue={vision || ""}
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
-              />
-            </div>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">Nr. angajați (estimativ)</label>
-              <div style={{ height: "4px" }} />
-              <input
-                type="number"
-                placeholder="–"
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
-              />
-            </div>
-          </div>
-
-          <div style={{ height: "20px" }} />
-
-          <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-            Salvează profilul
-          </button>
-
-          <div style={{ height: "8px" }} />
-          <p className="text-[9px] text-slate-400 text-center">Datele ANAF se preiau automat. Misiunea și viziunea sunt opționale.</p>
+          <ProfileForm cui={cui} mission={mission} vision={vision} onClose={() => setProfilePanel(false)} />
         </div>,
         document.body
       )}
@@ -232,6 +178,101 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           )}
         </>
       )}
+    </>
+  )
+}
+
+// ─── Formularul de profil (wired la API) ───────────────────────────────
+
+function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mission: string | null; vision: string | null; onClose: () => void }) {
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const handleSave = async () => {
+    if (!formRef.current) return
+    const fd = new FormData(formRef.current)
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/v1/company", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cui: fd.get("cui") || undefined,
+          mission: fd.get("mission") || undefined,
+          vision: fd.get("vision") || undefined,
+          size: fd.get("size") || undefined,
+        }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => { onClose(); window.location.reload() }, 1000)
+      } else {
+        const data = await res.json()
+        setError(data.message || "Eroare la salvare")
+      }
+    } catch (e) {
+      setError("Eroare de rețea")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <form ref={formRef}>
+        <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+          <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+          <div style={{ height: "12px" }} />
+          <div>
+            <label className="text-xs text-slate-600 font-medium">CUI (dacă nu e preluat)</label>
+            <div style={{ height: "4px" }} />
+            <input name="cui" type="text" placeholder="ex: 15790994" defaultValue={cui || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+          </div>
+          <div style={{ height: "12px" }} />
+          <div>
+            <label className="text-xs text-slate-600 font-medium">Misiune</label>
+            <div style={{ height: "4px" }} />
+            <textarea name="mission" rows={2} placeholder="Care e misiunea companiei? (opțional)" defaultValue={mission || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+          </div>
+          <div style={{ height: "12px" }} />
+          <div>
+            <label className="text-xs text-slate-600 font-medium">Viziune</label>
+            <div style={{ height: "4px" }} />
+            <textarea name="vision" rows={2} placeholder="Unde vrea compania să ajungă? (opțional)" defaultValue={vision || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+          </div>
+          <div style={{ height: "12px" }} />
+          <div>
+            <label className="text-xs text-slate-600 font-medium">Nr. angajați (estimativ)</label>
+            <div style={{ height: "4px" }} />
+            <input name="size" type="text" placeholder="–" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+          </div>
+        </div>
+      </form>
+
+      <div style={{ height: "20px" }} />
+
+      <button
+        onClick={handleSave}
+        disabled={saving || saved}
+        className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
+          saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+        }`}
+      >
+        {saved ? "✓ Salvat" : saving ? "Se salvează..." : "Salvează profilul"}
+      </button>
+
+      {error && (
+        <>
+          <div style={{ height: "8px" }} />
+          <p className="text-[9px] text-red-500 text-center font-medium">{error}</p>
+        </>
+      )}
+
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">Datele ANAF se preiau automat. Misiunea și viziunea sunt opționale.</p>
     </>
   )
 }
