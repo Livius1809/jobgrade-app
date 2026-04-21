@@ -367,9 +367,9 @@ export default function PackageExplorer() {
             </table>
           </div>
 
-          {/* Ce acumulezi */}
+          {/* Ai acces la */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Ce acumulezi</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Ai acces la serviciile din pachetele</p>
             <div className="space-y-1">
               {selectedPkg.cumulative.map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
