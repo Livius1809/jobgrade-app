@@ -199,110 +199,118 @@ export default function PackageExplorer() {
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
 
   return (
-    <>
-      {/* Carduri — grid 2×2 în flow-ul paginii */}
-      <div className="grid grid-cols-2 gap-3">
-        {PACKAGES.map(pkg => {
-          const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
-          const isSelected = selected === pkg.number
+    /* Breakout din max-w-4xl — full-width, centrat ca grup (ca MasterSimulatorLayout) */
+    <div
+      style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
+      className="flex justify-center gap-8 px-8 transition-all duration-300"
+    >
+      {/* Carduri — coloană stânga, aceeași lățime ca pagina */}
+      <div className="max-w-4xl flex-1 min-w-0">
+        <div className="grid grid-cols-2 gap-3">
+          {PACKAGES.map(pkg => {
+            const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
+            const isSelected = selected === pkg.number
 
-          return (
-            <button
-              key={pkg.number}
-              onClick={() => setSelected(isSelected ? null : pkg.number)}
-              style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
-              className={`rounded-xl p-4 text-left transition-all ${
-                isSelected
-                  ? `${c.bg} ${c.border} shadow-lg`
-                  : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
-                <span className="text-lg">{pkg.icon}</span>
-              </div>
-              <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-              <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
-              <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
-            </button>
-          )
-        })}
+            return (
+              <button
+                key={pkg.number}
+                onClick={() => setSelected(isSelected ? null : pkg.number)}
+                style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
+                className={`rounded-xl p-4 text-left transition-all ${
+                  isSelected
+                    ? `${c.bg} ${c.border} shadow-lg`
+                    : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
+                  <span className="text-lg">{pkg.icon}</span>
+                </div>
+                <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
+                <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Cartuș detalii — AFARĂ din container, fixed pe dreapta ecranului (ca simulatorul) */}
+      {/* Cartuș detalii — dreapta, în afara containerului (ca simulatorul) */}
       {selectedPkg && colors && (
         <div
-          style={{ borderWidth: "3px", top: "100px", right: "32px", maxHeight: "calc(100vh - 130px)" }}
-          className={`fixed w-[420px] rounded-2xl ${colors.border} ${colors.bg} p-8 overflow-y-auto shadow-xl z-40`}
+          style={{ borderWidth: "3px" }}
+          className={`w-[480px] shrink-0 rounded-2xl ${colors.border} ${colors.bg} p-6`}
         >
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">{selectedPkg.icon}</span>
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{selectedPkg.icon}</span>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">{selectedPkg.title}</h3>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded mt-1 inline-block ${colors.badge}`}>{selectedPkg.layerLabel}</span>
+                <h3 className="text-lg font-bold text-slate-900">{selectedPkg.title}</h3>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded inline-block ${colors.badge}`}>{selectedPkg.layerLabel}</span>
               </div>
             </div>
             <button onClick={() => setSelected(null)} className={`${colors.text} hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity`} title="Închide">✕</button>
           </div>
 
-          <p className="text-sm text-slate-600 mb-6 leading-relaxed">{selectedPkg.description}</p>
+          <p className="text-sm text-slate-600 mb-4 leading-relaxed">{selectedPkg.description}</p>
 
-          {/* Ce include */}
-          <div className="mb-6">
-            <h4 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide">Ce include</h4>
-            <ul className="space-y-2.5">
-              {selectedPkg.includes.map((item, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600 leading-relaxed">
-                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Servicii adiționale */}
-          {selectedPkg.extras && selectedPkg.extras.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide">Servicii adiționale (disponibile cu credite)</h4>
-              <ul className="space-y-2.5">
-                {selectedPkg.extras!.map((extra: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-slate-500 italic leading-relaxed">
-                    <span className="text-indigo-400 mt-0.5 shrink-0">+</span>
-                    {extra}
+          {/* Ce include + Servicii adiționale — pe 2 coloane */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <h4 className="text-[10px] font-bold text-slate-700 mb-2 uppercase tracking-wide">Ce include</h4>
+              <ul className="space-y-1.5">
+                {selectedPkg.includes.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed">
+                    <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                    {item}
                   </li>
                 ))}
               </ul>
-              <p className="text-[10px] text-slate-400 mt-3">Se activează automat pe măsură ce introduceți datele necesare. Consumă credite.</p>
             </div>
-          )}
-
-          {/* Calculator preț */}
-          <div className="bg-white rounded-xl p-5 border border-slate-200 mb-6">
-            <p className="text-xs text-slate-700 font-bold uppercase tracking-wide mb-4">Calculează prețul</p>
-
-            <div className="space-y-4 mb-5">
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-slate-600">Poziții distincte</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  value={positions}
-                  onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-                  className="w-24 text-center text-base font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
-                />
+            {selectedPkg.extras && selectedPkg.extras.length > 0 && (
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-700 mb-2 uppercase tracking-wide">Servicii adiționale (cu credite)</h4>
+                <ul className="space-y-1.5">
+                  {selectedPkg.extras!.map((extra: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-slate-500 italic leading-relaxed">
+                      <span className="text-indigo-400 mt-0.5 shrink-0">+</span>
+                      {extra}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[9px] text-slate-400 mt-2">Se activează automat cu datele necesare. Consumă credite.</p>
               </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-slate-600">Nr. salariați</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={5000}
-                  value={employees}
-                  onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
-                  className="w-24 text-center text-base font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
-                />
+            )}
+          </div>
+
+          {/* Calculator preț + Rezultat — compact */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
+            <div className="flex items-center gap-6 mb-3">
+              <p className="text-[10px] text-slate-700 font-bold uppercase tracking-wide shrink-0">Calculează prețul</p>
+              <div className="flex items-center gap-4 flex-1">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-slate-500">Poziții</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={positions}
+                    onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+                    className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-slate-500">Salariați</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5000}
+                    value={employees}
+                    onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
+                    className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                  />
+                </div>
               </div>
             </div>
 
@@ -314,40 +322,39 @@ export default function PackageExplorer() {
               const priceRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
 
               return (
-                <div className={`rounded-xl p-6 space-y-3 ${colors.bg}`}>
-                  <div className="text-center py-2">
+                <div className={`rounded-lg p-4 ${colors.bg} flex items-center justify-between`}>
+                  <div>
                     {volumeDiscount.pct > 0 && (
-                      <p className="text-sm text-slate-400 line-through mb-1">{priceBeforeDiscount.toLocaleString("ro-RO")} RON</p>
+                      <p className="text-xs text-slate-400 line-through">{priceBeforeDiscount.toLocaleString("ro-RO")} RON</p>
                     )}
-                    <p className="text-4xl font-bold text-slate-900">
+                    <p className="text-3xl font-bold text-slate-900">
                       {priceRON.toLocaleString("ro-RO")} RON
                     </p>
-                    {volumeDiscount.pct > 0 && (
-                      <p className="text-sm text-emerald-600 font-medium mt-2">
-                        {volumeDiscount.label}: -{volumeDiscount.pct}%
-                      </p>
-                    )}
-                    <p className="text-[10px] text-slate-400 mt-1">fără TVA · + abonament 399 RON/lună</p>
+                    <p className="text-[9px] text-slate-400 mt-0.5">fără TVA · + abonament 399 RON/lună</p>
                   </div>
+                  {volumeDiscount.pct > 0 && (
+                    <span className="text-sm text-emerald-600 font-semibold bg-emerald-50 px-3 py-1 rounded-full">
+                      {volumeDiscount.label}: -{volumeDiscount.pct}%
+                    </span>
+                  )}
                 </div>
               )
             })()}
           </div>
 
-          {/* Pachete credite — la ce servesc */}
-          <div className="bg-white rounded-xl p-5 border border-slate-200 mb-6">
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Pachete credite</p>
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-              Creditele suplimentare se folosesc pentru: revalidare evaluare, simulări adiționale,
-              sesiuni consultanță HR, rapoarte per angajat, comisie mediată.
+          {/* Pachete credite — tabel compact */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite</p>
+            <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+              Creditele suplimentare: revalidare, simulări, consultanță HR, rapoarte per angajat.
             </p>
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
                 <tr className="text-slate-400 border-b border-slate-200">
-                  <th className="text-left py-2">Pachet</th>
-                  <th className="text-right py-2">Credite</th>
-                  <th className="text-right py-2">RON</th>
-                  <th className="text-right py-2">Discount</th>
+                  <th className="text-left py-1.5">Pachet</th>
+                  <th className="text-right py-1.5">Credite</th>
+                  <th className="text-right py-1.5">RON</th>
+                  <th className="text-right py-1.5">Discount</th>
                 </tr>
               </thead>
               <tbody className="text-slate-600">
@@ -359,21 +366,19 @@ export default function PackageExplorer() {
                   { name: "Professional", credits: 5000, price: 30000, disc: "-25%" },
                   { name: "Enterprise", credits: 15000, price: 82500, disc: "-31%" },
                 ].map(p => (
-                  <tr key={p.name} className="border-t border-slate-100 hover:bg-slate-50">
-                    <td className="py-2.5 font-medium">{p.name}</td>
-                    <td className="py-2.5 text-right font-mono">{p.credits.toLocaleString()}</td>
-                    <td className="py-2.5 text-right font-mono">{p.price.toLocaleString()}</td>
-                    <td className="py-2.5 text-right text-emerald-600 font-medium">{p.disc}</td>
+                  <tr key={p.name} className="border-t border-slate-100">
+                    <td className="py-1.5 font-medium">{p.name}</td>
+                    <td className="py-1.5 text-right font-mono">{p.credits.toLocaleString()}</td>
+                    <td className="py-1.5 text-right font-mono">{p.price.toLocaleString()}</td>
+                    <td className="py-1.5 text-right text-emerald-600 font-medium">{p.disc}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Bară pachete incluse */}
-          <div className="mb-6">
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-3">Ai acces la</p>
-            {/* Etichete deasupra */}
+          {/* Bară pachete incluse — compact */}
+          <div className="mb-4">
             <div className="flex mb-1">
               {PACKAGES.map(p => {
                 const included = p.number <= selectedPkg.number
@@ -392,7 +397,6 @@ export default function PackageExplorer() {
                 )
               })}
             </div>
-            {/* Bara subțire */}
             <div className="flex rounded-full overflow-hidden h-2">
               {PACKAGES.map(p => {
                 const included = p.number <= selectedPkg.number
@@ -413,22 +417,22 @@ export default function PackageExplorer() {
           </div>
 
           {/* Acțiuni */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <Link
               href={selectedPkg.activateHref}
-              className={`flex-1 py-3 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm ${colors.btn}`}
+              className={`flex-1 py-2.5 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm ${colors.btn}`}
             >
               Cumpără
             </Link>
             <Link
               href={selectedPkg.demoHref}
-              className="flex-1 py-3 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold text-center hover:bg-white/50 transition-colors"
+              className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold text-center hover:bg-white/50 transition-colors"
             >
               Vezi demo →
             </Link>
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

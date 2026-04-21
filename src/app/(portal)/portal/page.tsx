@@ -134,12 +134,13 @@ export default async function PortalPage() {
 
       {/* ═══ ETAPA 1 — Ce vrei să rezolvi? ═══ */}
       {client.stage !== "NEW" && (
-        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-8">
-          <h2 className="text-lg font-bold text-slate-900 mb-2">Ce vrei să rezolvi?</h2>
-          <p className="text-sm text-slate-500 mb-6">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
-
+        <>
+          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-8">
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Ce vrei să rezolvi?</h2>
+            <p className="text-sm text-slate-500 mb-0">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
+          </div>
           <PackageExplorer />
-        </div>
+        </>
       )}
 
       {/* ═══ ETAPA 2 — Posturi ═══ */}
