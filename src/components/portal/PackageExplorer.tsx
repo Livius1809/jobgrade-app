@@ -111,8 +111,12 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badg
   emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
 }
 
+// Preț per poziție per pachet (RON fără TVA)
+const PRICE_PER_POSITION: Record<number, number> = { 1: 90, 2: 150, 3: 180, 4: 200 }
+
 export default function PackageExplorer() {
   const [selected, setSelected] = useState<number | null>(null)
+  const [positions, setPositions] = useState<number>(10)
 
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
@@ -129,10 +133,10 @@ export default function PackageExplorer() {
             <button
               key={pkg.number}
               onClick={() => setSelected(isSelected ? null : pkg.number)}
-              className={`rounded-xl border-2 p-4 text-left transition-all ${
+              className={`rounded-xl p-4 text-left transition-all ${
                 isSelected
-                  ? `${c.bg} ${c.border} shadow-lg`
-                  : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
+                  ? `${c.bg} border-3 ${c.border} shadow-lg ring-2 ring-offset-2 ring-${pkg.color}-300`
+                  : "bg-white border-2 border-slate-200 hover:shadow-md hover:border-slate-300"
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -176,11 +180,31 @@ export default function PackageExplorer() {
             </ul>
           </div>
 
-          {/* Preț */}
+          {/* Calculator preț */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Preț orientativ</p>
-            <p className="text-xl font-bold text-slate-900 mt-1">{selectedPkg.price}</p>
-            <p className="text-[10px] text-slate-400 mt-1">{selectedPkg.priceDetail}</p>
+            <p className="text-xs text-slate-700 font-bold uppercase tracking-wide mb-3">Preț</p>
+            <div className="flex items-center gap-3 mb-3">
+              <label className="text-xs text-slate-500 shrink-0">Câte poziții ai?</label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={positions}
+                onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+                className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+              />
+              <span className="text-xs text-slate-400">poziții</span>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-3 text-center">
+              <p className="text-xs text-slate-400">
+                {positions} poziții × {PRICE_PER_POSITION[selectedPkg.number]} RON
+              </p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {(positions * PRICE_PER_POSITION[selectedPkg.number]).toLocaleString("ro-RO")} RON
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">fără TVA · plată unică</p>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2">{selectedPkg.priceDetail}</p>
           </div>
 
           {/* Ce acumulezi */}
