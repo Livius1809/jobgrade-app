@@ -37,3 +37,14 @@ Owner vede DOAR decizii strategice care necesită input-ul lui.
 
 ### Principiu
 Organismul trebuie să fie RELIABLE — nu supus hazardului, nu dependent de cron-uri care merg sau nu merg, nu de kill-switch-uri uitate pe false.
+
+## Sesiunea următoare — REGULA: zero mockup fără backend
+
+### Tot ce e AI în portal trebuie testat funcțional:
+- [ ] Generare fișe de post cu Claude (buton există, backend lipsește)
+- [ ] Consultanță AI (bubble Consultant HR — funcționează?)
+- [ ] Evaluare AI din portal (POST /api/v1/evaluate — wired?)
+- [ ] Extragere MVV din website (POST /api/v1/ai/company-extract — testat?)
+- [ ] Preluare ANAF din CUI (GET /api/v1/anaf/lookup — testat?)
+
+### Principiu Owner: "Nu lăsăm nimic netestat. Fiecare detaliu mic devine mare."
