@@ -18,6 +18,7 @@ interface PackageInfo {
   color: string
   cumulative: string[]
   extras?: string[]
+  includesNote?: string
 }
 
 const PACKAGES: PackageInfo[] = [
@@ -26,6 +27,7 @@ const PACKAGES: PackageInfo[] = [
     icon: "🏗️",
     title: "Ordine internă",
     layerLabel: "Baza",
+    includesNote: "",
     description: "Evaluare și ierarhizare posturi pe criterii obiective, neutre din perspectiva genului.",
     includes: [
       "Evaluare AI automată sau prin comisie",
@@ -49,7 +51,8 @@ const PACKAGES: PackageInfo[] = [
     number: 2,
     icon: "⚖️",
     title: "Conformitate",
-    layerLabel: "Nivelul 1 · include Ordine internă",
+    layerLabel: "Nivelul 1",
+    includesNote: "include 1. Ordine internă – Baza",
     description: "Structură salarială transparentă, analiză decalaj salarial, conformitate Directiva EU 2023/970.",
     includes: [
       "Tot ce include Ordine internă +",
@@ -74,7 +77,8 @@ const PACKAGES: PackageInfo[] = [
     number: 3,
     icon: "🎯",
     title: "Competitivitate",
-    layerLabel: "Nivelul 2 · include Conformitate",
+    layerLabel: "Nivelul 2",
+    includesNote: "include 1. Ordine internă – Baza, 2. Conformitate – Nivelul 1",
     description: "Benchmark salarial vs piață. Știi unde te situezi și ce trebuie ajustat.",
     includes: [
       "Tot ce include Ordine internă + Conformitate +",
@@ -99,7 +103,8 @@ const PACKAGES: PackageInfo[] = [
     number: 4,
     icon: "🌱",
     title: "Dezvoltare",
-    layerLabel: "Nivelul 3 · include Competitivitate",
+    layerLabel: "Nivelul 3",
+    includesNote: "include 1. Ordine internă – Baza, 2. Conformitate – Nivelul 1, 3. Competitivitate – Nivelul 2",
     description: "Dezvoltare organizațională completă — cultură, performanță, echipe.",
     includes: [
       "Tot ce include Ordine internă + Conformitate + Competitivitate +",
@@ -281,14 +286,15 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
                     : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${c.badge}`}>
                     {isPurchased ? "✓" : pkg.number}
                   </span>
                   <div>
-                    <h3 className={`text-sm font-bold ${isSelected || isPurchased ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-                    <p className={`text-[10px] font-medium ${isSelected || isPurchased ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+                    <h3 className={`text-sm font-bold ${isSelected || isPurchased ? c.text : "text-slate-800"}`}>
+                      {pkg.title} <span className="font-normal">–</span> <span className="font-medium">{pkg.layerLabel}</span>
+                    </h3>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -296,6 +302,11 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
                   <span className="text-lg">{pkg.icon}</span>
                 </div>
               </div>
+              {pkg.includesNote && (
+                <p className={`text-[9px] ml-10 ${isSelected || isPurchased ? c.text : "text-slate-400"}`} style={{ opacity: 0.7 }}>
+                  ({pkg.includesNote})
+                </p>
+              )}
               <p className="text-[10px] text-slate-400 mt-2 line-clamp-2">{pkg.description}</p>
             </button>
           )
@@ -514,7 +525,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
                 return (
                   <div key={p.number} className="flex-1 text-center">
                     <span className={`text-[9px] font-bold ${included ? textColor[p.color] || "text-indigo-600" : "text-slate-300"}`}>
-                      {p.icon} {p.layerLabel.split(" · ")[0]}
+                      {p.icon} {p.layerLabel}
                     </span>
                   </div>
                 )

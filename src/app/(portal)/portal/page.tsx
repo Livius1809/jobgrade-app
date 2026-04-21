@@ -83,13 +83,14 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
     <div className="max-w-4xl mx-auto" style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
 
       {/* ═══ HEADER — Bun venit + progres ═══ */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm" style={{ padding: "28px" }}>
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
               {client.stage === "NEW" ? "Bine ai venit!" : client.companyName}
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <div style={{ height: "4px" }} />
+            <p className="text-sm text-slate-500">
               {client.stage === "NEW"
                 ? "Hai să ne cunoaștem. Începem cu câteva informații despre compania ta."
                 : client.stage === "VALIDATED"
@@ -105,8 +106,10 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           )}
         </div>
 
+        <div style={{ height: "24px" }} />
+
         {/* Progres vizual */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2">
           {steps.map((step, i) => (
             <div key={step.id} className="flex items-center flex-1">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
@@ -124,6 +127,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
             </div>
           ))}
         </div>
+        <div style={{ height: "8px" }} />
         <div className="flex justify-between text-[10px] text-slate-400 px-1">
           {steps.map(s => <span key={s.id}>{s.label}</span>)}
         </div>
@@ -140,23 +144,14 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
-      {/* ═══ ETAPA 0 — Compania ta (CUI) ═══ */}
-      <StepSection
-        number={1}
-        title="Compania ta"
-        subtitle="Spune-ne despre organizația ta — completăm automat ce putem din ANAF"
-        done={client.stage !== "NEW"}
-        active={client.stage === "NEW"}
-        href="/company"
-        actionLabel={client.stage === "NEW" ? "Completează profilul" : "Editează profilul"}
-        reward={client.cui ? `${client.industry || "Profil completat"} · CUI: ${client.cui}` : undefined}
-        freeLabel="GRATUIT"
+      {/* ═══ Toate secțiunile client (state partajat pentru panouri laterale) ═══ */}
+      <PortalClientSection
+        jobCount={client.jobCount}
+        purchasedLayer={purchasedLayer}
+        clientStage={client.stage}
+        cui={client.cui}
+        industry={client.industry}
       />
-
-      {/* ═══ Pachete + Date intrare client (state partajat) ═══ */}
-      {client.stage !== "NEW" && (
-        <PortalClientSection jobCount={client.jobCount} purchasedLayer={purchasedLayer} />
-      )}
 
       {/* ═══ Evaluare — se activează după posturi ═══ */}
       <StepSection
@@ -263,11 +258,12 @@ function StepSection({ number, title, subtitle, done, active, href, actionLabel,
 }) {
   if (locked) {
     return (
-      <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-6 opacity-60">
+      <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 opacity-60" style={{ padding: "28px" }}>
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold">{number}</div>
+          <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold shrink-0">{number}</div>
           <div>
             <h3 className="text-base font-bold text-slate-400">{title}</h3>
+            <div style={{ height: "4px" }} />
             <p className="text-xs text-slate-300">{lockedMessage || "Finalizează pașii anteriori"}</p>
           </div>
         </div>
@@ -276,13 +272,13 @@ function StepSection({ number, title, subtitle, done, active, href, actionLabel,
   }
 
   return (
-    <div className={`rounded-2xl border p-6 transition-all ${
+    <div className={`rounded-2xl border transition-all ${
       done ? "bg-emerald-50 border-emerald-200" :
       active ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100" :
       "bg-white border-slate-200"
-    }`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
+    }`} style={{ padding: "28px" }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${
             done ? "bg-emerald-500 text-white" :
             active ? "bg-indigo-500 text-white" :
@@ -295,8 +291,14 @@ function StepSection({ number, title, subtitle, done, active, href, actionLabel,
               <h3 className="text-base font-bold text-slate-900">{title}</h3>
               {freeLabel && <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">{freeLabel}</span>}
             </div>
-            <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
-            {reward && <p className="text-xs text-emerald-600 mt-2 font-medium">{reward}</p>}
+            <div style={{ height: "4px" }} />
+            <p className="text-sm text-slate-500">{subtitle}</p>
+            {reward && (
+              <>
+                <div style={{ height: "8px" }} />
+                <p className="text-xs text-emerald-600 font-medium">{reward}</p>
+              </>
+            )}
           </div>
         </div>
 
