@@ -602,6 +602,7 @@ function AddJobPanel({ onClose }: { onClose: () => void }) {
           title: title.trim(),
           departmentId,
           purpose: level ? `Nivel: ${level}` : undefined,
+          status: "ACTIVE",
         }),
       })
       if (res.ok) {

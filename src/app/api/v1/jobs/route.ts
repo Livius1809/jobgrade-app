@@ -4,6 +4,26 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { JobStatus } from "@/generated/prisma"
 
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ message: "Neautorizat." }, { status: 401 })
+    }
+
+    const jobs = await prisma.job.findMany({
+      where: { tenantId: session.user.tenantId, status: { in: ["ACTIVE", "DRAFT"] } },
+      select: { id: true, title: true, departmentId: true, status: true, createdAt: true },
+      orderBy: { title: "asc" },
+    })
+
+    return NextResponse.json({ jobs })
+  } catch (error) {
+    console.error("[JOBS GET]", error)
+    return NextResponse.json({ message: "Eroare internă." }, { status: 500 })
+  }
+}
+
 const schema = z.object({
   title: z.string().min(2),
   code: z.string().optional(),
