@@ -601,12 +601,11 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
 
   const handleSave = async () => {
     if (!title.trim()) { setError("Titlul postului e obligatoriu."); return }
-    if (!finalDept.trim()) { setError("Departamentul e obligatoriu."); return }
     setSaving(true); setError(null)
     try {
-      // Creăm/găsim departamentul mai întâi
+      // Creăm/găsim departamentul (opțional)
       let departmentId: string | undefined
-      if (finalDept.trim()) {
+      if (finalDept && finalDept.trim()) {
         const deptRes = await fetch("/api/v1/departments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
