@@ -171,18 +171,16 @@ export default function PortalClientSection({ jobCount, purchasedLayer, clientSt
 
           <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} />
 
-          {/* ═══ Date intrare client ═══ */}
-          <div className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
-            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-            <div style={{ height: "4px" }} />
-            <p className="text-xs text-slate-500">
-              {purchasedLayer > 0
-                ? "Completați datele pentru a genera rapoartele."
-                : "Cumpărați un pachet pentru a activa introducerea datelor."}
-            </p>
-            <div style={{ height: "20px" }} />
-            <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} />
-          </div>
+          {/* ═══ Date intrare client — apare doar după plată ═══ */}
+          {purchasedLayer > 0 && (
+            <div className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
+              <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-500">Completați datele pentru a genera rapoartele.</p>
+              <div style={{ height: "20px" }} />
+              <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} />
+            </div>
+          )}
         </>
       )}
     </>
