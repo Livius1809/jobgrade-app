@@ -370,13 +370,17 @@ export default function PackageExplorer() {
           {/* Ai acces la */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
             <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Ai acces la serviciile din pachetele</p>
-            <div className="space-y-1">
-              {selectedPkg.cumulative.map((c, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${i < selectedPkg.number ? "bg-emerald-400" : "bg-slate-200"}`} />
-                  <span className={`text-xs ${i < selectedPkg.number ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c}</span>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              {PACKAGES.filter(p => p.number <= selectedPkg.number).map(p => {
+                const c = COLOR_MAP[p.color] || COLOR_MAP.indigo
+                return (
+                  <div key={p.number} className="flex items-center gap-2">
+                    <span className="text-sm">{p.icon}</span>
+                    <span className={`text-xs font-medium ${c.text}`}>{p.number}. {p.title}</span>
+                    <span className="text-[9px] text-slate-400">— {p.description.split(".")[0]}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
