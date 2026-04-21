@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import PackageExplorer from "@/components/portal/PackageExplorer"
+import ClientDataTabs from "@/components/portal/ClientDataTabs"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -143,21 +144,20 @@ export default async function PortalPage() {
         </>
       )}
 
-      {/* ═══ ETAPA 2 — Posturi ═══ */}
-      <StepSection
-        number={2}
-        title="Posturile tale"
-        subtitle={client.jobCount > 0
-          ? `Ai ${client.jobCount} posturi definite. Poți adăuga mai multe sau le poți edita.`
-          : "Adaugă posturile companiei — manual sau din Excel."}
-        done={client.jobCount > 0}
-        active={client.stage === "HAS_PROFILE"}
-        href="/jobs"
-        actionLabel={client.jobCount > 0 ? `${client.jobCount} posturi — editează` : "Adaugă posturi"}
-        secondaryHref="/jobs/new?mode=ai"
-        secondaryLabel="Generează cu AI din descriere"
-        locked={client.stage === "NEW"}
-      />
+      {/* ═══ ETAPA 2 — Date intrare client ═══ */}
+      {client.stage !== "NEW" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm" style={{ padding: "28px" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold shrink-0">2</div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Date intrare client</h2>
+              <p className="text-xs text-slate-400">Datele necesare pentru evaluare, rapoarte și analiză</p>
+            </div>
+          </div>
+          <div style={{ height: "20px" }} />
+          <ClientDataTabs jobCount={client.jobCount} />
+        </div>
+      )}
 
       {/* ═══ ETAPA 3 — Evaluare ═══ */}
       <StepSection
