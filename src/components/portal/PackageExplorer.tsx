@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 
 interface PackageInfo {
@@ -198,50 +199,56 @@ export default function PackageExplorer() {
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
 
-  const isOpen = selectedPkg !== null
+  const [mounted, setMounted] = useState(false)
+  const cardsRef = useRef<HTMLDivElement>(null)
+  const [panelTop, setPanelTop] = useState(240)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  // Calculează top-ul panoului relativ la carduri
+  useEffect(() => {
+    if (selectedPkg && cardsRef.current) {
+      const rect = cardsRef.current.getBoundingClientRect()
+      setPanelTop(rect.top + window.scrollY)
+    }
+  }, [selectedPkg])
 
   return (
-    /* Breakout din max-w-4xl — flex centrat ca grup pe ecran (ca MasterSimulatorLayout) */
-    <div
-      style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
-      className="flex justify-center gap-6 px-6 transition-all duration-300"
-    >
-      {/* Carduri — aceeași lățime ca pagina */}
-      <div className="w-full max-w-4xl min-w-0">
-        <div className="grid grid-cols-2 gap-3">
-          {PACKAGES.map(pkg => {
-            const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
-            const isSelected = selected === pkg.number
+    <>
+      {/* Carduri — în flow-ul normal al paginii (max-w-4xl) */}
+      <div ref={cardsRef} className="grid grid-cols-2 gap-3">
+        {PACKAGES.map(pkg => {
+          const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
+          const isSelected = selected === pkg.number
 
-            return (
-              <button
-                key={pkg.number}
-                onClick={() => setSelected(isSelected ? null : pkg.number)}
-                style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
-                className={`rounded-xl p-4 text-left transition-all ${
-                  isSelected
-                    ? `${c.bg} ${c.border} shadow-lg`
-                    : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
-                  <span className="text-lg">{pkg.icon}</span>
-                </div>
-                <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-                <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
-                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
-              </button>
-            )
-          })}
-        </div>
+          return (
+            <button
+              key={pkg.number}
+              onClick={() => setSelected(isSelected ? null : pkg.number)}
+              style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
+              className={`rounded-xl p-4 text-left transition-all ${
+                isSelected
+                  ? `${c.bg} ${c.border} shadow-lg`
+                  : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
+                <span className="text-lg">{pkg.icon}</span>
+              </div>
+              <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
+              <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+              <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
+            </button>
+          )
+        })}
       </div>
 
-      {/* Cartuș detalii — dreapta, spații egale cu stânga (flex justify-center) */}
-      {selectedPkg && colors && (
+      {/* Cartuș detalii — Portal la body, ancorat la dreapta ecranului cu padding */}
+      {selectedPkg && colors && mounted && createPortal(
         <div
-          style={{ borderWidth: "3px" }}
-          className={`w-[420px] shrink-0 rounded-2xl ${colors.border} ${colors.bg} p-6`}
+          style={{ borderWidth: "3px", top: `${panelTop}px`, right: "24px", maxHeight: "calc(100vh - 48px)" }}
+          className={`absolute w-[420px] rounded-2xl ${colors.border} ${colors.bg} p-6 overflow-y-auto shadow-xl z-40`}
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
@@ -433,8 +440,9 @@ export default function PackageExplorer() {
               Vezi demo →
             </Link>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }
