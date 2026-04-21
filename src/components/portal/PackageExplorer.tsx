@@ -16,6 +16,7 @@ interface PackageInfo {
   activateHref: string
   color: string
   cumulative: string[]
+  extras?: string[]
 }
 
 const PACKAGES: PackageInfo[] = [
@@ -259,11 +260,11 @@ export default function PackageExplorer() {
           </div>
 
           {/* Servicii adiționale */}
-          {(selectedPkg as any).extras && (selectedPkg as any).extras.length > 0 && (
+          {selectedPkg.extras && selectedPkg.extras.length > 0 && (
             <div className="mb-4">
               <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Servicii adiționale disponibile</h4>
               <ul className="space-y-1.5">
-                {(selectedPkg as any).extras.map((extra: string, i: number) => (
+                {selectedPkg.extras!.map((extra: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-slate-500 italic">
                     <span className="text-indigo-400 mt-0.5 shrink-0">+</span>
                     {extra}
