@@ -176,73 +176,85 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
       />
 
       {/* ═══ Rapoarte — se activează când datele sunt complete ═══ */}
-      {purchasedLayer > 0 ? (
-        <div className={`rounded-2xl border transition-all ${
-          client.isValidated
-            ? "bg-emerald-50 border-emerald-200"
-            : client.sessionCount > 0
-              ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100"
-              : "bg-slate-50 border-dashed border-slate-200"
-        }`} style={{ padding: "28px" }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${
-                client.isValidated ? "bg-emerald-500 text-white" :
-                client.sessionCount > 0 ? "bg-indigo-500 text-white" :
-                "bg-slate-200 text-slate-400"
-              }`}>
-                {client.isValidated ? "✓" : "4"}
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Rapoarte</h3>
-                <div style={{ height: "4px" }} />
-                <p className="text-sm text-slate-500">
-                  {client.isValidated
-                    ? "Raportul este validat și disponibil."
-                    : client.sessionCount > 0
-                      ? "Evaluarea e completă. Deschide raportul, ajustează dacă vrei, apoi validează."
-                      : "Completează datele de intrare și rulează evaluarea pentru a genera rapoartele."}
-                </p>
-                {!client.isValidated && client.sessionCount === 0 && (
-                  <>
-                    <div style={{ height: "12px" }} />
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <span>{client.jobCount >= 3 ? "✓" : "○"} Posturi ({client.jobCount}/3 min)</span>
-                      <span>→</span>
-                      <span>{client.sessionCount > 0 ? "✓" : "○"} Evaluare</span>
-                      <span>→</span>
-                      <span>○ Raport</span>
-                    </div>
-                  </>
-                )}
+      {(() => {
+        const rDone = client.isValidated
+        const rActive = client.sessionCount > 0 && !client.isValidated
+        const rLocked = purchasedLayer === 0 || client.sessionCount === 0
+
+        if (purchasedLayer === 0) {
+          return (
+            <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 opacity-60" style={{ padding: "28px" }}>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold shrink-0">4</div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-400">Rapoarte</h3>
+                  <div style={{ height: "4px" }} />
+                  <p className="text-xs text-slate-300">Cumpără un pachet și completează datele de intrare</p>
+                </div>
               </div>
             </div>
-            {client.sessionCount > 0 && (
-              <Link
-                href="/reports/master"
-                className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 ${
-                  client.isValidated
-                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
-                }`}
-              >
-                {client.isValidated ? "Vezi raportul validat" : "Deschide raportul"}
-              </Link>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 opacity-60" style={{ padding: "28px" }}>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold shrink-0">4</div>
-            <div>
-              <h3 className="text-base font-bold text-slate-400">Rapoarte</h3>
-              <div style={{ height: "4px" }} />
-              <p className="text-xs text-slate-300">Cumpără un pachet și completează datele de intrare</p>
+          )
+        }
+
+        return (
+          <div className={`rounded-2xl border transition-all ${
+            rDone ? "bg-emerald-50 border-emerald-200" :
+            rActive ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100" :
+            "bg-white border-slate-200"
+          }`} style={{ padding: "28px" }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                  rDone ? "bg-emerald-500 text-white" :
+                  rActive ? "bg-indigo-500 text-white" :
+                  "bg-slate-100 text-slate-400"
+                }`}>
+                  {rDone ? "✓" : "4"}
+                </div>
+                <div>
+                  <h3 className={`text-base font-bold ${rLocked ? "text-slate-400" : "text-slate-900"}`}>Rapoarte</h3>
+                  <div style={{ height: "4px" }} />
+                  <p className={`text-sm ${rLocked ? "text-slate-300" : "text-slate-500"}`}>
+                    {rDone
+                      ? "Raportul este validat și disponibil."
+                      : rActive
+                        ? "Evaluarea e completă. Deschide raportul, ajustează dacă vrei, apoi validează."
+                        : "Completează datele de intrare și rulează evaluarea pentru a genera rapoartele."}
+                  </p>
+                  {rLocked && (
+                    <>
+                      <div style={{ height: "12px" }} />
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <span>{client.jobCount >= 3 ? "✓" : "○"} Posturi ({client.jobCount}/3 min)</span>
+                        <span>→</span>
+                        <span>{client.sessionCount > 0 ? "✓" : "○"} Evaluare</span>
+                        <span>→</span>
+                        <span>○ Raport</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              {rActive && (
+                <Link
+                  href="/reports/master"
+                  className="text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                >
+                  Deschide raportul
+                </Link>
+              )}
+              {rDone && (
+                <Link
+                  href="/reports/master"
+                  className="text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                >
+                  Vezi raportul validat
+                </Link>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ═══ AJUTOR ═══ */}
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-between">
