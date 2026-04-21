@@ -199,9 +199,9 @@ export default function PackageExplorer() {
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
 
   return (
-    <div className="flex gap-6 px-4 md:px-8">
-      {/* Carduri — stânga */}
-      <div className="flex-1 grid grid-cols-2 gap-3">
+    <div className="flex gap-6">
+      {/* Carduri — coloană stânga */}
+      <div className="w-64 shrink-0 flex flex-col gap-3">
         {PACKAGES.map(pkg => {
           const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
           const isSelected = selected === pkg.number
@@ -217,21 +217,24 @@ export default function PackageExplorer() {
                   : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
               }`}
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
                 <span className="text-lg">{pkg.icon}</span>
               </div>
               <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-              <p className={`text-[10px] mt-1 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+              <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
               <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
             </button>
           )
         })}
       </div>
 
-      {/* Detalii — dreapta (ca simulatorul) */}
+      {/* Detalii — cartuș dreapta (ca la raport + simulator) */}
       {selectedPkg && colors && (
-        <div style={{ borderWidth: "3px" }} className={`w-[400px] shrink-0 rounded-2xl ${colors.border} ${colors.bg} p-8`}>
+        <div
+          style={{ borderWidth: "3px" }}
+          className={`flex-1 rounded-2xl ${colors.border} ${colors.bg} p-8`}
+        >
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
               <span className="text-3xl">{selectedPkg.icon}</span>
@@ -240,7 +243,7 @@ export default function PackageExplorer() {
                 <span className={`text-xs font-bold px-2.5 py-1 rounded mt-1 inline-block ${colors.badge}`}>{selectedPkg.layerLabel}</span>
               </div>
             </div>
-            <button onClick={() => setSelected(null)} className={`${colors.text} hover:opacity-70 text-lg font-bold leading-none px-1 py-0.5 rounded transition-opacity`} title="Închide">✕</button>
+            <button onClick={() => setSelected(null)} className={`${colors.text} hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity`} title="Închide">✕</button>
           </div>
 
           <p className="text-sm text-slate-600 mb-6 leading-relaxed">{selectedPkg.description}</p>
