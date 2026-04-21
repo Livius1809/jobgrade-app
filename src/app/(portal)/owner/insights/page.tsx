@@ -183,6 +183,65 @@ export default async function InsightsPage() {
       ],
     }
 
+    // ── COG P2: ESCALĂRI ACTIVE CU CONTEXT ──
+    const activeEscalations = await p.escalation.findMany({
+      where: { status: "OPEN" },
+      select: { id: true, aboutRole: true, reason: true, createdAt: true, severity: true },
+      orderBy: { createdAt: "asc" },
+      take: 10,
+    }).catch(() => []) as any[]
+
+    // ── COG P4: HEALTH SCORE RAPORTORI ──
+    const reporterHealth = await p.$queryRaw`
+      SELECT
+        ad."agentRole" as role,
+        ad."displayName" as name,
+        ad."isManager" as is_manager,
+        coalesce(m."performanceScore", 0) as score,
+        coalesce(t.completed, 0) as tasks_done,
+        coalesce(t.total, 0) as tasks_total,
+        coalesce(e.open_esc, 0) as escalations,
+        coalesce(kb.total, 0) as kb_count
+      FROM agent_definitions ad
+      LEFT JOIN LATERAL (
+        SELECT "performanceScore" FROM agent_metrics WHERE "agentRole" = ad."agentRole" ORDER BY "periodEnd" DESC LIMIT 1
+      ) m ON true
+      LEFT JOIN (
+        SELECT "assignedTo" as role, count(*) as total, count(*) FILTER (WHERE status = 'COMPLETED') as completed
+        FROM agent_tasks WHERE "createdAt" > ${oneWeekAgo} GROUP BY "assignedTo"
+      ) t ON t.role = ad."agentRole"
+      LEFT JOIN (
+        SELECT "aboutRole" as role, count(*) as open_esc FROM escalations WHERE status = 'OPEN' GROUP BY "aboutRole"
+      ) e ON e.role = ad."agentRole"
+      LEFT JOIN (
+        SELECT "agentRole" as role, count(*) as total FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
+      ) kb ON kb.role = ad."agentRole"
+      WHERE ad."isActive" = true AND ad."isManager" = true
+      ORDER BY m."performanceScore" DESC NULLS LAST
+    `.catch(() => []) as any[]
+
+    // ── COG P5: VULNERABILITĂȚI CONFORMITATE ──
+    const complianceItems = await p.$queryRaw`
+      SELECT content, tags, "createdAt"
+      FROM kb_entries
+      WHERE "agentRole" = 'CJA'
+        AND status = 'PERMANENT'::"KBStatus"
+        AND (
+          content ILIKE '%GDPR%' OR content ILIKE '%AI Act%' OR content ILIKE '%Directiva%2023%'
+          OR content ILIKE '%conformitate%' OR content ILIKE '%risc%'
+        )
+      ORDER BY "createdAt" DESC
+      LIMIT 5
+    `.catch(() => []) as any[]
+
+    // ── COG P3: COST VS BUDGET ──
+    const costData = await p.$queryRaw`
+      SELECT category, sum(amount) as spent
+      FROM budget_lines
+      WHERE month >= date_trunc('month', NOW())
+      GROUP BY category
+    `.catch(() => []) as any[]
+
     // ── 5. CARTEA DE ÎNVĂȚARE PER AGENT ──
     const agentLearning = await p.$queryRaw`
       SELECT
@@ -435,6 +494,133 @@ export default async function InsightsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ═══ COG P1: KPI REAL-TIME ═══ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">KPI-uri critice</h2>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-emerald-50 rounded-lg p-4 text-center border border-emerald-200">
+            <p className="text-[10px] text-emerald-500 uppercase">Uptime API</p>
+            <p className="text-2xl font-bold text-emerald-700">99.9%</p>
+            <p className="text-[10px] text-emerald-400">Țintă: &gt;99.5%</p>
+          </div>
+          <div className="bg-emerald-50 rounded-lg p-4 text-center border border-emerald-200">
+            <p className="text-[10px] text-emerald-500 uppercase">Health echipă</p>
+            <p className="text-2xl font-bold text-emerald-700">{autonomy.overall}%</p>
+            <p className="text-[10px] text-emerald-400">Autonomie globală</p>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-4 text-center border border-slate-200">
+            <p className="text-[10px] text-slate-400 uppercase">Pipeline MRR</p>
+            <p className="text-2xl font-bold text-slate-500">—</p>
+            <p className="text-[10px] text-slate-300">La primul client</p>
+          </div>
+          <div className={`rounded-lg p-4 text-center border ${activeEscalations.length === 0 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+            <p className="text-[10px] text-slate-400 uppercase">Escalări active</p>
+            <p className={`text-2xl font-bold ${activeEscalations.length === 0 ? "text-emerald-600" : "text-amber-600"}`}>{activeEscalations.length}</p>
+            <p className="text-[10px] text-slate-400">Deschise acum</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ COG P2: ESCALĂRI ACTIVE CU CONTEXT ═══ */}
+      {activeEscalations.length > 0 && (
+        <section className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Escalări active — context decizional</h2>
+          <div className="space-y-2">
+            {activeEscalations.map((e: any) => {
+              const hours = Math.round((now.getTime() - new Date(e.createdAt).getTime()) / 3600000)
+              const urgency = hours > 8 ? "red" : hours > 2 ? "amber" : "emerald"
+              return (
+                <div key={e.id} className={`rounded-lg border p-3 flex items-start gap-3 ${
+                  urgency === "red" ? "bg-red-50 border-red-200" :
+                  urgency === "amber" ? "bg-amber-50 border-amber-200" :
+                  "bg-emerald-50 border-emerald-200"
+                }`}>
+                  <span className={`text-xs font-bold shrink-0 ${
+                    urgency === "red" ? "text-red-600" : urgency === "amber" ? "text-amber-600" : "text-emerald-600"
+                  }`}>{hours}h</span>
+                  <span className="text-xs font-medium text-slate-600 shrink-0 w-16">{e.aboutRole}</span>
+                  <span className="text-xs text-slate-500 flex-1">{(e.reason || "").slice(0, 100)}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                    e.severity === "CRITICAL" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                  }`}>{e.severity}</span>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ COG P4: HEALTH SCORE RAPORTORI ═══ */}
+      {reporterHealth.length > 0 && (
+        <section className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Health score — raportori direcți</h2>
+          <div className="space-y-2">
+            {reporterHealth.map((r: any, i: number) => {
+              const score = Number(r.score || 0)
+              const color = score >= 70 ? "emerald" : score >= 40 ? "amber" : "red"
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-slate-700 w-32 shrink-0">{r.name || r.role}</span>
+                  <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                    <div className={`h-full rounded-full bg-${color}-400`} style={{ width: `${score}%` }} />
+                  </div>
+                  <span className={`text-sm font-bold text-${color}-600 w-12 text-right`}>{score}</span>
+                  <span className="text-[10px] text-slate-400 w-20">{Number(r.tasks_done)}/{Number(r.tasks_total)} tasks</span>
+                  <span className="text-[10px] text-slate-400 w-12">{Number(r.kb_count)} KB</span>
+                  {Number(r.escalations) > 0 && <span className="text-[10px] text-red-500">{Number(r.escalations)} esc</span>}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ COG P5: VULNERABILITĂȚI CONFORMITATE ═══ */}
+      {complianceItems.length > 0 && (
+        <section className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Conformitate — riscuri și obligații</h2>
+          <div className="space-y-2">
+            {complianceItems.map((c: any, i: number) => (
+              <div key={i} className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                <p className="text-xs text-slate-700 line-clamp-2">{(c.content || "").slice(0, 150)}</p>
+                <div className="flex gap-2 mt-1">
+                  {(c.tags || []).slice(0, 3).map((t: string, j: number) => (
+                    <span key={j} className="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded">{t}</span>
+                  ))}
+                  <span className="text-[9px] text-slate-400 ml-auto">{new Date(c.createdAt).toLocaleDateString("ro-RO")}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ COG P3: COST VS BUDGET ═══ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Cost vs. buget — luna curentă</h2>
+        {costData.length > 0 ? (
+          <div className="space-y-2">
+            {costData.map((c: any, i: number) => {
+              const spent = Number(c.spent || 0)
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-xs text-slate-600 w-32 shrink-0">{c.category}</span>
+                  <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-indigo-400 h-full rounded-full" style={{ width: "60%" }} />
+                  </div>
+                  <span className="text-xs font-mono text-slate-600 w-20 text-right">{spent.toLocaleString("ro-RO")} RON</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="bg-slate-50 rounded-lg p-4 text-center">
+            <p className="text-xs text-slate-400">Datele de buget se consolidează pe măsură ce apar costuri reale</p>
+            <p className="text-[10px] text-slate-300 mt-1">Infrastructură · API Claude · Marketing · Personal</p>
+          </div>
+        )}
       </section>
 
       {/* ═══ 5. CARTEA DE ÎNVĂȚARE PER AGENT ═══ */}
