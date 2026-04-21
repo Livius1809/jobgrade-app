@@ -198,42 +198,50 @@ export default function PackageExplorer() {
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
 
-  return (
-    /* Carduri în flow-ul paginii (max-w-4xl), cartuș absolute la dreapta */
-    <div className="relative">
-      <div className="grid grid-cols-2 gap-3">
-        {PACKAGES.map(pkg => {
-          const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
-          const isSelected = selected === pkg.number
+  const isOpen = selectedPkg !== null
 
-          return (
-            <button
-              key={pkg.number}
-              onClick={() => setSelected(isSelected ? null : pkg.number)}
-              style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
-              className={`rounded-xl p-4 text-left transition-all ${
-                isSelected
-                  ? `${c.bg} ${c.border} shadow-lg`
-                  : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
-                <span className="text-lg">{pkg.icon}</span>
-              </div>
-              <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-              <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
-              <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
-            </button>
-          )
-        })}
+  return (
+    /* Breakout din max-w-4xl — flex centrat ca grup pe ecran (ca MasterSimulatorLayout) */
+    <div
+      style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
+      className="flex justify-center gap-6 px-6 transition-all duration-300"
+    >
+      {/* Carduri — aceeași lățime ca pagina */}
+      <div className="w-full max-w-4xl min-w-0">
+        <div className="grid grid-cols-2 gap-3">
+          {PACKAGES.map(pkg => {
+            const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
+            const isSelected = selected === pkg.number
+
+            return (
+              <button
+                key={pkg.number}
+                onClick={() => setSelected(isSelected ? null : pkg.number)}
+                style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
+                className={`rounded-xl p-4 text-left transition-all ${
+                  isSelected
+                    ? `${c.bg} ${c.border} shadow-lg`
+                    : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
+                  <span className="text-lg">{pkg.icon}</span>
+                </div>
+                <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
+                <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Cartuș detalii — absolute, ancorat la dreapta blocului de conținut principal */}
+      {/* Cartuș detalii — dreapta, spații egale cu stânga (flex justify-center) */}
       {selectedPkg && colors && (
         <div
-          style={{ borderWidth: "3px", left: "calc(100% + 32px)" }}
-          className={`absolute top-0 w-[480px] rounded-2xl ${colors.border} ${colors.bg} p-6`}
+          style={{ borderWidth: "3px" }}
+          className={`w-[420px] shrink-0 rounded-2xl ${colors.border} ${colors.bg} p-6`}
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
