@@ -199,9 +199,9 @@ export default function PackageExplorer() {
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
 
   return (
-    <div className="flex gap-6">
-      {/* Carduri — coloană stânga */}
-      <div className="w-64 shrink-0 flex flex-col gap-3">
+    <>
+      {/* Carduri — grid 2×2 în flow-ul paginii */}
+      <div className="grid grid-cols-2 gap-3">
         {PACKAGES.map(pkg => {
           const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
           const isSelected = selected === pkg.number
@@ -229,11 +229,11 @@ export default function PackageExplorer() {
         })}
       </div>
 
-      {/* Detalii — cartuș dreapta (ca la raport + simulator) */}
+      {/* Cartuș detalii — AFARĂ din container, fixed pe dreapta ecranului (ca simulatorul) */}
       {selectedPkg && colors && (
         <div
-          style={{ borderWidth: "3px" }}
-          className={`flex-1 rounded-2xl ${colors.border} ${colors.bg} p-8`}
+          style={{ borderWidth: "3px", top: "100px", right: "32px", maxHeight: "calc(100vh - 130px)" }}
+          className={`fixed w-[420px] rounded-2xl ${colors.border} ${colors.bg} p-8 overflow-y-auto shadow-xl z-40`}
         >
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -429,6 +429,6 @@ export default function PackageExplorer() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
