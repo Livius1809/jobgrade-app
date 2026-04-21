@@ -119,8 +119,10 @@ const CREDIT_VALUE_RON = 8
 // L1: + credite per angajat (pay gap, structură salarială)
 // L2: + credite per poziție (benchmark)
 // L3: + credite per angajat (dezvoltare)
-const CREDITS_PER_POSITION: Record<number, number> = { 1: 3, 2: 4, 3: 5, 4: 5 }
-const CREDITS_PER_EMPLOYEE: Record<number, number> = { 1: 0, 2: 2, 3: 2, 4: 3 }
+// Confirmat Owner: BAZA = 60 credite/poziție
+// L1-L3: de calibrat cu COG (estimări curente)
+const CREDITS_PER_POSITION: Record<number, number> = { 1: 60, 2: 80, 3: 100, 4: 120 }
+const CREDITS_PER_EMPLOYEE: Record<number, number> = { 1: 0, 2: 5, 3: 8, 4: 10 }
 
 // Discount automat pe volum total credite
 function getDiscountPct(totalCredits: number): { pct: number; label: string } {
@@ -152,10 +154,10 @@ export default function PackageExplorer() {
             <button
               key={pkg.number}
               onClick={() => setSelected(isSelected ? null : pkg.number)}
-              className={`rounded-xl p-4 text-left transition-all ${
+              className={`rounded-xl p-4 text-left transition-all border-[3px] ${
                 isSelected
-                  ? `${c.bg} border-3 ${c.border} shadow-lg ring-2 ring-offset-2 ring-${pkg.color}-300`
-                  : "bg-white border-2 border-slate-200 hover:shadow-md hover:border-slate-300"
+                  ? `${c.bg} ${c.border} shadow-lg`
+                  : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -172,7 +174,7 @@ export default function PackageExplorer() {
 
       {/* Detalii — dreapta (ca simulatorul) */}
       {selectedPkg && colors && (
-        <div className={`w-[380px] shrink-0 rounded-2xl border-2 ${colors.border} ${colors.bg} p-6`}>
+        <div className={`w-[380px] shrink-0 rounded-2xl border-[3px] ${colors.border} ${colors.bg} p-6`}>
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl">{selectedPkg.icon}</span>
