@@ -19,56 +19,61 @@ export async function POST(req: NextRequest) {
     const tenantId = session.user.tenantId
 
     if (action === "data") {
-      // Șterge datele de test — păstrează contul și profilul
+      // Șterge datele de lucru — PĂSTREAZĂ: cont, profil companie, utilizatori
       // Ordine: copiii înainte de părinți (FK constraints)
-      // Ștergere completă — TRUNCATE cascade pe tenantId
-      // Cea mai sigură abordare: un singur statement cu CTE
       const deletes = [
-        // Nivel 3: cele mai adânci dependențe
-        "DELETE FROM salary_steps WHERE \"salaryGradeId\" IN (SELECT id FROM salary_grades WHERE \"tenantId\" = $1)",
-        "DELETE FROM session_jobs WHERE \"sessionId\" IN (SELECT id FROM evaluation_sessions WHERE \"tenantId\" = $1)",
-        "DELETE FROM kpi_definitions WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)",
-        "DELETE FROM compensation_packages WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)",
-        // Nivel 2: tabele cu FK pe tenant direct
-        "DELETE FROM salary_grades WHERE \"tenantId\" = $1",
-        "DELETE FROM pay_gap_reports WHERE \"tenantId\" = $1",
-        "DELETE FROM joint_pay_assessments WHERE \"tenantId\" = $1",
-        "DELETE FROM employee_salary_records WHERE \"tenantId\" = $1",
-        "DELETE FROM simulation_scenarios WHERE \"tenantId\" = $1",
-        "DELETE FROM reports WHERE \"tenantId\" = $1",
-        "DELETE FROM ai_generations WHERE \"tenantId\" = $1",
-        "DELETE FROM evaluation_sessions WHERE \"tenantId\" = $1",
-        "DELETE FROM jobs WHERE \"tenantId\" = $1",
-        // Financiar
-        "DELETE FROM service_purchases WHERE \"tenantId\" = $1",
-        "DELETE FROM credit_transactions WHERE \"tenantId\" = $1",
-        "DELETE FROM credit_balances WHERE \"tenantId\" = $1",
-        "DELETE FROM revenue_entries WHERE \"tenantId\" = $1",
+        // Dependențe adânci
+        { sql: "DELETE FROM salary_steps WHERE \"salaryGradeId\" IN (SELECT id FROM salary_grades WHERE \"tenantId\" = $1)", label: "salary_steps" },
+        { sql: "DELETE FROM session_jobs WHERE \"sessionId\" IN (SELECT id FROM evaluation_sessions WHERE \"tenantId\" = $1)", label: "session_jobs" },
+        { sql: "DELETE FROM kpi_definitions WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)", label: "kpi_definitions" },
+        { sql: "DELETE FROM compensation_packages WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)", label: "compensation_packages" },
+        // Tabele cu FK pe tenant
+        { sql: "DELETE FROM salary_grades WHERE \"tenantId\" = $1", label: "salary_grades" },
+        { sql: "DELETE FROM pay_gap_reports WHERE \"tenantId\" = $1", label: "pay_gap_reports" },
+        { sql: "DELETE FROM joint_pay_assessments WHERE \"tenantId\" = $1", label: "joint_assessments" },
+        { sql: "DELETE FROM employee_salary_records WHERE \"tenantId\" = $1", label: "employee_salary_records" },
+        { sql: "DELETE FROM simulation_scenarios WHERE \"tenantId\" = $1", label: "simulation_scenarios" },
+        { sql: "DELETE FROM reports WHERE \"tenantId\" = $1", label: "reports" },
+        { sql: "DELETE FROM ai_generations WHERE \"tenantId\" = $1", label: "ai_generations" },
+        { sql: "DELETE FROM evaluation_sessions WHERE \"tenantId\" = $1", label: "evaluation_sessions" },
+        { sql: "DELETE FROM jobs WHERE \"tenantId\" = $1", label: "jobs" },
+        // Financiar — TOATE
+        { sql: "DELETE FROM service_purchases WHERE \"tenantId\" = $1", label: "service_purchases" },
+        { sql: "DELETE FROM credit_transactions WHERE \"tenantId\" = $1", label: "credit_transactions" },
+        { sql: "DELETE FROM credit_balances WHERE \"tenantId\" = $1", label: "credit_balances" },
+        { sql: "DELETE FROM revenue_entries WHERE \"tenantId\" = $1", label: "revenue_entries" },
         // Payroll
-        "DELETE FROM payroll_entries WHERE \"tenantId\" = $1",
-        "DELETE FROM payroll_import_batches WHERE \"tenantId\" = $1",
+        { sql: "DELETE FROM payroll_entries WHERE \"tenantId\" = $1", label: "payroll_entries" },
+        { sql: "DELETE FROM payroll_import_batches WHERE \"tenantId\" = $1", label: "payroll_import_batches" },
         // Alte date
-        "DELETE FROM employee_requests WHERE \"tenantId\" = $1",
-        "DELETE FROM client_memories WHERE \"tenantId\" = $1",
+        { sql: "DELETE FROM employee_requests WHERE \"tenantId\" = $1", label: "employee_requests" },
+        { sql: "DELETE FROM client_memories WHERE \"tenantId\" = $1", label: "client_memories" },
+        // Departamente (date de lucru, nu profil)
+        { sql: "DELETE FROM departments WHERE \"tenantId\" = $1", label: "departments" },
       ]
 
-      for (const sql of deletes) {
+      const results: string[] = []
+      for (const { sql, label } of deletes) {
         try {
-          await prisma.$executeRawUnsafe(sql, tenantId)
+          const result = await prisma.$executeRawUnsafe(sql, tenantId)
+          if (result > 0) results.push(`${label}: ${result}`)
         } catch (e: any) {
-          // Tabelul poate să nu existe sau să fie gol — continuăm
-          console.log(`[ACCOUNT RESET] Skip: ${e.message?.slice(0, 80)}`)
+          const msg = e.message?.slice(0, 100) || "unknown"
+          console.log(`[ACCOUNT RESET] Skip ${label}: ${msg}`)
+          results.push(`${label}: SKIP (${msg.slice(0, 40)})`)
         }
       }
 
-      console.log(`[ACCOUNT] Data reset → tenant ${tenantId}`)
-      return NextResponse.json({ success: true, message: "Datele au fost șterse." })
+      // NU ștergem: tenants, users, company_profiles (profil companie rămâne)
+      console.log(`[ACCOUNT] Data reset → tenant ${tenantId}:`, results.join(", "))
+      return NextResponse.json({ success: true, message: "Datele de lucru au fost șterse. Profilul companiei a fost păstrat.", details: results })
     }
 
     if (action === "account") {
+      // Șterge TOTUL — CASCADE
       await prisma.tenant.delete({ where: { id: tenantId } })
       console.log(`[ACCOUNT] Account deleted → tenant ${tenantId}`)
-      return NextResponse.json({ success: true, message: "Contul a fost șters." })
+      return NextResponse.json({ success: true, message: "Contul a fost șters complet." })
     }
 
     return NextResponse.json({ message: "Acțiune invalidă." }, { status: 400 })

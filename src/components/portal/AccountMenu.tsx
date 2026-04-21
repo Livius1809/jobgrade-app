@@ -68,9 +68,14 @@ export default function AccountMenu() {
             >
               {confirming === "account" ? (loading ? "Se șterge..." : "Confirmă ștergerea contului") : "Șterge contul"}
             </button>
-            {confirming && !error && (
+            {confirming === "data" && !error && (
               <p className="text-[9px] text-slate-400 px-3 py-1">
-                Apasă din nou pentru a confirma. Acțiunea este ireversibilă.
+                Șterge: achiziții, credite, posturi, evaluări, rapoarte. Păstrează: contul și profilul companiei.
+              </p>
+            )}
+            {confirming === "account" && !error && (
+              <p className="text-[9px] text-slate-400 px-3 py-1">
+                Șterge TOTUL inclusiv contul și profilul companiei. Ireversibil.
               </p>
             )}
             {error && (
