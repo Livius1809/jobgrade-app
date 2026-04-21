@@ -361,7 +361,7 @@ export default function PackageExplorer() {
           </div>
 
           {/* Pachete credite — tabel compact */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 mb-6">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 mb-16">
             <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite</p>
             <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
               Creditele suplimentare: revalidare, simulări, consultanță HR, rapoarte per angajat.
@@ -372,7 +372,7 @@ export default function PackageExplorer() {
                   <th className="text-left py-1.5">Pachet</th>
                   <th className="text-right py-1.5">Credite</th>
                   <th className="text-right py-1.5">RON</th>
-                  <th className="text-right py-1.5">Discount</th>
+                  <th className="text-right py-1.5">Disc.</th>
                 </tr>
               </thead>
               <tbody className="text-slate-600">
@@ -396,7 +396,7 @@ export default function PackageExplorer() {
           </div>
 
           {/* Bară pachete incluse */}
-          <div className="mb-8">
+          <div className="mb-16">
             <div className="flex mb-1">
               {PACKAGES.map(p => {
                 const included = p.number <= selectedPkg.number
@@ -435,7 +435,7 @@ export default function PackageExplorer() {
           </div>
 
           {/* Acțiuni */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-8">
             <Link
               href={selectedPkg.activateHref}
               className={`flex-1 py-2.5 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm ${colors.btn}`}
