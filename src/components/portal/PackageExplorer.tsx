@@ -49,7 +49,7 @@ const PACKAGES: PackageInfo[] = [
     number: 2,
     icon: "⚖️",
     title: "Conformitate",
-    layerLabel: "Nivelul 1",
+    layerLabel: "Nivelul 1 · include Ordine internă",
     description: "Structură salarială transparentă, analiză decalaj salarial, conformitate Directiva EU 2023/970.",
     includes: [
       "Tot ce include Ordine internă +",
@@ -74,7 +74,7 @@ const PACKAGES: PackageInfo[] = [
     number: 3,
     icon: "🎯",
     title: "Competitivitate",
-    layerLabel: "Nivelul 2",
+    layerLabel: "Nivelul 2 · include Conformitate",
     description: "Benchmark salarial vs piață. Știi unde te situezi și ce trebuie ajustat.",
     includes: [
       "Tot ce include Ordine internă + Conformitate +",
@@ -99,7 +99,7 @@ const PACKAGES: PackageInfo[] = [
     number: 4,
     icon: "🌱",
     title: "Dezvoltare",
-    layerLabel: "Nivelul 3",
+    layerLabel: "Nivelul 3 · include Competitivitate",
     description: "Dezvoltare organizațională completă — cultură, performanță, echipe.",
     includes: [
       "Tot ce include Ordine internă + Conformitate + Competitivitate +",
@@ -193,8 +193,8 @@ function pricePerCredit(totalCredits: number): number {
 
 export default function PackageExplorer() {
   const [selected, setSelected] = useState<number | null>(null)
-  const [positions, setPositions] = useState<number>(10)
-  const [employees, setEmployees] = useState<number>(30)
+  const [positions, setPositions] = useState<string>("")
+  const [employees, setEmployees] = useState<string>("")
 
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
@@ -293,40 +293,49 @@ export default function PackageExplorer() {
             )}
           </div>
 
-          {/* Calculator preț + Rezultat — compact */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
-            <div className="flex items-center gap-6 mb-3">
-              <p className="text-[10px] text-slate-700 font-bold uppercase tracking-wide shrink-0">Calculează prețul</p>
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-slate-500">Poziții</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={positions}
-                    onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-                    className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-slate-500">Salariați</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5000}
-                    value={employees}
-                    onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
-                    className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
-                  />
-                </div>
+          {/* Calculator preț — Date intrare client */}
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 mb-4">
+            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide mb-3">Date intrare client</p>
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex items-center gap-2 flex-1">
+                <label className="text-xs text-slate-600">Poziții distincte</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={positions}
+                  placeholder="–"
+                  onChange={(e) => setPositions(e.target.value)}
+                  className="w-20 text-center text-sm font-bold border-2 border-amber-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-amber-200 bg-white"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-1">
+                <label className="text-xs text-slate-600">Nr. salariați</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={5000}
+                  value={employees}
+                  placeholder="–"
+                  onChange={(e) => setEmployees(e.target.value)}
+                  className="w-20 text-center text-sm font-bold border-2 border-amber-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-amber-200 bg-white"
+                />
               </div>
             </div>
 
             {(() => {
-              const calc = calcLayerCredits(selectedPkg.number, positions, employees)
+              const pos = Number(positions) || 0
+              const emp = Number(employees) || 0
+              if (pos === 0 && emp === 0) {
+                return (
+                  <div className={`rounded-lg p-4 ${colors.bg} text-center`}>
+                    <p className="text-sm text-slate-400">Introduceți datele pentru a calcula prețul</p>
+                  </div>
+                )
+              }
+              const calc = calcLayerCredits(selectedPkg.number, Math.max(1, pos), Math.max(1, emp))
               const ppc = pricePerCredit(calc.total)
-              const volumeDiscount = getVolumeDiscount(positions, employees)
+              const volumeDiscount = getVolumeDiscount(Math.max(1, pos), Math.max(1, emp))
               const priceBeforeDiscount = Math.round(calc.total * ppc)
               const priceRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
 
@@ -386,8 +395,8 @@ export default function PackageExplorer() {
             </table>
           </div>
 
-          {/* Bară pachete incluse — compact */}
-          <div className="mb-4">
+          {/* Bară pachete incluse */}
+          <div className="mb-6 mt-2">
             <div className="flex mb-1">
               {PACKAGES.map(p => {
                 const included = p.number <= selectedPkg.number
@@ -400,7 +409,7 @@ export default function PackageExplorer() {
                 return (
                   <div key={p.number} className="flex-1 text-center">
                     <span className={`text-[9px] font-bold ${included ? textColor[p.color] || "text-indigo-600" : "text-slate-300"}`}>
-                      {p.icon} {p.layerLabel}
+                      {p.icon} {p.layerLabel.split(" · ")[0]}
                     </span>
                   </div>
                 )
@@ -426,7 +435,7 @@ export default function PackageExplorer() {
           </div>
 
           {/* Acțiuni */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-2">
             <Link
               href={selectedPkg.activateHref}
               className={`flex-1 py-2.5 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm ${colors.btn}`}

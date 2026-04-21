@@ -191,28 +191,7 @@ export default async function PortalPage() {
         lockedMessage="Mai întâi finalizează evaluarea"
       />
 
-      {/* ═══ CE PRIMEȘTI ═══ */}
-      {client.stage !== "NEW" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Structura concentrică a pachetelor</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FeatureCard icon="🏗️" title="BAZA" description="Ordine internă — evaluare și ierarhizare posturi" included />
-            <FeatureCard icon="⚖️" title="LAYER 1" description="Conformitate — clase salariale, pay gap, Art. 9" included={false} />
-            <FeatureCard icon="🎯" title="LAYER 2" description="Competitivitate — benchmark piață, poziționare" included={false} />
-            <FeatureCard icon="🌱" title="LAYER 3" description="Dezvoltare — cultură, performanță, organizațional" included={false} />
-          </div>
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-400 text-center">
-              Fiecare strat se construiește pe cel anterior. Poți începe cu BAZA și adăuga straturi ulterior.
-            </p>
-            <div className="flex justify-center mt-3">
-              <Link href="/b2b/abonamente" className="text-xs text-indigo-600 hover:underline font-medium">
-                Vezi toate pachetele și prețurile →
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Secțiunea concentrică eliminată — incluziunea e acum în cardurile PackageExplorer */}
 
       {/* ═══ AJUTOR ═══ */}
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-between">
