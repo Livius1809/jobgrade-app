@@ -41,6 +41,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
+    // Service package purchase
+    if (type === "service") {
+      const layer = parseInt(session.metadata?.layer ?? "0", 10)
+      const positions = parseInt(session.metadata?.positions ?? "0", 10)
+      const employees = parseInt(session.metadata?.employees ?? "0", 10)
+      const priceRON = parseInt(session.metadata?.priceRON ?? "0", 10)
+
+      if (layer > 0) {
+        await prisma.servicePurchase.upsert({
+          where: { tenantId },
+          create: {
+            tenantId,
+            layer,
+            positions,
+            employees,
+            priceRON,
+            stripeSessionId: session.id,
+            status: "ACTIVE",
+          },
+          update: {
+            layer: { set: Math.max(layer) },
+            positions,
+            employees,
+            priceRON,
+            stripeSessionId: session.id,
+            status: "ACTIVE",
+          },
+        })
+        console.log(`[WEBHOOK] Service purchase layer ${layer} → tenant ${tenantId}`)
+      }
+
+      await createRevenueEntry(tenantId, "SERVICE", session.amount_total, session.currency, `Pachet servicii L${layer}`, session.id)
+    }
+
     // Credits purchase
     if (type === "credits") {
       const credits = parseInt(session.metadata?.credits ?? "0", 10)

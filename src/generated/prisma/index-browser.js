@@ -561,6 +561,19 @@ exports.Prisma.RevenueEntryScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ServicePurchaseScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  layer: 'layer',
+  positions: 'positions',
+  employees: 'employees',
+  priceRON: 'priceRON',
+  stripeSessionId: 'stripeSessionId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.NotificationScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -2444,6 +2457,7 @@ exports.Prisma.ModelName = {
   CreditTransaction: 'CreditTransaction',
   BudgetLine: 'BudgetLine',
   RevenueEntry: 'RevenueEntry',
+  ServicePurchase: 'ServicePurchase',
   Notification: 'Notification',
   KBEntry: 'KBEntry',
   KBBuffer: 'KBBuffer',

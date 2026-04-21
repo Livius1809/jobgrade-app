@@ -191,8 +191,16 @@ function pricePerCredit(totalCredits: number): number {
   return 8.00
 }
 
-export default function PackageExplorer({ onLayerChange }: { onLayerChange?: (layer: number | null) => void } = {}) {
+const PURCHASED_FILLS: Record<string, string> = {
+  indigo: "rgba(99,102,241,0.2)",
+  violet: "rgba(139,92,246,0.2)",
+  fuchsia: "rgba(217,70,239,0.2)",
+  coral: "rgba(249,115,22,0.2)",
+}
+
+export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
+  const [purchasing, setPurchasing] = useState(false)
 
   const handleSelect = (pkg: number | null) => {
     setSelected(pkg)
@@ -201,6 +209,34 @@ export default function PackageExplorer({ onLayerChange }: { onLayerChange?: (la
   const [positions, setPositions] = useState<string>("")
   const [employees, setEmployees] = useState<string>("")
   const [annual, setAnnual] = useState(false)
+
+  const handlePurchase = async () => {
+    const pos = Number(positions) || 0
+    const emp = Number(employees) || 0
+    if (!selectedPkg || pos === 0 || emp === 0) return
+    setPurchasing(true)
+    try {
+      const res = await fetch("/api/v1/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "service",
+          layer: selectedPkg.number,
+          positions: pos,
+          employees: emp,
+          annual,
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (e) {
+      console.error("Checkout error:", e)
+    } finally {
+      setPurchasing(false)
+    }
+  }
 
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
@@ -227,26 +263,38 @@ export default function PackageExplorer({ onLayerChange }: { onLayerChange?: (la
           const c = COLOR_MAP[pkg.color] || COLOR_MAP.slate
           const isSelected = selected === pkg.number
 
+          const isPurchased = pkg.number <= purchasedLayer
+
           return (
             <button
               key={pkg.number}
               onClick={() => handleSelect(isSelected ? null : pkg.number)}
-              style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
+              style={{
+                borderWidth: isSelected ? "3px" : "2px",
+                ...(isPurchased && !isSelected ? { backgroundColor: PURCHASED_FILLS[pkg.color] } : {}),
+              }}
               className={`rounded-xl p-4 text-left transition-all ${
                 isSelected
                   ? `${c.bg} ${c.border} shadow-lg`
-                  : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
+                  : isPurchased
+                    ? `${c.border} shadow-sm`
+                    : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>
+                    {isPurchased ? "✓" : pkg.number}
+                  </span>
                   <div>
-                    <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-                    <p className={`text-[10px] font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+                    <h3 className={`text-sm font-bold ${isSelected || isPurchased ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
+                    <p className={`text-[10px] font-medium ${isSelected || isPurchased ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
                   </div>
                 </div>
-                <span className="text-lg">{pkg.icon}</span>
+                <div className="flex items-center gap-1">
+                  {isPurchased && <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">ACTIV</span>}
+                  <span className="text-lg">{pkg.icon}</span>
+                </div>
               </div>
               <p className="text-[10px] text-slate-400 mt-2 line-clamp-2">{pkg.description}</p>
             </button>
@@ -496,12 +544,19 @@ export default function PackageExplorer({ onLayerChange }: { onLayerChange?: (la
 
           {/* Acțiuni */}
           <div className="flex gap-3">
-            <Link
-              href={selectedPkg.activateHref}
-              className={`flex-1 py-2.5 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm ${colors.btn}`}
-            >
-              Cumpără
-            </Link>
+            {selectedPkg.number <= purchasedLayer ? (
+              <div className="flex-1 py-2.5 rounded-lg bg-emerald-100 text-emerald-700 text-sm font-semibold text-center">
+                ✓ Activ
+              </div>
+            ) : (
+              <button
+                onClick={handlePurchase}
+                disabled={purchasing || !Number(positions) || !Number(employees)}
+                className={`flex-1 py-2.5 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${colors.btn}`}
+              >
+                {purchasing ? "Se procesează..." : "Cumpără"}
+              </button>
+            )}
             <Link
               href={selectedPkg.demoHref}
               className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold text-center hover:bg-white/50 transition-colors"

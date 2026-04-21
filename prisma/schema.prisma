@@ -45,6 +45,7 @@ model Tenant {
   payrollEntries        PayrollEntry[]
   payrollImportBatches  PayrollImportBatch[]
   revenueEntries        RevenueEntry[]
+  servicePurchase       ServicePurchase?
 
   @@map("tenants")
 }
@@ -782,6 +783,27 @@ model RevenueEntry {
 
   @@index([tenantId, periodMonth])
   @@map("revenue_entries")
+}
+
+// ─────────────────────────────────────────
+// SERVICE PURCHASE (pachet servicii B2B)
+// ─────────────────────────────────────────
+
+model ServicePurchase {
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  layer           Int      // 1=Baza, 2=Conformitate, 3=Competitivitate, 4=Dezvoltare (max cumparat)
+  positions       Int      // nr pozitii la momentul achizitiei
+  employees       Int      // nr salariati la momentul achizitiei
+  priceRON        Int      // pretul platit in RON
+  stripeSessionId String?
+  status          String   @default("ACTIVE") // ACTIVE, EXPIRED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("service_purchases")
 }
 
 enum BudgetCategory {

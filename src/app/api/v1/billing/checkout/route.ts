@@ -4,11 +4,16 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe, CREDIT_PACKAGES, SUBSCRIPTION } from "@/lib/stripe"
 import { getAppUrl } from "@/lib/get-app-url"
+import { calculateServicePrice, LAYER_NAMES } from "@/lib/pricing"
 
 const schema = z.object({
-  type: z.enum(["credits", "subscription"]),
+  type: z.enum(["credits", "subscription", "service"]),
   packageId: z.string().optional(),
   billing: z.enum(["monthly", "annual"]).optional(),
+  layer: z.number().min(1).max(4).optional(),
+  positions: z.number().min(1).optional(),
+  employees: z.number().min(1).optional(),
+  annual: z.boolean().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -64,6 +69,49 @@ export async function POST(req: NextRequest) {
         success_url: `${APP_URL}/settings/billing?success=subscription`,
         cancel_url: `${APP_URL}/settings/billing?canceled=1`,
         metadata: { tenantId, type: "subscription", billing: data.billing || "monthly" },
+      })
+
+      return NextResponse.json({ url: checkoutSession.url })
+    }
+
+    // ── Service package checkout ──
+    if (data.type === "service") {
+      if (!data.layer || !data.positions || !data.employees) {
+        return NextResponse.json({ message: "Layer, poziții și salariați sunt obligatorii." }, { status: 400 })
+      }
+
+      const { serviciiRON } = calculateServicePrice(data.layer, data.positions, data.employees)
+      const abonamentRON = data.annual ? 3990 : 399
+      const totalRON = serviciiRON + abonamentRON
+      const layerName = LAYER_NAMES[data.layer] || `Pachet ${data.layer}`
+
+      const checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "ron",
+              product_data: {
+                name: `JobGrade — ${layerName}`,
+                description: `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
+              },
+              unit_amount: totalRON * 100,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${APP_URL}/portal?success=service&layer=${data.layer}`,
+        cancel_url: `${APP_URL}/portal?canceled=1`,
+        metadata: {
+          tenantId,
+          type: "service",
+          layer: String(data.layer),
+          positions: String(data.positions),
+          employees: String(data.employees),
+          priceRON: String(totalRON),
+        },
       })
 
       return NextResponse.json({ url: checkoutSession.url })

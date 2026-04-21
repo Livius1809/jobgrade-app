@@ -59,6 +59,13 @@ export default async function PortalPage() {
 
   const client = await getClientStage(session.user.tenantId)
 
+  // Fetch purchased service layer
+  const purchase = await prisma.servicePurchase.findUnique({
+    where: { tenantId: session.user.tenantId },
+    select: { layer: true },
+  }).catch(() => null)
+  const purchasedLayer = purchase?.layer ?? 0
+
   const steps = [
     { id: "profile", label: "Compania ta", icon: "🏢", done: client.stage !== "NEW" },
     { id: "jobs", label: "Posturi", icon: "📋", done: client.jobCount > 0 },
@@ -134,7 +141,7 @@ export default async function PortalPage() {
 
       {/* ═══ Pachete + Date intrare client (state partajat) ═══ */}
       {client.stage !== "NEW" && (
-        <PortalClientSection jobCount={client.jobCount} />
+        <PortalClientSection jobCount={client.jobCount} purchasedLayer={purchasedLayer} />
       )}
 
       {/* ═══ ETAPA 3 — Evaluare ═══ */}

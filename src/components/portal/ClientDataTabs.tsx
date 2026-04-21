@@ -29,9 +29,19 @@ const STATUS_STYLES = {
 interface ClientDataTabsProps {
   jobCount: number
   selectedLayer: number | null
+  purchasedLayer: number
   employeeCount?: number
   hasDepartments?: boolean
   hasSalaryData?: boolean
+}
+
+// Culori per tab — corelate cu cardurile servicii
+const TAB_COLORS: Record<string, { bar: string; fill: string; text: string; border: string }> = {
+  posturi:       { bar: "bg-indigo-500",  fill: "rgba(99,102,241,0.15)",  text: "text-indigo-700",  border: "border-indigo-300" },
+  fise:          { bar: "bg-indigo-500",  fill: "rgba(99,102,241,0.15)",  text: "text-indigo-700",  border: "border-indigo-300" },
+  "stat-functii":{ bar: "bg-violet-500",  fill: "rgba(139,92,246,0.15)",  text: "text-violet-700",  border: "border-violet-300" },
+  salarii:       { bar: "bg-fuchsia-500", fill: "rgba(217,70,239,0.15)",  text: "text-fuchsia-700", border: "border-fuchsia-300" },
+  departamente:  { bar: "bg-orange-500",  fill: "rgba(249,115,22,0.15)",  text: "text-orange-700",  border: "border-orange-300" },
 }
 
 // Ce taburi apar per layer:
@@ -46,7 +56,7 @@ const TABS_PER_LAYER: Record<number, string[]> = {
   4: ["posturi", "fise", "stat-functii", "salarii", "departamente"],
 }
 
-export default function ClientDataTabs({ jobCount, selectedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false }: ClientDataTabsProps) {
+export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false }: ClientDataTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("posturi")
   const [panelOpen, setPanelOpen] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -120,9 +130,19 @@ export default function ClientDataTabs({ jobCount, selectedLayer, employeeCount 
     },
   ]
 
-  // Filtrare taburi pe baza layer-ului selectat
-  const visibleTabIds = selectedLayer ? (TABS_PER_LAYER[selectedLayer] || TABS_PER_LAYER[1]) : ["posturi", "fise"]
+  // Filtrare taburi: show pe baza max(purchasedLayer, selectedLayer) — dar activabile doar dacă e plătit
+  const displayLayer = Math.max(purchasedLayer, selectedLayer || 0) || 1
+  const visibleTabIds = TABS_PER_LAYER[displayLayer] || TABS_PER_LAYER[1]
   const tabs = allTabs.filter(t => visibleTabIds.includes(t.id))
+
+  // Progress per tab (0-100)
+  const tabProgress: Record<string, number> = {
+    posturi: Math.min(100, Math.round((jobCount / Math.max(3, 1)) * 100)),
+    fise: 0,
+    "stat-functii": employeeCount > 0 ? 100 : 0,
+    salarii: hasSalaryData ? 100 : 0,
+    departamente: hasDepartments ? 100 : 0,
+  }
 
   const activeTabDef = tabs.find(t => t.id === activeTab)
   const st = activeTabDef ? STATUS_STYLES[activeTabDef.status] : STATUS_STYLES.empty
@@ -132,25 +152,32 @@ export default function ClientDataTabs({ jobCount, selectedLayer, employeeCount 
       <div ref={containerRef}>
         {/* Taburi */}
         <div className="flex border-b border-slate-200">
-          {tabs.map(tab => {
+          {tabs.map((tab, idx) => {
             const isActive = activeTab === tab.id
-            const tabSt = STATUS_STYLES[tab.status]
+            const tc = TAB_COLORS[tab.id] || TAB_COLORS.posturi
+            const progress = tabProgress[tab.id] || 0
+            const isLocked = purchasedLayer === 0
             return (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setPanelOpen(null) }}
+                onClick={() => { if (!isLocked) { setActiveTab(tab.id); setPanelOpen(null) } }}
+                disabled={isLocked}
                 className={`flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? "border-indigo-500 text-indigo-700"
-                    : "border-transparent text-slate-400 hover:text-slate-600"
+                  isLocked
+                    ? "border-transparent text-slate-300 cursor-not-allowed"
+                    : isActive
+                      ? `${tc.border} ${tc.text}`
+                      : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
-                <span>{tab.icon}</span>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                  progress === 100 ? `${tc.bar} text-white` : "bg-slate-100 text-slate-500"
+                }`}>{idx + 1}</span>
                 <span>{tab.label}</span>
-                <span className={`w-2 h-2 rounded-full ${tabSt.dot}`} />
                 {tab.count !== undefined && tab.count > 0 && (
                   <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full font-bold">{tab.count}</span>
                 )}
+                {isLocked && <span className="text-[10px]">🔒</span>}
               </button>
             )
           })}
@@ -159,18 +186,30 @@ export default function ClientDataTabs({ jobCount, selectedLayer, employeeCount 
         <div style={{ height: "20px" }} />
 
         {/* Conținut tab activ */}
-        {activeTabDef && (
-          <div>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${st.dot}`} />
-                  <span className={`text-[10px] font-bold uppercase tracking-wide ${st.text}`}>{st.label}</span>
-                </div>
-                <div style={{ height: "8px" }} />
-                <p className="text-sm text-slate-600 leading-relaxed">{activeTabDef.description}</p>
+        {purchasedLayer === 0 && (
+          <div className="text-center py-8">
+            <p className="text-sm text-slate-400">Cumpărați un pachet pentru a introduce datele.</p>
+          </div>
+        )}
+        {activeTabDef && purchasedLayer > 0 && (() => {
+          const tc = TAB_COLORS[activeTabDef.id] || TAB_COLORS.posturi
+          const progress = tabProgress[activeTabDef.id] || 0
+          return (
+          <div
+            style={progress === 100 ? { backgroundColor: tc.fill } : {}}
+            className={`rounded-xl ${progress === 100 ? tc.border : ""}`}
+          >
+            {/* Bară relevanță */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className={`h-full ${tc.bar} rounded-full transition-all duration-500`} style={{ width: `${progress}%` }} />
               </div>
+              <span className={`text-[10px] font-bold ${tc.text}`}>{progress}%</span>
             </div>
+
+            <div style={{ height: "16px" }} />
+
+            <p className="text-sm text-slate-600 leading-relaxed">{activeTabDef.description}</p>
 
             <div style={{ height: "20px" }} />
 
@@ -204,7 +243,8 @@ export default function ClientDataTabs({ jobCount, selectedLayer, employeeCount 
               })}
             </div>
           </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* Panou lateral — același pattern ca PackageExplorer (portal, fixed, ancorat la conținut) */}

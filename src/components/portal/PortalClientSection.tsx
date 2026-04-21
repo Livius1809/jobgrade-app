@@ -6,9 +6,10 @@ import ClientDataTabs from "./ClientDataTabs"
 
 interface Props {
   jobCount: number
+  purchasedLayer: number
 }
 
-export default function PortalClientSection({ jobCount }: Props) {
+export default function PortalClientSection({ jobCount, purchasedLayer }: Props) {
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
 
   return (
@@ -20,15 +21,19 @@ export default function PortalClientSection({ jobCount }: Props) {
         <p className="text-sm text-slate-500">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
       </div>
 
-      <PackageExplorer onLayerChange={setSelectedLayer} />
+      <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} />
 
       {/* ═══ Date intrare client ═══ */}
       <div className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
         <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
         <div style={{ height: "4px" }} />
-        <p className="text-xs text-slate-500">Datele necesare pentru evaluare, rapoarte și analiză</p>
+        <p className="text-xs text-slate-500">
+          {purchasedLayer > 0
+            ? "Completați datele pentru a genera rapoartele."
+            : "Cumpărați un pachet pentru a activa introducerea datelor."}
+        </p>
         <div style={{ height: "20px" }} />
-        <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} />
+        <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} />
       </div>
     </>
   )
