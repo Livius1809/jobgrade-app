@@ -473,7 +473,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
 
           <div style={{ height: "20px" }} />
 
-          {/* Pachete credite — tabel compact */}
+          {/* Pachete credite — cu buton cumpără */}
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite</p>
             <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
@@ -486,22 +486,41 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0 }: {
                   <th className="text-right py-1.5">Credite</th>
                   <th className="text-right py-1.5">RON</th>
                   <th className="text-right py-1.5">Reducere</th>
+                  <th className="text-right py-1.5"></th>
                 </tr>
               </thead>
               <tbody className="text-slate-600">
                 {[
-                  { name: "Micro", credits: 100, price: 800, disc: "—" },
-                  { name: "Mini", credits: 250, price: 1875, disc: "-6%" },
-                  { name: "Start", credits: 500, price: 3500, disc: "-12%" },
-                  { name: "Business", credits: 1500, price: 9750, disc: "-19%" },
-                  { name: "Professional", credits: 5000, price: 30000, disc: "-25%" },
-                  { name: "Enterprise", credits: 15000, price: 82500, disc: "-31%" },
+                  { id: "credits_micro", name: "Micro", credits: 100, price: 800, disc: "—" },
+                  { id: "credits_mini", name: "Mini", credits: 250, price: 1875, disc: "-6%" },
+                  { id: "credits_start", name: "Start", credits: 500, price: 3500, disc: "-12%" },
+                  { id: "credits_business", name: "Business", credits: 1500, price: 9750, disc: "-19%" },
+                  { id: "credits_professional", name: "Professional", credits: 5000, price: 30000, disc: "-25%" },
+                  { id: "credits_enterprise", name: "Enterprise", credits: 15000, price: 82500, disc: "-31%" },
                 ].map(p => (
                   <tr key={p.name} className="border-t border-slate-100">
                     <td className="py-1.5 font-medium">{p.name}</td>
                     <td className="py-1.5 text-right font-mono">{p.credits.toLocaleString()}</td>
                     <td className="py-1.5 text-right font-mono">{p.price.toLocaleString()}</td>
                     <td className="py-1.5 text-right text-emerald-600 font-medium">{p.disc}</td>
+                    <td className="py-1.5 text-right">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch("/api/v1/billing/checkout", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ type: "credits", packageId: p.id }),
+                            })
+                            const data = await res.json()
+                            if (data.url) window.location.href = data.url
+                          } catch (e) { console.error("Credit checkout error:", e) }
+                        }}
+                        className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded transition-colors"
+                      >
+                        Cumpără
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
