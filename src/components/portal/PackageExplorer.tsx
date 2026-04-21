@@ -280,25 +280,25 @@ export default function PackageExplorer() {
 
             <div className="space-y-4 mb-5">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-slate-500">Poziții distincte</label>
+                <label className="text-sm text-slate-600">Poziții distincte</label>
                 <input
                   type="number"
                   min={1}
                   max={500}
                   value={positions}
                   onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-                  className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                  className="w-24 text-center text-base font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
               <div className="flex items-center justify-between">
-                <label className="text-xs text-slate-500">Nr. salariați</label>
+                <label className="text-sm text-slate-600">Nr. salariați</label>
                 <input
                   type="number"
                   min={1}
                   max={5000}
                   value={employees}
                   onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
-                  className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                  className="w-24 text-center text-base font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
             </div>
@@ -311,16 +311,16 @@ export default function PackageExplorer() {
               const priceRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
 
               return (
-                <div className={`rounded-lg p-4 space-y-2 ${colors.bg}`}>
-                  <div className="text-center">
+                <div className={`rounded-xl p-6 space-y-3 ${colors.bg}`}>
+                  <div className="text-center py-2">
                     {volumeDiscount.pct > 0 && (
-                      <p className="text-xs text-slate-400 line-through">{priceBeforeDiscount.toLocaleString("ro-RO")} RON</p>
+                      <p className="text-sm text-slate-400 line-through mb-1">{priceBeforeDiscount.toLocaleString("ro-RO")} RON</p>
                     )}
-                    <p className="text-3xl font-bold text-slate-900">
+                    <p className="text-4xl font-bold text-slate-900">
                       {priceRON.toLocaleString("ro-RO")} RON
                     </p>
                     {volumeDiscount.pct > 0 && (
-                      <p className="text-xs text-emerald-600 font-medium mt-1">
+                      <p className="text-sm text-emerald-600 font-medium mt-2">
                         {volumeDiscount.label}: -{volumeDiscount.pct}%
                       </p>
                     )}
@@ -338,13 +338,13 @@ export default function PackageExplorer() {
               Creditele suplimentare se folosesc pentru: revalidare evaluare, simulări adiționale,
               sesiuni consultanță HR, rapoarte per angajat, comisie mediată.
             </p>
-            <table className="w-full text-[10px]">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
-                  <th className="text-left py-1">Pachet</th>
-                  <th className="text-right py-1">Credite</th>
-                  <th className="text-right py-1">RON</th>
-                  <th className="text-right py-1">Discount</th>
+                <tr className="text-slate-400 border-b border-slate-200">
+                  <th className="text-left py-2">Pachet</th>
+                  <th className="text-right py-2">Credite</th>
+                  <th className="text-right py-2">RON</th>
+                  <th className="text-right py-2">Discount</th>
                 </tr>
               </thead>
               <tbody className="text-slate-600">
@@ -356,11 +356,11 @@ export default function PackageExplorer() {
                   { name: "Professional", credits: 5000, price: 30000, disc: "-25%" },
                   { name: "Enterprise", credits: 15000, price: 82500, disc: "-31%" },
                 ].map(p => (
-                  <tr key={p.name} className="border-t border-slate-50 hover:bg-slate-50">
-                    <td className="py-1 font-medium">{p.name}</td>
-                    <td className="py-1 text-right font-mono">{p.credits.toLocaleString()}</td>
-                    <td className="py-1 text-right font-mono">{p.price.toLocaleString()}</td>
-                    <td className="py-1 text-right text-emerald-600">{p.disc}</td>
+                  <tr key={p.name} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="py-2.5 font-medium">{p.name}</td>
+                    <td className="py-2.5 text-right font-mono">{p.credits.toLocaleString()}</td>
+                    <td className="py-2.5 text-right font-mono">{p.price.toLocaleString()}</td>
+                    <td className="py-2.5 text-right text-emerald-600 font-medium">{p.disc}</td>
                   </tr>
                 ))}
               </tbody>
