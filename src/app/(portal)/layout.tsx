@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import SignOutButton from "@/components/auth/SignOutButton"
 import NarrativeGuide from "@/components/guide/NarrativeGuide"
+import AccountMenu from "@/components/portal/AccountMenu"
 
 export default async function PortalLayout({
   children,
@@ -33,9 +34,7 @@ export default async function PortalLayout({
                 Owner
               </Link>
             )}
-            <span className="text-xs text-text-secondary hidden sm:inline">
-              {session.user.name}
-            </span>
+            <AccountMenu />
             <SignOutButton />
           </div>
         </div>
