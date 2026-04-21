@@ -374,19 +374,27 @@ export default function PackageExplorer() {
               {PACKAGES.map(p => {
                 const included = p.number <= selectedPkg.number
                 const c = COLOR_MAP[p.color] || COLOR_MAP.indigo
-                const bgColors: Record<string, string> = {
-                  indigo: included ? "bg-indigo-500" : "bg-slate-100",
-                  violet: included ? "bg-violet-500" : "bg-slate-100",
-                  fuchsia: included ? "bg-fuchsia-500" : "bg-slate-100",
-                  coral: included ? "bg-orange-500" : "bg-slate-100",
+                const bgIncluded: Record<string, string> = {
+                  indigo: "bg-indigo-500/30",
+                  violet: "bg-violet-500/30",
+                  fuchsia: "bg-fuchsia-500/30",
+                  coral: "bg-orange-500/30",
+                }
+                const textIncluded: Record<string, string> = {
+                  indigo: "text-indigo-700",
+                  violet: "text-violet-700",
+                  fuchsia: "text-fuchsia-700",
+                  coral: "text-orange-700",
                 }
                 return (
                   <div
                     key={p.number}
-                    className={`flex-1 flex items-center justify-center gap-1 ${bgColors[p.color] || "bg-slate-100"} ${p.number < 4 ? "border-r border-white/30" : ""}`}
+                    className={`flex-1 flex items-center justify-center gap-1 ${
+                      included ? bgIncluded[p.color] || "bg-indigo-500/30" : "bg-slate-100"
+                    } ${p.number < 4 ? "border-r border-white/50" : ""}`}
                   >
-                    <span className={`text-xs ${included ? "text-white" : "text-slate-300"}`}>{p.icon}</span>
-                    <span className={`text-[9px] font-bold ${included ? "text-white" : "text-slate-300"}`}>{p.layerLabel}</span>
+                    <span className={`text-xs ${included ? textIncluded[p.color] || "text-indigo-700" : "text-slate-300"}`}>{p.icon}</span>
+                    <span className={`text-[9px] font-bold ${included ? textIncluded[p.color] || "text-indigo-700" : "text-slate-300"}`}>{p.layerLabel}</span>
                   </div>
                 )
               })}
