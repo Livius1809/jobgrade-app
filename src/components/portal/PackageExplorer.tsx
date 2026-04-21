@@ -195,6 +195,7 @@ export default function PackageExplorer() {
   const [selected, setSelected] = useState<number | null>(null)
   const [positions, setPositions] = useState<string>("")
   const [employees, setEmployees] = useState<string>("")
+  const [annual, setAnnual] = useState(false)
 
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
@@ -343,24 +344,60 @@ export default function PackageExplorer() {
               const ppc = pricePerCredit(calc.total)
               const volumeDiscount = getVolumeDiscount(Math.max(1, pos), Math.max(1, emp))
               const priceBeforeDiscount = Math.round(calc.total * ppc)
-              const priceRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
+              const serviciiRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
+              const abonamentLunar = 399
+              const abonamentAnual = 3990
+              const abonamentRON = annual ? abonamentAnual : abonamentLunar
+              const totalRON = serviciiRON + abonamentRON
 
               return (
-                <div className={`rounded-lg p-4 ${colors.bg} flex items-center justify-between`}>
-                  <div>
-                    {volumeDiscount.pct > 0 && (
-                      <p className="text-xs text-slate-400 line-through">{priceBeforeDiscount.toLocaleString("ro-RO")} RON</p>
-                    )}
-                    <p className="text-3xl font-bold text-slate-900">
-                      {priceRON.toLocaleString("ro-RO")} RON
-                    </p>
-                    <p className="text-[9px] text-slate-400 mt-0.5">fără TVA · + abonament 399 RON/lună</p>
+                <div className={`rounded-lg p-4 ${colors.bg}`}>
+                  {/* Servicii */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600">Servicii</span>
+                    <div className="text-right">
+                      {volumeDiscount.pct > 0 && (
+                        <span className="text-[10px] text-slate-400 line-through mr-2">{priceBeforeDiscount.toLocaleString("ro-RO")}</span>
+                      )}
+                      <span className="text-sm font-bold text-slate-900">{serviciiRON.toLocaleString("ro-RO")} RON</span>
+                      {volumeDiscount.pct > 0 && (
+                        <span className="text-[10px] text-emerald-600 font-medium ml-1">-{volumeDiscount.pct}%</span>
+                      )}
+                    </div>
                   </div>
-                  {volumeDiscount.pct > 0 && (
-                    <span className="text-sm text-emerald-600 font-semibold bg-emerald-50 px-3 py-1 rounded-full">
-                      {volumeDiscount.label}: -{volumeDiscount.pct}%
-                    </span>
-                  )}
+
+                  <div style={{ height: "12px" }} />
+
+                  {/* Abonament cu toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-600">Abonament</span>
+                      <button
+                        onClick={() => setAnnual(!annual)}
+                        className="flex items-center bg-white rounded-full border border-slate-200 text-[10px] overflow-hidden"
+                      >
+                        <span className={`px-2 py-0.5 transition-colors ${!annual ? "bg-indigo-600 text-white" : "text-slate-400"}`}>lunar</span>
+                        <span className={`px-2 py-0.5 transition-colors ${annual ? "bg-indigo-600 text-white" : "text-slate-400"}`}>anual</span>
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-slate-900">{abonamentRON.toLocaleString("ro-RO")} RON</span>
+                      <span className="text-[10px] text-slate-400 ml-1">{annual ? "/an" : "/lună"}</span>
+                      {annual && <span className="text-[10px] text-emerald-600 font-medium ml-1">-17%</span>}
+                    </div>
+                  </div>
+
+                  <div style={{ height: "12px", borderBottom: "1px solid rgba(0,0,0,0.1)" }} />
+                  <div style={{ height: "12px" }} />
+
+                  {/* Total */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-900">Total</span>
+                    <div className="text-right">
+                      <span className="text-2xl font-bold text-slate-900">{totalRON.toLocaleString("ro-RO")} RON</span>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-slate-400 text-right" style={{ marginTop: "4px" }}>fără TVA</p>
                 </div>
               )
             })()}
@@ -380,7 +417,7 @@ export default function PackageExplorer() {
                   <th className="text-left py-1.5">Pachet</th>
                   <th className="text-right py-1.5">Credite</th>
                   <th className="text-right py-1.5">RON</th>
-                  <th className="text-right py-1.5">Disc.</th>
+                  <th className="text-right py-1.5">Reducere</th>
                 </tr>
               </thead>
               <tbody className="text-slate-600">
