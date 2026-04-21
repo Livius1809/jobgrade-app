@@ -24,7 +24,7 @@ const PACKAGES: PackageInfo[] = [
     number: 1,
     icon: "🏗️",
     title: "Ordine internă",
-    layerLabel: "BAZA",
+    layerLabel: "Baza",
     description: "Evaluare și ierarhizare posturi pe criterii obiective, neutre din perspectiva genului.",
     includes: [
       "Evaluare AI automată sau prin comisie",
@@ -48,10 +48,10 @@ const PACKAGES: PackageInfo[] = [
     number: 2,
     icon: "⚖️",
     title: "Conformitate",
-    layerLabel: "LAYER 1",
+    layerLabel: "Nivelul 1",
     description: "Structură salarială transparentă, analiză decalaj salarial, conformitate Directiva EU 2023/970.",
     includes: [
-      "Tot ce include BAZA +",
+      "Tot ce include Ordine internă +",
       "Clase salariale cu trepte (metoda Pitariu, progresie geometrică)",
       "Analiză decalaj salarial F/M pe muncă de valoare egală",
       "Justificări documentate pentru diferențe",
@@ -63,7 +63,7 @@ const PACKAGES: PackageInfo[] = [
       "Benchmark salarial vs piață (se activează cu datele salariale)",
     ],
     price: "De la 150 RON/poziție",
-    priceDetail: "Include BAZA + structura salarială + pay gap.",
+    priceDetail: "Include Ordine internă + structura salarială + pay gap.",
     demoHref: "/demo",
     activateHref: "/sessions",
     color: "violet",
@@ -73,10 +73,10 @@ const PACKAGES: PackageInfo[] = [
     number: 3,
     icon: "🎯",
     title: "Competitivitate",
-    layerLabel: "LAYER 2",
+    layerLabel: "Nivelul 2",
     description: "Benchmark salarial vs piață. Știi unde te situezi și ce trebuie ajustat.",
     includes: [
-      "Tot ce include BAZA + Conformitate +",
+      "Tot ce include Ordine internă + Conformitate +",
       "Comparație cu piața (P25, P50, P75) per poziție",
       "Compa-ratio per post — sub/peste mediană",
       "Surse: INS, studii salariale, portaluri recrutare",
@@ -88,7 +88,7 @@ const PACKAGES: PackageInfo[] = [
       "Evaluare performanță per angajat (se activează cu KPI-uri per post)",
     ],
     price: "De la 180 RON/poziție",
-    priceDetail: "Include BAZA + Conformitate + benchmark piață.",
+    priceDetail: "Include Ordine internă + Conformitate + benchmark piață.",
     demoHref: "/demo",
     activateHref: "/sessions",
     color: "fuchsia",
@@ -98,10 +98,10 @@ const PACKAGES: PackageInfo[] = [
     number: 4,
     icon: "🌱",
     title: "Dezvoltare",
-    layerLabel: "LAYER 3",
+    layerLabel: "Nivelul 3",
     description: "Dezvoltare organizațională completă — cultură, performanță, echipe.",
     includes: [
-      "Tot ce include BAZA + Conformitate + Competitivitate +",
+      "Tot ce include Ordine internă + Conformitate + Competitivitate +",
       "Evaluare personal și diagnoză organizațională",
       "Management echipe multigeneraționale",
       "Structuri mixte om-AI",
@@ -386,7 +386,7 @@ export default function PackageExplorer() {
                     className={`flex-1 flex items-center justify-center gap-1 ${bgColors[p.color] || "bg-slate-100"} ${p.number < 4 ? "border-r border-white/30" : ""}`}
                   >
                     <span className={`text-xs ${included ? "text-white" : "text-slate-300"}`}>{p.icon}</span>
-                    <span className={`text-[9px] font-bold ${included ? "text-white" : "text-slate-300"}`}>{p.title}</span>
+                    <span className={`text-[9px] font-bold ${included ? "text-white" : "text-slate-300"}`}>{p.layerLabel}</span>
                   </div>
                 )
               })}
