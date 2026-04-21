@@ -22,6 +22,11 @@ export default async function InsightsPage() {
   let feedbackLoops: any = { total: 0, closed: 0, avgCloseTime: 0, open: [] }
   let heatMap: any = { processes: [] }
   let autonomy: any = { overall: 0, domains: [] }
+  let agentCards: any[] = []
+  let objectivesHeat: any[] = []
+  let maturityGrid: any[] = []
+  let recentLearning: any[] = []
+  let objectives: any[] = []
 
   try {
     // ── 1. EVOLUȚIA ORGANISMULUI ÎN TIMP ──
@@ -177,6 +182,88 @@ export default async function InsightsPage() {
         { name: "Comunicare client", autonomy: Math.max(0, autonomyPct - 20), target: 70 },
       ],
     }
+
+    // ── 5. CARTEA DE ÎNVĂȚARE PER AGENT ──
+    const agentLearning = await p.$queryRaw`
+      SELECT
+        kb."agentRole" as role,
+        ad."displayName" as name,
+        count(*) as total_learned,
+        count(*) FILTER (WHERE kb.source = 'PROPAGATED' OR kb.source = 'EXPERT_HUMAN') as from_internal,
+        count(*) FILTER (WHERE kb.source = 'DISTILLED_INTERACTION') as from_clients,
+        count(*) FILTER (WHERE kb.source = 'SELF_INTERVIEW') as from_claude,
+        count(*) FILTER (WHERE kb."createdAt" > ${oneWeekAgo}) as learned_week
+      FROM kb_entries kb
+      JOIN agent_definitions ad ON ad."agentRole" = kb."agentRole" AND ad."isActive" = true
+      WHERE kb.status = 'PERMANENT'::"KBStatus"
+      GROUP BY kb."agentRole", ad."displayName"
+      ORDER BY total_learned DESC
+      LIMIT 15
+    `.catch(() => []) as any[]
+
+    agentCards = agentLearning.map((a: any) => {
+      const total = Number(a.total_learned || 1)
+      return {
+        role: a.role, name: a.name || a.role,
+        total,
+        learnedWeek: Number(a.learned_week || 0),
+        pctInternal: Math.round(Number(a.from_internal || 0) / total * 100),
+        pctClients: Math.round(Number(a.from_clients || 0) / total * 100),
+        pctClaude: Math.round(Number(a.from_claude || 0) / total * 100),
+      }
+    })
+
+    // ── 6. OBIECTIVE VS EFORT ──
+    objectivesHeat = await p.$queryRaw`
+      SELECT
+        o.title, o.status, o.priority,
+        count(t.id) as total_tasks,
+        count(t.id) FILTER (WHERE t.status = 'COMPLETED') as completed,
+        count(t.id) FILTER (WHERE t.status = 'BLOCKED') as blocked
+      FROM organizational_objectives o
+      LEFT JOIN agent_tasks t ON t."objectiveId" = o.id
+      WHERE o.status IN ('PROPOSED','APPROVED','ACTIVE')
+      GROUP BY o.id, o.title, o.status, o.priority
+      ORDER BY o.priority, o.title
+    `.catch(() => []) as any[]
+
+    // ── 8. MATURITATE DEPARTAMENTALĂ ──
+    const deptLevels = ["STRATEGIC", "TACTICAL", "OPERATIONAL", "SUPPORT", "FIELD"]
+    const deptStats = await p.$queryRaw`
+      SELECT
+        ad.level,
+        count(DISTINCT ad."agentRole") as agents,
+        coalesce(sum(kb.total), 0) as kb_total,
+        coalesce(sum(t.completed), 0) as tasks_done
+      FROM agent_definitions ad
+      LEFT JOIN (
+        SELECT "agentRole", count(*) as total FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
+      ) kb ON kb."agentRole" = ad."agentRole"
+      LEFT JOIN (
+        SELECT "assignedTo", count(*) FILTER (WHERE status = 'COMPLETED') as completed FROM agent_tasks GROUP BY "assignedTo"
+      ) t ON t."assignedTo" = ad."agentRole"
+      WHERE ad."isActive" = true
+      GROUP BY ad.level
+      ORDER BY array_position(ARRAY['STRATEGIC','TACTICAL','OPERATIONAL','SUPPORT','FIELD'], ad.level)
+    `.catch(() => []) as any[]
+
+    maturityGrid = deptStats.map((d: any) => {
+      const kb = Number(d.kb_total || 0)
+      const tasks = Number(d.tasks_done || 0)
+      const score = Math.min(100, Math.round((kb * 0.5 + tasks * 2) / Math.max(1, Number(d.agents)) ))
+      let maturity = score < 20 ? "Reactiv" : score < 40 ? "Structurat" : score < 60 ? "Proactiv" : score < 80 ? "Predictiv" : "Inovator"
+      return { level: d.level, agents: Number(d.agents || 0), kb, tasks, score, maturity }
+    })
+
+    // ── 10. FEED ÎNVĂȚARE RECENT ──
+    recentLearning = await p.$queryRaw`
+      SELECT kb."agentRole" as role, ad."displayName" as name, kb.content, kb.source, kb."createdAt"
+      FROM kb_entries kb
+      JOIN agent_definitions ad ON ad."agentRole" = kb."agentRole"
+      WHERE kb."createdAt" > ${oneWeekAgo} AND kb.status = 'PERMANENT'::"KBStatus"
+      ORDER BY kb."createdAt" DESC
+      LIMIT 10
+    `.catch(() => []) as any[]
 
   } catch (e) {
     console.error("[insights]", e)
@@ -350,10 +437,225 @@ export default async function InsightsPage() {
         </div>
       </section>
 
-      {/* ═══ FAZA 2+3 — PLACEHOLDERS ═══ */}
-      <section className="bg-slate-50 rounded-xl border border-dashed border-slate-300 p-8 text-center">
-        <p className="text-sm text-slate-400">Secțiunile 5-12 — în dezvoltare (Faza 2 și 3)</p>
-        <p className="text-xs text-slate-300 mt-2">Cartea de învățare · Obiective vs Efort · Panou clienți · Maturitate · Simulator · Feed învățare · Lab experimente · Sala reflecție</p>
+      {/* ═══ 5. CARTEA DE ÎNVĂȚARE PER AGENT ═══ */}
+      {agentCards.length > 0 && (
+        <section className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">5. Cartea de învățare per agent</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            {agentCards.map((a: any) => (
+              <div key={a.role} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700">{a.name}</span>
+                  <span className="text-[10px] text-slate-400">{a.total} KB</span>
+                </div>
+                {a.learnedWeek > 0 && (
+                  <p className="text-[10px] text-emerald-600 mb-2">+{a.learnedWeek} această săptămână</p>
+                )}
+                <div className="flex rounded-full h-2 overflow-hidden">
+                  {a.pctInternal > 0 && <div className="bg-indigo-400 h-full" style={{ width: `${a.pctInternal}%` }} title="Intern" />}
+                  {a.pctClients > 0 && <div className="bg-violet-400 h-full" style={{ width: `${a.pctClients}%` }} title="Clienți" />}
+                  {a.pctClaude > 0 && <div className="bg-amber-300 h-full" style={{ width: `${a.pctClaude}%` }} title="Claude" />}
+                </div>
+                <div className="flex gap-2 mt-1 text-[8px] text-slate-400">
+                  <span>{a.pctInternal}% intern</span>
+                  <span>{a.pctClients}% clienți</span>
+                  <span>{a.pctClaude}% Claude</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ 6. HARTA CĂLDURII OBIECTIVE VS EFORT ═══ */}
+      {objectivesHeat.length > 0 && (
+        <section className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">6. Obiective vs. efort depus</h2>
+          <div className="space-y-3">
+            {objectivesHeat.map((o: any, i: number) => {
+              const total = Number(o.total_tasks || 0)
+              const completed = Number(o.completed || 0)
+              const blocked = Number(o.blocked || 0)
+              const progress = total > 0 ? Math.round(completed / total * 100) : 0
+              const efficiency = total > 0 && blocked === 0 ? "green" : blocked > completed ? "red" : "yellow"
+
+              return (
+                <div key={i} className={`rounded-lg border p-3 ${
+                  efficiency === "green" ? "bg-emerald-50 border-emerald-200" :
+                  efficiency === "red" ? "bg-red-50 border-red-200" :
+                  "bg-amber-50 border-amber-200"
+                }`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-slate-700">{o.title}</span>
+                    <div className="flex gap-2 text-[10px]">
+                      <span className="text-emerald-600">{completed} done</span>
+                      <span className="text-amber-500">{blocked} amânat</span>
+                      <span className="text-slate-400">{total} total</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/60 rounded-full h-2 overflow-hidden">
+                    <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ 7. PANOUL CLIENȚILOR ═══ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">7. Experiența clienților</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-violet-50 rounded-lg p-4 text-center border border-violet-100">
+            <p className="text-[10px] text-violet-400 uppercase">Clienți activi</p>
+            <p className="text-2xl font-bold text-violet-600">—</p>
+            <p className="text-[10px] text-violet-400">Se populează la primul client</p>
+          </div>
+          <div className="bg-violet-50 rounded-lg p-4 text-center border border-violet-100">
+            <p className="text-[10px] text-violet-400 uppercase">Satisfacție medie</p>
+            <p className="text-2xl font-bold text-violet-600">—</p>
+            <p className="text-[10px] text-violet-400">NPS / feedback</p>
+          </div>
+          <div className="bg-violet-50 rounded-lg p-4 text-center border border-violet-100">
+            <p className="text-[10px] text-violet-400 uppercase">Învățare din clienți</p>
+            <p className="text-2xl font-bold text-violet-600">—</p>
+            <p className="text-[10px] text-violet-400">KB entries DISTILLED_INTERACTION</p>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-400 text-center mt-3">Datele se populează automat din interacțiunile cu clienții reali</p>
+      </section>
+
+      {/* ═══ 8. MATRICEA DE MATURITATE ═══ */}
+      {maturityGrid.length > 0 && (
+        <section className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">8. Maturitate departamentală</h2>
+          <div className="space-y-3">
+            {maturityGrid.map((d: any, i: number) => (
+              <div key={i} className="flex items-center gap-4">
+                <span className="text-xs text-slate-600 w-28 shrink-0 font-medium">{d.level}</span>
+                <span className="text-[10px] text-slate-400 w-16">{d.agents} agenți</span>
+                <div className="flex-1 bg-slate-100 rounded-full h-5 overflow-hidden relative">
+                  <div
+                    className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${
+                      d.score >= 60 ? "bg-emerald-400" : d.score >= 30 ? "bg-amber-300" : "bg-red-300"
+                    }`}
+                    style={{ width: `${d.score}%` }}
+                  >
+                    <span className="text-[9px] font-bold text-white">{d.maturity}</span>
+                  </div>
+                </div>
+                <span className="text-xs text-slate-500 w-12 text-right">{d.score}%</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4 mt-3 text-[9px] text-slate-400">
+            <span>Reactiv → Structurat → Proactiv → Predictiv → Inovator</span>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ 9. SIMULATOR SCENARII ═══ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">9. Simulator scenarii strategice</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { scenario: "Dublăm echipa", impact: "Autonomie +20%, Cost +80%", risk: "medium" },
+            { scenario: "Primul client B2B", impact: "Venituri +100%, Învățare +40%", risk: "low" },
+            { scenario: "Competitor nou", impact: "Urgență marketing, Preț sub presiune", risk: "high" },
+          ].map((s, i) => (
+            <div key={i} className={`rounded-lg p-4 border ${
+              s.risk === "low" ? "bg-emerald-50 border-emerald-200" :
+              s.risk === "high" ? "bg-red-50 border-red-200" :
+              "bg-amber-50 border-amber-200"
+            }`}>
+              <p className="text-xs font-bold text-slate-700">{s.scenario}</p>
+              <p className="text-[10px] text-slate-500 mt-1">{s.impact}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-slate-400 text-center mt-3">Simulare interactivă — în dezvoltare</p>
+      </section>
+
+      {/* ═══ 10. FEED ÎNVĂȚARE ═══ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">10. Feed de învățare — ultimele 7 zile</h2>
+        {recentLearning.length > 0 ? (
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {recentLearning.map((l: any, i: number) => {
+              const sourceColors: Record<string, string> = {
+                SELF_INTERVIEW: "bg-amber-100 text-amber-700",
+                EXPERT_HUMAN: "bg-indigo-100 text-indigo-700",
+                DISTILLED_INTERACTION: "bg-violet-100 text-violet-700",
+                PROPAGATED: "bg-emerald-100 text-emerald-700",
+              }
+              const sourceLabels: Record<string, string> = {
+                SELF_INTERVIEW: "Claude",
+                EXPERT_HUMAN: "Intern",
+                DISTILLED_INTERACTION: "Client",
+                PROPAGATED: "Propagat",
+              }
+              return (
+                <div key={i} className="flex items-start gap-3 text-xs border-b border-slate-100 pb-2">
+                  <span className="text-[9px] text-slate-300 tabular-nums shrink-0 w-10">
+                    {new Date(l.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" })}
+                  </span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded shrink-0 ${sourceColors[l.source] || "bg-slate-100 text-slate-500"}`}>
+                    {sourceLabels[l.source] || l.source}
+                  </span>
+                  <span className="text-xs text-indigo-600 font-medium shrink-0">{l.name || l.role}</span>
+                  <span className="text-slate-600 line-clamp-2">{(l.content || "").slice(0, 120)}</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 text-center py-4">Niciun entry KB nou în ultimele 7 zile</p>
+        )}
+      </section>
+
+      {/* ═══ 11. LABORATORUL DE EXPERIMENTE ═══ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">11. Laboratorul de experimente</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+            <p className="text-xs font-bold text-indigo-700">Experiment activ</p>
+            <p className="text-sm text-slate-600 mt-1">Organism viu — GitHub Actions cron autonom</p>
+            <p className="text-[10px] text-indigo-400 mt-2">Ipoteză: ciclurile automate cresc scorul conștiință</p>
+            <p className="text-[10px] text-slate-400">Start: 20.04.2026 · Durată: 30 zile</p>
+          </div>
+          <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
+            <p className="text-xs font-bold text-emerald-700">Rezultate anterioare</p>
+            <p className="text-sm text-slate-600 mt-1">Ciclu evoluție #6 — scor 24/SEED</p>
+            <p className="text-[10px] text-emerald-400 mt-2">Confirmat: engine-ul funcționează, produce narativă</p>
+            <p className="text-[10px] text-slate-400">7 gaps, 4 revelate, 25 acțiuni planificate</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ 12. SALA DE REFLECȚIE STRATEGICĂ ═══ */}
+      <section className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-xl border border-indigo-100 p-6">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">12. Sala de reflecție strategică</h2>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-4 border border-indigo-100 shadow-inner">
+            <p className="text-xs text-indigo-500 font-medium mb-2">Întrebarea săptămânii</p>
+            <p className="text-sm text-slate-700 italic leading-relaxed">
+              „Ce ar face diferit organizația ta dacă ar fi complet autonomă mâine? Ce decizii iei tu acum care ar putea fi delegate?"
+            </p>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-indigo-100 shadow-inner">
+            <p className="text-xs text-indigo-500 font-medium mb-2">Reflecție din datele organismului</p>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Autonomia actuală este de <strong>{autonomy.overall}%</strong>.
+              {autonomy.overall < 50
+                ? " Structura depinde încă mult de intervenție directă. Ce procese pot fi automatizate în următoarele 2 săptămâni?"
+                : autonomy.overall < 80
+                  ? " Structura devine din ce în ce mai autonomă. Unde simți că încă ești indispensabil — și este asta o problemă sau o alegere?"
+                  : " Structura funcționează aproape autonom. Rolul tău se schimbă din executor în vizionar. Ce direcție nouă deschizi?"
+              }
+            </p>
+          </div>
+        </div>
       </section>
     </div>
   )
