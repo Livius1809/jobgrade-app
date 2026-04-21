@@ -21,26 +21,23 @@ export async function POST(req: NextRequest) {
     if (action === "data") {
       // Șterge datele de test — păstrează contul și profilul
       // Ordine: copiii înainte de părinți (FK constraints)
-      // Ștergere completă — toate tabelele cu FK, ordine corectă (copii → părinți)
+      // Ștergere completă — TRUNCATE cascade pe tenantId
+      // Cea mai sigură abordare: un singur statement cu CTE
       const deletes = [
-        // Dependențe session_jobs
+        // Nivel 3: cele mai adânci dependențe
+        "DELETE FROM salary_steps WHERE \"salaryGradeId\" IN (SELECT id FROM salary_grades WHERE \"tenantId\" = $1)",
         "DELETE FROM session_jobs WHERE \"sessionId\" IN (SELECT id FROM evaluation_sessions WHERE \"tenantId\" = $1)",
-        // Dependențe jobs
         "DELETE FROM kpi_definitions WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)",
         "DELETE FROM compensation_packages WHERE \"jobId\" IN (SELECT id FROM jobs WHERE \"tenantId\" = $1)",
+        // Nivel 2: tabele cu FK pe tenant direct
         "DELETE FROM salary_grades WHERE \"tenantId\" = $1",
-        "DELETE FROM salary_steps WHERE \"salaryGradeId\" IN (SELECT id FROM salary_grades WHERE \"tenantId\" = $1)",
-        // Pay gap
         "DELETE FROM pay_gap_reports WHERE \"tenantId\" = $1",
         "DELETE FROM joint_pay_assessments WHERE \"tenantId\" = $1",
         "DELETE FROM employee_salary_records WHERE \"tenantId\" = $1",
-        // Simulations, reports
         "DELETE FROM simulation_scenarios WHERE \"tenantId\" = $1",
         "DELETE FROM reports WHERE \"tenantId\" = $1",
         "DELETE FROM ai_generations WHERE \"tenantId\" = $1",
-        // Sesiuni și evaluări
         "DELETE FROM evaluation_sessions WHERE \"tenantId\" = $1",
-        // Jobs
         "DELETE FROM jobs WHERE \"tenantId\" = $1",
         // Financiar
         "DELETE FROM service_purchases WHERE \"tenantId\" = $1",

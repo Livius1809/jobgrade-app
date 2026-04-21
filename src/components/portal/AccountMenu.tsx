@@ -23,15 +23,15 @@ export default function AccountMenu() {
         body: JSON.stringify({ action }),
       })
       const data = await res.json()
-      if (res.ok) {
+      if (res.ok && data.success) {
         if (action === "account") {
           window.location.href = "/login"
         } else {
-          // Hard reload — router.refresh() nu e suficient
-          window.location.reload()
+          // Force hard reload fără cache
+          window.location.href = "/portal?reset=" + Date.now()
         }
       } else {
-        setError(data.message || "Eroare necunoscută")
+        setError(data.message || `Eroare ${res.status}`)
       }
     } catch (e) {
       setError("Eroare de rețea")
