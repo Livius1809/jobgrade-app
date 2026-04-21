@@ -108,28 +108,26 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
         <div style={{ height: "24px" }} />
 
-        {/* Progres vizual */}
-        <div className="flex items-center gap-2">
+        {/* Progres vizual — cerc + text aliniate pe aceeași coloană */}
+        <div className="flex items-start">
           {steps.map((step, i) => (
             <div key={step.id} className="flex items-center flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                step.done ? "bg-emerald-500 text-white" :
-                i === currentStep ? "bg-indigo-500 text-white ring-4 ring-indigo-100" :
-                "bg-slate-100 text-slate-400"
-              }`}>
-                {step.done ? "✓" : step.icon}
+              <div className="flex flex-col items-center shrink-0" style={{ width: "56px" }}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                  step.done ? "bg-emerald-500 text-white" :
+                  i === currentStep ? "bg-indigo-500 text-white ring-4 ring-indigo-100" :
+                  "bg-slate-100 text-slate-400"
+                }`}>
+                  {step.done ? "✓" : step.icon}
+                </div>
+                <div style={{ height: "6px" }} />
+                <span className="text-[10px] text-slate-400 text-center whitespace-nowrap">{step.label}</span>
               </div>
               {i < steps.length - 1 && (
-                <div className={`flex-1 h-1 mx-2 rounded ${
-                  step.done ? "bg-emerald-300" : "bg-slate-100"
-                }`} />
+                <div className={`flex-1 h-1 rounded ${step.done ? "bg-emerald-300" : "bg-slate-100"}`} style={{ marginTop: "14px" }} />
               )}
             </div>
           ))}
-        </div>
-        <div style={{ height: "8px" }} />
-        <div className="flex justify-between text-[10px] text-slate-400 px-1">
-          {steps.map(s => <span key={s.id}>{s.label}</span>)}
         </div>
       </div>
 
@@ -170,15 +168,15 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
       {/* ═══ Rapoarte — se activează când datele sunt complete ═══ */}
       {purchasedLayer > 0 ? (
-        <div className={`rounded-2xl border p-6 transition-all ${
+        <div className={`rounded-2xl border transition-all ${
           client.isValidated
             ? "bg-emerald-50 border-emerald-200"
             : client.sessionCount > 0
               ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100"
               : "bg-slate-50 border-dashed border-slate-200"
-        }`}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
+        }`} style={{ padding: "28px" }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${
                 client.isValidated ? "bg-emerald-500 text-white" :
                 client.sessionCount > 0 ? "bg-indigo-500 text-white" :
@@ -188,7 +186,8 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900">Rapoarte</h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <div style={{ height: "4px" }} />
+                <p className="text-sm text-slate-500">
                   {client.isValidated
                     ? "Raportul este validat și disponibil."
                     : client.sessionCount > 0
@@ -212,7 +211,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
             {client.sessionCount > 0 && (
               <Link
                 href="/reports/master"
-                className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 ${
                   client.isValidated
                     ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                     : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
@@ -224,11 +223,12 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           </div>
         </div>
       ) : (
-        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-6 opacity-60">
+        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 opacity-60" style={{ padding: "28px" }}>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold">4</div>
+            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold shrink-0">4</div>
             <div>
               <h3 className="text-base font-bold text-slate-400">Rapoarte</h3>
+              <div style={{ height: "4px" }} />
               <p className="text-xs text-slate-300">Cumpără un pachet și completează datele de intrare</p>
             </div>
           </div>
