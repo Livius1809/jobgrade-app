@@ -142,21 +142,28 @@ export default async function PortalPage() {
               icon="🏗️"
               title="Vreau ordine internă"
               description="Evaluare și ierarhizare posturi pe criterii obiective. Știi exact care post e mai complex și de ce."
-              solution="Pachet Ordine internă"
+              solution="BAZA — Ordine internă"
               href="/sessions"
             />
             <ProblemCard
               icon="⚖️"
-              title="Vreau structură salarială și conformitate"
-              description="Clase, trepte, pay gap, conformitate Directiva EU 2023/970. Totul documentat."
-              solution="Pachet Remunerare și performanță"
+              title="Vreau conformitate salarială"
+              description="Structură salarială cu clase și trepte, analiză pay gap, conformitate Directiva EU 2023/970."
+              solution="BAZA + Layer 1 — Conformitate"
               href="/sessions"
             />
             <ProblemCard
               icon="🎯"
-              title="Vreau competitivitate și dezvoltare"
-              description="Benchmark cu piața, retenție, dezvoltare organizațională. Nu mai pierzi oameni buni."
-              solution="Pachet Complet"
+              title="Vreau competitivitate"
+              description="Benchmark cu piața, poziționare salarială, retenție personal. Știi unde te situezi."
+              solution="BAZA + Layer 1 + Layer 2 — Competitivitate"
+              href="/sessions"
+            />
+            <ProblemCard
+              icon="🌱"
+              title="Vreau dezvoltare completă"
+              description="Tot ce e mai sus + dezvoltare organizațională, cultură, performanță. Pachetul complet."
+              solution="BAZA + Layer 1 + Layer 2 + Layer 3 — Dezvoltare"
               href="/sessions"
             />
           </div>
@@ -214,16 +221,16 @@ export default async function PortalPage() {
       {/* ═══ CE PRIMEȘTI ═══ */}
       {client.stage !== "NEW" && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Ce primești cu Pachetul Ordine internă</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Structura concentrică a pachetelor</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FeatureCard icon="🏗️" title="Clasament posturi" description="Ierarhizare obiectivă pe 4 criterii EU" included />
-            <FeatureCard icon="🔧" title="Simulator" description="Modifici, vezi impactul, ajustezi" included />
-            <FeatureCard icon="📄" title="Raport complet" description="Profesional, conform legislativ" included />
-            <FeatureCard icon="✅" title="Validare oficială" description="Semnătură electronică + olografă" included />
+            <FeatureCard icon="🏗️" title="BAZA" description="Ordine internă — evaluare și ierarhizare posturi" included />
+            <FeatureCard icon="⚖️" title="LAYER 1" description="Conformitate — clase salariale, pay gap, Art. 9" included={false} />
+            <FeatureCard icon="🎯" title="LAYER 2" description="Competitivitate — benchmark piață, poziționare" included={false} />
+            <FeatureCard icon="🌱" title="LAYER 3" description="Dezvoltare — cultură, performanță, organizațional" included={false} />
           </div>
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-xs text-slate-400 text-center">
-              Cu pachetele superioare adaugi: structură salarială · remunerare · pay gap · benchmark piață · dezvoltare organizațională
+              Fiecare strat se construiește pe cel anterior. Poți începe cu BAZA și adăuga straturi ulterior.
             </p>
             <div className="flex justify-center mt-3">
               <Link href="/b2b/abonamente" className="text-xs text-indigo-600 hover:underline font-medium">
@@ -333,11 +340,13 @@ function FeatureCard({ icon, title, description, included }: {
   icon: string; title: string; description: string; included: boolean
 }) {
   return (
-    <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
+    <div className={`rounded-xl p-4 text-center border ${
+      included ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-100 opacity-60"
+    }`}>
       <span className="text-xl">{icon}</span>
-      <p className="text-xs font-bold text-slate-700 mt-2">{title}</p>
+      <p className={`text-xs font-bold mt-2 ${included ? "text-emerald-800" : "text-slate-500"}`}>{title}</p>
       <p className="text-[10px] text-slate-400 mt-1">{description}</p>
-      {included && <p className="text-[9px] text-emerald-600 font-bold mt-2">✓ INCLUS</p>}
+      {included ? <p className="text-[9px] text-emerald-600 font-bold mt-2">✓ INCLUS</p> : <p className="text-[9px] text-slate-400 mt-2">+ adaugă</p>}
     </div>
   )
 }
