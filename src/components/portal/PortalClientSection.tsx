@@ -187,23 +187,70 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
 function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mission: string | null; vision: string | null; onClose: () => void }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [anafLoading, setAnafLoading] = useState(false)
+  const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
+
+  const handleAnafLookup = async () => {
+    if (!formRef.current) return
+    const cuiVal = (new FormData(formRef.current).get("cui") as string || "").replace(/\D/g, "")
+    if (!cuiVal) { setError("Completează CUI-ul mai întâi."); return }
+    setAnafLoading(true); setError(null); setSuccess(null)
+    try {
+      const res = await fetch(`/api/v1/anaf/lookup?cui=${cuiVal}`)
+      const json = await res.json()
+      if (!res.ok) { setError(json.message || "Nu am găsit firma la ANAF."); return }
+      const form = formRef.current!
+      if (json.name) (form.querySelector('[name="tenantName"]') as HTMLInputElement).value = json.name
+      if (json.address) (form.querySelector('[name="address"]') as HTMLInputElement).value = json.address
+      if (json.caen?.name) (form.querySelector('[name="caenName"]') as HTMLInputElement).value = json.caen.name
+      setSuccess(`Date preluate: ${json.name}`)
+    } catch { setError("Eroare la conectarea cu ANAF.") }
+    finally { setAnafLoading(false) }
+  }
+
+  const handleExtract = async () => {
+    if (!formRef.current) return
+    const website = new FormData(formRef.current).get("website") as string || ""
+    if (!website) { setError("Completează URL-ul website-ului."); return }
+    setExtracting(true); setError(null); setSuccess(null)
+    try {
+      const res = await fetch("/api/v1/ai/company-extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.message || "Eroare la extragere."); return }
+      const form = formRef.current!
+      if (json.mission) (form.querySelector('[name="mission"]') as HTMLTextAreaElement).value = json.mission
+      if (json.vision) (form.querySelector('[name="vision"]') as HTMLTextAreaElement).value = json.vision
+      if (json.description) (form.querySelector('[name="description"]') as HTMLTextAreaElement).value = json.description
+      setSuccess("Misiune și viziune extrase din website. Verifică și salvează.")
+    } catch { setError("Eroare la extragerea informațiilor.") }
+    finally { setExtracting(false) }
+  }
 
   const handleSave = async () => {
     if (!formRef.current) return
     const fd = new FormData(formRef.current)
-    setSaving(true)
-    setError(null)
+    setSaving(true); setError(null)
     try {
       const res = await fetch("/api/v1/company", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          tenantName: fd.get("tenantName") || undefined,
           cui: fd.get("cui") || undefined,
           mission: fd.get("mission") || undefined,
           vision: fd.get("vision") || undefined,
+          description: fd.get("description") || undefined,
           size: fd.get("size") || undefined,
+          website: fd.get("website") || undefined,
+          address: fd.get("address") || undefined,
+          caenName: fd.get("caenName") || undefined,
         }),
       })
       if (res.ok) {
@@ -213,11 +260,8 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
         const data = await res.json()
         setError(data.message || "Eroare la salvare")
       }
-    } catch (e) {
-      setError("Eroare de rețea")
-    } finally {
-      setSaving(false)
-    }
+    } catch { setError("Eroare de rețea") }
+    finally { setSaving(false) }
   }
 
   return (
@@ -225,23 +269,57 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
       <form ref={formRef}>
         <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
           <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+
+          <div style={{ height: "12px" }} />
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-xs text-slate-600 font-medium">CUI</label>
+              <div style={{ height: "4px" }} />
+              <input name="cui" type="text" placeholder="ex: 15790994" defaultValue={cui || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+            </div>
+            <button type="button" onClick={handleAnafLookup} disabled={anafLoading} className="px-3 py-2 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 disabled:opacity-50 shrink-0">
+              {anafLoading ? "Se caută..." : "Preia din ANAF"}
+            </button>
+          </div>
+
           <div style={{ height: "12px" }} />
           <div>
-            <label className="text-xs text-slate-600 font-medium">CUI (dacă nu e preluat)</label>
+            <label className="text-xs text-slate-600 font-medium">Denumire firmă</label>
             <div style={{ height: "4px" }} />
-            <input name="cui" type="text" placeholder="ex: 15790994" defaultValue={cui || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+            <input name="tenantName" type="text" placeholder="Se completează din ANAF" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
           </div>
+          <input name="address" type="hidden" />
+          <input name="caenName" type="hidden" />
+
+          <div style={{ height: "12px" }} />
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-xs text-slate-600 font-medium">Website</label>
+              <div style={{ height: "4px" }} />
+              <input name="website" type="text" placeholder="ex: www.firma.ro" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+            </div>
+            <button type="button" onClick={handleExtract} disabled={extracting} className="px-3 py-2 text-xs font-medium bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 disabled:opacity-50 shrink-0">
+              {extracting ? "Se extrage..." : "Preia MVV"}
+            </button>
+          </div>
+
           <div style={{ height: "12px" }} />
           <div>
             <label className="text-xs text-slate-600 font-medium">Misiune</label>
             <div style={{ height: "4px" }} />
-            <textarea name="mission" rows={2} placeholder="Care e misiunea companiei? (opțional)" defaultValue={mission || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+            <textarea name="mission" rows={2} placeholder="Care e misiunea companiei?" defaultValue={mission || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
           </div>
           <div style={{ height: "12px" }} />
           <div>
             <label className="text-xs text-slate-600 font-medium">Viziune</label>
             <div style={{ height: "4px" }} />
-            <textarea name="vision" rows={2} placeholder="Unde vrea compania să ajungă? (opțional)" defaultValue={vision || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+            <textarea name="vision" rows={2} placeholder="Unde vrea compania să ajungă?" defaultValue={vision || ""} className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+          </div>
+          <div style={{ height: "12px" }} />
+          <div>
+            <label className="text-xs text-slate-600 font-medium">Descriere (opțional)</label>
+            <div style={{ height: "4px" }} />
+            <textarea name="description" rows={2} placeholder="Scurtă descriere a companiei" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
           </div>
           <div style={{ height: "12px" }} />
           <div>
@@ -252,7 +330,20 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
         </div>
       </form>
 
-      <div style={{ height: "20px" }} />
+      <div style={{ height: "16px" }} />
+
+      {success && (
+        <>
+          <p className="text-[10px] text-emerald-600 font-medium text-center">{success}</p>
+          <div style={{ height: "8px" }} />
+        </>
+      )}
+      {error && (
+        <>
+          <p className="text-[10px] text-red-500 font-medium text-center">{error}</p>
+          <div style={{ height: "8px" }} />
+        </>
+      )}
 
       <button
         onClick={handleSave}
@@ -263,16 +354,6 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
       >
         {saved ? "✓ Salvat" : saving ? "Se salvează..." : "Salvează profilul"}
       </button>
-
-      {error && (
-        <>
-          <div style={{ height: "8px" }} />
-          <p className="text-[9px] text-red-500 text-center font-medium">{error}</p>
-        </>
-      )}
-
-      <div style={{ height: "8px" }} />
-      <p className="text-[9px] text-slate-400 text-center">Datele ANAF se preiau automat. Misiunea și viziunea sunt opționale.</p>
     </>
   )
 }
