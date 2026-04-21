@@ -203,9 +203,18 @@ const PURCHASED_FILLS: Record<string, string> = {
   coral: "rgba(249,115,22,0.2)",
 }
 
-export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, creditBalance = 0 }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; creditBalance?: number } = {}) {
+export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, creditBalance = 0, forceOpen = false }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; creditBalance?: number; forceOpen?: boolean } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
   const [purchasing, setPurchasing] = useState(false)
+
+  // Dacă forceOpen, selectăm automat pachetul curent sau primul
+  useEffect(() => {
+    if (forceOpen && selected === null) {
+      const autoSelect = purchasedLayer > 0 ? purchasedLayer : 1
+      setSelected(autoSelect)
+      onLayerChange?.(autoSelect)
+    }
+  }, [forceOpen])
 
   const handleSelect = (pkg: number | null) => {
     setSelected(pkg)

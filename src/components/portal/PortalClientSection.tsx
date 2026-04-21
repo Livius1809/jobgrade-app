@@ -18,10 +18,31 @@ export default function PortalClientSection({ jobCount, purchasedLayer, creditBa
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
   const [profilePanel, setProfilePanel] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [calculatorForceOpen, setCalculatorForceOpen] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
 
   useEffect(() => { setMounted(true) }, [])
+
+  // Ascultă event-ul "open-calculator" din navbar BuyButton
+  useEffect(() => {
+    const handler = () => {
+      setCalculatorForceOpen(true)
+      document.getElementById("pachete")?.scrollIntoView({ behavior: "smooth" })
+    }
+    window.addEventListener("open-calculator", handler)
+    return () => window.removeEventListener("open-calculator", handler)
+  }, [])
+
+  // Verifică ?openCalculator=1 la mount (redirect din alte pagini)
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("openCalculator") === "1") {
+      setCalculatorForceOpen(true)
+      setTimeout(() => {
+        document.getElementById("pachete")?.scrollIntoView({ behavior: "smooth" })
+      }, 300)
+    }
+  }, [])
 
   useEffect(() => {
     if (profilePanel && sectionRef.current) {
@@ -170,7 +191,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, creditBa
             <p className="text-sm text-slate-500">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
           </div>
 
-          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} creditBalance={creditBalance} />
+          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} creditBalance={creditBalance} forceOpen={calculatorForceOpen} />
 
           {/* ═══ Date intrare client — apare doar după plată ═══ */}
           {purchasedLayer > 0 && (

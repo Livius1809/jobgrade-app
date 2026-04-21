@@ -5,9 +5,10 @@ export default function BuyButton() {
     <button
       onClick={() => {
         if (window.location.pathname === "/portal") {
-          document.getElementById("pachete")?.scrollIntoView({ behavior: "smooth" })
+          // Emite event custom — PortalClientSection ascultă
+          window.dispatchEvent(new CustomEvent("open-calculator"))
         } else {
-          window.location.href = "/portal#pachete"
+          window.location.href = "/portal?openCalculator=1"
         }
       }}
       className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
