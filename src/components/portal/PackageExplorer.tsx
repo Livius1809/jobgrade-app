@@ -32,6 +32,10 @@ const PACKAGES: PackageInfo[] = [
       "Raport profesional cu validare oficială",
       "Semnătură electronică și olografă",
     ],
+    extras: [
+      "Fișe de post generate AI (se activează cu descrierea posturilor)",
+      "Generare organigramă (se activează cu structura departamentelor)",
+    ],
     price: "De la 90 RON/poziție",
     priceDetail: "Plată unică. Include simulări nelimitate înainte de validare.",
     demoHref: "/demo",
@@ -52,6 +56,10 @@ const PACKAGES: PackageInfo[] = [
       "Justificări documentate pentru diferențe",
       "Plan de corecție dacă decalajul depășește 5%",
       "Evaluare comună (Art. 10) dacă e cazul",
+    ],
+    extras: [
+      "Raport per angajat — clarificare salarială (se activează cu statul de funcții)",
+      "Benchmark salarial vs piață (se activează cu datele salariale)",
     ],
     price: "De la 150 RON/poziție",
     priceDetail: "Include BAZA + structura salarială + pay gap.",
@@ -74,6 +82,10 @@ const PACKAGES: PackageInfo[] = [
       "Recomandări de ajustare pentru retenție",
       "Impact bugetar al ajustărilor",
     ],
+    extras: [
+      "Pachete salariale extinse (se activează cu compensații + beneficii)",
+      "Evaluare performanță per angajat (se activează cu KPI-uri per post)",
+    ],
     price: "De la 180 RON/poziție",
     priceDetail: "Include BAZA + Conformitate + benchmark piață.",
     demoHref: "/demo",
@@ -94,6 +106,11 @@ const PACKAGES: PackageInfo[] = [
       "Structuri mixte om-AI",
       "Procese interne și Manual calitate",
       "Cultură organizațională și performanță",
+    ],
+    extras: [
+      "Proiectare + gestionare recrutare (se activează cu fișe complete)",
+      "Manual angajat nou (se activează cu documente interne)",
+      "Diagnoză echipe multigeneraționale (se activează cu date demografice)",
     ],
     price: "De la 200 RON/poziție",
     priceDetail: "Pachetul complet. Include toate straturile.",
@@ -193,7 +210,8 @@ export default function PackageExplorer() {
             <button
               key={pkg.number}
               onClick={() => setSelected(isSelected ? null : pkg.number)}
-              className={`rounded-xl p-4 text-left transition-all border-[3px] ${
+              style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
+              className={`rounded-xl p-4 text-left transition-all ${
                 isSelected
                   ? `${c.bg} ${c.border} shadow-lg`
                   : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
@@ -213,7 +231,7 @@ export default function PackageExplorer() {
 
       {/* Detalii — dreapta (ca simulatorul) */}
       {selectedPkg && colors && (
-        <div className={`w-[380px] shrink-0 rounded-2xl border-[3px] ${colors.border} ${colors.bg} p-6`}>
+        <div style={{ borderWidth: "3px" }} className={`w-[380px] shrink-0 rounded-2xl ${colors.border} ${colors.bg} p-6`}>
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl">{selectedPkg.icon}</span>
@@ -240,9 +258,25 @@ export default function PackageExplorer() {
             </ul>
           </div>
 
+          {/* Servicii adiționale */}
+          {(selectedPkg as any).extras && (selectedPkg as any).extras.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Servicii adiționale disponibile</h4>
+              <ul className="space-y-1.5">
+                {(selectedPkg as any).extras.map((extra: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-slate-500 italic">
+                    <span className="text-indigo-400 mt-0.5 shrink-0">+</span>
+                    {extra}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[9px] text-slate-400 mt-2">Se activează automat pe măsură ce introduceți datele necesare. Consumă credite.</p>
+            </div>
+          )}
+
           {/* Calculator preț */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
-            <p className="text-xs text-slate-700 font-bold uppercase tracking-wide mb-3">Calculează prețul exact</p>
+            <p className="text-xs text-slate-700 font-bold uppercase tracking-wide mb-3">Calculează prețul</p>
 
             <div className="space-y-3 mb-4">
               <div className="flex items-center justify-between">
@@ -256,19 +290,17 @@ export default function PackageExplorer() {
                   className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
-              {selectedPkg.number >= 2 && (
-                <div className="flex items-center justify-between">
-                  <label className="text-xs text-slate-500">Nr. salariați</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5000}
-                    value={employees}
-                    onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
-                    className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
-                  />
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-slate-500">Nr. salariați</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={5000}
+                  value={employees}
+                  onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
+                  className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                />
+              </div>
             </div>
 
             {(() => {
@@ -278,66 +310,57 @@ export default function PackageExplorer() {
               const priceRON = Math.round(calc.total * ppc)
 
               return (
-                <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                  {/* Detaliere per serviciu */}
-                  <div className="text-[10px] text-slate-500 space-y-0.5">
-                    {calc.items.map((item, i) => (
-                      <p key={i}>{item.label}: <span className="font-mono">{item.detail}</span> = <strong>{item.credits} cr</strong></p>
-                    ))}
-                  </div>
-                  <div className="border-t border-slate-200 pt-2 text-xs text-slate-600 flex justify-between">
-                    <span>Total credite</span>
-                    <span className="font-bold font-mono">{calc.total.toLocaleString()} cr</span>
-                  </div>
-                  {discount.pct > 0 && (
-                    <p className="text-[10px] text-emerald-600 font-medium">
-                      Discount volum {discount.label}: {ppc.toFixed(2)} RON/credit (-{discount.pct}%)
-                    </p>
-                  )}
-                  {/* Preț final */}
-                  <div className="text-center pt-2 border-t border-slate-200">
+                <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                  <div className="text-center">
                     <p className="text-3xl font-bold text-slate-900">
                       {priceRON.toLocaleString("ro-RO")} RON
                     </p>
+                    {discount.pct > 0 && (
+                      <p className="text-xs text-emerald-600 font-medium mt-1">
+                        Discount volum: -{discount.pct}%
+                      </p>
+                    )}
                     <p className="text-[10px] text-slate-400 mt-1">fără TVA · + abonament 399 RON/lună</p>
                   </div>
                 </div>
               )
             })()}
+          </div>
 
-            {/* Tabel pachete credite */}
-            <div className="bg-white rounded-xl p-3 border border-slate-200">
-              <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-2">Pachete credite disponibile</p>
-              <table className="w-full text-[10px]">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-100">
-                    <th className="text-left py-1">Pachet</th>
-                    <th className="text-right py-1">Credite</th>
-                    <th className="text-right py-1">RON</th>
-                    <th className="text-right py-1">Per credit</th>
-                    <th className="text-right py-1">Discount</th>
+          {/* Pachete credite — la ce servesc */}
+          <div className="bg-white rounded-xl p-3 border border-slate-200 mb-4">
+            <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite suplimentare</p>
+            <p className="text-[10px] text-slate-500 mb-2">
+              Creditele suplimentare se folosesc pentru: revalidare evaluare, simulări adiționale,
+              sesiuni consultanță HR, rapoarte per angajat, comisie mediată.
+            </p>
+            <table className="w-full text-[10px]">
+              <thead>
+                <tr className="text-slate-400 border-b border-slate-100">
+                  <th className="text-left py-1">Pachet</th>
+                  <th className="text-right py-1">Credite</th>
+                  <th className="text-right py-1">RON</th>
+                  <th className="text-right py-1">Discount</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-600">
+                {[
+                  { name: "Micro", credits: 100, price: 800, disc: "—" },
+                  { name: "Mini", credits: 250, price: 1875, disc: "-6%" },
+                  { name: "Start", credits: 500, price: 3500, disc: "-12%" },
+                  { name: "Business", credits: 1500, price: 9750, disc: "-19%" },
+                  { name: "Professional", credits: 5000, price: 30000, disc: "-25%" },
+                  { name: "Enterprise", credits: 15000, price: 82500, disc: "-31%" },
+                ].map(p => (
+                  <tr key={p.name} className="border-t border-slate-50 hover:bg-slate-50">
+                    <td className="py-1 font-medium">{p.name}</td>
+                    <td className="py-1 text-right font-mono">{p.credits.toLocaleString()}</td>
+                    <td className="py-1 text-right font-mono">{p.price.toLocaleString()}</td>
+                    <td className="py-1 text-right text-emerald-600">{p.disc}</td>
                   </tr>
-                </thead>
-                <tbody className="text-slate-600">
-                  {[
-                    { name: "Micro", credits: 100, price: 800, pc: "8.00", disc: "—" },
-                    { name: "Mini", credits: 250, price: 1875, pc: "7.50", disc: "6%" },
-                    { name: "Start", credits: 500, price: 3500, pc: "7.00", disc: "12%" },
-                    { name: "Business", credits: 1500, price: 9750, pc: "6.50", disc: "19%" },
-                    { name: "Professional", credits: 5000, price: 30000, pc: "6.00", disc: "25%" },
-                    { name: "Enterprise", credits: 15000, price: 82500, pc: "5.50", disc: "31%" },
-                  ].map(p => (
-                    <tr key={p.name} className="border-t border-slate-50 hover:bg-slate-50">
-                      <td className="py-1 font-medium">{p.name}</td>
-                      <td className="py-1 text-right font-mono">{p.credits.toLocaleString()}</td>
-                      <td className="py-1 text-right font-mono">{p.price.toLocaleString()}</td>
-                      <td className="py-1 text-right font-mono">{p.pc}</td>
-                      <td className="py-1 text-right text-emerald-600">{p.disc}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Ce acumulezi */}
@@ -364,7 +387,7 @@ export default function PackageExplorer() {
                 "bg-emerald-600 hover:bg-emerald-700"
               }`}
             >
-              Începe acum
+              Cumpără
             </Link>
             <Link
               href={selectedPkg.demoHref}
