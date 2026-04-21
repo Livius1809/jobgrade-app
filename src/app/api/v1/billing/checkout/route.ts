@@ -82,23 +82,45 @@ export async function POST(req: NextRequest) {
       }
 
       const { serviciiRON } = calculateServicePrice(data.layer, data.positions, data.employees)
-      const abonamentRON = data.annual ? 3990 : 399
       const layerName = LAYER_NAMES[data.layer] || `Pachet ${data.layer}`
+
+      // Verifică dacă e upgrade — calculează prorata
+      const existingPurchase = await prisma.servicePurchase.findUnique({
+        where: { tenantId },
+        select: { layer: true, positions: true, employees: true },
+      }).catch(() => null)
+
+      const isUpgrade = existingPurchase && data.layer > existingPurchase.layer
+      let serviciiDiff = serviciiRON
+      let abonamentRON = data.annual ? 3990 : 399
+
+      if (isUpgrade) {
+        // Prorata: scadem prețul pachetului curent
+        const { serviciiRON: currentPrice } = calculateServicePrice(
+          existingPurchase.layer,
+          existingPurchase.positions,
+          existingPurchase.employees
+        )
+        serviciiDiff = Math.max(0, serviciiRON - currentPrice)
+        abonamentRON = 0 // abonamentul curent rămâne activ
+      }
 
       // Credite suplimentare (opțional)
       const creditPkg = data.creditPackageId ? CREDIT_PACKAGES.find(p => p.id === data.creditPackageId) : null
       const crediteRON = creditPkg ? creditPkg.price : 0
-      const totalRON = serviciiRON + abonamentRON + crediteRON
+      const totalRON = serviciiDiff + abonamentRON + crediteRON
 
       const lineItems: any[] = [
         {
           price_data: {
             currency: "ron",
             product_data: {
-              name: `JobGrade — ${layerName}`,
-              description: `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
+              name: isUpgrade ? `JobGrade — Upgrade → ${layerName}` : `JobGrade — ${layerName}`,
+              description: isUpgrade
+                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.`
+                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
             },
-            unit_amount: (serviciiRON + abonamentRON) * 100,
+            unit_amount: (serviciiDiff + abonamentRON) * 100,
           },
           quantity: 1,
         },

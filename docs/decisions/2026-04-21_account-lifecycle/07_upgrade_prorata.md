@@ -24,7 +24,19 @@ La upgrade de la pachetul X la pachetul Y:
 - Text sub carduri active: "Click pe un pachet superior pentru upgrade"
 - În calculator upgrade: "Rest de plată după prorata din abonamentul curent"
 
+## Decizie Owner (21.04.2026)
+- La upgrade: **storno perioada neconsumată** din abonamentul curent
+- Serviciile sunt one-time (plătite = consumate, nu se stornează)
+- Abonamentul e recurent → se stornează prorata zilelor rămase
+- Apoi se facturează prețul ÎNTREG al noului pachet (servicii + abonament)
+- Creditele rămase se păstrează
+
+## Implementare curentă (simplificată)
+- Diferență servicii: preț nou - preț curent = rest de plată
+- Abonament: nu se taxează din nou la upgrade (rămâne cel curent)
+- Storno real cu credit note + factură nouă = de implementat cu facturier RO
+
 ## De implementat cu COG/CFO
-- Formula exactă prorata
-- Tratament contabil (stornare parțială + factură nouă)
+- Storno real: Stripe refund parțial pe zilele rămase + checkout nou preț întreg
+- Integrare facturier RO: credit note + factură nouă
 - Ce se întâmplă cu creditele rămase (se păstrează)
