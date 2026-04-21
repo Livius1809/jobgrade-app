@@ -470,7 +470,8 @@ export default async function OwnerDashboard() {
             Rapoarte
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="8 dimensiuni per agent, maturitate, trend-uri" icon="📊" />
+            <ReportLink href="/owner/insights" title="Experiențe de învățare" description="Evoluție organism, feedback loops, harta sănătății, autonomie" icon="🧠" />
+            <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Pipeline, diagnoză, învățare per sursă, direcție creștere" icon="📊" />
             <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Oglinda ta: aliniere L1+L2+L3, pattern-uri, reflecție" icon="🪞" />
             <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="KB, performanță, brainstorming, cicluri, escaladări" icon="📅" />
             <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
