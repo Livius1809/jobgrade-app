@@ -164,7 +164,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, creditBa
       {/* ═══ Ce vrei să rezolvi? ═══ */}
       {clientStage !== "NEW" && (
         <>
-          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100" style={{ padding: "28px" }}>
+          <div id="pachete" className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100" style={{ padding: "28px" }}>
             <h2 className="text-lg font-bold text-slate-900">Ce vrei să rezolvi?</h2>
             <div style={{ height: "4px" }} />
             <p className="text-sm text-slate-500">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
