@@ -70,7 +70,7 @@ export default async function PortalPage() {
   const progress = Math.round(steps.filter(s => s.done).length / steps.length * 100)
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto" style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
 
       {/* ═══ HEADER — Bun venit + progres ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">

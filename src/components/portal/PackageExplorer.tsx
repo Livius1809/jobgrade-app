@@ -251,7 +251,7 @@ export default function PackageExplorer() {
           className={`fixed rounded-2xl ${colors.border} ${colors.bg} p-5 overflow-y-auto shadow-xl z-40`}
         >
           {/* Header */}
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <span className="text-2xl">{selectedPkg.icon}</span>
               <div>
@@ -262,10 +262,14 @@ export default function PackageExplorer() {
             <button onClick={() => setSelected(null)} className={`${colors.text} hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity`} title="Închide">✕</button>
           </div>
 
-          <p className="text-sm text-slate-600 mb-4 leading-relaxed">{selectedPkg.description}</p>
+          <div style={{ height: "16px" }} />
+
+          <p className="text-sm text-slate-600 leading-relaxed">{selectedPkg.description}</p>
+
+          <div style={{ height: "20px" }} />
 
           {/* Ce include + Servicii adiționale — pe 2 coloane */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-[10px] font-bold text-slate-700 mb-2 uppercase tracking-wide">Ce include</h4>
               <ul className="space-y-1.5">
@@ -293,8 +297,10 @@ export default function PackageExplorer() {
             )}
           </div>
 
+          <div style={{ height: "20px" }} />
+
           {/* Calculator preț — Date intrare client */}
-          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 mb-4">
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
             <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide mb-3">Date intrare client</p>
             <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-2 flex-1">
@@ -359,6 +365,8 @@ export default function PackageExplorer() {
               )
             })()}
           </div>
+
+          <div style={{ height: "20px" }} />
 
           {/* Pachete credite — tabel compact */}
           <div className="bg-white rounded-xl p-4 border border-slate-200">
