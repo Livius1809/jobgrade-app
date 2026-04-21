@@ -203,7 +203,7 @@ const PURCHASED_FILLS: Record<string, string> = {
   coral: "rgba(249,115,22,0.2)",
 }
 
-export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, creditBalance = 0, forceOpen = false }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; creditBalance?: number; forceOpen?: boolean } = {}) {
+export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, purchasedPositions = 0, purchasedEmployees = 0, creditBalance = 0, forceOpen = false }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; purchasedPositions?: number; purchasedEmployees?: number; creditBalance?: number; forceOpen?: boolean } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
   const [purchasing, setPurchasing] = useState(false)
 
@@ -220,8 +220,9 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, cre
     setSelected(pkg)
     onLayerChange?.(pkg)
   }
-  const [positions, setPositions] = useState<string>("")
-  const [employees, setEmployees] = useState<string>("")
+  // Pre-completez cu valorile din achiziția existentă
+  const [positions, setPositions] = useState<string>(purchasedPositions > 0 ? String(purchasedPositions) : "")
+  const [employees, setEmployees] = useState<string>(purchasedEmployees > 0 ? String(purchasedEmployees) : "")
   const [annual, setAnnual] = useState(false)
   const [selectedCredits, setSelectedCredits] = useState<string | null>(null)
 

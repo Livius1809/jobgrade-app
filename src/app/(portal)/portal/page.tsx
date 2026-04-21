@@ -65,9 +65,11 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   // Fetch purchased service layer
   const purchase = await prisma.servicePurchase.findUnique({
     where: { tenantId: session.user.tenantId },
-    select: { layer: true },
+    select: { layer: true, positions: true, employees: true },
   }).catch(() => null)
   const purchasedLayer = purchase?.layer ?? 0
+  const purchasedPositions = purchase?.positions ?? 0
+  const purchasedEmployees = purchase?.employees ?? 0
 
   const steps = [
     { id: "profile", label: "Compania ta", icon: "🏢", done: client.stage !== "NEW" },
@@ -154,6 +156,8 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
       <PortalClientSection
         jobCount={client.jobCount}
         purchasedLayer={purchasedLayer}
+        purchasedPositions={purchasedPositions}
+        purchasedEmployees={purchasedEmployees}
         creditBalance={client.creditBalance}
         clientStage={client.stage}
         cui={client.cui}
