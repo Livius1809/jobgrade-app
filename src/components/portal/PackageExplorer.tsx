@@ -201,15 +201,15 @@ export default function PackageExplorer() {
 
   const [mounted, setMounted] = useState(false)
   const cardsRef = useRef<HTMLDivElement>(null)
-  const [panelTop, setPanelTop] = useState(240)
+  const [panelLeft, setPanelLeft] = useState(0)
 
   useEffect(() => { setMounted(true) }, [])
 
-  // Calculează top-ul panoului relativ la carduri
+  // Calculează left-ul panoului = marginea dreaptă a cardurilor + gap
   useEffect(() => {
     if (selectedPkg && cardsRef.current) {
       const rect = cardsRef.current.getBoundingClientRect()
-      setPanelTop(rect.top + window.scrollY)
+      setPanelLeft(rect.right + 24)
     }
   }, [selectedPkg])
 
@@ -247,8 +247,8 @@ export default function PackageExplorer() {
       {/* Cartuș detalii — Portal la body, ancorat la dreapta ecranului cu padding */}
       {selectedPkg && colors && mounted && createPortal(
         <div
-          style={{ borderWidth: "3px", top: "100px", right: "24px", maxHeight: "calc(100vh - 130px)" }}
-          className={`fixed w-[400px] rounded-2xl ${colors.border} ${colors.bg} p-5 overflow-y-auto shadow-xl z-40`}
+          style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)" }}
+          className={`fixed rounded-2xl ${colors.border} ${colors.bg} p-5 overflow-y-auto shadow-xl z-40`}
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
