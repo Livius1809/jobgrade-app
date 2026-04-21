@@ -152,6 +152,17 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
   const [mounted, setMounted] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string }>>([])
+
+  // Fetch joburile existente pentru dropdown fișe de post
+  useEffect(() => {
+    if (purchasedLayer > 0) {
+      fetch("/api/v1/jobs").then(r => r.json()).then(data => {
+        const list = Array.isArray(data) ? data : (data.jobs || [])
+        setJobs(list.map((j: any) => ({ id: j.id, title: j.title })))
+      }).catch(() => {})
+    }
+  }, [purchasedLayer, panelOpen])
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -378,36 +389,52 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
           {panelOpen === "fise" && (
             <>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Introduceți titlul postului și o scurtă descriere. AI generează fișa completă: responsabilități, competențe, cerințe.
+                {jobs.length > 0
+                  ? "Selectează un post din lista ta. AI generează fișa completă: responsabilități, competențe, cerințe."
+                  : "Adaugă mai întâi posturi, apoi revino aici pentru a genera fișele."}
               </p>
               <div style={{ height: "20px" }} />
-              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Director Financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+              {jobs.length > 0 ? (
+                <>
+                  <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+                    <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+                    <div style={{ height: "12px" }} />
+                    <div>
+                      <label className="text-xs text-slate-600 font-medium">Selectează postul</label>
+                      <div style={{ height: "4px" }} />
+                      <select className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white">
+                        <option value="">— Alege un post —</option>
+                        {jobs.map(j => (
+                          <option key={j.id} value={j.id}>{j.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ height: "12px" }} />
+                    <div>
+                      <label className="text-xs text-slate-600 font-medium">Detalii suplimentare (opțional)</label>
+                      <div style={{ height: "4px" }} />
+                      <textarea rows={3} placeholder="Ce face persoana pe acest post? Responsabilități specifice?" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+                    </div>
+                  </div>
+                  <div style={{ height: "20px" }} />
+                  <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+                    Generează fișa de post cu AI
+                  </button>
+                  <div style={{ height: "8px" }} />
+                  <p className="text-[9px] text-slate-400 text-center">Consumă 12 credite per fișă generată. Poți edita rezultatul.</p>
+                </>
+              ) : (
+                <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center" style={{ padding: "24px" }}>
+                  <p className="text-xs text-slate-400">Nu ai posturi adăugate.</p>
+                  <div style={{ height: "8px" }} />
+                  <button
+                    onClick={() => setPanelOpen("posturi")}
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                  >
+                    Adaugă posturi mai întâi →
+                  </button>
                 </div>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Descriere pe scurt (opțional)</label>
-                  <div style={{ height: "4px" }} />
-                  <textarea rows={3} placeholder="Ce face persoana pe acest post? Ce responsabilități are?" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
-                </div>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Departament</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Financiar-Contabil" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                </div>
-              </div>
-              <div style={{ height: "20px" }} />
-              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-                Generează fișa de post cu AI
-              </button>
-              <div style={{ height: "8px" }} />
-              <p className="text-[9px] text-slate-400 text-center">Consumă 12 credite per fișă generată. Poți edita rezultatul.</p>
+              )}
             </>
           )}
 
