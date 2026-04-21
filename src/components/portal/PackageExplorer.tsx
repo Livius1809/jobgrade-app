@@ -341,6 +341,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                 </div>
                 <div className="flex items-center gap-1">
                   {isPurchased && <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">ACTIV</span>}
+                  {!isPurchased && purchasedLayer > 0 && <span className={`text-[9px] font-bold ${c.text} px-1.5 py-0.5 rounded ${c.bg}`}>UPGRADE</span>}
                   <span className="text-lg">{pkg.icon}</span>
                 </div>
               </div>
@@ -508,48 +509,82 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
               const volumeDiscount = getVolumeDiscount(Math.max(1, pos), Math.max(1, emp))
               const priceBeforeDiscount = Math.round(calc.total * ppc)
               const serviciiRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
+
+              // Prorata la upgrade: scadem prețul pachetului curent
+              let prorataCredit = 0
+              if (isUpgrade && purchasedLayer > 0) {
+                const calcCurrent = calcLayerCredits(purchasedLayer, Math.max(1, pos), Math.max(1, emp))
+                const ppcCurrent = pricePerCredit(calcCurrent.total)
+                const volDiscCurrent = getVolumeDiscount(Math.max(1, pos), Math.max(1, emp))
+                prorataCredit = Math.round(Math.round(calcCurrent.total * ppcCurrent) * (1 - volDiscCurrent.pct / 100))
+              }
+              const serviciiDiff = Math.max(0, serviciiRON - prorataCredit)
+
               const abonamentLunar = 399
               const abonamentAnual = 3990
-              const abonamentRON = annual ? abonamentAnual : abonamentLunar
+              const abonamentRON = isUpgrade ? 0 : (annual ? abonamentAnual : abonamentLunar)
               const crediteRON = selectedCreditPkg?.price || 0
-              const totalRON = serviciiRON + abonamentRON + crediteRON
+              const totalRON = serviciiDiff + abonamentRON + crediteRON
 
               return (
                 <div className={`rounded-lg p-4 ${colors.bg}`}>
                   {/* Servicii */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600">Servicii</span>
+                    <span className="text-xs text-slate-600">{isUpgrade ? "Servicii upgrade" : "Servicii"}</span>
                     <div className="text-right">
-                      {volumeDiscount.pct > 0 && (
-                        <span className="text-[10px] text-slate-400 line-through mr-2">{priceBeforeDiscount.toLocaleString("ro-RO")}</span>
+                      {isUpgrade && prorataCredit > 0 && (
+                        <span className="text-[10px] text-slate-400 line-through mr-2">{serviciiRON.toLocaleString("ro-RO")}</span>
                       )}
-                      <span className="text-sm font-bold text-slate-900">{serviciiRON.toLocaleString("ro-RO")} RON</span>
-                      {volumeDiscount.pct > 0 && (
-                        <span className="text-[10px] text-emerald-600 font-medium ml-1">-{volumeDiscount.pct}%</span>
+                      <span className="text-sm font-bold text-slate-900">{serviciiDiff.toLocaleString("ro-RO")} RON</span>
+                      {isUpgrade && prorataCredit > 0 && (
+                        <span className="text-[10px] text-emerald-600 font-medium ml-1">prorata</span>
+                      )}
+                      {!isUpgrade && volumeDiscount.pct > 0 && (
+                        <>
+                          <span className="text-[10px] text-slate-400 line-through mr-2">{priceBeforeDiscount.toLocaleString("ro-RO")}</span>
+                          <span className="text-[10px] text-emerald-600 font-medium ml-1">-{volumeDiscount.pct}%</span>
+                        </>
                       )}
                     </div>
                   </div>
 
-                  <div style={{ height: "12px" }} />
+                  {isUpgrade && prorataCredit > 0 && (
+                    <>
+                      <div style={{ height: "4px" }} />
+                      <p className="text-[9px] text-slate-400">Diferență: {serviciiRON.toLocaleString("ro-RO")} - {prorataCredit.toLocaleString("ro-RO")} (pachet curent) = {serviciiDiff.toLocaleString("ro-RO")} RON</p>
+                    </>
+                  )}
 
-                  {/* Abonament cu toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-600">Abonament</span>
-                      <button
-                        onClick={() => setAnnual(!annual)}
-                        className="flex items-center bg-white rounded-full border border-slate-200 text-[10px] overflow-hidden"
-                      >
-                        <span className={`px-2 py-0.5 transition-colors ${!annual ? "bg-indigo-600 text-white" : "text-slate-400"}`}>lunar</span>
-                        <span className={`px-2 py-0.5 transition-colors ${annual ? "bg-indigo-600 text-white" : "text-slate-400"}`}>anual</span>
-                      </button>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-slate-900">{abonamentRON.toLocaleString("ro-RO")} RON</span>
-                      <span className="text-[10px] text-slate-400 ml-1">{annual ? "/an" : "/lună"}</span>
-                      {annual && <span className="text-[10px] text-emerald-600 font-medium ml-1">-17%</span>}
-                    </div>
-                  </div>
+                  {!isUpgrade && (
+                    <>
+                      <div style={{ height: "12px" }} />
+                      {/* Abonament cu toggle */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-600">Abonament</span>
+                          <button
+                            onClick={() => setAnnual(!annual)}
+                            className="flex items-center bg-white rounded-full border border-slate-200 text-[10px] overflow-hidden"
+                          >
+                            <span className={`px-2 py-0.5 transition-colors ${!annual ? "bg-indigo-600 text-white" : "text-slate-400"}`}>lunar</span>
+                            <span className={`px-2 py-0.5 transition-colors ${annual ? "bg-indigo-600 text-white" : "text-slate-400"}`}>anual</span>
+                          </button>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-bold text-slate-900">{abonamentRON.toLocaleString("ro-RO")} RON</span>
+                          <span className="text-[10px] text-slate-400 ml-1">{annual ? "/an" : "/lună"}</span>
+                          {annual && <span className="text-[10px] text-emerald-600 font-medium ml-1">-17%</span>}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {isUpgrade && (
+                    <>
+                      <div style={{ height: "4px" }} />
+                      <p className="text-[9px] text-emerald-600">Abonamentul curent rămâne activ — nu se taxează din nou.</p>
+                    </>
+                  )}
 
                   {/* Credite (dacă e selectat un pachet) */}
                   {selectedCreditPkg && (
@@ -567,7 +602,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
 
                   {/* Total */}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-900">Total</span>
+                    <span className="text-sm font-bold text-slate-900">{isUpgrade ? "Rest de plată" : "Total"}</span>
                     <div className="text-right">
                       <span className="text-2xl font-bold text-slate-900">{totalRON.toLocaleString("ro-RO")} RON</span>
                     </div>
