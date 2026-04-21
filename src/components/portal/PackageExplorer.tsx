@@ -370,32 +370,40 @@ export default function PackageExplorer() {
           {/* Bară pachete incluse */}
           <div className="mb-4">
             <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-2">Ai acces la</p>
-            <div className="flex rounded-lg overflow-hidden h-8">
+            {/* Etichete deasupra */}
+            <div className="flex mb-1">
               {PACKAGES.map(p => {
                 const included = p.number <= selectedPkg.number
-                const c = COLOR_MAP[p.color] || COLOR_MAP.indigo
-                const bgIncluded: Record<string, string> = {
-                  indigo: "bg-indigo-500/30",
-                  violet: "bg-violet-500/30",
-                  fuchsia: "bg-fuchsia-500/30",
-                  coral: "bg-orange-500/30",
+                const textColor: Record<string, string> = {
+                  indigo: "text-indigo-600",
+                  violet: "text-violet-600",
+                  fuchsia: "text-fuchsia-600",
+                  coral: "text-orange-600",
                 }
-                const textIncluded: Record<string, string> = {
-                  indigo: "text-indigo-700",
-                  violet: "text-violet-700",
-                  fuchsia: "text-fuchsia-700",
-                  coral: "text-orange-700",
+                return (
+                  <div key={p.number} className="flex-1 text-center">
+                    <span className={`text-[9px] font-bold ${included ? textColor[p.color] || "text-indigo-600" : "text-slate-300"}`}>
+                      {p.icon} {p.layerLabel}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Bara subțire */}
+            <div className="flex rounded-full overflow-hidden h-2">
+              {PACKAGES.map(p => {
+                const included = p.number <= selectedPkg.number
+                const barColor: Record<string, string> = {
+                  indigo: "bg-indigo-500",
+                  violet: "bg-violet-500",
+                  fuchsia: "bg-fuchsia-500",
+                  coral: "bg-orange-500",
                 }
                 return (
                   <div
                     key={p.number}
-                    className={`flex-1 flex items-center justify-center gap-1 ${
-                      included ? bgIncluded[p.color] || "bg-indigo-500/30" : "bg-slate-100"
-                    } ${p.number < 4 ? "border-r border-white/50" : ""}`}
-                  >
-                    <span className={`text-xs ${included ? textIncluded[p.color] || "text-indigo-700" : "text-slate-300"}`}>{p.icon}</span>
-                    <span className={`text-[9px] font-bold ${included ? textIncluded[p.color] || "text-indigo-700" : "text-slate-300"}`}>{p.layerLabel}</span>
-                  </div>
+                    className={`flex-1 ${included ? barColor[p.color] || "bg-indigo-500" : "bg-slate-200"} ${p.number < 4 ? "border-r border-white" : ""}`}
+                  />
                 )
               })}
             </div>
