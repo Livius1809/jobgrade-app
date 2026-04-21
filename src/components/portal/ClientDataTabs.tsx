@@ -322,7 +322,22 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
                   <div style={{ height: "8px" }} />
                   <div className="flex flex-wrap gap-2">
                     {jobs.map(j => (
-                      <span key={j.id} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-medium">{j.title}</span>
+                      <span key={j.id} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1">
+                        {j.title}
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            try {
+                              const res = await fetch(`/api/v1/jobs/${j.id}`, { method: "DELETE" })
+                              if (res.ok) {
+                                setJobs(prev => prev.filter(p => p.id !== j.id))
+                              }
+                            } catch {}
+                          }}
+                          className="text-indigo-400 hover:text-red-500 transition-colors ml-0.5"
+                          title="Șterge"
+                        >✕</button>
+                      </span>
                     ))}
                   </div>
                 </div>
