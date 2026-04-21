@@ -86,7 +86,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               {!isDone ? (
                 <p className="text-sm text-slate-500">Spune-ne despre organizația ta — completăm automat ce putem din ANAF</p>
               ) : (
-                <p className="text-xs text-emerald-600 font-medium">{industry || caenName || "Profil completat"} · CUI: {cui || "–"}</p>
+                <p className="text-xs text-emerald-600 font-medium">{caenName || industry || "Profil completat"} · CUI: {cui || "–"}</p>
               )}
             </div>
           </div>
