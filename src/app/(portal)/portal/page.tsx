@@ -98,12 +98,20 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
                   : "Continuă de unde ai rămas."}
             </p>
           </div>
-          {client.cui && (
-            <div className="text-right">
-              <p className="text-xs text-slate-400">CUI</p>
-              <p className="text-sm font-mono text-slate-600">{client.cui}</p>
-            </div>
-          )}
+          <div className="flex items-center gap-6 shrink-0">
+            {client.creditBalance > 0 && (
+              <div className="text-right">
+                <p className="text-xs text-slate-400">Credite disponibile</p>
+                <p className="text-sm font-bold text-indigo-600">{client.creditBalance.toLocaleString("ro-RO")}</p>
+              </div>
+            )}
+            {client.cui && (
+              <div className="text-right">
+                <p className="text-xs text-slate-400">CUI</p>
+                <p className="text-sm font-mono text-slate-600">{client.cui}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ height: "24px" }} />
