@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import PackageExplorer from "@/components/portal/PackageExplorer"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -135,42 +136,9 @@ export default async function PortalPage() {
       {client.stage !== "NEW" && (
         <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-8">
           <h2 className="text-lg font-bold text-slate-900 mb-2">Ce vrei să rezolvi?</h2>
-          <p className="text-sm text-slate-500 mb-6">Alege problema ta — îți recomandăm soluția potrivită.</p>
+          <p className="text-sm text-slate-500 mb-6">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <ProblemCard
-              number={1}
-              icon="🏗️"
-              title="Ordine internă"
-              description="Evaluare și ierarhizare posturi pe criterii obiective."
-              solution="BAZA"
-              href="/sessions"
-            />
-            <ProblemCard
-              number={2}
-              icon="⚖️"
-              title="Conformitate"
-              description="Clase salariale, pay gap, Directiva EU 2023/970."
-              solution="+ Layer 1"
-              href="/sessions"
-            />
-            <ProblemCard
-              number={3}
-              icon="🎯"
-              title="Competitivitate"
-              description="Benchmark piață, poziționare, retenție personal."
-              solution="+ Layer 2"
-              href="/sessions"
-            />
-            <ProblemCard
-              number={4}
-              icon="🌱"
-              title="Dezvoltare"
-              description="Cultură, performanță, dezvoltare organizațională."
-              solution="+ Layer 3"
-              href="/sessions"
-            />
-          </div>
+          <PackageExplorer />
         </div>
       )}
 
