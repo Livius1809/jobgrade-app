@@ -27,6 +27,10 @@ export default async function InsightsPage() {
   let maturityGrid: any[] = []
   let recentLearning: any[] = []
   let objectives: any[] = []
+  let activeEscalations: any[] = []
+  let reporterHealth: any[] = []
+  let complianceItems: any[] = []
+  let costData: any[] = []
 
   try {
     // ── 1. EVOLUȚIA ORGANISMULUI ÎN TIMP ──
@@ -184,7 +188,7 @@ export default async function InsightsPage() {
     }
 
     // ── COG P2: ESCALĂRI ACTIVE CU CONTEXT ──
-    const activeEscalations = await p.escalation.findMany({
+    activeEscalations = await p.escalation.findMany({
       where: { status: "OPEN" },
       select: { id: true, aboutRole: true, reason: true, createdAt: true, severity: true },
       orderBy: { createdAt: "asc" },
@@ -192,7 +196,7 @@ export default async function InsightsPage() {
     }).catch(() => []) as any[]
 
     // ── COG P4: HEALTH SCORE RAPORTORI ──
-    const reporterHealth = await p.$queryRaw`
+    reporterHealth = await p.$queryRaw`
       SELECT
         ad."agentRole" as role,
         ad."displayName" as name,
@@ -221,7 +225,7 @@ export default async function InsightsPage() {
     `.catch(() => []) as any[]
 
     // ── COG P5: VULNERABILITĂȚI CONFORMITATE ──
-    const complianceItems = await p.$queryRaw`
+    complianceItems = await p.$queryRaw`
       SELECT content, tags, "createdAt"
       FROM kb_entries
       WHERE "agentRole" = 'CJA'
@@ -235,7 +239,7 @@ export default async function InsightsPage() {
     `.catch(() => []) as any[]
 
     // ── COG P3: COST VS BUDGET ──
-    const costData = await p.$queryRaw`
+    costData = await p.$queryRaw`
       SELECT category, sum(amount) as spent
       FROM budget_lines
       WHERE month >= date_trunc('month', NOW())
