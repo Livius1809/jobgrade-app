@@ -59,6 +59,8 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
   const params = await searchParams
   const showSuccess = params?.success === "service"
+  const showCreditsSuccess = params?.success === "credits"
+  const creditsAmount = params?.amount || ""
 
   const client = await getClientStage(session.user.tenantId)
 
@@ -148,6 +150,15 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           <div>
             <p className="text-sm font-semibold text-emerald-800">Pachetul a fost activat cu succes!</p>
             <p className="text-xs text-emerald-600">Poți introduce datele necesare pentru generarea rapoartelor.</p>
+          </div>
+        </div>
+      )}
+      {showCreditsSuccess && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-emerald-600 text-lg">✓</span>
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">Creditele au fost adăugate cu succes!</p>
+            <p className="text-xs text-emerald-600">{creditsAmount ? `+${Number(creditsAmount).toLocaleString("ro-RO")} credite disponibile.` : "Creditele sunt disponibile în cont."}</p>
           </div>
         </div>
       )}
