@@ -199,7 +199,7 @@ export default function PackageExplorer() {
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 px-4 md:px-8">
       {/* Carduri — stânga */}
       <div className="flex-1 grid grid-cols-2 gap-3">
         {PACKAGES.map(pkg => {
@@ -240,7 +240,7 @@ export default function PackageExplorer() {
                 <span className={`text-xs font-bold px-2.5 py-1 rounded mt-1 inline-block ${colors.badge}`}>{selectedPkg.layerLabel}</span>
               </div>
             </div>
-            <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1 rounded hover:bg-white/50">Minimizează</button>
+            <button onClick={() => setSelected(null)} className={`${colors.text} hover:opacity-70 text-lg font-bold leading-none px-1 py-0.5 rounded transition-opacity`} title="Închide">✕</button>
           </div>
 
           <p className="text-sm text-slate-600 mb-6 leading-relaxed">{selectedPkg.description}</p>
