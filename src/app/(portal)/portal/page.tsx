@@ -144,16 +144,12 @@ export default async function PortalPage() {
         </>
       )}
 
-      {/* ═══ ETAPA 2 — Date intrare client ═══ */}
+      {/* ═══ Date intrare client ═══ */}
       {client.stage !== "NEW" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm" style={{ padding: "28px" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold shrink-0">2</div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Date intrare client</h2>
-              <p className="text-xs text-slate-400">Datele necesare pentru evaluare, rapoarte și analiză</p>
-            </div>
-          </div>
+        <div className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
+          <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+          <div style={{ height: "4px" }} />
+          <p className="text-xs text-slate-500">Datele necesare pentru evaluare, rapoarte și analiză</p>
           <div style={{ height: "20px" }} />
           <ClientDataTabs jobCount={client.jobCount} />
         </div>
