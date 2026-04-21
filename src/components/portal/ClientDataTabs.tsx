@@ -48,6 +48,50 @@ function suggestDepartment(title: string): string | null {
   return null
 }
 
+// Poziții standard RO — bază de sugestii
+const STANDARD_POSITIONS = [
+  // Management
+  "Director General", "Director Executiv", "Director Operațional", "Director Financiar",
+  "Director Comercial", "Director Marketing", "Director IT", "Director Resurse Umane",
+  "Director Producție", "Director Logistică", "Director Calitate", "Director Juridic",
+  "Director Administrativ", "Director Vânzări", "Director Tehnic",
+  // Management mediu
+  "Manager Departament", "Manager Proiect", "Manager Operațional", "Manager Zonal",
+  "Manager Produs", "Manager Cont", "Manager Achiziții", "Manager Supply Chain",
+  "Șef Serviciu", "Șef Birou", "Șef Secție", "Șef Atelier", "Șef Tură",
+  "Coordonator Echipă", "Team Leader",
+  // Financiar-Contabil
+  "Contabil Șef", "Contabil", "Economist", "Analist Financiar", "Controller Financiar",
+  "Trezorier", "Auditor Intern", "Referent Salarizare", "Specialist Buget",
+  // HR
+  "Specialist Resurse Umane", "Recrutor", "Specialist Salarizare", "Inspector SSM",
+  "Specialist Formare Profesională", "Specialist Relații Muncă", "Psiholog Organizațional",
+  // IT
+  "Programator", "Developer Senior", "Analist Programator", "Administrator Sistem",
+  "DevOps Engineer", "Specialist Securitate IT", "Analist Date", "Tester QA",
+  "Arhitect Software", "Specialist Suport IT", "Administrator Baze de Date",
+  // Vânzări / Marketing
+  "Agent Vânzări", "Reprezentant Comercial", "Specialist Marketing", "Specialist PR",
+  "Content Manager", "Specialist Social Media", "Analist Piață", "Key Account Manager",
+  // Producție / Tehnic
+  "Inginer Producție", "Inginer Calitate", "Inginer Proiectant", "Tehnician",
+  "Operator CNC", "Operator Producție", "Maistru", "Mecanic", "Electrician",
+  "Sudor", "Strungar", "Lăcătuș", "Montator",
+  // Logistică
+  "Specialist Logistică", "Gestionar", "Magaziner", "Șofer", "Curier",
+  "Operator Depozit", "Dispecer",
+  // Administrativ / Suport
+  "Asistent Manager", "Secretar", "Recepționer", "Administrator",
+  "Specialist Administrativ", "Arhivar", "Referent",
+  // Juridic
+  "Consilier Juridic", "Specialist Conformitate", "Specialist GDPR",
+  // Calitate
+  "Specialist Calitate", "Inspector Calitate", "Auditor Calitate",
+  // Altele
+  "Specialist Achiziții", "Specialist Relații Clienți", "Operator Call Center",
+  "Casier", "Paznic", "Îngrijitor",
+]
+
 const LEVEL_OPTIONS = ["Top Management", "Management", "Specialist / Expert", "Execuție"]
 
 interface TabDef {
@@ -458,10 +502,23 @@ function AddJobPanel({ onClose }: { onClose: () => void }) {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [suggestion, setSuggestion] = useState<string | null>(null)
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
-  // Sugestie departament la schimbarea titlului
+  // Sugestii titlu + departament la schimbarea titlului
   const handleTitleChange = (val: string) => {
     setTitle(val)
+    // Sugestii poziții
+    if (val.length >= 2) {
+      const lower = val.toLowerCase()
+      const matches = STANDARD_POSITIONS.filter(p => p.toLowerCase().includes(lower)).slice(0, 6)
+      setTitleSuggestions(matches)
+      setShowSuggestions(matches.length > 0)
+    } else {
+      setTitleSuggestions([])
+      setShowSuggestions(false)
+    }
+    // Sugestie departament
     if (val.length >= 3) {
       const suggested = suggestDepartment(val)
       if (suggested && dept !== suggested) {
@@ -472,6 +529,15 @@ function AddJobPanel({ onClose }: { onClose: () => void }) {
     } else {
       setSuggestion(null)
     }
+  }
+
+  const selectTitle = (t: string) => {
+    setTitle(t)
+    setShowSuggestions(false)
+    setTitleSuggestions([])
+    const suggested = suggestDepartment(t)
+    if (suggested) { setDept(suggested); setSuggestion(null) }
+    else { setSuggestion(null) }
   }
 
   const acceptSuggestion = () => {
@@ -532,17 +598,33 @@ function AddJobPanel({ onClose }: { onClose: () => void }) {
         <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
 
         <div style={{ height: "12px" }} />
-        <div>
+        <div className="relative">
           <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
           <div style={{ height: "4px" }} />
           <input
             type="text"
             value={title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="ex: Director Financiar"
+            onFocus={() => { if (titleSuggestions.length > 0) setShowSuggestions(true) }}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            placeholder="Începe să scrii... ex: Director"
             className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
           />
-          {suggestion && (
+          {showSuggestions && titleSuggestions.length > 0 && (
+            <div className="absolute z-10 left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden" style={{ top: "100%", marginTop: "4px" }}>
+              {titleSuggestions.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onMouseDown={() => selectTitle(s)}
+                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+          {suggestion && !showSuggestions && (
             <button
               onClick={acceptSuggestion}
               className="mt-1 text-[10px] text-indigo-600 hover:text-indigo-800 font-medium"
