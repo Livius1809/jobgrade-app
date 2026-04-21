@@ -367,17 +367,26 @@ export default function PackageExplorer() {
             </table>
           </div>
 
-          {/* Ai acces la */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Ai acces la serviciile din pachetele</p>
-            <div className="space-y-1.5">
-              {PACKAGES.filter(p => p.number <= selectedPkg.number).map(p => {
+          {/* Bară pachete incluse */}
+          <div className="mb-4">
+            <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-2">Ai acces la</p>
+            <div className="flex rounded-lg overflow-hidden h-8">
+              {PACKAGES.map(p => {
+                const included = p.number <= selectedPkg.number
                 const c = COLOR_MAP[p.color] || COLOR_MAP.indigo
+                const bgColors: Record<string, string> = {
+                  indigo: included ? "bg-indigo-500" : "bg-slate-100",
+                  violet: included ? "bg-violet-500" : "bg-slate-100",
+                  fuchsia: included ? "bg-fuchsia-500" : "bg-slate-100",
+                  coral: included ? "bg-orange-500" : "bg-slate-100",
+                }
                 return (
-                  <div key={p.number} className="flex items-center gap-2">
-                    <span className="text-sm">{p.icon}</span>
-                    <span className={`text-xs font-medium ${c.text}`}>{p.number}. {p.title}</span>
-                    <span className="text-[9px] text-slate-400">— {p.description.split(".")[0]}</span>
+                  <div
+                    key={p.number}
+                    className={`flex-1 flex items-center justify-center gap-1 ${bgColors[p.color] || "bg-slate-100"} ${p.number < 4 ? "border-r border-white/30" : ""}`}
+                  >
+                    <span className={`text-xs ${included ? "text-white" : "text-slate-300"}`}>{p.icon}</span>
+                    <span className={`text-[9px] font-bold ${included ? "text-white" : "text-slate-300"}`}>{p.title}</span>
                   </div>
                 )
               })}
