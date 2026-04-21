@@ -119,18 +119,57 @@ const CREDIT_VALUE_RON = 8
 // L1: + credite per angajat (pay gap, structură salarială)
 // L2: + credite per poziție (benchmark)
 // L3: + credite per angajat (dezvoltare)
-// Confirmat Owner: BAZA = 60 credite/poziție
-// L1-L3: de calibrat cu COG (estimări curente)
-const CREDITS_PER_POSITION: Record<number, number> = { 1: 60, 2: 80, 3: 100, 4: 120 }
-const CREDITS_PER_EMPLOYEE: Record<number, number> = { 1: 0, 2: 5, 3: 8, 4: 10 }
+// Formule din PackageSelector.tsx — sursa de adevăr
+function calcLayerCredits(layer: number, positions: number, employees: number) {
+  const items: Array<{ label: string; credits: number; detail: string }> = []
 
-// Discount automat pe volum total credite
-function getDiscountPct(totalCredits: number): { pct: number; label: string } {
-  if (totalCredits >= 15000) return { pct: 31, label: "Enterprise -31%" }
-  if (totalCredits >= 5000) return { pct: 25, label: "Professional -25%" }
-  if (totalCredits >= 1500) return { pct: 19, label: "Business -19%" }
-  if (totalCredits >= 500) return { pct: 12, label: "Start -12%" }
-  if (totalCredits >= 250) return { pct: 6, label: "Mini -6%" }
+  // BAZA (layer 1)
+  if (layer >= 1) {
+    items.push({ label: "Evaluare posturi (JE AUTO)", credits: positions * 60, detail: `${positions} × 60 cr` })
+    items.push({ label: "Fișe de post AI", credits: positions * 12, detail: `${positions} × 12 cr` })
+    items.push({ label: "Structură salarială", credits: 20 + employees * 1, detail: `20 + ${employees} × 1 cr` })
+  }
+  // LAYER 1 — Conformitate
+  if (layer >= 2) {
+    items.push({ label: "Analiză pay gap (Art. 9)", credits: 15 + Math.ceil(employees * 0.5), detail: `15 + ${employees} × 0,5 cr` })
+    items.push({ label: "Benchmark salarial", credits: 30 + Math.ceil(positions * 1.5), detail: `30 + ${positions} × 1,5 cr` })
+  }
+  // LAYER 2 — Competitivitate
+  if (layer >= 3) {
+    items.push({ label: "Pachete salariale", credits: 25 + positions * 1, detail: `25 + ${positions} × 1 cr` })
+    items.push({ label: "Evaluare performanță", credits: employees * 15, detail: `${employees} × 15 cr` })
+    items.push({ label: "Impact bugetar", credits: 40, detail: "40 cr" })
+  }
+  // LAYER 3 — Dezvoltare
+  if (layer >= 4) {
+    const recruitProjects = Math.max(1, Math.ceil(positions * 0.2))
+    const candidates = recruitProjects * 5
+    items.push({ label: "Dezvoltare HR", credits: 40 + employees * 1, detail: `40 + ${employees} × 1 cr` })
+    items.push({ label: "Recrutare", credits: recruitProjects * 60, detail: `${recruitProjects} proiecte × 60 cr` })
+    items.push({ label: "Manual angajat", credits: 20 + Math.ceil(positions * 1.5), detail: `20 + ${positions} × 1,5 cr` })
+  }
+
+  const total = items.reduce((s, i) => s + i.credits, 0)
+  return { items, total }
+}
+
+// Preț per credit (discount pe volum) — din PackageSelector
+function pricePerCredit(totalCredits: number): number {
+  if (totalCredits >= 15000) return 5.50
+  if (totalCredits >= 5000) return 6.00
+  if (totalCredits >= 1500) return 6.50
+  if (totalCredits >= 500) return 7.00
+  if (totalCredits >= 250) return 7.50
+  return 8.00
+}
+
+function getDiscountPct(ppc: number): { pct: number; label: string } {
+  const pct = Math.round((1 - ppc / 8) * 100)
+  if (ppc <= 5.50) return { pct, label: "Enterprise" }
+  if (ppc <= 6.00) return { pct, label: "Professional" }
+  if (ppc <= 6.50) return { pct, label: "Business" }
+  if (ppc <= 7.00) return { pct, label: "Start" }
+  if (ppc <= 7.50) return { pct, label: "Mini" }
   return { pct: 0, label: "Micro" }
 }
 
@@ -233,25 +272,28 @@ export default function PackageExplorer() {
             </div>
 
             {(() => {
-              const credPerPos = CREDITS_PER_POSITION[selectedPkg.number]
-              const credPerEmp = CREDITS_PER_EMPLOYEE[selectedPkg.number]
-              const totalCredits = positions * credPerPos + (selectedPkg.number >= 2 ? employees * credPerEmp : 0)
-              const discount = getDiscountPct(totalCredits)
-              const priceRON = Math.round(totalCredits * CREDIT_VALUE_RON * (1 - discount.pct / 100))
+              const calc = calcLayerCredits(selectedPkg.number, positions, employees)
+              const ppc = pricePerCredit(calc.total)
+              const discount = getDiscountPct(ppc)
+              const priceRON = Math.round(calc.total * ppc)
 
               return (
                 <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                  {/* Detaliere */}
+                  {/* Detaliere per serviciu */}
                   <div className="text-[10px] text-slate-500 space-y-0.5">
-                    <p>{positions} poziții × {credPerPos} credite = {positions * credPerPos} credite</p>
-                    {selectedPkg.number >= 2 && (
-                      <p>{employees} salariați × {credPerEmp} credite = {employees * credPerEmp} credite</p>
-                    )}
-                    <p className="font-medium text-slate-600">Total: {totalCredits} credite</p>
-                    {discount.pct > 0 && (
-                      <p className="text-emerald-600 font-medium">Discount volum: {discount.label}</p>
-                    )}
+                    {calc.items.map((item, i) => (
+                      <p key={i}>{item.label}: <span className="font-mono">{item.detail}</span> = <strong>{item.credits} cr</strong></p>
+                    ))}
                   </div>
+                  <div className="border-t border-slate-200 pt-2 text-xs text-slate-600 flex justify-between">
+                    <span>Total credite</span>
+                    <span className="font-bold font-mono">{calc.total.toLocaleString()} cr</span>
+                  </div>
+                  {discount.pct > 0 && (
+                    <p className="text-[10px] text-emerald-600 font-medium">
+                      Discount volum {discount.label}: {ppc.toFixed(2)} RON/credit (-{discount.pct}%)
+                    </p>
+                  )}
                   {/* Preț final */}
                   <div className="text-center pt-2 border-t border-slate-200">
                     <p className="text-3xl font-bold text-slate-900">
