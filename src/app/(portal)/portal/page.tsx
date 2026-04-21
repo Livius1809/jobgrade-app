@@ -16,6 +16,10 @@ async function getClientStage(tenantId: string): Promise<{
   companyName: string
   cui: string | null
   industry: string | null
+  caenName: string | null
+  address: string | null
+  mission: string | null
+  vision: string | null
   jobCount: number
   sessionCount: number
   hasPayroll: boolean
@@ -24,7 +28,7 @@ async function getClientStage(tenantId: string): Promise<{
 }> {
   const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
-    prisma.companyProfile.findUnique({ where: { tenantId }, select: { cui: true, industry: true } }),
+    prisma.companyProfile.findUnique({ where: { tenantId }, select: { cui: true, industry: true, caenName: true, address: true, mission: true, vision: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }),
     prisma.evaluationSession.count({ where: { tenantId, status: { in: ["COMPLETED", "VALIDATED"] } } }),
     (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0),
@@ -43,6 +47,10 @@ async function getClientStage(tenantId: string): Promise<{
     companyName: tenant?.name || "—",
     cui: profile?.cui || null,
     industry: profile?.industry || null,
+    caenName: profile?.caenName || null,
+    address: profile?.address || null,
+    mission: profile?.mission || null,
+    vision: profile?.vision || null,
     jobCount,
     sessionCount,
     hasPayroll: payrollCount > 0,
@@ -171,8 +179,13 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
         purchasedEmployees={purchasedEmployees}
         creditBalance={client.creditBalance}
         clientStage={client.stage}
+        companyName={client.companyName}
         cui={client.cui}
         industry={client.industry}
+        caenName={client.caenName}
+        address={client.address}
+        mission={client.mission}
+        vision={client.vision}
       />
 
       {/* ═══ Evaluare — se activează după posturi ═══ */}

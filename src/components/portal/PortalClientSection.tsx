@@ -12,11 +12,16 @@ interface Props {
   purchasedEmployees: number
   creditBalance: number
   clientStage: string
+  companyName: string
   cui: string | null
   industry: string | null
+  caenName: string | null
+  address: string | null
+  mission: string | null
+  vision: string | null
 }
 
-export default function PortalClientSection({ jobCount, purchasedLayer, purchasedPositions, purchasedEmployees, creditBalance, clientStage, cui, industry }: Props) {
+export default function PortalClientSection({ jobCount, purchasedLayer, purchasedPositions, purchasedEmployees, creditBalance, clientStage, companyName, cui, industry, caenName, address, mission, vision }: Props) {
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
   const [profilePanel, setProfilePanel] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -110,25 +115,46 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               <span className="text-2xl">🏢</span>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Profil companie</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">Identificare ANAF</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">Identificare ANAF + MVV</span>
               </div>
             </div>
             <button onClick={() => setProfilePanel(false)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
           </div>
 
-          <div style={{ height: "20px" }} />
+          <div style={{ height: "16px" }} />
 
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Introduceți CUI-ul companiei. Completăm automat denumirea, adresa și domeniul de activitate din ANAF.
-          </p>
+          {/* Date ANAF — read-only, populate din DB */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200" style={{ padding: "16px" }}>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Date ANAF (preluate automat)</p>
+            <div style={{ height: "12px" }} />
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-slate-400">Denumire</span>
+                <p className="font-medium text-slate-900">{companyName || "–"}</p>
+              </div>
+              <div>
+                <span className="text-slate-400">CUI</span>
+                <p className="font-medium text-slate-900">{cui || "–"}</p>
+              </div>
+              <div>
+                <span className="text-slate-400">CAEN</span>
+                <p className="font-medium text-slate-900">{caenName || industry || "–"}</p>
+              </div>
+              <div>
+                <span className="text-slate-400">Adresă</span>
+                <p className="font-medium text-slate-900">{address || "–"}</p>
+              </div>
+            </div>
+          </div>
 
-          <div style={{ height: "20px" }} />
+          <div style={{ height: "16px" }} />
 
+          {/* Date editabile — MVV + alte info */}
           <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
             <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
             <div style={{ height: "12px" }} />
             <div>
-              <label className="text-xs text-slate-600 font-medium">CUI (Cod Unic de Identificare)</label>
+              <label className="text-xs text-slate-600 font-medium">CUI (dacă nu e preluat)</label>
               <div style={{ height: "4px" }} />
               <input
                 type="text"
@@ -139,25 +165,24 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             </div>
             <div style={{ height: "12px" }} />
             <div>
-              <label className="text-xs text-slate-600 font-medium">Denumire companie</label>
+              <label className="text-xs text-slate-600 font-medium">Misiune</label>
               <div style={{ height: "4px" }} />
-              <input
-                type="text"
-                placeholder="Se completează automat din ANAF"
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white text-slate-400"
-                disabled
+              <textarea
+                rows={2}
+                placeholder="Care e misiunea companiei? (opțional — se poate genera din obiectul de activitate)"
+                defaultValue={mission || ""}
+                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
               />
             </div>
             <div style={{ height: "12px" }} />
             <div>
-              <label className="text-xs text-slate-600 font-medium">Domeniu de activitate (CAEN)</label>
+              <label className="text-xs text-slate-600 font-medium">Viziune</label>
               <div style={{ height: "4px" }} />
-              <input
-                type="text"
-                placeholder="Se completează automat din ANAF"
-                defaultValue={industry || ""}
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white text-slate-400"
-                disabled
+              <textarea
+                rows={2}
+                placeholder="Unde vrea compania să ajungă? (opțional)"
+                defaultValue={vision || ""}
+                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
               />
             </div>
             <div style={{ height: "12px" }} />
@@ -179,7 +204,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           </button>
 
           <div style={{ height: "8px" }} />
-          <p className="text-[9px] text-slate-400 text-center">Datele se preiau automat din ANAF pe baza CUI-ului.</p>
+          <p className="text-[9px] text-slate-400 text-center">Datele ANAF se preiau automat. Misiunea și viziunea sunt opționale.</p>
         </div>,
         document.body
       )}
