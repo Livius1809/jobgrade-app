@@ -459,10 +459,10 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
               )}
             </div>
           ) : (
-          /* Prima achiziție sau upgrade — trebuie poziții/salariați */
-          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide mb-3">
-              {isUpgrade ? "Upgrade pachet" : "Date intrare client"}
+          /* Prima achiziție sau upgrade */
+          <div className={isUpgrade ? `rounded-xl p-4 ${colors.bg} border ${colors.border}` : "bg-amber-50 rounded-xl p-4 border border-amber-200"} style={{ borderWidth: "1px" }}>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-3 ${isUpgrade ? colors.text : "text-amber-700"}`}>
+              {isUpgrade ? `Upgrade → ${selectedPkg.title}` : "Date intrare client"}
             </p>
             <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-2 flex-1">
@@ -473,8 +473,9 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                   max={500}
                   value={positions}
                   placeholder="–"
-                  onChange={(e) => setPositions(e.target.value)}
-                  className="w-20 text-center text-sm font-bold border-2 border-amber-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-amber-200 bg-white"
+                  onChange={(e) => !isUpgrade && setPositions(e.target.value)}
+                  readOnly={isUpgrade}
+                  className={`w-20 text-center text-sm font-bold border-2 rounded-lg px-2 py-1.5 ${isUpgrade ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-amber-300 bg-white focus:ring-2 focus:ring-amber-200"}`}
                 />
               </div>
               <div className="flex items-center gap-2 flex-1">
@@ -485,8 +486,9 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                   max={5000}
                   value={employees}
                   placeholder="–"
-                  onChange={(e) => setEmployees(e.target.value)}
-                  className="w-20 text-center text-sm font-bold border-2 border-amber-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-amber-200 bg-white"
+                  onChange={(e) => !isUpgrade && setEmployees(e.target.value)}
+                  readOnly={isUpgrade}
+                  className={`w-20 text-center text-sm font-bold border-2 rounded-lg px-2 py-1.5 ${isUpgrade ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-amber-300 bg-white focus:ring-2 focus:ring-amber-200"}`}
                 />
               </div>
             </div>
