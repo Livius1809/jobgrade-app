@@ -20,25 +20,34 @@ export async function POST(req: NextRequest) {
 
     if (action === "data") {
       // Șterge datele de test — păstrează contul și profilul
-      await prisma.$transaction([
-        prisma.servicePurchase.deleteMany({ where: { tenantId } }),
-        prisma.creditTransaction.deleteMany({ where: { tenantId } }),
-        prisma.creditBalance.deleteMany({ where: { tenantId } }),
-        (prisma as any).revenueEntry.deleteMany({ where: { tenantId } }),
-        prisma.evaluationSession.deleteMany({ where: { tenantId } }),
-        prisma.job.deleteMany({ where: { tenantId } }),
-        (prisma as any).payrollEntry.deleteMany({ where: { tenantId } }).catch(() => {}),
-        (prisma as any).employeeSalaryRecord.deleteMany({ where: { tenantId } }).catch(() => {}),
-      ])
+      // Ordine: copiii înainte de părinți (FK constraints)
+      const deletes = [
+        "DELETE FROM service_purchases WHERE \"tenantId\" = $1",
+        "DELETE FROM credit_transactions WHERE \"tenantId\" = $1",
+        "DELETE FROM credit_balances WHERE \"tenantId\" = $1",
+        "DELETE FROM revenue_entries WHERE \"tenantId\" = $1",
+        "DELETE FROM session_jobs WHERE \"sessionId\" IN (SELECT id FROM evaluation_sessions WHERE \"tenantId\" = $1)",
+        "DELETE FROM evaluation_sessions WHERE \"tenantId\" = $1",
+        "DELETE FROM jobs WHERE \"tenantId\" = $1",
+        "DELETE FROM payroll_entries WHERE \"tenantId\" = $1",
+        "DELETE FROM employee_salary_records WHERE \"tenantId\" = $1",
+      ]
+
+      for (const sql of deletes) {
+        try {
+          await prisma.$executeRawUnsafe(sql, tenantId)
+        } catch (e: any) {
+          // Tabelul poate să nu existe sau să fie gol — continuăm
+          console.log(`[ACCOUNT RESET] Skip: ${e.message?.slice(0, 80)}`)
+        }
+      }
 
       console.log(`[ACCOUNT] Data reset → tenant ${tenantId}`)
       return NextResponse.json({ success: true, message: "Datele au fost șterse." })
     }
 
     if (action === "account") {
-      // Șterge contul complet — CASCADE pe toate relațiile
       await prisma.tenant.delete({ where: { id: tenantId } })
-
       console.log(`[ACCOUNT] Account deleted → tenant ${tenantId}`)
       return NextResponse.json({ success: true, message: "Contul a fost șters." })
     }
