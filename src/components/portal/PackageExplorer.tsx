@@ -111,12 +111,31 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badg
   emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
 }
 
-// Preț per poziție per pachet (RON fără TVA)
-const PRICE_PER_POSITION: Record<number, number> = { 1: 90, 2: 150, 3: 180, 4: 200 }
+// 1 credit = 8 RON (standard, fără discount)
+const CREDIT_VALUE_RON = 8
+
+// Credite per unitate per layer (estimare — de calibrat cu COG)
+// BAZA: credite per poziție
+// L1: + credite per angajat (pay gap, structură salarială)
+// L2: + credite per poziție (benchmark)
+// L3: + credite per angajat (dezvoltare)
+const CREDITS_PER_POSITION: Record<number, number> = { 1: 3, 2: 4, 3: 5, 4: 5 }
+const CREDITS_PER_EMPLOYEE: Record<number, number> = { 1: 0, 2: 2, 3: 2, 4: 3 }
+
+// Discount automat pe volum total credite
+function getDiscountPct(totalCredits: number): { pct: number; label: string } {
+  if (totalCredits >= 15000) return { pct: 31, label: "Enterprise -31%" }
+  if (totalCredits >= 5000) return { pct: 25, label: "Professional -25%" }
+  if (totalCredits >= 1500) return { pct: 19, label: "Business -19%" }
+  if (totalCredits >= 500) return { pct: 12, label: "Start -12%" }
+  if (totalCredits >= 250) return { pct: 6, label: "Mini -6%" }
+  return { pct: 0, label: "Micro" }
+}
 
 export default function PackageExplorer() {
   const [selected, setSelected] = useState<number | null>(null)
   const [positions, setPositions] = useState<number>(10)
+  const [employees, setEmployees] = useState<number>(30)
 
   const selectedPkg = selected !== null ? PACKAGES.find(p => p.number === selected) : null
   const colors = selectedPkg ? COLOR_MAP[selectedPkg.color] || COLOR_MAP.slate : null
@@ -182,29 +201,99 @@ export default function PackageExplorer() {
 
           {/* Calculator preț */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 mb-4">
-            <p className="text-xs text-slate-700 font-bold uppercase tracking-wide mb-3">Preț</p>
-            <div className="flex items-center gap-3 mb-3">
-              <label className="text-xs text-slate-500 shrink-0">Câte poziții ai?</label>
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={positions}
-                onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-                className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-              />
-              <span className="text-xs text-slate-400">poziții</span>
+            <p className="text-xs text-slate-700 font-bold uppercase tracking-wide mb-3">Calculează prețul exact</p>
+
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-slate-500">Poziții distincte</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={positions}
+                  onChange={(e) => setPositions(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+                  className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                />
+              </div>
+              {selectedPkg.number >= 2 && (
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-slate-500">Nr. salariați</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5000}
+                    value={employees}
+                    onChange={(e) => setEmployees(Math.max(1, Math.min(5000, Number(e.target.value) || 1)))}
+                    className="w-20 text-center text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-200"
+                  />
+                </div>
+              )}
             </div>
-            <div className="bg-slate-50 rounded-lg p-3 text-center">
-              <p className="text-xs text-slate-400">
-                {positions} poziții × {PRICE_PER_POSITION[selectedPkg.number]} RON
-              </p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">
-                {(positions * PRICE_PER_POSITION[selectedPkg.number]).toLocaleString("ro-RO")} RON
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1">fără TVA · plată unică</p>
+
+            {(() => {
+              const credPerPos = CREDITS_PER_POSITION[selectedPkg.number]
+              const credPerEmp = CREDITS_PER_EMPLOYEE[selectedPkg.number]
+              const totalCredits = positions * credPerPos + (selectedPkg.number >= 2 ? employees * credPerEmp : 0)
+              const discount = getDiscountPct(totalCredits)
+              const priceRON = Math.round(totalCredits * CREDIT_VALUE_RON * (1 - discount.pct / 100))
+
+              return (
+                <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                  {/* Detaliere */}
+                  <div className="text-[10px] text-slate-500 space-y-0.5">
+                    <p>{positions} poziții × {credPerPos} credite = {positions * credPerPos} credite</p>
+                    {selectedPkg.number >= 2 && (
+                      <p>{employees} salariați × {credPerEmp} credite = {employees * credPerEmp} credite</p>
+                    )}
+                    <p className="font-medium text-slate-600">Total: {totalCredits} credite</p>
+                    {discount.pct > 0 && (
+                      <p className="text-emerald-600 font-medium">Discount volum: {discount.label}</p>
+                    )}
+                  </div>
+                  {/* Preț final */}
+                  <div className="text-center pt-2 border-t border-slate-200">
+                    <p className="text-3xl font-bold text-slate-900">
+                      {priceRON.toLocaleString("ro-RO")} RON
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-1">fără TVA · + abonament 399 RON/lună</p>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Tabel pachete credite */}
+            <div className="bg-white rounded-xl p-3 border border-slate-200">
+              <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-2">Pachete credite disponibile</p>
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="text-slate-400 border-b border-slate-100">
+                    <th className="text-left py-1">Pachet</th>
+                    <th className="text-right py-1">Credite</th>
+                    <th className="text-right py-1">RON</th>
+                    <th className="text-right py-1">Per credit</th>
+                    <th className="text-right py-1">Discount</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-600">
+                  {[
+                    { name: "Micro", credits: 100, price: 800, pc: "8.00", disc: "—" },
+                    { name: "Mini", credits: 250, price: 1875, pc: "7.50", disc: "6%" },
+                    { name: "Start", credits: 500, price: 3500, pc: "7.00", disc: "12%" },
+                    { name: "Business", credits: 1500, price: 9750, pc: "6.50", disc: "19%" },
+                    { name: "Professional", credits: 5000, price: 30000, pc: "6.00", disc: "25%" },
+                    { name: "Enterprise", credits: 15000, price: 82500, pc: "5.50", disc: "31%" },
+                  ].map(p => (
+                    <tr key={p.name} className="border-t border-slate-50 hover:bg-slate-50">
+                      <td className="py-1 font-medium">{p.name}</td>
+                      <td className="py-1 text-right font-mono">{p.credits.toLocaleString()}</td>
+                      <td className="py-1 text-right font-mono">{p.price.toLocaleString()}</td>
+                      <td className="py-1 text-right font-mono">{p.pc}</td>
+                      <td className="py-1 text-right text-emerald-600">{p.disc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <p className="text-[10px] text-slate-400 mt-2">{selectedPkg.priceDetail}</p>
           </div>
 
           {/* Ce acumulezi */}
