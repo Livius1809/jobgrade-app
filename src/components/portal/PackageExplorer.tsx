@@ -247,8 +247,8 @@ export default function PackageExplorer() {
       {/* Cartuș detalii — Portal la body, ancorat la dreapta ecranului cu padding */}
       {selectedPkg && colors && mounted && createPortal(
         <div
-          style={{ borderWidth: "3px", top: `${panelTop}px`, right: "24px", maxHeight: "calc(100vh - 48px)" }}
-          className={`absolute w-[420px] rounded-2xl ${colors.border} ${colors.bg} p-6 overflow-y-auto shadow-xl z-40`}
+          style={{ borderWidth: "3px", top: "100px", right: "24px", maxHeight: "calc(100vh - 130px)" }}
+          className={`fixed w-[400px] rounded-2xl ${colors.border} ${colors.bg} p-5 overflow-y-auto shadow-xl z-40`}
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
