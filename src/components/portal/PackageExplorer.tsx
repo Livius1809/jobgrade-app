@@ -41,7 +41,7 @@ const PACKAGES: PackageInfo[] = [
     priceDetail: "Plată unică. Include simulări nelimitate înainte de validare.",
     demoHref: "/demo",
     activateHref: "/sessions",
-    color: "slate",
+    color: "indigo",
     cumulative: ["Evaluare posturi", "Ierarhizare", "Simulator", "Raport", "Validare"],
   },
   {
@@ -66,7 +66,7 @@ const PACKAGES: PackageInfo[] = [
     priceDetail: "Include BAZA + structura salarială + pay gap.",
     demoHref: "/demo",
     activateHref: "/sessions",
-    color: "indigo",
+    color: "violet",
     cumulative: ["BAZA", "+ Clase salariale", "+ Pay gap", "+ Conformitate EU"],
   },
   {
@@ -91,7 +91,7 @@ const PACKAGES: PackageInfo[] = [
     priceDetail: "Include BAZA + Conformitate + benchmark piață.",
     demoHref: "/demo",
     activateHref: "/sessions",
-    color: "violet",
+    color: "fuchsia",
     cumulative: ["BAZA", "L1 Conformitate", "+ Benchmark piață", "+ Impact bugetar"],
   },
   {
@@ -117,16 +117,16 @@ const PACKAGES: PackageInfo[] = [
     priceDetail: "Pachetul complet. Include toate straturile.",
     demoHref: "/demo",
     activateHref: "/sessions",
-    color: "emerald",
+    color: "coral",
     cumulative: ["BAZA", "L1 Conformitate", "L2 Competitivitate", "+ Dezvoltare completă"],
   },
 ]
 
-const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  slate: { bg: "bg-slate-50", border: "border-slate-200", text: "text-slate-700", badge: "bg-slate-100 text-slate-600" },
-  indigo: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-700" },
-  violet: { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", badge: "bg-violet-100 text-violet-700" },
-  emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
+const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string; btn: string }> = {
+  indigo: { bg: "bg-indigo-50", border: "border-indigo-400", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-700", btn: "bg-indigo-600 hover:bg-indigo-700" },
+  violet: { bg: "bg-violet-50", border: "border-violet-400", text: "text-violet-700", badge: "bg-violet-100 text-violet-700", btn: "bg-violet-600 hover:bg-violet-700" },
+  fuchsia: { bg: "bg-fuchsia-50", border: "border-fuchsia-400", text: "text-fuchsia-700", badge: "bg-fuchsia-100 text-fuchsia-700", btn: "bg-fuchsia-600 hover:bg-fuchsia-700" },
+  coral: { bg: "bg-orange-50", border: "border-orange-400", text: "text-orange-700", badge: "bg-orange-100 text-orange-700", btn: "bg-orange-600 hover:bg-orange-700" },
 }
 
 // 1 credit = 8 RON (standard, fără discount)
@@ -171,7 +171,16 @@ function calcLayerCredits(layer: number, positions: number, employees: number) {
   return { items, total }
 }
 
-// Preț per credit (discount pe volum) — din PackageSelector
+// Discount pe volum — bareme din strategie (poziții + salariați)
+// Starter: 1-50 poz → 0%, Professional: 51-150 poz → 12%, Enterprise: 150+ poz → 25%
+function getVolumeDiscount(positions: number, employees: number): { pct: number; label: string } {
+  const maxDim = Math.max(positions, employees)
+  if (maxDim > 150) return { pct: 25, label: "Enterprise" }
+  if (maxDim > 50) return { pct: 12, label: "Professional" }
+  return { pct: 0, label: "Starter" }
+}
+
+// Preț per credit (discount pe volum credite) — din PackageSelector
 function pricePerCredit(totalCredits: number): number {
   if (totalCredits >= 15000) return 5.50
   if (totalCredits >= 5000) return 6.00
@@ -179,16 +188,6 @@ function pricePerCredit(totalCredits: number): number {
   if (totalCredits >= 500) return 7.00
   if (totalCredits >= 250) return 7.50
   return 8.00
-}
-
-function getDiscountPct(ppc: number): { pct: number; label: string } {
-  const pct = Math.round((1 - ppc / 8) * 100)
-  if (ppc <= 5.50) return { pct, label: "Enterprise" }
-  if (ppc <= 6.00) return { pct, label: "Professional" }
-  if (ppc <= 6.50) return { pct, label: "Business" }
-  if (ppc <= 7.00) return { pct, label: "Start" }
-  if (ppc <= 7.50) return { pct, label: "Mini" }
-  return { pct: 0, label: "Micro" }
 }
 
 export default function PackageExplorer() {
@@ -262,7 +261,7 @@ export default function PackageExplorer() {
           {/* Servicii adiționale */}
           {selectedPkg.extras && selectedPkg.extras.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Servicii adiționale disponibile</h4>
+              <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Servicii adiționale (disponibile cu credite)</h4>
               <ul className="space-y-1.5">
                 {selectedPkg.extras!.map((extra: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-slate-500 italic">
@@ -307,18 +306,22 @@ export default function PackageExplorer() {
             {(() => {
               const calc = calcLayerCredits(selectedPkg.number, positions, employees)
               const ppc = pricePerCredit(calc.total)
-              const discount = getDiscountPct(ppc)
-              const priceRON = Math.round(calc.total * ppc)
+              const volumeDiscount = getVolumeDiscount(positions, employees)
+              const priceBeforeDiscount = Math.round(calc.total * ppc)
+              const priceRON = Math.round(priceBeforeDiscount * (1 - volumeDiscount.pct / 100))
 
               return (
-                <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                <div className={`rounded-lg p-4 space-y-2 ${colors.bg}`}>
                   <div className="text-center">
+                    {volumeDiscount.pct > 0 && (
+                      <p className="text-xs text-slate-400 line-through">{priceBeforeDiscount.toLocaleString("ro-RO")} RON</p>
+                    )}
                     <p className="text-3xl font-bold text-slate-900">
                       {priceRON.toLocaleString("ro-RO")} RON
                     </p>
-                    {discount.pct > 0 && (
+                    {volumeDiscount.pct > 0 && (
                       <p className="text-xs text-emerald-600 font-medium mt-1">
-                        Discount volum: -{discount.pct}%
+                        {volumeDiscount.label}: -{volumeDiscount.pct}%
                       </p>
                     )}
                     <p className="text-[10px] text-slate-400 mt-1">fără TVA · + abonament 399 RON/lună</p>
@@ -330,7 +333,7 @@ export default function PackageExplorer() {
 
           {/* Pachete credite — la ce servesc */}
           <div className="bg-white rounded-xl p-3 border border-slate-200 mb-4">
-            <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite suplimentare</p>
+            <p className="text-[9px] text-slate-400 uppercase tracking-wide mb-1">Pachete credite</p>
             <p className="text-[10px] text-slate-500 mb-2">
               Creditele suplimentare se folosesc pentru: revalidare evaluare, simulări adiționale,
               sesiuni consultanță HR, rapoarte per angajat, comisie mediată.
@@ -381,12 +384,7 @@ export default function PackageExplorer() {
           <div className="flex gap-2">
             <Link
               href={selectedPkg.activateHref}
-              className={`flex-1 py-2.5 rounded-lg text-white text-sm font-medium text-center transition-colors ${
-                selectedPkg.color === "slate" ? "bg-slate-700 hover:bg-slate-800" :
-                selectedPkg.color === "indigo" ? "bg-indigo-600 hover:bg-indigo-700" :
-                selectedPkg.color === "violet" ? "bg-violet-600 hover:bg-violet-700" :
-                "bg-emerald-600 hover:bg-emerald-700"
-              }`}
+              className={`flex-1 py-2.5 rounded-lg text-white text-sm font-medium text-center transition-colors ${colors.btn}`}
             >
               Cumpără
             </Link>
