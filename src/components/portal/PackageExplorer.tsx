@@ -191,8 +191,13 @@ function pricePerCredit(totalCredits: number): number {
   return 8.00
 }
 
-export default function PackageExplorer() {
+export default function PackageExplorer({ onLayerChange }: { onLayerChange?: (layer: number | null) => void } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
+
+  const handleSelect = (pkg: number | null) => {
+    setSelected(pkg)
+    onLayerChange?.(pkg)
+  }
   const [positions, setPositions] = useState<string>("")
   const [employees, setEmployees] = useState<string>("")
   const [annual, setAnnual] = useState(false)
@@ -225,7 +230,7 @@ export default function PackageExplorer() {
           return (
             <button
               key={pkg.number}
-              onClick={() => setSelected(isSelected ? null : pkg.number)}
+              onClick={() => handleSelect(isSelected ? null : pkg.number)}
               style={isSelected ? { borderWidth: "3px" } : { borderWidth: "2px" }}
               className={`rounded-xl p-4 text-left transition-all ${
                 isSelected
@@ -233,13 +238,17 @@ export default function PackageExplorer() {
                   : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300"
               }`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${c.badge}`}>{pkg.number}</span>
+                  <div>
+                    <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
+                    <p className={`text-[10px] font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
+                  </div>
+                </div>
                 <span className="text-lg">{pkg.icon}</span>
               </div>
-              <h3 className={`text-sm font-bold ${isSelected ? c.text : "text-slate-800"}`}>{pkg.title}</h3>
-              <p className={`text-[10px] mt-0.5 font-medium ${isSelected ? c.text : "text-slate-400"}`}>{pkg.layerLabel}</p>
-              <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{pkg.description}</p>
+              <p className="text-[10px] text-slate-400 mt-2 line-clamp-2">{pkg.description}</p>
             </button>
           )
         })}
@@ -260,7 +269,7 @@ export default function PackageExplorer() {
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded inline-block ${colors.badge}`}>{selectedPkg.layerLabel}</span>
               </div>
             </div>
-            <button onClick={() => setSelected(null)} className={`${colors.text} hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity`} title="Închide">✕</button>
+            <button onClick={() => handleSelect(null)} className={`${colors.text} hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity`} title="Închide">✕</button>
           </div>
 
           <div style={{ height: "16px" }} />

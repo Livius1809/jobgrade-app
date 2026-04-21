@@ -2,8 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import PackageExplorer from "@/components/portal/PackageExplorer"
-import ClientDataTabs from "@/components/portal/ClientDataTabs"
+import PortalClientSection from "@/components/portal/PortalClientSection"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -133,26 +132,9 @@ export default async function PortalPage() {
         freeLabel="GRATUIT"
       />
 
-      {/* ═══ ETAPA 1 — Ce vrei să rezolvi? ═══ */}
+      {/* ═══ Pachete + Date intrare client (state partajat) ═══ */}
       {client.stage !== "NEW" && (
-        <>
-          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-8">
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Ce vrei să rezolvi?</h2>
-            <p className="text-sm text-slate-500 mb-0">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
-          </div>
-          <PackageExplorer />
-        </>
-      )}
-
-      {/* ═══ Date intrare client ═══ */}
-      {client.stage !== "NEW" && (
-        <div className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
-          <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-          <div style={{ height: "4px" }} />
-          <p className="text-xs text-slate-500">Datele necesare pentru evaluare, rapoarte și analiză</p>
-          <div style={{ height: "20px" }} />
-          <ClientDataTabs jobCount={client.jobCount} />
-        </div>
+        <PortalClientSection jobCount={client.jobCount} />
       )}
 
       {/* ═══ ETAPA 3 — Evaluare ═══ */}

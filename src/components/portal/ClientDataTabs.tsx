@@ -28,12 +28,25 @@ const STATUS_STYLES = {
 
 interface ClientDataTabsProps {
   jobCount: number
+  selectedLayer: number | null
   employeeCount?: number
   hasDepartments?: boolean
   hasSalaryData?: boolean
 }
 
-export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartments = false, hasSalaryData = false }: ClientDataTabsProps) {
+// Ce taburi apar per layer:
+// Baza (1): Posturi, Fișe de post
+// Nivelul 1 (2): + Stat de funcții (pay gap)
+// Nivelul 2 (3): + Date salariale (benchmark)
+// Nivelul 3 (4): + Departamente (dezvoltare org)
+const TABS_PER_LAYER: Record<number, string[]> = {
+  1: ["posturi", "fise"],
+  2: ["posturi", "fise", "stat-functii"],
+  3: ["posturi", "fise", "stat-functii", "salarii"],
+  4: ["posturi", "fise", "stat-functii", "salarii", "departamente"],
+}
+
+export default function ClientDataTabs({ jobCount, selectedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false }: ClientDataTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("posturi")
   const [panelOpen, setPanelOpen] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -49,7 +62,7 @@ export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartm
     }
   }, [panelOpen])
 
-  const tabs: TabDef[] = [
+  const allTabs: TabDef[] = [
     {
       id: "posturi",
       label: "Posturi",
@@ -58,7 +71,7 @@ export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartm
       status: jobCount >= 3 ? "done" : jobCount > 0 ? "partial" : "empty",
       count: jobCount,
       actions: [
-        { label: "Adaugă manual", href: "/jobs/new", primary: jobCount === 0 },
+        { label: "Adaugă manual", onClick: () => setPanelOpen("posturi"), primary: jobCount === 0, opensPanel: true },
         { label: "Importă din Excel", href: "/jobs/import" },
       ],
     },
@@ -69,30 +82,20 @@ export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartm
       description: "Descrierile detaliate ale fiecărei poziții. Se pot genera automat cu AI din titlu.",
       status: "empty",
       actions: [
-        { label: "Compune fișe", onClick: () => setPanelOpen("fise"), primary: true, opensPanel: true },
-        { label: "Încarcă fișe (PDF/Word)", href: "/jobs/import?type=descriptions" },
+        { label: "Compune cu AI", onClick: () => setPanelOpen("fise"), primary: true, opensPanel: true },
+        { label: "Încarcă PDF/Word", onClick: () => setPanelOpen("upload-fise"), opensPanel: true },
       ],
     },
     {
       id: "stat-functii",
       label: "Stat de funcții",
       icon: "👥",
-      description: "Lista angajaților cu poziția, departamentul și salariul actual. Necesar pentru pay gap.",
+      description: "Lista angajaților cu poziția, departamentul și salariul actual. Necesar pentru analiza pay gap.",
       status: employeeCount > 0 ? "done" : "empty",
       count: employeeCount,
       actions: [
         { label: "Importă din Excel", href: "/pay-gap/employees", primary: true },
-        { label: "Adaugă manual", href: "/pay-gap/employees?mode=manual" },
-      ],
-    },
-    {
-      id: "departamente",
-      label: "Departamente",
-      icon: "🏢",
-      description: "Structura organizatorică — departamente, echipe, linii de raportare.",
-      status: hasDepartments ? "done" : "empty",
-      actions: [
-        { label: "Definește structura", href: "/company/departments", primary: true },
+        { label: "Adaugă manual", onClick: () => setPanelOpen("stat-functii"), opensPanel: true },
       ],
     },
     {
@@ -105,7 +108,21 @@ export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartm
         { label: "Importă grila", href: "/compensation", primary: true },
       ],
     },
+    {
+      id: "departamente",
+      label: "Departamente",
+      icon: "🏢",
+      description: "Structura organizatorică — departamente, echipe, linii de raportare.",
+      status: hasDepartments ? "done" : "empty",
+      actions: [
+        { label: "Definește structura", href: "/company/departments", primary: true },
+      ],
+    },
   ]
+
+  // Filtrare taburi pe baza layer-ului selectat
+  const visibleTabIds = selectedLayer ? (TABS_PER_LAYER[selectedLayer] || TABS_PER_LAYER[1]) : ["posturi", "fise"]
+  const tabs = allTabs.filter(t => visibleTabIds.includes(t.id))
 
   const activeTabDef = tabs.find(t => t.id === activeTab)
   const st = activeTabDef ? STATUS_STYLES[activeTabDef.status] : STATUS_STYLES.empty
@@ -196,13 +213,25 @@ export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartm
           style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
           className="fixed rounded-2xl border-indigo-400 bg-indigo-50 overflow-y-auto shadow-xl z-40"
         >
-          {/* Header */}
+          {/* Header comun */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📄</span>
+              <span className="text-2xl">
+                {panelOpen === "posturi" && "📋"}
+                {panelOpen === "fise" && "📄"}
+                {panelOpen === "upload-fise" && "📤"}
+                {panelOpen === "stat-functii" && "👥"}
+              </span>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Compune fișe de post</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">Generare AI</span>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {panelOpen === "posturi" && "Adaugă post"}
+                  {panelOpen === "fise" && "Compune fișă de post"}
+                  {panelOpen === "upload-fise" && "Încarcă fișe de post"}
+                  {panelOpen === "stat-functii" && "Adaugă angajat"}
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">
+                  {panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : "Manual"}
+                </span>
               </div>
             </div>
             <button onClick={() => setPanelOpen(null)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
@@ -210,56 +239,151 @@ export default function ClientDataTabs({ jobCount, employeeCount = 0, hasDepartm
 
           <div style={{ height: "20px" }} />
 
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Introduceți titlul postului și o scurtă descriere. AI generează fișa completă: responsabilități, competențe, cerințe.
-          </p>
+          {/* ─── Adaugă post manual ─── */}
+          {panelOpen === "posturi" && (
+            <>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Introduceți datele postului. Minim titlul și departamentul.
+              </p>
+              <div style={{ height: "20px" }} />
+              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Director Financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Departament</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Financiar-Contabil" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Nivel ierarhic (opțional)</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Management, Specialist, Execuție" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+              </div>
+              <div style={{ height: "20px" }} />
+              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+                Salvează postul
+              </button>
+            </>
+          )}
 
-          <div style={{ height: "20px" }} />
+          {/* ─── Compune fișă AI ─── */}
+          {panelOpen === "fise" && (
+            <>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Introduceți titlul postului și o scurtă descriere. AI generează fișa completă: responsabilități, competențe, cerințe.
+              </p>
+              <div style={{ height: "20px" }} />
+              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Director Financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Descriere pe scurt (opțional)</label>
+                  <div style={{ height: "4px" }} />
+                  <textarea rows={3} placeholder="Ce face persoana pe acest post? Ce responsabilități are?" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
+                </div>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Departament</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Financiar-Contabil" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+              </div>
+              <div style={{ height: "20px" }} />
+              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+                Generează fișa de post cu AI
+              </button>
+              <div style={{ height: "8px" }} />
+              <p className="text-[9px] text-slate-400 text-center">Consumă 12 credite per fișă generată. Poți edita rezultatul.</p>
+            </>
+          )}
 
-          {/* Formular compunere fișe */}
-          <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-            <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">Titlul postului</label>
-              <div style={{ height: "4px" }} />
-              <input
-                type="text"
-                placeholder="ex: Director Financiar"
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
-              />
-            </div>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">Descriere pe scurt (opțional)</label>
-              <div style={{ height: "4px" }} />
-              <textarea
-                rows={3}
-                placeholder="Ce face persoana pe acest post? Ce responsabilități are?"
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
-              />
-            </div>
-            <div style={{ height: "12px" }} />
-            <div>
-              <label className="text-xs text-slate-600 font-medium">Departament</label>
-              <div style={{ height: "4px" }} />
-              <input
-                type="text"
-                placeholder="ex: Financiar-Contabil"
-                className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
-              />
-            </div>
-          </div>
+          {/* ─── Upload PDF/Word ─── */}
+          {panelOpen === "upload-fise" && (
+            <>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Încărcați fișele de post existente în format PDF sau Word. Le procesăm automat și extragem informațiile relevante.
+              </p>
+              <div style={{ height: "20px" }} />
+              <div className="bg-amber-50 rounded-xl border-2 border-dashed border-amber-300 flex flex-col items-center justify-center text-center" style={{ padding: "32px" }}>
+                <span className="text-3xl">📤</span>
+                <div style={{ height: "12px" }} />
+                <p className="text-sm font-medium text-slate-700">Trageți fișierele aici</p>
+                <p className="text-xs text-slate-400">sau</p>
+                <div style={{ height: "8px" }} />
+                <button className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors">
+                  Alegeți fișiere
+                </button>
+                <div style={{ height: "8px" }} />
+                <p className="text-[10px] text-slate-400">PDF, DOC, DOCX · max 10 MB per fișier</p>
+              </div>
+              <div style={{ height: "20px" }} />
+              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+                Procesează fișierele
+              </button>
+              <div style={{ height: "8px" }} />
+              <p className="text-[9px] text-slate-400 text-center">AI extrage automat: titlu, responsabilități, competențe, cerințe.</p>
+            </>
+          )}
 
-          <div style={{ height: "20px" }} />
-
-          <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-            Generează fișa de post cu AI
-          </button>
-
-          <div style={{ height: "12px" }} />
-
-          <p className="text-[9px] text-slate-400 text-center">Consumă 12 credite per fișă generată. Poți edita rezultatul.</p>
+          {/* ─── Adaugă angajat manual ─── */}
+          {panelOpen === "stat-functii" && (
+            <>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Introduceți datele angajatului. Necesar: nume, post, salariu brut.
+              </p>
+              <div style={{ height: "20px" }} />
+              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Nume angajat</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Popescu Ion" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+                <div style={{ height: "12px" }} />
+                <div>
+                  <label className="text-xs text-slate-600 font-medium">Post ocupat</label>
+                  <div style={{ height: "4px" }} />
+                  <input type="text" placeholder="ex: Analist financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+                <div style={{ height: "12px" }} />
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="text-xs text-slate-600 font-medium">Salariu brut (RON)</label>
+                    <div style={{ height: "4px" }} />
+                    <input type="number" placeholder="–" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-slate-600 font-medium">Gen (F/M)</label>
+                    <div style={{ height: "4px" }} />
+                    <select className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white">
+                      <option value="">–</option>
+                      <option value="F">F</option>
+                      <option value="M">M</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div style={{ height: "20px" }} />
+              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+                Salvează angajatul
+              </button>
+            </>
+          )}
         </div>,
         document.body
       )}
