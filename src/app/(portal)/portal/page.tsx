@@ -53,9 +53,12 @@ async function getClientStage(tenantId: string): Promise<{
 
 // ─── Pagina principală ─────────────────────────────────────────────────────
 
-export default async function PortalPage() {
+export default async function PortalPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const session = await auth()
   if (!session?.user?.tenantId) redirect("/login")
+
+  const params = await searchParams
+  const showSuccess = params?.success === "service"
 
   const client = await getClientStage(session.user.tenantId)
 
@@ -126,6 +129,17 @@ export default async function PortalPage() {
         </div>
       </div>
 
+      {/* ═══ Toast succes plată ═══ */}
+      {showSuccess && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-emerald-600 text-lg">✓</span>
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">Pachetul a fost activat cu succes!</p>
+            <p className="text-xs text-emerald-600">Poți introduce datele necesare pentru generarea rapoartelor.</p>
+          </div>
+        </div>
+      )}
+
       {/* ═══ ETAPA 0 — Compania ta (CUI) ═══ */}
       <StepSection
         number={1}
@@ -144,7 +158,7 @@ export default async function PortalPage() {
         <PortalClientSection jobCount={client.jobCount} purchasedLayer={purchasedLayer} />
       )}
 
-      {/* ═══ ETAPA 3 — Evaluare ═══ */}
+      {/* ═══ Evaluare — se activează după posturi ═══ */}
       <StepSection
         number={3}
         title="Evaluare și ierarhizare"
@@ -155,28 +169,76 @@ export default async function PortalPage() {
         active={client.stage === "HAS_JOBS"}
         href="/sessions"
         actionLabel={client.sessionCount > 0 ? "Vezi evaluarea" : "Pornește evaluarea AI"}
-        locked={client.jobCount === 0}
-        lockedMessage="Mai întâi adaugă cel puțin 3 posturi"
+        locked={client.jobCount === 0 || purchasedLayer === 0}
+        lockedMessage={purchasedLayer === 0 ? "Cumpără un pachet și completează datele" : "Mai întâi adaugă cel puțin 3 posturi"}
       />
 
-      {/* ═══ ETAPA 4 — Raport ═══ */}
-      <StepSection
-        number={4}
-        title="Raportul tău"
-        subtitle={client.isValidated
-          ? "Raportul este validat și disponibil."
-          : client.sessionCount > 0
-            ? "Evaluarea e completă. Deschide raportul, ajustează dacă vrei, apoi validează."
-            : "Raportul se generează automat din evaluare."}
-        done={client.isValidated}
-        active={client.sessionCount > 0 && !client.isValidated}
-        href="/reports/master"
-        actionLabel={client.isValidated ? "Vezi raportul validat" : "Deschide raportul"}
-        locked={client.sessionCount === 0}
-        lockedMessage="Mai întâi finalizează evaluarea"
-      />
-
-      {/* Secțiunea concentrică eliminată — incluziunea e acum în cardurile PackageExplorer */}
+      {/* ═══ Rapoarte — se activează când datele sunt complete ═══ */}
+      {purchasedLayer > 0 ? (
+        <div className={`rounded-2xl border p-6 transition-all ${
+          client.isValidated
+            ? "bg-emerald-50 border-emerald-200"
+            : client.sessionCount > 0
+              ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100"
+              : "bg-slate-50 border-dashed border-slate-200"
+        }`}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${
+                client.isValidated ? "bg-emerald-500 text-white" :
+                client.sessionCount > 0 ? "bg-indigo-500 text-white" :
+                "bg-slate-200 text-slate-400"
+              }`}>
+                {client.isValidated ? "✓" : "4"}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Rapoarte</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {client.isValidated
+                    ? "Raportul este validat și disponibil."
+                    : client.sessionCount > 0
+                      ? "Evaluarea e completă. Deschide raportul, ajustează dacă vrei, apoi validează."
+                      : "Completează datele de intrare și rulează evaluarea pentru a genera rapoartele."}
+                </p>
+                {!client.isValidated && client.sessionCount === 0 && (
+                  <>
+                    <div style={{ height: "12px" }} />
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>{client.jobCount >= 3 ? "✓" : "○"} Posturi ({client.jobCount}/3 min)</span>
+                      <span>→</span>
+                      <span>{client.sessionCount > 0 ? "✓" : "○"} Evaluare</span>
+                      <span>→</span>
+                      <span>○ Raport</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            {client.sessionCount > 0 && (
+              <Link
+                href="/reports/master"
+                className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors ${
+                  client.isValidated
+                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                }`}
+              >
+                {client.isValidated ? "Vezi raportul validat" : "Deschide raportul"}
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-6 opacity-60">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold">4</div>
+            <div>
+              <h3 className="text-base font-bold text-slate-400">Rapoarte</h3>
+              <p className="text-xs text-slate-300">Cumpără un pachet și completează datele de intrare</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ AJUTOR ═══ */}
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-between">
