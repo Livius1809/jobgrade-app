@@ -137,33 +137,37 @@ export default async function PortalPage() {
           <h2 className="text-lg font-bold text-slate-900 mb-2">Ce vrei să rezolvi?</h2>
           <p className="text-sm text-slate-500 mb-6">Alege problema ta — îți recomandăm soluția potrivită.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <ProblemCard
+              number={1}
               icon="🏗️"
-              title="Vreau ordine internă"
-              description="Evaluare și ierarhizare posturi pe criterii obiective. Știi exact care post e mai complex și de ce."
-              solution="BAZA — Ordine internă"
+              title="Ordine internă"
+              description="Evaluare și ierarhizare posturi pe criterii obiective."
+              solution="BAZA"
               href="/sessions"
             />
             <ProblemCard
+              number={2}
               icon="⚖️"
-              title="Vreau conformitate salarială"
-              description="Structură salarială cu clase și trepte, analiză pay gap, conformitate Directiva EU 2023/970."
-              solution="BAZA + Layer 1 — Conformitate"
+              title="Conformitate"
+              description="Clase salariale, pay gap, Directiva EU 2023/970."
+              solution="+ Layer 1"
               href="/sessions"
             />
             <ProblemCard
+              number={3}
               icon="🎯"
-              title="Vreau competitivitate"
-              description="Benchmark cu piața, poziționare salarială, retenție personal. Știi unde te situezi."
-              solution="BAZA + Layer 1 + Layer 2 — Competitivitate"
+              title="Competitivitate"
+              description="Benchmark piață, poziționare, retenție personal."
+              solution="+ Layer 2"
               href="/sessions"
             />
             <ProblemCard
+              number={4}
               icon="🌱"
-              title="Vreau dezvoltare completă"
-              description="Tot ce e mai sus + dezvoltare organizațională, cultură, performanță. Pachetul complet."
-              solution="BAZA + Layer 1 + Layer 2 + Layer 3 — Dezvoltare"
+              title="Dezvoltare"
+              description="Cultură, performanță, dezvoltare organizațională."
+              solution="+ Layer 3"
               href="/sessions"
             />
           </div>
@@ -323,13 +327,16 @@ function StepSection({ number, title, subtitle, done, active, href, actionLabel,
   )
 }
 
-function ProblemCard({ icon, title, description, solution, href }: {
-  icon: string; title: string; description: string; solution: string; href: string
+function ProblemCard({ number, icon, title, description, solution, href }: {
+  number: number; icon: string; title: string; description: string; solution: string; href: string
 }) {
   return (
     <Link href={href} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-indigo-200 transition-all group">
-      <span className="text-2xl">{icon}</span>
-      <h3 className="text-sm font-bold text-slate-800 mt-3 group-hover:text-indigo-700">{title}</h3>
+      <div className="flex items-center gap-3 mb-2">
+        <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">{number}</span>
+        <span className="text-xl">{icon}</span>
+      </div>
+      <h3 className="text-sm font-bold text-slate-800 group-hover:text-indigo-700">{title}</h3>
       <p className="text-xs text-slate-500 mt-1 leading-relaxed">{description}</p>
       <p className="text-[10px] text-indigo-500 font-medium mt-3">{solution} →</p>
     </Link>
