@@ -203,7 +203,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
       count: jobCount,
       actions: [
         { label: "Adaugă manual", onClick: () => setPanelOpen("posturi"), primary: jobCount === 0, opensPanel: true },
-        { label: "Importă din Excel", href: "/jobs/import" },
+        { label: "Importă din Excel", onClick: () => setPanelOpen("import-excel"), opensPanel: true },
       ],
     },
     {
@@ -411,6 +411,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
             <div className="flex items-center gap-3">
               <span className="text-2xl">
                 {panelOpen === "posturi" && "📋"}
+                {panelOpen === "import-excel" && "📥"}
                 {panelOpen === "fise" && "📄"}
                 {panelOpen === "upload-fise" && "📤"}
                 {panelOpen === "stat-functii" && "👥"}
@@ -418,12 +419,13 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
                   {panelOpen === "posturi" && "Adaugă post"}
+                  {panelOpen === "import-excel" && "Importă posturi din Excel"}
                   {panelOpen === "fise" && "Compune fișă de post"}
                   {panelOpen === "upload-fise" && "Încarcă fișe de post"}
                   {panelOpen === "stat-functii" && "Adaugă angajat"}
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">
-                  {panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : "Manual"}
+                  {panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : panelOpen === "import-excel" ? "Import XLSX" : "Manual"}
                 </span>
               </div>
             </div>
@@ -446,6 +448,11 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
           {/* ─── Compune fișă AI ─── */}
           {panelOpen === "fise" && (
             <GenerateJobDescPanel jobs={jobs} onSwitchToPosturi={() => setPanelOpen("posturi")} />
+          )}
+
+          {/* ─── Import Excel ─── */}
+          {panelOpen === "import-excel" && (
+            <ImportExcelPanel onComplete={() => setPanelOpen(null)} />
           )}
 
           {/* ─── Upload PDF/Word ─── */}
@@ -1398,5 +1405,117 @@ function ExtractedField({ label, value, long }: { label: string; value?: string;
         {value}
       </p>
     </div>
+  )
+}
+
+// ── Import Excel ─────────────────────────────────────────────────────────────
+
+function ImportExcelPanel({ onComplete }: { onComplete: () => void }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleUpload() {
+    if (!file) return
+    setUploading(true)
+    setError(null)
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/v1/jobs/import", { method: "POST", body: formData })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.message || "Eroare la import.")
+      } else {
+        setResult({ imported: data.imported, skipped: data.skipped })
+      }
+    } catch {
+      setError("Eroare de conexiune.")
+    }
+    setUploading(false)
+  }
+
+  if (result) {
+    return (
+      <>
+        <div className="bg-emerald-50 rounded-xl border border-emerald-200 text-center" style={{ padding: "24px" }}>
+          <span className="text-3xl">✓</span>
+          <div style={{ height: "12px" }} />
+          <p className="text-sm font-semibold text-emerald-800">{result.imported} posturi importate</p>
+          {result.skipped > 0 && <p className="text-xs text-emerald-600 mt-1">{result.skipped} rânduri omise (fără titlu)</p>}
+        </div>
+        <div style={{ height: "16px" }} />
+        <button onClick={onComplete} className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+          Inchide
+        </button>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Incarcati un fisier Excel (.xlsx) cu posturile din organizatie. Coloane asteptate: Titlu, Cod, Departament, Scop, Responsabilitati, Cerinte, Status.
+      </p>
+      <div style={{ height: "20px" }} />
+
+      <div
+        className={`rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center transition-colors ${
+          dragOver ? "border-indigo-400 bg-indigo-50" : "border-amber-300 bg-amber-50"
+        }`}
+        style={{ padding: "32px" }}
+        onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); setError(null) } }}
+      >
+        <span className="text-3xl">{file ? "📄" : "📥"}</span>
+        <div style={{ height: "12px" }} />
+
+        {file ? (
+          <>
+            <p className="text-sm font-medium text-slate-700">{file.name}</p>
+            <p className="text-[10px] text-slate-400">{(file.size / 1024).toFixed(0)} KB</p>
+            <div style={{ height: "8px" }} />
+            <button onClick={() => { setFile(null); setError(null) }} className="text-[10px] text-red-500 hover:underline">Sterge</button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-slate-700">Trageti fisierul aici</p>
+            <p className="text-xs text-slate-400">sau</p>
+            <div style={{ height: "8px" }} />
+            <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setFile(f); setError(null) } }} />
+            <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors">
+              Alegeti fisier
+            </button>
+            <div style={{ height: "8px" }} />
+            <p className="text-[10px] text-slate-400">XLSX — max 10 MB</p>
+          </>
+        )}
+      </div>
+
+      {error && (
+        <>
+          <div style={{ height: "12px" }} />
+          <p className="text-xs text-red-600">{error}</p>
+        </>
+      )}
+
+      <div style={{ height: "20px" }} />
+      <button
+        onClick={handleUpload}
+        disabled={!file || uploading}
+        className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+      >
+        {uploading ? "Se importa..." : "Importa posturile"}
+      </button>
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">Coloana Titlu este obligatorie. Restul sunt optionale.</p>
+    </>
   )
 }

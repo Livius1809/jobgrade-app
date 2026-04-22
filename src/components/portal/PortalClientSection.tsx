@@ -613,11 +613,32 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
     setError(null)
 
     try {
-      // 1. Creăm sesiune cu toate posturile
+      // 1. Fetch toate joburile + user-ul curent
+      const [jobsRes, sessionRes] = await Promise.all([
+        fetch("/api/v1/jobs").then(r => r.json()),
+        fetch("/api/auth/session").then(r => r.json()).catch(() => null),
+      ])
+
+      const jobIds = (Array.isArray(jobsRes) ? jobsRes : jobsRes.jobs || []).map((j: any) => j.id)
+      if (jobIds.length < 3) {
+        throw new Error("Sunt necesare cel puțin 3 posturi pentru evaluare.")
+      }
+
+      // User-ul curent ca evaluator (singur participant la evaluare AI)
+      const userId = sessionRes?.user?.id
+      if (!userId) {
+        throw new Error("Nu s-a putut identifica utilizatorul curent.")
+      }
+
+      // 2. Creăm sesiune cu toate posturile
       const createRes = await fetch("/api/v1/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: `Evaluare AI — ${new Date().toLocaleDateString("ro-RO")}`, autoIncludeAllJobs: true }),
+        body: JSON.stringify({
+          name: `Evaluare AI — ${new Date().toLocaleDateString("ro-RO")}`,
+          jobIds,
+          participantIds: [userId],
+        }),
       })
 
       if (!createRes.ok) {
@@ -625,16 +646,17 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         throw new Error(err.message || "Nu s-a putut crea sesiunea.")
       }
 
-      const { session } = await createRes.json()
-      setSessionId(session.id)
+      const createData = await createRes.json()
+      const sid = createData.id || createData.session?.id
+      setSessionId(sid)
 
-      // 2. Rulăm evaluarea automată AI
+      // 3. Rulăm evaluarea automată AI
       setPhase("evaluating")
 
       const evalRes = await fetch("/api/v1/sessions/auto-evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: session.id }),
+        body: JSON.stringify({ sessionId: sid }),
       })
 
       if (!evalRes.ok) {
@@ -644,11 +666,10 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
 
       const evalData = await evalRes.json()
 
-      // 3. Încărcăm rezultatele
-      await loadResults(session.id)
+      // 4. Încărcăm rezultatele
+      await loadResults(sid)
 
       if (results.length === 0 && evalData.jobsEvaluated > 0) {
-        // Fallback: încărcăm din scores direct
         setResults([{ position: `${evalData.jobsEvaluated} posturi evaluate`, department: "", grade: "—", score: 0 }])
         setPhase("done")
       }

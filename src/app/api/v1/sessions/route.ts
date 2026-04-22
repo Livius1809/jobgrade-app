@@ -3,6 +3,23 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = "force-dynamic"
+
+export async function GET() {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
+    return NextResponse.json({ sessions: [] })
+  }
+
+  const sessions = await prisma.evaluationSession.findMany({
+    where: { tenantId: session.user.tenantId },
+    select: { id: true, name: true, status: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  })
+
+  return NextResponse.json({ sessions })
+}
+
 const schema = z.object({
   name: z.string().min(3),
   jobIds: z.array(z.string()).min(1),
