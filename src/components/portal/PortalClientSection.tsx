@@ -31,6 +31,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
   const [mounted, setMounted] = useState(false)
   const [calculatorForceOpen, setCalculatorForceOpen] = useState(false)
   const [dataPanelOpen, setDataPanelOpen] = useState(false)
+  const [calculatorOpen, setCalculatorOpen] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const evalSectionRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
@@ -169,7 +170,18 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             <p className="text-sm text-slate-500">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
           </div>
 
-          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} purchasedPositions={purchasedPositions} purchasedEmployees={purchasedEmployees} creditBalance={creditBalance} forceOpen={calculatorForceOpen} forceClose={dataPanelOpen || evalPanel || profilePanel} />
+          <PackageExplorer
+            onLayerChange={setSelectedLayer}
+            purchasedLayer={purchasedLayer}
+            purchasedPositions={purchasedPositions}
+            purchasedEmployees={purchasedEmployees}
+            creditBalance={creditBalance}
+            forceOpen={calculatorForceOpen}
+            forceClose={dataPanelOpen || evalPanel || profilePanel}
+            onPanelOpen={(open) => {
+              setCalculatorOpen(open)
+            }}
+          />
 
           {/* ═══ Date intrare client — apare doar după plată ═══ */}
           {purchasedLayer > 0 && (
@@ -178,7 +190,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               <div style={{ height: "4px" }} />
               <p className="text-xs text-slate-500">Completați datele pentru a genera rapoartele.</p>
               <div style={{ height: "20px" }} />
-              <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} onPanelChange={(open) => setDataPanelOpen(open)} />
+              <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} onPanelChange={(open) => setDataPanelOpen(open)} forceClosePanel={calculatorOpen} />
             </div>
           )}
 

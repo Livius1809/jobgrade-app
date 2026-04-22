@@ -203,7 +203,7 @@ const PURCHASED_FILLS: Record<string, string> = {
   coral: "rgba(249,115,22,0.2)",
 }
 
-export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, purchasedPositions = 0, purchasedEmployees = 0, creditBalance = 0, forceOpen = false, forceClose = false }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; purchasedPositions?: number; purchasedEmployees?: number; creditBalance?: number; forceOpen?: boolean; forceClose?: boolean } = {}) {
+export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, purchasedPositions = 0, purchasedEmployees = 0, creditBalance = 0, forceOpen = false, forceClose = false, onPanelOpen }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; purchasedPositions?: number; purchasedEmployees?: number; creditBalance?: number; forceOpen?: boolean; forceClose?: boolean; onPanelOpen?: (open: boolean) => void } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
   const [purchasing, setPurchasing] = useState(false)
 
@@ -213,6 +213,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
       const autoSelect = purchasedLayer > 0 ? purchasedLayer : 1
       setSelected(autoSelect)
       onLayerChange?.(autoSelect)
+      onPanelOpen?.(true)
     }
   }, [forceOpen])
 
@@ -227,6 +228,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
   const handleSelect = (pkg: number | null) => {
     setSelected(pkg)
     onLayerChange?.(pkg)
+    onPanelOpen?.(pkg !== null)
   }
   // Pre-completez cu valorile din achiziția existentă
   const [positions, setPositions] = useState<string>(purchasedPositions > 0 ? String(purchasedPositions) : "")

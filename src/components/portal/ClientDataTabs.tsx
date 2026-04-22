@@ -124,6 +124,7 @@ interface ClientDataTabsProps {
   hasDepartments?: boolean
   hasSalaryData?: boolean
   onPanelChange?: (open: boolean) => void
+  forceClosePanel?: boolean
 }
 
 // Culori per tab — corelate cu cardurile servicii
@@ -147,7 +148,7 @@ const TABS_PER_LAYER: Record<number, string[]> = {
   4: ["posturi", "fise", "stat-functii", "salarii", "departamente"],
 }
 
-export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange }: ClientDataTabsProps) {
+export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange, forceClosePanel = false }: ClientDataTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("posturi")
   const [panelOpen, setPanelOpenRaw] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -157,6 +158,13 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
     setPanelOpenRaw(v)
     onPanelChange?.(v !== null)
   }
+
+  // Force close de la parent (când se deschide calculatorul)
+  useEffect(() => {
+    if (forceClosePanel && panelOpen !== null) {
+      setPanelOpenRaw(null)
+    }
+  }, [forceClosePanel])
   const containerRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
   const [jobs, setJobs] = useState<Array<{ id: string; title: string }>>([])
