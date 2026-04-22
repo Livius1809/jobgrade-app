@@ -149,6 +149,16 @@ model CompanyProfile {
   logoUrl     String?
   extractedAt DateTime?
   anafSyncedAt DateTime?
+  // MVV Progressive Builder
+  mvvMaturity      String    @default("IMPLICIT") // IMPLICIT | EMERGENT | PARTIAL | SUBSTANTIAL | COMPLETE
+  missionDraft     String?   @db.Text // generat AI
+  visionDraft      String?   @db.Text
+  valuesDraft      String[]
+  mvvLastBuiltAt   DateTime?
+  mvvLastBuiltFrom String?   // ce date au contribuit la ultimul rebuild
+  mvvCoherenceScore Float?   // 0-100
+  mvvCoherenceGaps  Json?    // [{level, gap, suggestion}]
+  mvvValidatedAt    DateTime? // când a confirmat clientul MVV-ul
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
