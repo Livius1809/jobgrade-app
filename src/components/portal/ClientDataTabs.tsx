@@ -593,11 +593,11 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
 
   const finalDept = dept === "__other__" ? customDept : dept
 
-  const canSave = mode === "assisted" || (mode === "manual" && relevance && relevance.score >= 80)
+  const canSave = mode === "assisted" || (mode === "manual" && relevance && relevance.score >= 100)
 
   const handleSave = async () => {
     if (!title.trim()) { setError("Titlul postului e obligatoriu."); return }
-    if (mode === "manual" && (!relevance || relevance.score < 80)) { setError("Completează fișa până la minim 80% relevanță."); return }
+    if (mode === "manual" && (!relevance || relevance.score < 100)) { setError("Completează fișa până la 100% relevanță pe toate criteriile."); return }
     setSaving(true); setError(null)
     try {
       // Creăm/găsim departamentul (opțional)
@@ -851,7 +851,7 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
             "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
           }`}
         >
-          {saved ? "✓ Salvat" : saving ? "Se salvează..." : mode === "manual" && (!relevance || relevance.score < 80) ? `Relevanță ${relevance?.score || 0}% — completează` : "Salvează postul"}
+          {saved ? "✓ Salvat" : saving ? "Se salvează..." : mode === "manual" && (!relevance || relevance.score < 100) ? `Relevanță ${relevance?.score || 0}% — vezi indicațiile` : "Salvează postul"}
         </button>
       </div>
 

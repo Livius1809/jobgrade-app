@@ -59,9 +59,11 @@ Returnează STRICT JSON:
   "workConditions": { "score": 0-100, "hint": "" }
 }
 
-Score 100 = informația e suficientă pentru evaluare pe acest criteriu.
+Score 100 = informația e suficientă și clară pentru evaluare pe acest criteriu.
 Score 0 = nicio informație relevantă.
-Hint = sugestie scurtă (max 10 cuvinte) ce mai trebuie adăugat. Gol dacă score >= 80.`
+Score sub 100 = lipsesc detalii — hint TREBUIE să spună EXACT ce să adauge clientul.
+Hint = instrucțiune directă, concretă. Exemplu: "Adaugă ce studii necesită postul (medii/superioare/postuniversitare)".
+Hint GOLL DOAR dacă score = 100.`
       }],
     })
 
