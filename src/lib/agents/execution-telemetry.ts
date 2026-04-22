@@ -68,10 +68,7 @@ export async function updateAgentBudget(
   })
 
   if (!budget) {
-    // Dacă nu există budget definit, creăm unul default
-    await prisma.agentBudget.create({
-      data: { agentRole, dailyLimitTokens: 20000, monthlyLimitTokens: 500000 },
-    })
+    // Fără budget definit = fără limită. COG decide bugetele, nu codul.
     return { withinBudget: true, usagePercent: 0 }
   }
 
