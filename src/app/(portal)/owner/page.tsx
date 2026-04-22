@@ -315,8 +315,8 @@ export default async function OwnerDashboard() {
   )
 
   return (
-    <div className="flex gap-8 items-start">
-      <div className="flex-1 min-w-0" style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+    <div>
+      <div className="max-w-4xl mx-auto" style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
         <meta httpEquiv="refresh" content="3600" />
 
         {/* ═══ HEADER + CUPRINS ═══ */}
@@ -490,10 +490,7 @@ export default async function OwnerDashboard() {
         )}
       </div>
 
-      {/* ════════════ RIGHT: COG Chat ════════════ */}
-      <aside className="hidden lg:block w-[380px] shrink-0 sticky top-24">
-        <CogChat />
-      </aside>
+      {/* COG Chat scos — redundant cu "Discută cu echipa" */}
     </div>
   )
 }
