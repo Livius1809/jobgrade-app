@@ -409,6 +409,9 @@ export default async function OwnerDashboard() {
 
             <OwnerInbox />
 
+            {/* Task-uri alocate de Owner/Claude — tracking */}
+            <OwnerTasksSection />
+
             {ownerDecisions.length > 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
                 <div className="flex items-center justify-between">
@@ -595,6 +598,56 @@ const STATUS_BG: Record<string, string> = {
   HEALTHY: "bg-white",
   WARNING: "bg-amber-50/50",
   CRITICAL: "bg-red-50/50",
+}
+
+async function OwnerTasksSection() {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    const tasks = await prisma.agentTask.findMany({
+      where: { assignedBy: { in: ["claude", "owner", "OWNER"] } },
+      select: { id: true, title: true, assignedTo: true, status: true, priority: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    })
+
+    const active = tasks.filter(t => t.status !== "COMPLETED")
+    const completed = tasks.filter(t => t.status === "COMPLETED")
+
+    if (tasks.length === 0) return null
+
+    const STATUS_DOT_TASK: Record<string, string> = {
+      ASSIGNED: "bg-amber-400",
+      ACCEPTED: "bg-indigo-400",
+      IN_PROGRESS: "bg-indigo-500 animate-pulse",
+      COMPLETED: "bg-emerald-500",
+      BLOCKED: "bg-red-400",
+      FAILED: "bg-red-500",
+    }
+
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+        <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Task-uri alocate de tine</p>
+        <div style={{ height: "16px" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {active.map(t => (
+            <div key={t.id} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50" style={{ padding: "12px" }}>
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT_TASK[t.status] || "bg-slate-300"}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-slate-800 truncate">{t.title}</p>
+                <p className="text-[9px] text-slate-400">{t.assignedTo} · {t.status}</p>
+              </div>
+              {t.priority === "CRITICAL" && <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">CRITIC</span>}
+            </div>
+          ))}
+          {completed.length > 0 && (
+            <p className="text-[9px] text-emerald-500 text-center">+ {completed.length} realizate</p>
+          )}
+        </div>
+      </div>
+    )
+  } catch {
+    return null
+  }
 }
 
 function LayerCard({ layer, icon }: { layer: LayerStatus; icon: string }) {
