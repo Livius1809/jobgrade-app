@@ -30,9 +30,9 @@ const CONTROLS = [
 ]
 
 const CRON_INFO = [
-  { path: "Executor", schedule: "La fiecare 30 min", limit: "5 tasks/ciclu" },
-  { path: "Signals", schedule: "La fiecare 15 min", limit: "10 signals/ciclu" },
-  { path: "Retry", schedule: "La fiecare 30 min", limit: "10 tasks blocate" },
+  { path: "Executor", schedule: "La fiecare 2h", limit: "Toată coada, aliniat la obiective" },
+  { path: "Signals", schedule: "La fiecare 2h", limit: "Filtrare pe relevanță, nu pe număr" },
+  { path: "Retry", schedule: "La fiecare ciclu", limit: "Deblocare automată > 24h" },
 ]
 
 export default function OrganismControls() {
