@@ -550,7 +550,10 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
   )
 }
 
-// ── Panou Evaluare ───────────────────────────────────────────────────────────
+// ── Panou Evaluare — 4 variante ─────────────────────────────────────────────
+
+type EvalVariant = "auto" | "comisie-ai" | "comisie-consultant" | "hibrid"
+type EvalPhase = "choose" | "configure" | "running" | "results" | "error"
 
 interface EvalResult {
   position: string
@@ -559,27 +562,76 @@ interface EvalResult {
   score: number
 }
 
+const VARIANTS: Array<{
+  id: EvalVariant
+  icon: string
+  title: string
+  description: string
+  who: string
+  time: string
+  cost: string
+}> = [
+  {
+    id: "auto",
+    icon: "🤖",
+    title: "Evaluare automata AI",
+    description: "AI analizeaza fisele de post si evalueaza pe 6 criterii obiective. Dumneavoastra validati si semnati raportul.",
+    who: "AI evalueaza, personal acreditat supervizeaza",
+    time: "10-30 secunde",
+    cost: "Inclus in pachet",
+  },
+  {
+    id: "comisie-ai",
+    icon: "👥",
+    title: "Comisie interna, mediata AI",
+    description: "Membrii comisiei dumneavoastra evalueaza individual. AI identifica divergentele si mediaza consensul.",
+    who: "Comisia dumneavoastra evalueaza, AI mediaza",
+    time: "2-5 zile (depinde de nr. posturi si disponibilitatea comisiei)",
+    cost: "Inclus in pachet",
+  },
+  {
+    id: "comisie-consultant",
+    icon: "🎓",
+    title: "Comisie interna, mediata de consultant",
+    description: "Membrii comisiei dumneavoastra evalueaza. Un consultant acreditat din echipa noastra faciliteaza consensul.",
+    who: "Comisia dumneavoastra evalueaza, consultantul nostru mediaza",
+    time: "1-2 saptamani",
+    cost: "Cost suplimentar (credite)",
+  },
+  {
+    id: "hibrid",
+    icon: "🔄",
+    title: "Hibrid: AI apoi comisie",
+    description: "Se ruleaza mai intai evaluarea AI. Raportul generat devine baza de discutie pentru comisie. Comisia ajusteaza de unde are nevoie.",
+    who: "AI genereaza prima versiune, comisia valideaza si ajusteaza",
+    time: "AI: 30s + comisie: 1-3 zile",
+    cost: "Pachet + 30-40% suplimentar",
+  },
+]
+
 function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
-  const [phase, setPhase] = useState<"idle" | "creating" | "evaluating" | "done" | "error">("idle")
+  const [variant, setVariant] = useState<EvalVariant | null>(null)
+  const [phase, setPhase] = useState<EvalPhase>("choose")
   const [results, setResults] = useState<EvalResult[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [validating, setValidating] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [validating, setValidating] = useState(false)
 
-  // La mount, verificăm dacă există deja o sesiune
+  // La mount, verificăm dacă există deja o sesiune cu rezultate
   useEffect(() => {
     fetch("/api/v1/sessions")
       .then(r => r.json())
       .then(data => {
         const sessions = data.sessions || []
         const completed = sessions.find((s: any) => s.status === "COMPLETED" || s.status === "VALIDATED")
-        const inProgress = sessions.find((s: any) => s.status !== "DRAFT")
+        const inProgress = sessions.find((s: any) => !["DRAFT", "COMPLETED", "VALIDATED"].includes(s.status))
 
         if (completed) {
           setSessionId(completed.id)
           loadResults(completed.id)
         } else if (inProgress) {
           setSessionId(inProgress.id)
+          setPhase("running")
           loadResults(inProgress.id)
         }
       })
@@ -595,63 +647,51 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
       })
       if (res.ok) {
         const data = await res.json()
-        if (data.hierarchy && data.hierarchy.length > 0) {
+        if (data.hierarchy?.length > 0) {
           setResults(data.hierarchy.map((h: any) => ({
             position: h.title || h.jobTitle,
             department: h.department || "—",
             grade: h.grade || h.letterGrade || "—",
             score: h.totalScore || h.score || 0,
           })))
-          setPhase("done")
+          setPhase("results")
         }
       }
     } catch {}
   }
 
-  async function startEvaluation() {
-    setPhase("creating")
+  async function startAutoEvaluation() {
+    setPhase("running")
     setError(null)
 
     try {
-      // 1. Fetch toate joburile + user-ul curent
       const [jobsRes, sessionRes] = await Promise.all([
         fetch("/api/v1/jobs").then(r => r.json()),
         fetch("/api/auth/session").then(r => r.json()).catch(() => null),
       ])
 
       const jobIds = (Array.isArray(jobsRes) ? jobsRes : jobsRes.jobs || []).map((j: any) => j.id)
-      if (jobIds.length < 3) {
-        throw new Error("Sunt necesare cel puțin 3 posturi pentru evaluare.")
-      }
+      if (jobIds.length < 3) throw new Error("Sunt necesare cel putin 3 posturi pentru evaluare.")
 
-      // User-ul curent ca evaluator (singur participant la evaluare AI)
       const userId = sessionRes?.user?.id
-      if (!userId) {
-        throw new Error("Nu s-a putut identifica utilizatorul curent.")
-      }
+      if (!userId) throw new Error("Nu s-a putut identifica utilizatorul curent.")
 
-      // 2. Creăm sesiune cu toate posturile
+      const variantLabel = variant === "auto" ? "Evaluare AI" : variant === "hibrid" ? "Hibrid AI + Comisie" : "Comisie"
+
       const createRes = await fetch("/api/v1/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `Evaluare AI — ${new Date().toLocaleDateString("ro-RO")}`,
+          name: `${variantLabel} — ${new Date().toLocaleDateString("ro-RO")}`,
           jobIds,
           participantIds: [userId],
         }),
       })
 
-      if (!createRes.ok) {
-        const err = await createRes.json()
-        throw new Error(err.message || "Nu s-a putut crea sesiunea.")
-      }
+      if (!createRes.ok) throw new Error((await createRes.json()).message || "Nu s-a putut crea sesiunea.")
 
-      const createData = await createRes.json()
-      const sid = createData.id || createData.session?.id
+      const sid = (await createRes.json()).id
       setSessionId(sid)
-
-      // 3. Rulăm evaluarea automată AI
-      setPhase("evaluating")
 
       const evalRes = await fetch("/api/v1/sessions/auto-evaluate", {
         method: "POST",
@@ -659,24 +699,67 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         body: JSON.stringify({ sessionId: sid }),
       })
 
-      if (!evalRes.ok) {
-        const err = await evalRes.json()
-        throw new Error(err.message || "Eroare la evaluarea AI.")
-      }
+      if (!evalRes.ok) throw new Error((await evalRes.json()).message || "Eroare la evaluarea AI.")
 
-      const evalData = await evalRes.json()
-
-      // 4. Încărcăm rezultatele
       await loadResults(sid)
-
-      if (results.length === 0 && evalData.jobsEvaluated > 0) {
-        setResults([{ position: `${evalData.jobsEvaluated} posturi evaluate`, department: "", grade: "—", score: 0 }])
-        setPhase("done")
-      }
     } catch (e: any) {
       setError(e.message)
       setPhase("error")
     }
+  }
+
+  async function startCommitteeSession() {
+    setPhase("running")
+    setError(null)
+
+    try {
+      const [jobsRes, sessionRes] = await Promise.all([
+        fetch("/api/v1/jobs").then(r => r.json()),
+        fetch("/api/auth/session").then(r => r.json()).catch(() => null),
+      ])
+
+      const jobIds = (Array.isArray(jobsRes) ? jobsRes : jobsRes.jobs || []).map((j: any) => j.id)
+      if (jobIds.length < 3) throw new Error("Sunt necesare cel putin 3 posturi.")
+
+      const userId = sessionRes?.user?.id
+      if (!userId) throw new Error("Nu s-a putut identifica utilizatorul.")
+
+      const label = variant === "comisie-consultant" ? "Comisie + Consultant" : "Comisie + AI"
+
+      const createRes = await fetch("/api/v1/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${label} — ${new Date().toLocaleDateString("ro-RO")}`,
+          jobIds,
+          participantIds: [userId], // TODO: adăugare membri comisie din formular
+        }),
+      })
+
+      if (!createRes.ok) throw new Error((await createRes.json()).message || "Nu s-a putut crea sesiunea.")
+
+      const sid = (await createRes.json()).id
+      setSessionId(sid)
+
+      // Comisie: sesiunea rămâne IN_PROGRESS — membrii evaluează individual
+      // Schimbăm statusul la IN_PROGRESS
+      await fetch(`/api/v1/sessions/${sid}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "IN_PROGRESS" }),
+      })
+
+      setPhase("running")
+    } catch (e: any) {
+      setError(e.message)
+      setPhase("error")
+    }
+  }
+
+  function handleStart() {
+    if (variant === "auto") startAutoEvaluation()
+    else if (variant === "hibrid") startAutoEvaluation() // prima fază e identică cu auto
+    else startCommitteeSession()
   }
 
   async function validateResults() {
@@ -695,58 +778,108 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
     setValidating(false)
   }
 
-  // ── Fază: idle — buton de start ──
-  if (phase === "idle") {
+  // ── Alegere variantă ──
+  if (phase === "choose") {
     return (
       <>
         <p className="text-sm text-slate-600 leading-relaxed">
-          AI-ul analizează fiecare fișă de post și evaluează pe 6 criterii obiective:
-          Educație, Comunicare, Rezolvare probleme, Luarea deciziilor, Impact afaceri, Condiții de muncă.
+          Alegeti cum doriti sa se desfasoare evaluarea posturilor. In toate variantele, dumneavoastra validati si semnati raportul final.
         </p>
-        <div style={{ height: "12px" }} />
-        <div className="bg-white rounded-xl border border-slate-200" style={{ padding: "16px" }}>
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-[10px]">1</span>
-            <span>AI citește fișele de post</span>
-            <span className="text-slate-300">→</span>
-            <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-[10px]">2</span>
-            <span>Evaluare pe 6 criterii</span>
-            <span className="text-slate-300">→</span>
-            <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-[10px]">3</span>
-            <span>Ierarhie și grade</span>
-          </div>
+        <div style={{ height: "16px" }} />
+
+        <div className="space-y-3">
+          {VARIANTS.map(v => (
+            <button
+              key={v.id}
+              onClick={() => setVariant(v.id)}
+              className={`w-full text-left rounded-xl border-2 transition-all ${
+                variant === v.id
+                  ? "border-indigo-400 bg-indigo-50 shadow-md"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+              }`}
+              style={{ padding: "16px" }}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-xl mt-0.5">{v.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`text-sm font-bold ${variant === v.id ? "text-indigo-700" : "text-slate-800"}`}>
+                    {v.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{v.description}</p>
+                  <div style={{ height: "8px" }} />
+                  <div className="flex flex-wrap gap-3 text-[9px]">
+                    <span className="text-slate-400"><span className="font-semibold text-slate-500">Cine:</span> {v.who}</span>
+                    <span className="text-slate-400"><span className="font-semibold text-slate-500">Timp:</span> {v.time}</span>
+                    <span className="text-slate-400"><span className="font-semibold text-slate-500">Cost:</span> {v.cost}</span>
+                  </div>
+                </div>
+                {variant === v.id && (
+                  <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs shrink-0">✓</span>
+                )}
+              </div>
+            </button>
+          ))}
         </div>
+
         <div style={{ height: "20px" }} />
         <button
-          onClick={startEvaluation}
-          className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
+          onClick={handleStart}
+          disabled={!variant}
+          className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
         >
-          Pornește evaluarea AI
+          {!variant ? "Selectati o varianta" :
+           variant === "auto" ? "Porneste evaluarea AI" :
+           variant === "hibrid" ? "Porneste evaluarea AI (prima faza)" :
+           "Creeaza sesiunea de evaluare"}
         </button>
+
         <div style={{ height: "8px" }} />
-        <p className="text-[9px] text-slate-400 text-center">Durează 10-30 secunde, în funcție de numărul de posturi.</p>
+        <p className="text-[9px] text-slate-400 text-center">
+          6 criterii: Educatie, Comunicare, Rezolvare probleme, Luarea deciziilor, Impact afaceri, Conditii de munca.
+        </p>
       </>
     )
   }
 
-  // ── Fază: creating / evaluating — loading ──
-  if (phase === "creating" || phase === "evaluating") {
+  // ── Rulare ──
+  if (phase === "running") {
+    const isAutoOrHibrid = variant === "auto" || variant === "hibrid"
     return (
       <div className="flex flex-col items-center justify-center text-center" style={{ padding: "40px 0" }}>
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-        <div style={{ height: "20px" }} />
-        <p className="text-sm font-medium text-slate-700">
-          {phase === "creating" ? "Se creează sesiunea de evaluare..." : "AI evaluează posturile..."}
-        </p>
-        <div style={{ height: "8px" }} />
-        <p className="text-xs text-slate-400">
-          {phase === "evaluating" && "Fiecare post e analizat individual pe 6 criterii."}
-        </p>
+        {isAutoOrHibrid ? (
+          <>
+            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+            <div style={{ height: "20px" }} />
+            <p className="text-sm font-medium text-slate-700">AI evalueaza posturile...</p>
+            <p className="text-xs text-slate-400 mt-2">Fiecare post e analizat individual pe 6 criterii.</p>
+          </>
+        ) : (
+          <>
+            <span className="text-4xl">👥</span>
+            <div style={{ height: "16px" }} />
+            <p className="text-sm font-medium text-slate-700">Sesiunea de evaluare a fost creata</p>
+            <p className="text-xs text-slate-400 mt-2">
+              Membrii comisiei pot accesa sesiunea pentru a evalua individual fiecare post.
+              {variant === "comisie-consultant" && " Consultantul nostru va fi notificat pentru facilitare."}
+            </p>
+            <div style={{ height: "16px" }} />
+            {sessionId && (
+              <a
+                href={`/sessions/${sessionId}`}
+                target="_blank"
+                rel="noopener"
+                className="text-xs text-indigo-600 hover:underline"
+              >
+                Deschide sesiunea de evaluare →
+              </a>
+            )}
+          </>
+        )}
       </div>
     )
   }
 
-  // ── Fază: error ──
+  // ── Eroare ──
   if (phase === "error") {
     return (
       <div>
@@ -754,25 +887,22 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
           <p className="text-sm text-red-700">{error}</p>
         </div>
         <div style={{ height: "16px" }} />
-        <button
-          onClick={() => setPhase("idle")}
-          className="text-xs text-indigo-600 hover:underline"
-        >
-          Incearca din nou
+        <button onClick={() => { setPhase("choose"); setError(null) }} className="text-xs text-indigo-600 hover:underline">
+          Inapoi la selectie
         </button>
       </div>
     )
   }
 
-  // ── Fază: done — rezultate ──
+  // ── Rezultate ──
   return (
     <>
       <p className="text-sm text-slate-600 leading-relaxed">
-        Evaluarea e completa. Verificati ierarhia rezultata si validati daca reflecta realitatea organizatiei.
+        Evaluarea e completa. Verificati ierarhia si validati daca reflecta realitatea organizatiei.
+        {variant === "hibrid" && " Puteti trece la faza 2 (comisie) sau valida direct."}
       </p>
       <div style={{ height: "16px" }} />
 
-      {/* Tabel rezultate */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full text-xs">
           <thead>
@@ -809,19 +939,33 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
       </div>
 
       <div style={{ height: "20px" }} />
-
       {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
 
-      <button
-        onClick={validateResults}
-        disabled={validating}
-        className="w-full py-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-40"
-      >
-        {validating ? "Se validează..." : "Validez rezultatele"}
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={validateResults}
+          disabled={validating}
+          className="flex-1 py-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-40"
+        >
+          {validating ? "Se valideaza..." : "Deschide raportul pentru validare"}
+        </button>
+      </div>
+
+      {variant === "hibrid" && (
+        <>
+          <div style={{ height: "8px" }} />
+          <button
+            onClick={() => { setVariant("comisie-ai"); setPhase("choose") }}
+            className="w-full py-2 rounded-lg border border-indigo-200 text-indigo-700 text-xs font-medium hover:bg-indigo-50 transition-colors"
+          >
+            Trece la faza 2: comisia ajusteaza rezultatele
+          </button>
+        </>
+      )}
+
       <div style={{ height: "8px" }} />
       <p className="text-[9px] text-slate-400 text-center">
-        Dupa validare, raportul RDA devine disponibil in sectiunea Rapoarte.
+        Dupa validare si semnatura, raportul RDA devine oficial.
       </p>
     </>
   )
