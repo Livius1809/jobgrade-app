@@ -307,12 +307,12 @@ export default async function OwnerDashboard() {
 
   // Filtrare decizii Owner (doar strategice)
   const COG_COA_PATTERNS = /no_activity|no_cycles|no_actions|monotony|dormant|error|bug|fix|deploy|config|cron|timeout|crash|memory|cpu|disk|latency|cache|migration|schema|build|test.*fail|refactor|endpoint|api.*error|database|redis|queue/i
-  const ownerDecisions = data?.decisions.filter(
-    d => (d.severity === "CRITICAL" || d.severity === "HIGH") &&
+  const ownerDecisions = (data?.decisions || []).filter(
+    (d: any) => (d.severity === "CRITICAL" || d.severity === "HIGH") &&
       !COG_COA_PATTERNS.test(d.title || "") &&
       !COG_COA_PATTERNS.test(d.cause || "") &&
       !COG_COA_PATTERNS.test(d.classification || "")
-  ) || []
+  )
 
   return (
     <div className="flex gap-8 items-start">
