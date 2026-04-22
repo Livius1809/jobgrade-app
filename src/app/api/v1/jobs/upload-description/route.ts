@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   if (ext === ".pdf") {
     const { PDFParse } = await import("pdf-parse")
-    const parser = new PDFParse(buffer)
+    const parser = new PDFParse(buffer) as any
     await parser.load()
     rawText = await parser.getText()
   } else if (ext === ".docx" || ext === ".doc") {
