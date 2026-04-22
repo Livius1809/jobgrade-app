@@ -569,7 +569,8 @@ const VARIANTS: Array<{
   description: string
   who: string
   time: string
-  cost: string
+  includedInPackage: boolean
+  extraCreditsPercent?: number
 }> = [
   {
     id: "auto",
@@ -578,7 +579,7 @@ const VARIANTS: Array<{
     description: "AI analizeaza fisele de post si evalueaza pe 6 criterii obiective. Dumneavoastra validati si semnati raportul.",
     who: "AI evalueaza, personal acreditat supervizeaza",
     time: "10-30 secunde",
-    cost: "Inclus in pachet",
+    includedInPackage: true,
   },
   {
     id: "comisie-ai",
@@ -587,7 +588,7 @@ const VARIANTS: Array<{
     description: "Membrii comisiei dumneavoastra evalueaza individual. AI identifica divergentele si mediaza consensul.",
     who: "Comisia dumneavoastra evalueaza, AI mediaza",
     time: "2-5 zile (depinde de nr. posturi si disponibilitatea comisiei)",
-    cost: "Inclus in pachet",
+    includedInPackage: true,
   },
   {
     id: "comisie-consultant",
@@ -596,7 +597,7 @@ const VARIANTS: Array<{
     description: "Membrii comisiei dumneavoastra evalueaza. Un consultant acreditat din echipa noastra faciliteaza consensul.",
     who: "Comisia dumneavoastra evalueaza, consultantul nostru mediaza",
     time: "1-2 saptamani",
-    cost: "Cost suplimentar (credite)",
+    includedInPackage: true,
   },
   {
     id: "hibrid",
@@ -605,7 +606,8 @@ const VARIANTS: Array<{
     description: "Se ruleaza mai intai evaluarea AI. Raportul generat devine baza de discutie pentru comisie. Comisia ajusteaza de unde are nevoie.",
     who: "AI genereaza prima versiune, comisia valideaza si ajusteaza",
     time: "AI: 30s + comisie: 1-3 zile",
-    cost: "Pachet + 30-40% suplimentar",
+    includedInPackage: false,
+    extraCreditsPercent: 35,
   },
 ]
 
@@ -810,8 +812,10 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
                   <div className="flex flex-wrap gap-3 text-[9px]">
                     <span className="text-slate-400"><span className="font-semibold text-slate-500">Cine:</span> {v.who}</span>
                     <span className="text-slate-400"><span className="font-semibold text-slate-500">Timp:</span> {v.time}</span>
-                    <span className="text-slate-400"><span className="font-semibold text-slate-500">Cost:</span> {v.cost}</span>
                   </div>
+                  {v.includedInPackage && (
+                    <p className="text-[9px] text-emerald-600 mt-1.5">Inclus in pachetul achizitionat</p>
+                  )}
                 </div>
                 {variant === v.id && (
                   <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs shrink-0">✓</span>
@@ -820,6 +824,20 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
             </button>
           ))}
         </div>
+
+        {/* Avertizare credite suplimentare la hibrid */}
+        {variant === "hibrid" && (
+          <>
+            <div style={{ height: "16px" }} />
+            <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "14px" }}>
+              <p className="text-xs text-amber-800 font-medium">Varianta hibrid nu este acoperita integral de pachetul de baza.</p>
+              <p className="text-[10px] text-amber-600 mt-1">
+                Faza AI este inclusa. Faza comisie necesita aproximativ <span className="font-bold">35% credite suplimentare</span> fata de costul pachetului.
+                Creditele vor fi deduse din soldul dumneavoastra. Daca nu aveti suficiente, le puteti achizitiona din sectiunea de mai sus.
+              </p>
+            </div>
+          </>
+        )}
 
         <div style={{ height: "20px" }} />
         <button
