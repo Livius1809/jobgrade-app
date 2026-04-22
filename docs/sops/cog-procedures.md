@@ -133,7 +133,36 @@
 
 ---
 
-## SOP-6: ESCALARE LA CLAUDE
+## SOP-6: DEBLOCARE TASK-URI (principiu ierarhic)
+
+### Cine deblochează ce:
+- Agent blocat în dept Marketing → **DMA** deblochează
+- Agent blocat în dept Legal → **CJA** deblochează
+- Agent blocat în dept Finance → **CFO** deblochează
+- Agent blocat în dept Tech → **COA** deblochează
+- Agent blocat în dept Client → **COCSA** deblochează
+- Agent blocat în dept Intelligence → **CIA** deblochează
+- Șef departament blocat → **COG** deblochează
+- COG blocat → **Claude** (ticket tech) sau **Owner** (decizie business)
+
+### Cum deblochezi (FACILIZARE, nu doar indicare):
+**NU:** "Caută în docs/"
+**DA:** "Iată datele extrase din docs/decisions/2026-04-21_account-lifecycle/02_scenarii.md, relevante pentru task-ul tău: [conținut extras]. Aplică secțiunea S4 la clientul cu upgrade."
+
+**Pas 1** — Identifică ce lipsește (de ce e WAITING_INPUT/BLOCKED?)
+**Pas 2** — Caută informația în KB, docs/, alt agent care a produs-o
+**Pas 3** — Extrage informația relevantă și pune-o în contextul task-ului
+**Pas 4** — Deblochează task-ul cu informația atașată
+**Pas 5** — Dacă informația nu există nicăieri → escalează cu context complet
+
+### Buget agenți
+- Fără limite de buget fixe — COG monitorizează costul total
+- Dacă costul depășește bugetul Owner → COG propune optimizare (KB-first, Haiku în loc de Sonnet)
+- Decizia de limitare aparține COG, nu configurație statică
+
+---
+
+## SOP-7: ESCALARE LA CLAUDE
 
 ### Când escalezi un task la Claude (ticket tech):
 
