@@ -77,6 +77,14 @@ export async function GET(req: NextRequest) {
             title: "Prag pay gap depășit — Evaluare comună necesară",
             body: `Diferența salarială pe gen (${indicators.a_mean_base_gap}%) depășește 5%. Art. 10 obligă inițierea unei evaluări comune. Un caz JointPayAssessment a fost creat automat.`,
             link: "/pay-gap/assessments",
+            sourceRole: "CCO",
+            requestKind: "DECISION" as const,
+            requestData: JSON.stringify({
+              whatIsNeeded: `Decideti initierea evaluarii comune (Joint Pay Assessment) conform Art. 10 Directiva EU 2023/970`,
+              context: `Diferenta salariala pe gen a atins ${indicators.a_mean_base_gap}%, depasind pragul legal de 5%. Legea obliga initierea unei evaluari comune cu reprezentantii angajatilor. Un caz a fost creat automat dar necesita validarea dumneavoastra.`,
+              options: ["Aprob evaluarea comuna — incep procesul", "Contestam datele — solicit reverificare"],
+              resourceLabel: `Joint Pay Assessment ${year}`,
+            }),
           })),
         })
       }

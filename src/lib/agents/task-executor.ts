@@ -567,13 +567,24 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
           select: { id: true },
         })
         if (ownerUser) {
+          const blockerRoleName = ROLE_LABELS[task.assignedTo] || task.assignedTo
+          const cleanBlockerDesc = stripTechJargon(blockerDesc)
+          const cleanTaskTitle = stripTechJargon(task.title)
+
           await (prisma as any).notification.create({
             data: {
               userId: ownerUser.id,
               type: "AGENT_MESSAGE",
-              title: `${task.assignedTo}: necesită decizia conducerii`,
-              body: `Task: ${task.title}\nMotiv: ${blockerDesc.slice(0, 200)}`,
+              title: `${blockerRoleName}: este blocat si are nevoie de directiva dumneavoastra`,
+              body: `${blockerRoleName} lucreaza la: ${cleanTaskTitle}.\nMotivul blocajului: ${cleanBlockerDesc}`,
               read: false,
+              sourceRole: task.assignedTo,
+              requestKind: "DECISION",
+              requestData: JSON.stringify({
+                whatIsNeeded: `${blockerRoleName} este blocat si are nevoie de o decizie de la dumneavoastra pentru a continua`,
+                context: `Lucreaza la: ${cleanTaskTitle}. Motivul blocajului: ${cleanBlockerDesc}`,
+                resourceLabel: cleanTaskTitle,
+              }),
             },
           })
         }
@@ -797,7 +808,7 @@ async function executeOperationalActions(result: string, agentRole: string): Pro
   // NOTIFY_OWNER actions
   let notifyMatch: RegExpExecArray | null
   while ((notifyMatch = NOTIFY_PATTERN.exec(result)) !== null) {
-    const [, title, body] = notifyMatch
+    const [, rawTitle, rawBody] = notifyMatch
     try {
       // Find Owner user
       const owner = await (prisma as any).user.findFirst({
@@ -805,20 +816,30 @@ async function executeOperationalActions(result: string, agentRole: string): Pro
         select: { id: true },
       })
       if (owner) {
+        // Traducere din limbaj tehnic în limbaj Owner
+        const translated = translateAgentMessageForOwner(agentRole, rawTitle, rawBody)
+
         await (prisma as any).notification.create({
           data: {
             userId: owner.id,
             type: "COG_MESSAGE",
-            title: `[${agentRole}] ${title}`,
-            body,
+            title: translated.title,
+            body: translated.body,
             read: false,
+            sourceRole: agentRole,
+            requestKind: translated.requestKind,
+            requestData: JSON.stringify({
+              whatIsNeeded: translated.whatIsNeeded,
+              context: translated.context,
+              options: translated.options,
+            }),
           },
         })
-        actions.push(`[NOTIFIED] Owner: ${title}`)
-        console.log(`[ACTION] ${agentRole} NOTIFY_OWNER: ${title}`)
+        actions.push(`[NOTIFIED] Owner: ${translated.title}`)
+        console.log(`[ACTION] ${agentRole} NOTIFY_OWNER: ${rawTitle} → translated`)
       }
     } catch (e: any) {
-      actions.push(`[NOTIFY_FAILED] ${title} — ${e.message}`)
+      actions.push(`[NOTIFY_FAILED] ${rawTitle} — ${e.message}`)
     }
   }
 
@@ -997,4 +1018,132 @@ export async function executeQueue(options: {
     }
   }
   return results
+}
+
+// ── Traducere mesaje agent → limbaj Owner ──────────────────────────────────
+
+const ROLE_LABELS: Record<string, string> = {
+  COG: "Directorul General", COA: "Directorul Operațional",
+  DOA: "Administratorul Operațional", DOAS: "Administratorul Senior",
+  COCSA: "Strategul Comercial", PMA: "Managerul de Produs",
+  CJA: "Juristul", CIA: "Analistul de Informații",
+  MKA: "Managerul de Marketing", CMA: "Managerul de Conținut",
+  SOA: "Agentul de Vânzări", DMA: "Managerul de Date",
+  CFO: "Directorul Financiar", CCO: "Directorul de Conformitate",
+  COSO: "Observatorul Strategic", HR_COUNSELOR: "Consilierul HR",
+  MEDIATOR: "Mediatorul",
+}
+
+interface TranslatedMessage {
+  title: string
+  body: string
+  whatIsNeeded: string
+  context: string
+  requestKind: string
+  options?: string[]
+}
+
+function translateAgentMessageForOwner(agentRole: string, rawTitle: string, rawBody: string): TranslatedMessage {
+  const roleName = ROLE_LABELS[agentRole] || agentRole
+
+  // Curățăm jargon tehnic din titlu și body
+  const cleanTitle = stripTechJargon(rawTitle)
+  const cleanBody = stripTechJargon(rawBody)
+
+  // Detectăm tipul cerere
+  const combined = `${rawTitle} ${rawBody}`.toLowerCase()
+  const requestKind = detectRequestKind(combined)
+
+  // Traducem ce anume cere agentul
+  const whatIsNeeded = extractOwnerFriendlyRequest(cleanTitle, cleanBody, requestKind)
+
+  // Context tradus
+  const context = cleanBody.length > 0 ? cleanBody : cleanTitle
+
+  // Opțiuni dacă e decizie
+  const options = requestKind === "DECISION"
+    ? extractDecisionOptions(rawBody)
+    : undefined
+
+  return {
+    title: `${roleName}: ${cleanTitle}`,
+    body: cleanBody,
+    whatIsNeeded,
+    context,
+    requestKind,
+    options,
+  }
+}
+
+/**
+ * Elimină jargon tehnic: paths, extensii, JSON, variabile, referințe cod
+ */
+function stripTechJargon(text: string): string {
+  if (!text) return ""
+  let t = text
+  // Elimină JSON inline { ... }
+  t = t.replace(/\{[^{}]*\}/g, "(detalii tehnice omise)")
+  // Elimină array-uri [...]
+  t = t.replace(/\[[^\[\]]*\]/g, "")
+  // Elimină path-uri de fișiere
+  t = t.replace(/(?:src|docs|scripts|lib|app|api|components)\/[\w\-\/\.]+/g, "")
+  t = t.replace(/[A-Za-z]:\\[\w\\\-\.]+/g, "")
+  // Elimină extensii fișiere
+  t = t.replace(/\b\w+\.(ts|tsx|js|jsx|mjs|json|md|yml|yaml|sql|prisma|env)\b/gi, "")
+  // Elimină referințe tehnice comune
+  t = t.replace(/\b(FLUX-\d+[a-z]?|route|endpoint|API|DB|cron|webhook|prisma|schema|migration|deploy|build|SSR|ISR|RSC|middleware|runtime)\b/gi, "")
+  // Elimină variabile tehnice camelCase/SCREAMING_CASE izolate
+  t = t.replace(/\b[A-Z_]{3,30}\b/g, (match) => {
+    // Păstrăm rolurile și cuvintele business
+    if (ROLE_LABELS[match]) return ROLE_LABELS[match]
+    if (/^(ART|RON|EUR|USD|TVA|GDPR|MVV|KPI|SRL|CIF|B2B|B2C|FAQ|PDF|CSV|HR)$/.test(match)) return match
+    return ""
+  })
+  // Elimină backticks și code formatting
+  t = t.replace(/`[^`]*`/g, "")
+  // Elimină URL-uri
+  t = t.replace(/https?:\/\/\S+/g, "")
+  // Curățăm spații multiple și punctuație redundantă
+  t = t.replace(/\(\s*\)/g, "")
+  t = t.replace(/\s+/g, " ")
+  t = t.replace(/\s*,\s*,/g, ",")
+  t = t.replace(/\s*\.\s*\./g, ".")
+  return t.trim()
+}
+
+function detectRequestKind(text: string): string {
+  if (/aprob|decid|valid|resping|alege|optiune|propunere/i.test(text)) return "DECISION"
+  if (/acces|permisiune|drept|deblocare/i.test(text)) return "ACCESS"
+  if (/actiune|realiza|execut|implement|furniza|trimite/i.test(text)) return "ACTION"
+  if (/valida|verifica|confirma|revizui/i.test(text)) return "VALIDATION"
+  return "INFORMATION"
+}
+
+function extractOwnerFriendlyRequest(title: string, body: string, kind: string): string {
+  const combined = `${title} ${body}`.slice(0, 500)
+
+  switch (kind) {
+    case "DECISION":
+      return `Este necesara o decizie de la dumneavoastra: ${title}`
+    case "ACCESS":
+      return `Se solicita acordarea accesului: ${title}`
+    case "ACTION":
+      return `Este necesara o actiune concreta din partea dumneavoastra: ${title}`
+    case "VALIDATION":
+      return `Se solicita validarea: ${title}`
+    default:
+      return `Echipa va informeaza: ${title}`
+  }
+}
+
+function extractDecisionOptions(body: string): string[] | undefined {
+  // Căutăm opțiuni explicite: "1. ...", "a) ...", "- ..."
+  const optionLines = body.match(/(?:^|\n)\s*(?:\d+[\.\)]\s*|[a-z]\)\s*|-\s+)(.+)/g)
+  if (optionLines && optionLines.length >= 2) {
+    return optionLines
+      .map(l => stripTechJargon(l.replace(/^\s*(?:\d+[\.\)]\s*|[a-z]\)\s*|-\s+)/, "").trim()))
+      .filter(l => l.length > 5)
+      .slice(0, 5)
+  }
+  return undefined
 }

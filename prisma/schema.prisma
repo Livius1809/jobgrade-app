@@ -861,6 +861,14 @@ model Notification {
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
 
+  // ── Cerere structurată de la agent ──
+  sourceRole    String?                  // Agentul care solicită (COG, DOA, etc.)
+  requestKind   OwnerRequestKind?        // Ce tip de răspuns așteaptă
+  requestData   String?       @db.Text   // JSON: detalii specifice cererii
+  responseKind  OwnerResponseKind?       // Ce a răspuns Owner-ul
+  responseData  String?       @db.Text   // JSON: datele/acțiunea furnizată
+  respondedAt   DateTime?                // Când a răspuns
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read, createdAt])
@@ -1026,6 +1034,30 @@ enum NotificationType {
   PAY_GAP_THRESHOLD_EXCEEDED
   COG_MESSAGE
   AGENT_MESSAGE
+  OWNER_REQUEST            // Cerere structurată de la structură către Owner
+}
+
+// Ce tip de răspuns așteaptă agentul de la Owner
+enum OwnerRequestKind {
+  INFORMATION       // Agentul are nevoie de date/informații specifice
+  ACCESS            // Agentul cere acces la o resursă/funcționalitate
+  DECISION          // Agentul cere o decizie strategică (aprob/resping/ajustez)
+  ACTION            // Agentul cere Owner-ului să facă ceva concret
+  VALIDATION        // Agentul cere validarea unui rezultat/raport
+}
+
+// Ce a furnizat Owner-ul ca răspuns
+enum OwnerResponseKind {
+  INFO_PROVIDED     // A furnizat informația cerută
+  ACCESS_GRANTED    // A acordat accesul
+  ACCESS_DENIED     // A refuzat accesul
+  APPROVED          // A aprobat
+  REJECTED          // A respins
+  ADJUSTED          // A aprobat cu modificări
+  ACTION_DONE       // A executat acțiunea cerută
+  VALIDATED         // A validat rezultatul
+  DELEGATED         // A delegat altcuiva
+  CLARIFICATION     // A cerut lămuriri suplimentare
 }
 
 enum Gender {

@@ -104,6 +104,14 @@ export async function POST(req: NextRequest) {
         title: "Cerere nouă Art. 7 — Transparență salarială",
         body: `${parsed.data.requestedBy} (${parsed.data.requestEmail}) a solicitat informații despre remunerare. Termen de răspuns: ${dueDate.toLocaleDateString("ro-RO")}.`,
         link: "/employee-portal",
+        sourceRole: "CCO",
+        requestKind: "ACTION" as const,
+        requestData: JSON.stringify({
+          whatIsNeeded: `Furnizati informatiile salariale solicitate de ${parsed.data.requestedBy} conform Art. 7 Directiva Transparenta Salariala`,
+          context: `Cerere legala cu termen obligatoriu. Trebuie furnizate: grila salariala aplicabila, media remuneratiei pe categorie, criteriile de determinare a salariului.`,
+          deadline: dueDate.toLocaleDateString("ro-RO"),
+          resourceLabel: `Cerere Art. 7 — ${parsed.data.requestedBy}`,
+        }),
       })),
     })
 
