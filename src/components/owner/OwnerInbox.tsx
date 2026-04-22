@@ -114,32 +114,50 @@ export default function OwnerInbox() {
 
   // Filtrare mesaje tehnice gestionate autonom de COG
   const COG_AUTO = /no_activity|dormant|reactivare|sincronizare|activare agent|diagnostic inactivitate/i
-  const ownerMessages = notifications.filter(n => !COG_AUTO.test(n.title))
-  const cogFiltered = notifications.length - ownerMessages.length
-  const unread = ownerMessages.filter(n => !n.read)
+  const active = notifications.filter(n => !COG_AUTO.test(n.title) && !n.respondedAt)
+  const resolved = notifications.filter(n => !COG_AUTO.test(n.title) && !!n.respondedAt)
+  const cogFiltered = notifications.filter(n => COG_AUTO.test(n.title)).length
+  const [showResolved, setShowResolved] = useState(false)
 
   if (loading) return null
-  if (ownerMessages.length === 0 && cogFiltered === 0) return null
+  if (active.length === 0 && resolved.length === 0 && cogFiltered === 0) return null
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Mesaje de la structura</p>
-          {unread.length > 0 && (
+          {active.length > 0 && (
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-bold">
-              {unread.length}
+              {active.length}
             </span>
           )}
         </div>
-        {cogFiltered > 0 && (
-          <p className="text-[9px] text-slate-400">{cogFiltered} tehnice gestionate autonom</p>
-        )}
+        <div className="flex items-center gap-3">
+          {resolved.length > 0 && (
+            <button
+              onClick={() => setShowResolved(!showResolved)}
+              className="text-[9px] text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showResolved ? "Ascunde" : "Arata"} {resolved.length} rezolvate
+            </button>
+          )}
+          {cogFiltered > 0 && (
+            <p className="text-[9px] text-slate-400">{cogFiltered} tehnice autonom</p>
+          )}
+        </div>
       </div>
+
+      {active.length === 0 && !showResolved && (
+        <>
+          <div style={{ height: "16px" }} />
+          <p className="text-xs text-emerald-600 text-center">Niciun mesaj activ. Structura functioneaza autonom.</p>
+        </>
+      )}
 
       <div style={{ height: "16px" }} />
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {ownerMessages.slice(0, 15).map(n => {
+        {[...active, ...(showResolved ? resolved : [])].slice(0, 20).map(n => {
           const rk = n.requestKind
           const style = rk ? REQUEST_LABELS[rk] : FALLBACK_STYLE
           const reqData: RequestData = n.requestData ? JSON.parse(n.requestData) : {}
