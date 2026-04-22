@@ -1,88 +1,133 @@
-# Handover sesiune 22.04.2026
+# Handover sesiune 22.04.2026 (sesiunea 2 — continuare)
 
-## Ce s-a realizat azi
+## Ce s-a realizat
 
-### Organism — refăcut complet
-1. **Executor reliable**: scos guard ore, kill-switch ON by default, toată coada procesată, retry automat 24h
-2. **Alignment simplificat**: Nivel 1 pattern-uri interzise pentru operaționale, alignment complet doar pt taguri sensibile
-3. **Budget**: scoase toate limitele (47 AgentBudgets șterse), COG decide bugetele prin calitate nu plafon
-4. **Auto-create budget fix**: telemetry nu mai recrează AgentBudget la 20K
-5. **KB-first resolver refăcut**: caută în RULE nu în problemClass → KB hit rate de la 1% la 50%
+### Sesiunea 1 (mai devreme)
+- Commit cod sesiune anterioară (Company Profiler + Account lifecycle)
+- OwnerInbox refăcut complet (5 tipuri cereri, traducere, lanț escalare, active/rezolvate)
+- Sincronizare realitate → KB prod (6 entries, 9 notificări rezolvate)
+- 4 commit-uri deploy-uite pe prod
 
-### Seeduire completă — toți agenții la 80-100%
-6. **SOP-uri procedurale**: 10 individuale + 28 universale = 38 agenți cu HOW
-7. **Cunoștințe declarative diferențiate**: COG 95%, dept heads 85%, client-facing 95%, operaționali 85%
-8. **Cursuri distilate**: curs AI Silviu Popescu (284 artifacts), customer relations (24), interpersonal skills (30)
-9. **27 skills din jobgrade_team/skills/**: customer-success, conflict-harmonization, hr-psychology etc.
-10. **Referințe bibliografice**: Pitariu (3 chunks), LLEAC, brand brief, CI report, owner inputs
-11. **Bridge KBEntry→learningArtifact**: 1151 EXPERT_HUMAN (inclusiv 503 Hawkins)
-12. **CÂMPUL acționabil**: proceduri per tip activitate pentru toți 39 agenți
-13. **9 principii Owner**: infuzate în KB toți agenții (conducere prin obiective, nu buget)
-14. **35 agenți la 0% ridicați la 80%**: 175 artifacts (5 straturi × 35 agenți)
-15. **Roluri normalizate**: cog-agent→COG, soa-agent→SOA etc. (194 updated)
+### Sesiunea 2
+1. **Upload PDF/Word** E2E funcțional — pdf-parse v2 (PDFParse class), mammoth Word
+2. **Evaluare inline** — EvaluationPanel în panou lateral (fetch jobs+user, auto-evaluate, tabel rezultate)
+3. **Rapoarte inline** — card dependent de validare
+4. **Un singur panou activ** — activePanel centralizat, mutual exclusion calculator↔date↔evaluare↔profil
+5. **Lățime uniformă panouri** — parentPanelLeft din sectionRef
+6. **Company Profiler badge-uri** — `/api/v1/company/maturity` cu fallback robust, badge-uri PREGĂTIT/ratio/missing pe carduri
+7. **Restructurare tab-uri**:
+   - Card 1: Posturi ("Adaugă" + "Import stat funcții" XLSX/PDF/PNG Vision) + Fișe de post
+   - Card 2: + Stat salarii (XLSX/XML/CSV) — NOU
+   - Card 3, 4: de revizuit (nu e prioritar acum)
+8. **Import stat funcții** — API cu Claude Vision pentru organigrame imagine
+9. **GET /api/v1/sessions** adăugat (lipsea)
+10. **Sessions API fix** — EvaluationPanel trimite jobIds+participantIds corect
 
-### Pâlnia de învățare
-16. **learning-funnel.ts**: 6 niveluri (captură→distilare→agent→departament→organizație→spirală)
-17. **Hook post-execuție**: PAS 9 în intelligent-executor, non-blocking
-18. **Propagare departamentală**: la fiecare ciclu cron
-19. **Pipeline cursuri automat**: SOP documentat + script reusabil
+## Stare curentă portal Card 1 (Ordine internă)
 
-### Dashboard
-20. **Insights + Agents**: citesc din AMBELE tabele (kb_entries + learning_artifacts)
-21. **Coloane noi**: Seed%, KB Hit%, Maturitate per agent
-22. **Viziune redesign**: 3 secțiuni (Dinamici / Decizii / Interacțiune) — documentat, de implementat
+### FUNCȚIONAL
+- Profil companie (ANAF, CAEN, MVV)
+- Posturi: Adaugă (AI) + Import stat funcții (XLSX/PDF/PNG)
+- Fișe de post: Compune AI + Upload PDF/Word
+- Raport MasterReportFlipbook cu validare+semnătură (electronică+olografă)
+- Company Profiler badge-uri dinamice pe carduri servicii
 
-## Metrici organism acum
-- KB Hit Rate: **50%** (de la 1%)
-- Blocked: **24** (de la 138)
-- RESOURCE blockers: **0** (de la 124)
-- Autonomie: **94%**
-- Cost 24h: **$17.13** (rezonabil)
-- Total artefacte KB: **976** (de la ~155)
+### DE IMPLEMENTAT — Panoul Evaluare complet (4 variante)
 
-## De implementat imediat (sesiune următoare)
+**Cele 4 procese de evaluare (din discuții Owner):**
 
-### Prioritate 1: Redesign Owner Dashboard
-- docs/decisions/2026-04-22_owner-dashboard-redesign.md
-- 3 secțiuni: Dinamici / Decizii Owner / Interacțiune structura
-- Pattern-uri portal: separatoare fixe, padding 28px, cuprins click-abil
-- Flaguri noutăți, ștergere informații vechi, zero redundanțe
+1. **Automat AI** — AI evaluează, supervizat de personal acreditat nostru
+   - AI citește fișe → scoruri 6 criterii → verificare
+   - Clientul validează raportul + semnează
+   - Cel mai rapid/ieftin
 
-### Prioritate 2: AI în portal (de ieri)
-- Generare fișe AI (buton există, backend lipsește)
-- Upload PDF/Word (UI drag&drop, parser lipsește)
-- Consultanță AI (bubble funcționează?)
-- ANAF lookup + MVV extract (testat?)
-- Toate testate funcțional, zero mockup
+2. **Cu comisie, mediat AI** — comisia clientului evaluează, AI mediază
+   - Membrii scorează individual → AI compară → 3 etape consens
+   - Consens: automat → recalibrare → facilitare AI
+   - NU include personal acreditat de la noi
+   - Clientul validează + semnează
 
-### Prioritate 3: Portal B2B finalizare
-- Ștergere date test (funcționează parțial)
-- Jurnal cheltuieli client
-- T&C + pagini legal
+3. **Cu comisie, mediat consultant uman** — comisia evaluează, consultant nostru mediază
+   - Același flux, dar etapa 3 = consultant nostru (personal acreditat)
+   - Cel mai scump
 
-## Principii permanente stabilite azi
-1. Obiective top-down, nu activitate bottom-up
-2. Cost = funcție de relevanță, nu de buget
-3. Deblocare ierarhică (fiecare șef la nivelul lui)
-4. Facilitare activă (extrage+contextualizează, nu "caută în docs/")
-5. Limitare prin calitate demers, nu plafon tokeni
-6. Pâlnia de învățare continuă
-7. SOP-uri vii, nu statice
-8. Zero blocaje permanente
-9. Organism condus de obiective = cost natural
+4. **Hibrid AI → Comisie** — rulează mai întâi 1 (automat), apoi comisia folosește raportul ca bază
+   - Pricing: A + 30-40%
+   - Comisia pornește de la rezultatul AI, nu de la zero
 
-## Fișiere cheie create/modificate azi
-- docs/sops/*.md — 11 fișiere SOP
-- docs/seeds/*.md — 5 fișiere cunoștințe
-- docs/sops/learning-funnel.md — arhitectura pâlniei
-- docs/sops/cog-principles-owner-22apr2026.md — 9 principii
-- src/lib/agents/learning-funnel.ts — implementare pâlnie
-- src/lib/agents/intelligent-executor.ts — alignment simplificat + hook pâlnie
-- src/lib/agents/kb-first-resolver.ts — refăcut complet (RULE nu problemClass)
-- src/lib/agents/execution-telemetry.ts — scos auto-create budget
-- src/lib/agents/alignment-checker.ts — BLOCKED_PATTERNS exportat
-- src/app/api/cron/executor/route.ts — fără guard ore, kill-switch ON default
-- src/app/(portal)/owner/reports/agents/page.tsx — coloane Maturitate
-- src/app/(portal)/owner/insights/page.tsx — UNION ambele KB
-- scripts/seed-remaining-courses.mjs — reusabil
-- scripts/seed-references.mjs — reusabil
+**REGULĂ:** Cele 3 moduri NU SE AMESTECĂ. "Personal acreditat" e DOAR la varianta automată.
+
+**Validare:** În TOATE variantele, clientul (Owner/DG/reprezentanți) validează și semnează raportul.
+Implementat deja: declarație formală + semnătură electronică + loc olografă + nr. înregistrare + L.S.
+
+**Backend existent (4096 linii):**
+- je-process-engine.ts (1810 linii): startPreScoring, submitPreScore, revealScores, flagForMediation, suggestBenchmarks, confirmBenchmarks, suggestSlotting, confirmSlotting, startOwnerValidation, getHierarchyForValidation, proposeGradeAdjustment, confirmAdjustment, getAdjustmentImpact, finalizeSession, getSessionJournal
+- NewSessionWizard (311): alege posturi + evaluatori
+- EvaluationForm (303): formular scorare 6 criterii per post
+- ConsensusView (414): vizualizare consens + divergențe
+- JEResultsTable (902): tabel rezultate ierarhie
+- ClassCountSelector (186): selector nr. grade
+- SessionActions (128): butoane status sesiune
+- auto-evaluate (42): evaluare automată AI
+
+**De făcut:**
+- Panou lateral cu 4 opțiuni (selectare variantă)
+- Per variantă: configurare (comisie, evaluatori — doar pt 2/3/4)
+- Rulare proces inline (nu navigare la /sessions)
+- Progres vizibil
+- Rezultate inline (tabel ierarhie)
+- Link la raport (MasterReportFlipbook) pentru validare+semnătură
+
+## PRICING METHODOLOGY v2 — Status
+
+**Document:** `docs/pricing-methodology-v2.md` (553 linii, commit 76374b3)
+
+### Ce conține:
+- Inventar complet 33 servicii din cod (13 AI + 20 non-AI)
+- Consum resurse real per serviciu (tokeni, model AI, DB, compute)
+- Toți furnizorii CAPEX+OPEX (Anthropic, Vercel, Neon, Upstash, Stripe, Resend, ElevenLabs, Sentry, ntfy, GitHub)
+- Cost real → Plasa 1 (Opus worst-case) → Plasa 2 (BNR+10%) → Verificare marjă
+- Chat consultant HR implementat: familiarizare 🟢 135min/lună gratuit, consultanță 🟡 3cr/min
+- Flying wheel implementat: NarrativeGuide.tsx bubble contextual gratuit
+- Storage: ~400-600 KB/an/client (<$0.001/an)
+- Cod existent avansat: cost-calculator.ts, usage-logger.ts, anthropic-tracked.ts, budget-cap.ts, cost-gate.ts
+
+### Sistem pricing din cod (deja implementat):
+- `src/lib/pricing/cost-calculator.ts` — 4 plase siguranță, ProviderCost din DB, AIOperationTier, token amplification
+- `src/lib/pricing/usage-logger.ts` — loghează fiecare execuție cu toate resursele
+- `src/lib/pricing/anthropic-tracked.ts` — wrapper SDK cu telemetry automat
+- `src/lib/ai/budget-cap.ts` — budget tiers (FREE/STARTER/PROFESSIONAL/ENTERPRISE), limită zilnică/lunară USD
+- `src/lib/agents/cost-gate.ts` — alege model AI optimal per complexitate + verifică buget
+
+### TODO — de finalizat cu structura:
+- Multiplicatori variante evaluare (auto/comisie-AI/comisie-consultant/hibrid) — deducere din costuri reale
+- Verificare fezabilitate prețuri implementate vs costuri calculate
+- Populare tabel ProviderCost în DB prod cu prețuri reale furnizori
+- Populare AIOperationTier pentru fiecare serviciu
+- Validare Owner pe document final
+
+## REZOLVAT: Pricing per variantă de evaluare (commit f470ea6)
+Multiplicatori deduși din DB prod (provider_costs + ai_operation_tiers):
+- A (Auto AI): 0 credite suplimentare (inclus în 60 cr/poz pachet)
+- B (Comisie + AI): +1 cr/poz (mediation-facilitation Sonnet, amp 1.50)
+- C (Comisie + Consultant): +20 cr/poz (175 EUR/oră × 7 min/poz)
+- D (Hibrid): +1 cr/poz (A complet + B parțial)
+Human-specialist-min corectat pe prod: real 2.50, covering 3.50 USD/min.
+
+## ÎN CURS: Elaborare document pricing final
+**Directivă Owner:** Claude + COG elaborează varianta finală a structurii de preț pe TOATE serviciile platformei. Fără confirmare Owner necesară până la documentul final. La final: fine tuning + asigurare permanență (nu se mai pierde NICIODATĂ).
+
+## Commit-uri sesiunea 2
+- eb34aba — Company Profiler + Account lifecycle
+- e20a754 — OwnerInbox cereri structurate
+- 650f084 — INFORMATION itemi concreți
+- d863759 — active/rezolvate toggle
+- 250b4e9 — Upload PDF/Word
+- 1b702d2 — Evaluare+Rapoarte inline
+- 2eac09f, 3898666, 7e797c8 — fix-uri pdf-parse
+- 5892f0a, 386d9a4 — panel coordination
+- 3c530e0 — bidirectional panels
+- 42650a2 — EvaluationPanel fix + Import Excel + GET sessions
+- eb51753 — Company Profiler badge-uri
+- 5e4fb12 — maturity fallback robust
+- 92c73eb — restructurare tab-uri + import stat funcții
