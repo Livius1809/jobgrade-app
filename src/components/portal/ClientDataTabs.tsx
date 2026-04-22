@@ -731,7 +731,11 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
 function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: string; title: string }>; onSwitchToPosturi: () => void }) {
   const [selectedJobId, setSelectedJobId] = useState("")
   const [generating, setGenerating] = useState(false)
-  const [result, setResult] = useState<{ purpose: string; responsibilities: string; requirements: string } | null>(null)
+  const [result, setResult] = useState<{
+    purpose: string; responsibilities: string; requirements: string;
+    criteriaMapping?: Record<string, { level: string; summary: string; evidence: string }>;
+    missingInfo?: string[];
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -862,6 +866,48 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
               <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{result.requirements}</div>
             </div>
           </div>
+
+          {/* Mapare criterii (intern — alimentează evaluarea) */}
+          {result.criteriaMapping && (
+            <>
+              <div style={{ height: "12px" }} />
+              <div className="bg-indigo-50 rounded-xl border border-indigo-200" style={{ padding: "16px" }}>
+                <p className="text-[10px] text-indigo-700 font-bold uppercase tracking-wide">Mapare pe criterii de evaluare</p>
+                <div style={{ height: "8px" }} />
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(result.criteriaMapping).map(([key, val]) => {
+                    const labels: Record<string, string> = {
+                      education: "Educație", communication: "Comunicare", problemSolving: "Rezolvare probleme",
+                      decisionMaking: "Luarea deciziilor", businessImpact: "Impact afaceri", workConditions: "Condiții"
+                    }
+                    return (
+                      <div key={key} className="bg-white rounded-lg border border-indigo-100" style={{ padding: "8px" }}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] text-slate-500">{labels[key] || key}</span>
+                          <span className="text-xs font-bold text-indigo-700">{val.level}</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 mt-1">{val.summary}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Întrebări — informații lipsă */}
+          {result.missingInfo && result.missingInfo.length > 0 && (
+            <>
+              <div style={{ height: "12px" }} />
+              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "12px" }}>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Informații lipsă — clarifică pentru evaluare mai precisă</p>
+                <div style={{ height: "6px" }} />
+                {result.missingInfo.map((q, i) => (
+                  <p key={i} className="text-xs text-amber-800 leading-relaxed">• {q}</p>
+                ))}
+              </div>
+            </>
+          )}
 
           <div style={{ height: "12px" }} />
           <button
