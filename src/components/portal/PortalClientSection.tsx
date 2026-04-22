@@ -618,6 +618,15 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [validating, setValidating] = useState(false)
+  const [jobCount, setJobCount] = useState(0)
+
+  // Fetch nr posturi pentru calcul credite hibrid
+  useEffect(() => {
+    fetch("/api/v1/jobs").then(r => r.json()).then(data => {
+      const jobs = Array.isArray(data) ? data : data.jobs || []
+      setJobCount(jobs.length)
+    }).catch(() => {})
+  }, [])
 
   // La mount, verificăm dacă există deja o sesiune cu rezultate
   useEffect(() => {
@@ -826,18 +835,19 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         </div>
 
         {/* Avertizare credite suplimentare la hibrid */}
-        {variant === "hibrid" && (
-          <>
-            <div style={{ height: "16px" }} />
-            <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "14px" }}>
-              <p className="text-xs text-amber-800 font-medium">Varianta hibrid nu este acoperita integral de pachetul de baza.</p>
-              <p className="text-[10px] text-amber-600 mt-1">
-                Faza AI este inclusa. Faza comisie necesita aproximativ <span className="font-bold">35% credite suplimentare</span> fata de costul pachetului.
-                Creditele vor fi deduse din soldul dumneavoastra. Daca nu aveti suficiente, le puteti achizitiona din sectiunea de mai sus.
-              </p>
-            </div>
-          </>
-        )}
+        {variant === "hibrid" && (() => {
+          const extraCredits = Math.ceil(jobCount * 60 * 0.4 / 8)
+          return (
+            <>
+              <div style={{ height: "16px" }} />
+              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "14px" }}>
+                <p className="text-xs text-amber-800">
+                  Varianta hibrid nu este inclusa integral in pachetul de baza. Pentru derularea procesului mai sunt necesare <span className="font-bold">{extraCredits} credite suplimentare</span>.
+                </p>
+              </div>
+            </>
+          )
+        })()}
 
         <div style={{ height: "20px" }} />
         <button
