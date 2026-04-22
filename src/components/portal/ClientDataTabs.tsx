@@ -924,6 +924,7 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
             <button
               onClick={async () => {
                 if (!selectedJobId || !result) return
+                // Salvează validarea pe post
                 await fetch(`/api/v1/jobs/${selectedJobId}`, {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
@@ -932,6 +933,16 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
                     responsibilities: result.responsibilities,
                     requirements: result.requirements,
                     status: "ACTIVE",
+                  }),
+                }).catch(() => {})
+                // Loghează în jurnal activități
+                await fetch("/api/v1/billing/log-activity", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    type: "JOB_DESCRIPTION_VALIDATED",
+                    description: `Fișă de post validată de client: ${selectedJob?.title}`,
+                    jobId: selectedJobId,
                   }),
                 }).catch(() => {})
                 setSaved(true)
