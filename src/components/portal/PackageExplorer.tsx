@@ -203,7 +203,7 @@ const PURCHASED_FILLS: Record<string, string> = {
   coral: "rgba(249,115,22,0.2)",
 }
 
-export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, purchasedPositions = 0, purchasedEmployees = 0, creditBalance = 0, forceOpen = false }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; purchasedPositions?: number; purchasedEmployees?: number; creditBalance?: number; forceOpen?: boolean } = {}) {
+export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, purchasedPositions = 0, purchasedEmployees = 0, creditBalance = 0, forceOpen = false, forceClose = false }: { onLayerChange?: (layer: number | null) => void; purchasedLayer?: number; purchasedPositions?: number; purchasedEmployees?: number; creditBalance?: number; forceOpen?: boolean; forceClose?: boolean } = {}) {
   const [selected, setSelected] = useState<number | null>(null)
   const [purchasing, setPurchasing] = useState(false)
 
@@ -215,6 +215,14 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
       onLayerChange?.(autoSelect)
     }
   }, [forceOpen])
+
+  // Dacă alt panou se deschide, închidem calculatorul
+  useEffect(() => {
+    if (forceClose && selected !== null) {
+      setSelected(null)
+      onLayerChange?.(null)
+    }
+  }, [forceClose])
 
   const handleSelect = (pkg: number | null) => {
     setSelected(pkg)

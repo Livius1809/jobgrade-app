@@ -30,6 +30,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
   const [reportPanel, setReportPanel] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [calculatorForceOpen, setCalculatorForceOpen] = useState(false)
+  const [dataPanelOpen, setDataPanelOpen] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const evalSectionRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
@@ -168,7 +169,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             <p className="text-sm text-slate-500">Alege ce te interesează — vezi detalii, preț, ce primești.</p>
           </div>
 
-          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} purchasedPositions={purchasedPositions} purchasedEmployees={purchasedEmployees} creditBalance={creditBalance} forceOpen={calculatorForceOpen} />
+          <PackageExplorer onLayerChange={setSelectedLayer} purchasedLayer={purchasedLayer} purchasedPositions={purchasedPositions} purchasedEmployees={purchasedEmployees} creditBalance={creditBalance} forceOpen={calculatorForceOpen} forceClose={dataPanelOpen || evalPanel || profilePanel} />
 
           {/* ═══ Date intrare client — apare doar după plată ═══ */}
           {purchasedLayer > 0 && (
@@ -177,7 +178,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               <div style={{ height: "4px" }} />
               <p className="text-xs text-slate-500">Completați datele pentru a genera rapoartele.</p>
               <div style={{ height: "20px" }} />
-              <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} />
+              <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} onPanelChange={(open) => setDataPanelOpen(open)} />
             </div>
           )}
 
