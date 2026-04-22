@@ -125,6 +125,7 @@ interface ClientDataTabsProps {
   hasSalaryData?: boolean
   onPanelChange?: (open: boolean) => void
   forceClosePanel?: boolean
+  parentPanelLeft?: number
 }
 
 // Culori per tab — corelate cu cardurile servicii
@@ -148,7 +149,7 @@ const TABS_PER_LAYER: Record<number, string[]> = {
   4: ["posturi", "fise", "stat-functii", "salarii", "departamente"],
 }
 
-export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange, forceClosePanel = false }: ClientDataTabsProps) {
+export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange, forceClosePanel = false, parentPanelLeft }: ClientDataTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("posturi")
   const [panelOpen, setPanelOpenRaw] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -182,11 +183,15 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
-    if (panelOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect()
-      setPanelLeft(rect.right + 24)
+    if (panelOpen) {
+      if (parentPanelLeft) {
+        setPanelLeft(parentPanelLeft)
+      } else if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        setPanelLeft(rect.right + 24)
+      }
     }
-  }, [panelOpen])
+  }, [panelOpen, parentPanelLeft])
 
   const allTabs: TabDef[] = [
     {

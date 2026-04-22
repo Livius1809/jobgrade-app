@@ -25,16 +25,24 @@ interface Props {
 
 export default function PortalClientSection({ jobCount, purchasedLayer, purchasedPositions, purchasedEmployees, creditBalance, clientStage, companyName, cui, industry, caenName, address, mission, vision, sessionCount, isValidated }: Props) {
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
-  const [profilePanel, setProfilePanel] = useState(false)
-  const [evalPanel, setEvalPanel] = useState(false)
-  const [reportPanel, setReportPanel] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [calculatorForceOpen, setCalculatorForceOpen] = useState(false)
-  const [dataPanelOpen, setDataPanelOpen] = useState(false)
-  const [calculatorOpen, setCalculatorOpen] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const evalSectionRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
+
+  // Un singur panou activ la un moment dat: "profile" | "calculator" | "data:posturi" | "data:fise" | etc. | "eval" | "report" | null
+  const [activePanel, setActivePanel] = useState<string | null>(null)
+
+  // Helper: deschide panou nou (închide automat pe cel vechi)
+  const openPanel = (panel: string) => setActivePanel(prev => prev === panel ? null : panel)
+
+  // Derivate din activePanel
+  const profilePanel = activePanel === "profile"
+  const evalPanel = activePanel === "eval"
+  const reportPanel = activePanel === "report"
+  const calculatorActive = activePanel === "calculator"
+  const dataPanelActive = activePanel?.startsWith("data:") ?? false
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -42,6 +50,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
   useEffect(() => {
     const handler = () => {
       setCalculatorForceOpen(true)
+      setActivePanel("calculator")
       document.getElementById("pachete")?.scrollIntoView({ behavior: "smooth" })
     }
     window.addEventListener("open-calculator", handler)
@@ -52,6 +61,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
   useEffect(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("openCalculator") === "1") {
       setCalculatorForceOpen(true)
+      setActivePanel("calculator")
       setTimeout(() => {
         document.getElementById("pachete")?.scrollIntoView({ behavior: "smooth" })
       }, 300)
@@ -59,12 +69,14 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
   }, [])
 
   useEffect(() => {
-    const ref = evalPanel ? evalSectionRef.current : sectionRef.current
-    if ((profilePanel || evalPanel || reportPanel) && ref) {
-      const rect = ref.getBoundingClientRect()
-      setPanelLeft(rect.right + 24)
+    if (activePanel && sectionRef.current) {
+      const ref = evalPanel ? evalSectionRef.current : sectionRef.current
+      if (ref) {
+        const rect = ref.getBoundingClientRect()
+        setPanelLeft(rect.right + 24)
+      }
     }
-  }, [profilePanel, evalPanel, reportPanel])
+  }, [activePanel])
 
   const isDone = clientStage !== "NEW"
 
@@ -100,7 +112,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           </div>
 
           <button
-            onClick={() => setProfilePanel(!profilePanel)}
+            onClick={() => openPanel("profile")}
             className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 ${
               isDone ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
             }`}
@@ -124,7 +136,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">Identificare ANAF + MVV</span>
               </div>
             </div>
-            <button onClick={() => setProfilePanel(false)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
+            <button onClick={() => setActivePanel(null)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
           </div>
 
           <div style={{ height: "16px" }} />
@@ -156,7 +168,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           <div style={{ height: "16px" }} />
 
           {/* Date editabile — MVV + alte info */}
-          <ProfileForm cui={cui} mission={mission} vision={vision} onClose={() => setProfilePanel(false)} />
+          <ProfileForm cui={cui} mission={mission} vision={vision} onClose={() => setActivePanel(null)} />
         </div>,
         document.body
       )}
@@ -177,9 +189,10 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             purchasedEmployees={purchasedEmployees}
             creditBalance={creditBalance}
             forceOpen={calculatorForceOpen}
-            forceClose={dataPanelOpen || evalPanel || profilePanel}
+            forceClose={activePanel !== null && activePanel !== "calculator"}
             onPanelOpen={(open) => {
-              setCalculatorOpen(open)
+              if (open) setActivePanel("calculator")
+              else if (activePanel === "calculator") setActivePanel(null)
             }}
           />
 
@@ -190,7 +203,17 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               <div style={{ height: "4px" }} />
               <p className="text-xs text-slate-500">Completați datele pentru a genera rapoartele.</p>
               <div style={{ height: "20px" }} />
-              <ClientDataTabs jobCount={jobCount} selectedLayer={selectedLayer} purchasedLayer={purchasedLayer} onPanelChange={(open) => setDataPanelOpen(open)} forceClosePanel={calculatorOpen} />
+              <ClientDataTabs
+                jobCount={jobCount}
+                selectedLayer={selectedLayer}
+                purchasedLayer={purchasedLayer}
+                onPanelChange={(open) => {
+                  if (open) setActivePanel("data")
+                  else if (activePanel === "data") setActivePanel(null)
+                }}
+                forceClosePanel={activePanel !== null && activePanel !== "data"}
+                parentPanelLeft={panelLeft || undefined}
+              />
             </div>
           )}
 
@@ -234,7 +257,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
 
                 {jobCount >= 3 && (
                   <button
-                    onClick={() => { setEvalPanel(!evalPanel); setProfilePanel(false); setReportPanel(false) }}
+                    onClick={() => openPanel("eval")}
                     className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 ${
                       isValidated ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" :
                       sessionCount > 0 ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" :
@@ -264,10 +287,10 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setEvalPanel(false)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
+                <button onClick={() => setActivePanel(null)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
               </div>
               <div style={{ height: "20px" }} />
-              <EvaluationPanel onComplete={() => { setEvalPanel(false); window.location.reload() }} />
+              <EvaluationPanel onComplete={() => { setActivePanel(null); window.location.reload() }} />
             </div>,
             document.body
           )}
@@ -301,7 +324,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
 
                 {isValidated && (
                   <button
-                    onClick={() => { setReportPanel(!reportPanel); setProfilePanel(false); setEvalPanel(false) }}
+                    onClick={() => openPanel("report")}
                     className="text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
                   >
                     Deschide raportul →
