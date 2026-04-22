@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
   let rawText = ""
 
   if (ext === ".pdf") {
-    const pdfParse = (await import("pdf-parse")).default
-    const parsed = await pdfParse(buffer)
-    rawText = parsed.text
+    const { PDFParse } = await import("pdf-parse")
+    const parser = new PDFParse()
+    await parser.load(buffer)
+    rawText = await parser.getText()
   } else if (ext === ".docx" || ext === ".doc") {
     const mammoth = await import("mammoth")
     const result = await mammoth.extractRawText({ buffer })
