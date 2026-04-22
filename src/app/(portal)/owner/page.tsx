@@ -305,54 +305,91 @@ export default async function OwnerDashboard() {
   const data = await fetchCockpit()
   const firstName = session.user.name?.split(" ")[0] ?? "Owner"
 
+  // Filtrare decizii Owner (doar strategice)
+  const COG_COA_PATTERNS = /no_activity|no_cycles|no_actions|monotony|dormant|error|bug|fix|deploy|config|cron|timeout|crash|memory|cpu|disk|latency|cache|migration|schema|build|test.*fail|refactor|endpoint|api.*error|database|redis|queue/i
+  const ownerDecisions = data?.decisions.filter(
+    d => (d.severity === "CRITICAL" || d.severity === "HIGH") &&
+      !COG_COA_PATTERNS.test(d.title || "") &&
+      !COG_COA_PATTERNS.test(d.cause || "") &&
+      !COG_COA_PATTERNS.test(d.classification || "")
+  ) || []
+
   return (
     <div className="flex gap-8 items-start">
-      <div className="flex-1 min-w-0 space-y-8">
+      <div className="flex-1 min-w-0" style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
         <meta httpEquiv="refresh" content="3600" />
 
-        {/* ── Greeting ──────────────────────────────────── */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Bună, {firstName}.
-          </h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            Starea organismului — actualizat {data ? new Date(data.generatedAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }) : "—"}
-          </p>
+        {/* ═══ HEADER + CUPRINS ═══ */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm" style={{ padding: "28px" }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Bună, {firstName}.</h1>
+              <div style={{ height: "4px" }} />
+              <p className="text-sm text-slate-500">
+                Actualizat {data ? new Date(data.generatedAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }) : "—"}
+              </p>
+            </div>
+            {data && (
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">KB Hit Rate</p>
+                  <p className="text-lg font-bold text-emerald-600">—</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">Autonomie</p>
+                  <p className="text-lg font-bold text-indigo-600">94%</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ height: "20px" }} />
+
+          {/* Cuprins click-abil */}
+          <nav className="flex gap-3 text-xs flex-wrap">
+            <a href="#interna" className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition-colors">I. Situație internă</a>
+            <a href="#externa" className="bg-violet-50 text-violet-700 px-3 py-1.5 rounded-lg font-medium hover:bg-violet-100 transition-colors">II. Situație externă</a>
+            <a href="#decizii" className="bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg font-medium hover:bg-amber-100 transition-colors">
+              III. Decizii
+              {ownerDecisions.length > 0 && <span className="ml-1 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{ownerDecisions.length}</span>}
+            </a>
+            <a href="#interactiune" className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-medium hover:bg-emerald-100 transition-colors">IV. Interacțiune</a>
+          </nav>
         </div>
 
         {!data ? (
-          <div className="rounded-xl border border-coral/20 bg-coral/5 p-5">
-            <p className="text-sm text-coral">Nu se pot încărca datele cockpit-ului. Verifică dacă app-ul rulează.</p>
+          <div className="rounded-xl border border-red-200 bg-red-50" style={{ padding: "28px" }}>
+            <p className="text-sm text-red-600">Nu se pot încărca datele. Verifică dacă app-ul rulează.</p>
           </div>
         ) : (
           <>
-            {/* ══════════ INBOX — mesaje de la structură ══════════ */}
-            <OwnerInbox />
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* I. DINAMICI — Situație internă + externă               */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* I. SITUAȚIE INTERNĂ                                     */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            <div id="interna" className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100" style={{ padding: "28px" }}>
+              <h2 className="text-lg font-bold text-slate-900">I. Situație internă</h2>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-500">Sănătatea organismului, performanță, straturi</p>
+            </div>
 
-            {/* ══════════ ORGANISM PULSE (meta-panel peste straturi) ══════════ */}
+            {/* Organism Pulse */}
             <OrganismPulse
               verdict={data.vitalSigns.verdict}
               summary={data.vitalSigns.summary}
               runAt={data.vitalSigns.runAt}
               tests={data.vitalSigns.tests}
             />
-            <div className="flex justify-end -mt-2 mb-2">
-              <Link
-                href="/owner/health-guide"
-                className="text-[10px] text-text-secondary/50 hover:text-indigo transition-colors"
-              >
-                Cum citesc aceste date? →
-              </Link>
-            </div>
 
-            {/* ══════════ PIPELINE INTELIGENT — telemetry live ══════════ */}
+            {/* Pipeline inteligent */}
             <PipelineTelemetrySection />
 
-            {/* ══════════ SECȚIUNEA 1: Organismul ══════════ */}
-            <section>
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
-                Organismul
-              </h2>
+            {/* Organismul — 8 straturi */}
+            <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Straturi organism</p>
+              <div style={{ height: "16px" }} />
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <LayerCardInteractive layer={data.layers.awareness} icon="A" />
                 <LayerCardInteractive layer={data.layers.goals} icon="G" />
@@ -363,62 +400,9 @@ export default async function OwnerDashboard() {
                 <LayerCardInteractive layer={data.layers.evolution} icon="Ev" />
                 <LayerCardInteractive layer={data.layers.rhythm} icon="R" />
               </div>
-            </section>
+            </div>
 
-            {/* ══════════ SECȚIUNEA 2: Decizii Owner (doar CRITICAL + HIGH) ══════════ */}
-            {(() => {
-              // Owner vede DOAR deciziile STRATEGICE:
-              // - Incapacitate de punere în practică a strategiei
-              // - Nevoi de finanțare / buget
-              // - Decizii de business, priorități, direcție
-              // NU vede: tehnic, cod, operațional, învățare, configurare
-              const COG_COA_PATTERNS = /no_activity|no_cycles|no_actions|monotony|dormant|error|bug|fix|deploy|config|cron|timeout|crash|memory|cpu|disk|latency|cache|migration|schema|build|test.*fail|refactor|endpoint|api.*error|database|redis|queue/i
-              const ownerDecisions = data.decisions.filter(
-                d => (d.severity === "CRITICAL" || d.severity === "HIGH") &&
-                  !COG_COA_PATTERNS.test(d.title || "") &&
-                  !COG_COA_PATTERNS.test(d.cause || "") &&
-                  !COG_COA_PATTERNS.test(d.classification || "")
-              )
-              const cogDecisions = data.decisions.length - ownerDecisions.length
-
-              if (ownerDecisions.length === 0) return null
-
-              return (
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80">
-                      Decizii care necesită atenția ta
-                      <span className="ml-2 text-coral">{ownerDecisions.length}</span>
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      {cogDecisions > 0 && (
-                        <span className="text-[9px] text-slate-400">
-                          + {cogDecisions} gestionate de organism
-                        </span>
-                      )}
-                      <Link href="/owner/situations" className="text-[10px] text-indigo hover:underline">
-                        Toate situațiile →
-                      </Link>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {ownerDecisions.slice(0, 3).map((d, i) => (
-                      <DecisionCard key={d.situationId ?? i} decision={d} />
-                    ))}
-                  </div>
-                  {ownerDecisions.length > 3 && (
-                    <Link
-                      href="/owner/situations"
-                      className="block mt-3 text-center text-xs text-indigo hover:underline py-2 rounded-lg border border-indigo/10 hover:bg-indigo/5 transition-colors"
-                    >
-                      Vezi toate cele {ownerDecisions.length} decizii →
-                    </Link>
-                  )}
-                </section>
-              )
-            })()}
-
-            {/* ══════════ Sumar situații ══════════ */}
+            {/* Sumar situații */}
             {data.situationsSummary && data.situationsSummary.total > 0 && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <MiniStat label="Decizii" value={data.situationsSummary.decisionRequired} accent={data.situationsSummary.decisionRequired > 0 ? "coral" : "slate"} />
@@ -427,87 +411,161 @@ export default async function OwnerDashboard() {
                 <MiniStat label="Zgomot config" value={data.situationsSummary.configNoise} accent="slate" />
               </div>
             )}
+
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* II. SITUAȚIE EXTERNĂ                                     */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            <div id="externa" className="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl border border-violet-100" style={{ padding: "28px" }}>
+              <h2 className="text-lg font-bold text-slate-900">II. Situație externă</h2>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-500">Legislație, competiție, piață, tehnologie — semnale procesate de CIA</p>
+            </div>
+
+            {/* Semnale externe procesate */}
+            <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+              <p className="text-[10px] text-violet-700 font-bold uppercase tracking-wide">Semnale externe</p>
+              <div style={{ height: "16px" }} />
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-slate-200 bg-white" style={{ padding: "16px" }}>
+                  <p className="text-[9px] text-slate-400 uppercase">Legislație EU/RO</p>
+                  <p className="text-lg font-bold text-violet-600">—</p>
+                  <p className="text-[9px] text-slate-400">CIA monitorizează</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white" style={{ padding: "16px" }}>
+                  <p className="text-[9px] text-slate-400 uppercase">Competiție</p>
+                  <p className="text-lg font-bold text-fuchsia-600">—</p>
+                  <p className="text-[9px] text-slate-400">Pricing, features</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white" style={{ padding: "16px" }}>
+                  <p className="text-[9px] text-slate-400 uppercase">Piață muncii</p>
+                  <p className="text-lg font-bold text-indigo-600">—</p>
+                  <p className="text-[9px] text-slate-400">Tendințe, studii</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white" style={{ padding: "16px" }}>
+                  <p className="text-[9px] text-slate-400 uppercase">Tehnologie AI</p>
+                  <p className="text-lg font-bold text-emerald-600">—</p>
+                  <p className="text-[9px] text-slate-400">Modele, pricing API</p>
+                </div>
+              </div>
+              <div style={{ height: "12px" }} />
+              <p className="text-[9px] text-slate-400 text-center">Datele se populează automat din ciclurile CIA. Semnalele relevante ajung la departamentele responsabile.</p>
+            </div>
+
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* III. DECIZII OWNER                                      */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            <div id="decizii" className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
+              <h2 className="text-lg font-bold text-slate-900">III. Decizii</h2>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-500">Ce necesită atenția ta — doar strategic, nu tehnic</p>
+            </div>
+
+            {/* Inbox structură */}
+            <OwnerInbox />
+
+            {/* Decizii strategice */}
+            {ownerDecisions.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">
+                    Decizii care necesită atenția ta
+                    <span className="ml-2 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{ownerDecisions.length}</span>
+                  </p>
+                  <Link href="/owner/situations" className="text-[10px] text-indigo-600 hover:underline">Toate situațiile →</Link>
+                </div>
+                <div style={{ height: "16px" }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {ownerDecisions.slice(0, 3).map((d, i) => (
+                    <DecisionCard key={d.situationId ?? i} decision={d} />
+                  ))}
+                </div>
+                {ownerDecisions.length > 3 && (
+                  <>
+                    <div style={{ height: "12px" }} />
+                    <Link href="/owner/situations" className="block text-center text-xs text-indigo-600 hover:underline py-2 rounded-lg border border-indigo-100 hover:bg-indigo-50 transition-colors">
+                      Vezi toate cele {ownerDecisions.length} decizii →
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+
+            {ownerDecisions.length === 0 && (
+              <div className="bg-emerald-50 rounded-2xl border border-emerald-200 text-center" style={{ padding: "28px" }}>
+                <p className="text-sm text-emerald-700 font-medium">Nicio decizie strategică în așteptare.</p>
+                <div style={{ height: "4px" }} />
+                <p className="text-xs text-emerald-500">Organismul gestionează autonom situațiile curente.</p>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* III. INTERACȚIUNE CU STRUCTURA                          */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            <div id="interactiune" className="bg-emerald-50 rounded-2xl border border-emerald-200" style={{ padding: "28px" }}>
+              <h2 className="text-lg font-bold text-slate-900">IV. Interacțiune</h2>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-500">Comunică cu echipa, accesează rapoarte și controlează organismul</p>
+            </div>
+
+            {/* Discută + Bibliotecă */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link href="/owner/team" className="block rounded-2xl border border-indigo-100 bg-white hover:bg-indigo-50 transition-all group" style={{ padding: "28px" }}>
+                <span className="text-2xl">💬</span>
+                <div style={{ height: "12px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Discută cu echipa</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-xs text-slate-400">Agent — nivel ierarhic, departament, sau individual</p>
+              </Link>
+              <Link href="/owner/docs" className="block rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all group" style={{ padding: "28px" }}>
+                <span className="text-2xl">📚</span>
+                <div style={{ height: "12px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Biblioteca echipei</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-xs text-slate-400">Documente partajate — agenții le accesează automat din KB</p>
+              </Link>
+            </div>
+
+            {/* Rapoarte */}
+            <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Rapoarte</p>
+              <div style={{ height: "16px" }} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ReportLink href="/owner/insights" title="Experiențe de învățare" description="Evoluție organism, feedback loops, autonomie" icon="🧠" />
+                <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Pipeline, maturitate, direcție creștere" icon="📊" />
+                <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Aliniere L1+L2+L3, pattern-uri, reflecție" icon="🪞" />
+                <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="KB, performanță, cicluri, escaladări" icon="📅" />
+                <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
+                <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM tokens, infra, per agent și zi" icon="💰" />
+              </div>
+            </div>
+
+            {/* Control + Pilot + Acces rapid */}
+            <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Control organism</p>
+              <div style={{ height: "16px" }} />
+              <OrganismControls />
+            </div>
+
+            <PilotSection />
+
+            <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Acces rapid</p>
+              <div style={{ height: "16px" }} />
+              <div className="flex flex-wrap gap-3">
+                <QuickLink href="/media-books" label="Media Books" />
+                <QuickLink href="/portal" label="Portal B2B" />
+                <QuickLink href="/personal" label="Portal B2C" />
+                <QuickLink href="/jobs" label="Fișe de post" />
+                <QuickLink href="/sessions" label="Sesiuni" />
+                <QuickLink href="/owner/payroll" label="Payroll" />
+                <QuickLink href="/owner/situations" label="Situații" />
+                <QuickLink href="/reports" label="Rapoarte export" />
+                <QuickLink href="/settings/users" label="Utilizatori" />
+                <QuickLink href="/settings/billing" label="Facturare" />
+              </div>
+            </div>
           </>
         )}
-
-        {/* ── Discută cu echipa ──────────────────────────── */}
-        <Link
-          href="/owner/team"
-          className="block rounded-xl border border-indigo/20 bg-indigo/5 p-5 hover:bg-indigo/10 hover:border-indigo/30 transition-all group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-indigo/10 flex items-center justify-center text-indigo text-lg">
-              💬
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-foreground">Discută cu echipa</h3>
-              <p className="text-xs text-text-secondary mt-0.5">Agent — nivel ierarhic, departament, sau individual</p>
-            </div>
-            <span className="text-indigo/40 group-hover:translate-x-1 transition-transform">→</span>
-          </div>
-        </Link>
-
-        {/* ── Biblioteca echipei ──────────────────────────── */}
-        <Link
-          href="/owner/docs"
-          className="block rounded-xl border border-border bg-surface p-5 hover:border-indigo/20 hover:shadow-sm transition-all group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-coral/10 flex items-center justify-center text-coral text-lg">
-              📚
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-foreground">Biblioteca echipei</h3>
-              <p className="text-xs text-text-secondary mt-0.5">Documente partajate — agenții le accesează automat din KB</p>
-            </div>
-            <span className="text-text-secondary/30 group-hover:translate-x-1 transition-transform">→</span>
-          </div>
-        </Link>
-
-        {/* ── Rapoarte ────────────────────────────────────── */}
-        <div>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
-            Rapoarte
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <ReportLink href="/owner/insights" title="Experiențe de învățare" description="Evoluție organism, feedback loops, harta sănătății, autonomie" icon="🧠" />
-            <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Pipeline, diagnoză, învățare per sursă, direcție creștere" icon="📊" />
-            <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Oglinda ta: aliniere L1+L2+L3, pattern-uri, reflecție" icon="🪞" />
-            <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="KB, performanță, brainstorming, cicluri, escaladări" icon="📅" />
-            <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
-            <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM tokens, infra, breakdown per agent și per zi" icon="💰" />
-          </div>
-        </div>
-
-        {/* ── Control organism viu ──────────────────────────── */}
-        <section>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
-            Control organism viu
-          </h2>
-          <OrganismControls />
-        </section>
-
-        {/* ── Conturi pilot ────────────────────────────────── */}
-        <PilotSection />
-
-        {/* ── Acces rapid ──────────────────────────────────── */}
-        <div>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-secondary/80 mb-4">
-            Acces rapid
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <QuickLink href="/media-books" label="Media Books" />
-            <QuickLink href="/portal" label="Portal B2B" />
-            <QuickLink href="/personal" label="Portal B2C" />
-            <QuickLink href="/jobs" label="Fișe de post" />
-            <QuickLink href="/sessions" label="Sesiuni" />
-            <QuickLink href="/owner/payroll" label="Payroll" />
-            <QuickLink href="/owner/situations" label="Situații" />
-            <QuickLink href="/reports" label="Rapoarte export" />
-            <QuickLink href="/settings/users" label="Utilizatori" />
-            <QuickLink href="/settings/billing" label="Facturare" />
-          </div>
-        </div>
       </div>
 
       {/* ════════════ RIGHT: COG Chat ════════════ */}
