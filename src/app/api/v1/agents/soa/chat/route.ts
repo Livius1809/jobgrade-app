@@ -140,11 +140,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 1. Build client context + client memory profile + KB context
-    const [clientContext, clientProfile, kbContext] = await Promise.all([
+    // 1. Build client context + client memory profile + KB context + Company Profiler
+    const [clientContext, clientProfile, kbContext, profilerCtx] = await Promise.all([
       buildClientContext(userId, tenantId, prisma).catch(() => null),
       getClientProfile(tenantId, prisma).catch(() => null),
       injectKBContext(AGENT_ROLE, message.trim()).catch(() => ""),
+      tenantId ? import("@/lib/company-profiler").then(m => m.getAgentContext(tenantId, "SOA")).catch(() => null) : Promise.resolve(null),
     ])
 
     const contextPrompt = clientContext ? formatContextForPrompt(clientContext) : ""
@@ -187,6 +188,15 @@ export async function POST(req: NextRequest) {
 
     // 5. Build system prompt with all context
     const systemPromptMd = loadSystemPrompt()
+    const profilerPrompt = profilerCtx
+      ? [
+          "",
+          "--- COMPANY PROFILER ---",
+          profilerCtx.companyEssence,
+          `Servicii disponibile: ${profilerCtx.specificData?.unlockedServices ? (profilerCtx.specificData.unlockedServices as string[]).join(", ") : "–"}`,
+          profilerCtx.deviationsToFlag.length > 0 ? `Deviații: ${profilerCtx.deviationsToFlag.join("; ")}` : "",
+        ].filter(Boolean).join("\n")
+      : ""
     const fullSystemPrompt = [
       systemPromptMd,
       "",
@@ -195,6 +205,8 @@ export async function POST(req: NextRequest) {
       "",
       "--- MEMORIE CLIENT ---",
       memoryPrompt,
+      "",
+      profilerPrompt,
       "",
       kbContext,
       "",

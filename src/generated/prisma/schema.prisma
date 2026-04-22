@@ -130,31 +130,56 @@ model VerificationToken {
 // ─────────────────────────────────────────
 
 model CompanyProfile {
-  id           String    @id @default(cuid())
-  tenantId     String    @unique
-  mission      String?   @db.Text
-  vision       String?   @db.Text
-  values       String[]
-  description  String?   @db.Text
-  industry     String?
-  size         String?
-  website      String?
-  cui          String?
-  regCom       String?
-  address      String?
-  county       String?
-  caenCode     String?
-  caenName     String?
-  isVATPayer   Boolean?
-  logoUrl      String?
-  extractedAt  DateTime?
-  anafSyncedAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  tenantId          String    @unique
+  mission           String?   @db.Text
+  vision            String?   @db.Text
+  values            String[]
+  description       String?   @db.Text
+  industry          String?
+  size              String?
+  website           String?
+  cui               String?
+  regCom            String?
+  address           String?
+  county            String?
+  caenCode          String?
+  caenName          String?
+  isVATPayer        Boolean?
+  logoUrl           String?
+  extractedAt       DateTime?
+  anafSyncedAt      DateTime?
+  // MVV Progressive Builder
+  mvvMaturity       String    @default("IMPLICIT") // IMPLICIT | EMERGENT | PARTIAL | SUBSTANTIAL | COMPLETE
+  missionDraft      String?   @db.Text // generat AI
+  visionDraft       String?   @db.Text
+  valuesDraft       String[]
+  mvvLastBuiltAt    DateTime?
+  mvvLastBuiltFrom  String? // ce date au contribuit la ultimul rebuild
+  mvvCoherenceScore Float? // 0-100
+  mvvCoherenceGaps  Json? // [{level, gap, suggestion}]
+  mvvValidatedAt    DateTime? // când a confirmat clientul MVV-ul
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("company_profiles")
+}
+
+// Company Profiler Engine — Punct 7: Memorie de evoluție
+model CompanyProfileSnapshot {
+  id             String   @id @default(cuid())
+  tenantId       String
+  maturityLevel  String // IMPLICIT | EMERGENT | PARTIAL | SUBSTANTIAL | COMPLETE
+  maturityScore  Float // 0-100
+  coherenceScore Float // 0-100
+  dataPoints     Json // DataPointPresence snapshot
+  readyServices  String[] // ServiceType[] active la momentul snapshot-ului
+  takenAt        DateTime @default(now())
+
+  @@index([tenantId, takenAt])
+  @@map("company_profile_snapshots")
 }
 
 model Department {

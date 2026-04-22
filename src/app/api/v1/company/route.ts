@@ -64,6 +64,17 @@ export async function PUT(req: NextRequest) {
       })
     })
 
+    // Company Profiler: profil actualizat = acțiune semnificativă
+    import("@/lib/company-profiler").then(m => m.onSignificantAction(tenantId)).catch(() => {})
+    // MVV rebuild
+    import("@/lib/mvv/builder").then(m => m.mvvRebuildIfNeeded(tenantId)).catch(() => {})
+    // CUI tracking — verificăm dacă CUI-ul a mai fost văzut (alt cont, aceeași firmă)
+    if (data.cui) {
+      import("@/lib/company-profiler/portability").then(async ({ trackCUIPresence }) => {
+        await trackCUIPresence(data.cui!, tenantId)
+      }).catch(() => {})
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {

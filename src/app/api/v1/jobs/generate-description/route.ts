@@ -32,8 +32,21 @@ export async function POST(request: NextRequest) {
     requirements: "cerințele postului",
   }
 
-  const prompt = `Ești expert HR. Scrie un paragraf pentru ${fieldLabels[fieldTarget] || "fișa postului"} al poziției "${jobTitle}", bazat pe informațiile de mai jos.
+  // Company Profiler — context MVV pentru alinierea textului
+  let companyHint = ""
+  if (session.user.tenantId) {
+    try {
+      const { getAgentContext } = await import("@/lib/company-profiler")
+      const ctx = await getAgentContext(session.user.tenantId, "JE")
+      const mvvParts = []
+      if (ctx.mvv.mission) mvvParts.push(`Misiune: ${ctx.mvv.mission}`)
+      if (ctx.mvv.values.length > 0) mvvParts.push(`Valori: ${ctx.mvv.values.join(", ")}`)
+      if (mvvParts.length > 0) companyHint = `\nContext companie (aliniază textul cu valorile organizației):\n${mvvParts.join("\n")}\n`
+    } catch {}
+  }
 
+  const prompt = `Ești expert HR. Scrie un paragraf pentru ${fieldLabels[fieldTarget] || "fișa postului"} al poziției "${jobTitle}", bazat pe informațiile de mai jos.
+${companyHint}
 Criteriul evaluat: ${criterionName}
 Informații de la client: ${answers}
 

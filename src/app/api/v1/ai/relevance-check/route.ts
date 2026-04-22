@@ -37,6 +37,23 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Company Profiler — context MVV pentru evaluarea relevanței
+    let companyHint = ""
+    if (session.user.tenantId) {
+      try {
+        const { getCompanyProfile } = await import("@/lib/company-profiler")
+        const profile = await getCompanyProfile(session.user.tenantId)
+        const mission = profile.mvv.missionValidated || profile.mvv.missionDraft
+        const values = profile.mvv.valuesValidated.length > 0 ? profile.mvv.valuesValidated : profile.mvv.valuesDraft
+        if (mission || values.length > 0) {
+          companyHint = `\nCONTEXT COMPANIE (evaluează relevanța în raport cu misiunea/valorile):`
+          if (mission) companyHint += `\nMisiune: ${mission}`
+          if (values.length > 0) companyHint += `\nValori: ${values.join(", ")}`
+          companyHint += "\n"
+        }
+      } catch {}
+    }
+
     const client = new Anthropic()
     const response = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
@@ -44,7 +61,7 @@ export async function POST(req: NextRequest) {
       messages: [{
         role: "user",
         content: `Analizează acest text de fișă de post și evaluează cât de completă e informația per criteriu de evaluare.
-
+${companyHint}
 POST: ${title || "nespecificat"}
 TEXT CLIENT:
 ${text.slice(0, 2000)}

@@ -59,8 +59,9 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Hook: rebuild MVV progresiv (non-blocking)
+    // Hook: rebuild MVV progresiv + invalidare profil companie (non-blocking)
     import("@/lib/mvv/builder").then(m => m.mvvRebuildIfNeeded(session.user.tenantId)).catch(() => {})
+    import("@/lib/company-profiler").then(m => m.onSignificantAction(session.user.tenantId)).catch(() => {})
 
     return NextResponse.json({ id: job.id }, { status: 201 })
   } catch (error) {

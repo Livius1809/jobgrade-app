@@ -92,6 +92,9 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
+    // Company Profiler: MVV validat = acțiune semnificativă majoră
+    import("@/lib/company-profiler").then(m => m.onSignificantAction(session.user.tenantId)).catch(() => {})
+
     // Log în jurnal
     await prisma.creditTransaction.create({
       data: {

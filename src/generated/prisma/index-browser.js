@@ -197,8 +197,28 @@ exports.Prisma.CompanyProfileScalarFieldEnum = {
   logoUrl: 'logoUrl',
   extractedAt: 'extractedAt',
   anafSyncedAt: 'anafSyncedAt',
+  mvvMaturity: 'mvvMaturity',
+  missionDraft: 'missionDraft',
+  visionDraft: 'visionDraft',
+  valuesDraft: 'valuesDraft',
+  mvvLastBuiltAt: 'mvvLastBuiltAt',
+  mvvLastBuiltFrom: 'mvvLastBuiltFrom',
+  mvvCoherenceScore: 'mvvCoherenceScore',
+  mvvCoherenceGaps: 'mvvCoherenceGaps',
+  mvvValidatedAt: 'mvvValidatedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CompanyProfileSnapshotScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  maturityLevel: 'maturityLevel',
+  maturityScore: 'maturityScore',
+  coherenceScore: 'coherenceScore',
+  dataPoints: 'dataPoints',
+  readyServices: 'readyServices',
+  takenAt: 'takenAt'
 };
 
 exports.Prisma.DepartmentScalarFieldEnum = {
@@ -2426,6 +2446,7 @@ exports.Prisma.ModelName = {
   AuthSession: 'AuthSession',
   VerificationToken: 'VerificationToken',
   CompanyProfile: 'CompanyProfile',
+  CompanyProfileSnapshot: 'CompanyProfileSnapshot',
   Department: 'Department',
   Job: 'Job',
   Criterion: 'Criterion',

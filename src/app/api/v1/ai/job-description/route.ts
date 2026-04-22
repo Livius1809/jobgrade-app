@@ -27,10 +27,24 @@ export async function POST(req: NextRequest) {
       kbType: "METHODOLOGY",
     })
 
+    // Company Profiler — context MVV + coerență pentru generarea fișei
+    let companyContext = ""
+    if (session.user.tenantId) {
+      try {
+        const { getAgentContext } = await import("@/lib/company-profiler")
+        const ctx = await getAgentContext(session.user.tenantId, "JE")
+        companyContext = `\nCONTEXT COMPANIE (aliniază fișa cu misiunea și valorile):\n${ctx.companyEssence}`
+        if (ctx.deviationsToFlag.length > 0) {
+          companyContext += `\nATENȚIE — deviații identificate:\n${ctx.deviationsToFlag.map(d => `- ${d}`).join("\n")}`
+        }
+      } catch {}
+    }
+
     const systemPrompt = [
       "Ești expert în HR din România, specializat în redactarea fișelor de post și evaluarea posturilor.",
       "Fișa de post trebuie să conțină informație structurată pe 6 criterii de evaluare, chiar dacă o prezinți cursiv.",
       kbContext,
+      companyContext,
     ].filter(Boolean).join("\n\n")
 
     const isFromUpload = !!data.rawText

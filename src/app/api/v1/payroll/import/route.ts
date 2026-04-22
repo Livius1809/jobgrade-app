@@ -331,6 +331,9 @@ export async function POST(req: NextRequest) {
       return batchRecord
     })
 
+    // Company Profiler: import salarial = acțiune semnificativă
+    import("@/lib/company-profiler").then(m => m.onSignificantAction(session.user.tenantId)).catch(() => {})
+
     return NextResponse.json({
       batchId: batch.id,
       totalRows,

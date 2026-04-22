@@ -359,6 +359,8 @@ export interface AgentPromptOptions {
   contextOverride?: AgentContext
   /** Include the markdown system prompt file if available */
   includeSystemPrompt?: boolean
+  /** Tenant ID — activează injecția Company Profiler pentru agenții client-facing */
+  _tenantId?: string
 }
 
 /**
@@ -599,11 +601,52 @@ export async function buildAgentPromptWithKB(
   const chain = await getEscalationChain(prisma).catch(() => ESCALATION_CHAIN)
   const reportsTo = chain[role] || ESCALATION_CHAIN[role] || "COG"
 
-  const combined = [lessonsSection, options.additionalContext, kbSection, culturalKB, l2Knowledge].filter(Boolean).join("\n\n")
+  // Company Profiler context — injectat pentru agenții client-facing și operaționali
+  let profilerSection = ""
+  if (CLIENT_FACING_PROFILER_ROLES.includes(role) && options._tenantId) {
+    try {
+      const { getAgentContext } = await import("@/lib/company-profiler")
+      const profilerRole = PROFILER_ROLE_MAP[role] || "DOA"
+      const ctx = await getAgentContext(options._tenantId, profilerRole as any)
+      const parts = [`\n═══ COMPANY PROFILER — CONTEXT CLIENT ═══\n${ctx.companyEssence}`]
+      if (ctx.deviationsToFlag.length > 0) {
+        parts.push(`\nDEVIAȚII DE SEMNALAT:\n${ctx.deviationsToFlag.map(d => `- ${d}`).join("\n")}`)
+      }
+      if (ctx.coherenceRelevant.length > 0) {
+        const relevant = ctx.coherenceRelevant.filter(c => c.status !== "COERENT")
+        if (relevant.length > 0) {
+          parts.push(`\nVERIFICĂRI COERENȚĂ:\n${relevant.map(c => `- ${c.pair}: ${c.gap} (scor ${c.score}/100)`).join("\n")}`)
+        }
+      }
+      profilerSection = parts.join("\n")
+    } catch {}
+  }
+
+  const combined = [lessonsSection, options.additionalContext, kbSection, culturalKB, l2Knowledge, profilerSection].filter(Boolean).join("\n\n")
 
   return buildAgentPrompt(role, description, {
     ...options,
     additionalContext: combined,
     _reportsToOverride: reportsTo,
   } as any)
+}
+
+// Roluri care primesc context Company Profiler automat
+const CLIENT_FACING_PROFILER_ROLES = [
+  "HR_COUNSELOR", "SOA", "CSSA", "CSA", "MEDIATOR", "BCA",
+  "DOA", "DOAS", "COG", "COA",
+]
+
+// Mapare rol agent → rol profiler
+const PROFILER_ROLE_MAP: Record<string, string> = {
+  HR_COUNSELOR: "JE",
+  SOA: "SOA",
+  CSSA: "SOA",
+  CSA: "SOA",
+  MEDIATOR: "PAY_GAP",
+  BCA: "BENCHMARK",
+  DOA: "DOA",
+  DOAS: "DOA",
+  COG: "DOA",
+  COA: "DOA",
 }

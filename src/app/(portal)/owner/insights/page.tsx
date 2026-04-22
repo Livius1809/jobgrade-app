@@ -198,21 +198,28 @@ export default async function InsightsPage() {
       take: 10,
     }).catch(() => []) as any[]
 
-    // ── COG P4: HEALTH SCORE RAPORTORI ──
+    // ── COG P4: HEALTH SCORE RAPORTORI (recalculat live) ──
+    // Valorile se calculează ACUM din date reale, nu din ultimul snapshot metrics
     reporterHealth = await p.$queryRaw`
       SELECT
         ad."agentRole" as role,
         ad."displayName" as name,
         ad."isManager" as is_manager,
-        coalesce(m."performanceScore", 0) as score,
+        -- Scor live: combinat din tasks + KB + escalări (ultimele 7 zile)
+        CASE
+          WHEN coalesce(t.total, 0) = 0 AND coalesce(kb.recent, 0) = 0 THEN 0
+          ELSE LEAST(100, GREATEST(0,
+            (CASE WHEN coalesce(t.total, 0) > 0 THEN (coalesce(t.completed, 0)::float / t.total * 40) ELSE 20 END)
+            + (LEAST(coalesce(kb.recent, 0), 10)::float / 10 * 30)
+            + (CASE WHEN coalesce(e.open_esc, 0) = 0 THEN 30 WHEN coalesce(e.open_esc, 0) <= 2 THEN 15 ELSE 0 END)
+          ))
+        END as score,
         coalesce(t.completed, 0) as tasks_done,
         coalesce(t.total, 0) as tasks_total,
         coalesce(e.open_esc, 0) as escalations,
-        coalesce(kb.total, 0) as kb_count
+        coalesce(kb.total, 0) as kb_count,
+        coalesce(kb.recent, 0) as kb_recent
       FROM agent_definitions ad
-      LEFT JOIN LATERAL (
-        SELECT "performanceScore" FROM agent_metrics WHERE "agentRole" = ad."agentRole" ORDER BY "periodEnd" DESC LIMIT 1
-      ) m ON true
       LEFT JOIN (
         SELECT "assignedTo" as role, count(*) as total, count(*) FILTER (WHERE status = 'COMPLETED') as completed
         FROM agent_tasks WHERE "createdAt" > ${oneWeekAgo} GROUP BY "assignedTo"
@@ -221,14 +228,16 @@ export default async function InsightsPage() {
         SELECT "aboutRole" as role, count(*) as open_esc FROM escalations WHERE status = 'OPEN' GROUP BY "aboutRole"
       ) e ON e.role = ad."agentRole"
       LEFT JOIN (
-        SELECT role, sum(total) as total FROM (
-          SELECT "agentRole" as role, count(*) as total FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
+        SELECT role, sum(total) as total, sum(recent) as recent FROM (
+          SELECT "agentRole" as role, count(*) as total, count(*) FILTER (WHERE "createdAt" > ${oneWeekAgo}) as recent
+          FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
           UNION ALL
-          SELECT "studentRole" as role, count(*) as total FROM learning_artifacts GROUP BY "studentRole"
+          SELECT "studentRole" as role, count(*) as total, count(*) FILTER (WHERE "createdAt" > ${oneWeekAgo}) as recent
+          FROM learning_artifacts GROUP BY "studentRole"
         ) combined GROUP BY role
       ) kb ON kb.role = ad."agentRole"
       WHERE ad."isActive" = true AND ad."isManager" = true
-      ORDER BY m."performanceScore" DESC NULLS LAST
+      ORDER BY score DESC NULLS LAST
     `.catch(() => []) as any[]
 
     // ── COG P5: VULNERABILITĂȚI CONFORMITATE ──

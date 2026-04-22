@@ -45,6 +45,8 @@ export interface PayGapNarrative {
     planActiune: string
   }
   recomandariFinale: string[]
+  /** Secțiuni Company Profiler — coerență MVV ↔ structură salarială */
+  profilerSections?: import("@/lib/company-profiler").ReportSection[]
 }
 
 export function generateNarrative(report: PayGapReport): PayGapNarrative {

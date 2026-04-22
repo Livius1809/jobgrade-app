@@ -131,6 +131,21 @@ export interface MasterReportData {
     evaluationDate: string
     committee?: Array<{ name: string; role: string }>
   }
+  /** Company Profiler — coerență organizațională */
+  profiler?: {
+    maturity: string
+    maturityScore: number
+    coherenceScore: number
+    coherenceSummary: string
+    deviations: Array<{ pair: string; gap: string; suggestion: string }>
+    /** Secțiuni narrative injectabile per layer */
+    sections: {
+      baza: Array<{ title: string; narrative: string; recommendations: string[] }>
+      layer1: Array<{ title: string; narrative: string; recommendations: string[] }>
+      layer2: Array<{ title: string; narrative: string; recommendations: string[] }>
+      layer3: Array<{ title: string; narrative: string; recommendations: string[] }>
+    }
+  }
 }
 
 // ─── Date fictive AgroVision SRL ──────────────────────────────────────────
@@ -418,6 +433,7 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
       },
     },
     generatedAt: new Date().toISOString(),
+    profiler: await buildProfilerSection(tenantId),
     validation: latestSession?.validatedAt ? {
       validatedAt: latestSession.validatedAt.toISOString(),
       validatedBy: (latestSession as any).validator
@@ -431,5 +447,50 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
         role: p.user.jobTitle ?? "Evaluator",
       })),
     } : undefined,
+  }
+}
+
+/**
+ * Company Profiler — secțiuni coerență MVV pentru raportul master.
+ * Generează secțiuni narrative per layer + scor global.
+ */
+async function buildProfilerSection(tenantId: string): Promise<MasterReportData["profiler"]> {
+  try {
+    const { getCompanyProfile, getReportSections } = await import("@/lib/company-profiler")
+    const profile = await getCompanyProfile(tenantId)
+
+    // Generăm secțiuni per serviciu (mapate pe layere)
+    const [bazaSections, l1Sections, l2Sections, l3Sections] = await Promise.all([
+      getReportSections(tenantId, "JOB_EVALUATION").catch(() => []),
+      getReportSections(tenantId, "PAY_GAP_ANALYSIS").catch(() => []),
+      getReportSections(tenantId, "SALARY_BENCHMARK").catch(() => []),
+      getReportSections(tenantId, "CULTURE_AUDIT").catch(() => []),
+    ])
+
+    const mapSection = (s: any) => ({
+      title: s.title,
+      narrative: s.narrative,
+      recommendations: s.recommendations || [],
+    })
+
+    return {
+      maturity: profile.mvv.maturity,
+      maturityScore: profile.maturityState.score,
+      coherenceScore: profile.coherence.overallScore,
+      coherenceSummary: profile.coherence.summary,
+      deviations: profile.coherence.deviations.map(d => ({
+        pair: d.pair,
+        gap: d.gap || "",
+        suggestion: d.suggestion || "",
+      })),
+      sections: {
+        baza: bazaSections.map(mapSection),
+        layer1: l1Sections.map(mapSection),
+        layer2: l2Sections.map(mapSection),
+        layer3: l3Sections.map(mapSection),
+      },
+    }
+  } catch {
+    return undefined
   }
 }

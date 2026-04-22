@@ -65,6 +65,17 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const indicatorsJson = indicators as any
 
+    // Company Profiler — secțiuni coerență MVV ↔ structură salarială
+    let profilerSections: any[] = []
+    try {
+      const { getReportSections } = await import("@/lib/company-profiler")
+      profilerSections = await getReportSections(tenantId, "PAY_GAP_ANALYSIS", {
+        year,
+        employeeCount: records.length,
+        gapCategories: indicators,
+      })
+    } catch {}
+
     const report = await prisma.payGapReport.upsert({
       where: { tenantId_reportYear: { tenantId, reportYear: year } },
       create: {
@@ -86,7 +97,10 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ report }, { status: 201 })
+    // Company Profiler: acțiune semnificativă — raport pay gap generat
+    import("@/lib/company-profiler").then(m => m.onSignificantAction(tenantId)).catch(() => {})
+
+    return NextResponse.json({ report, profilerSections }, { status: 201 })
   } catch (error) {
     console.error("[PAY-GAP REPORT POST]", error)
     return NextResponse.json({ message: "Eroare server." }, { status: 500 })

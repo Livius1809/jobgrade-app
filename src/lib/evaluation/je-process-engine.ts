@@ -631,23 +631,24 @@ export async function suggestBenchmarks(sessionId: string, prisma: any) {
   // Calculează target-ul: ~30% din total, minim 3, maxim 50
   const targetCount = Math.max(3, Math.min(50, Math.round(jobs.length * 0.3)))
 
-  // Obține company profile pentru context MVV
-  const company = await (prisma as any).companyProfile.findFirst({
-    where: { tenantId: session.tenantId },
-  })
+  // Company Profiler Engine — context complet pentru AI
+  const { getAgentContext: getProfilerContext } = await import("@/lib/company-profiler")
+  const profilerCtx = await getProfilerContext(session.tenantId, "JE").catch(() => null)
+
+  const companyContext = profilerCtx
+    ? `
+TASK: Selectează benchmark-uri din lista de joburi pentru o sesiune de evaluare.
+PROFIL COMPANIE:
+${profilerCtx.companyEssence}
+
+${profilerCtx.deviationsToFlag.length > 0 ? `DEVIAȚII DE SEMNALAT ÎN SELECȚIA BENCHMARK:\n${profilerCtx.deviationsToFlag.map(d => `- ${d}`).join("\n")}` : ""}`
+    : `TASK: Selectează benchmark-uri din lista de joburi pentru o sesiune de evaluare.`
 
   const systemPrompt = await buildAgentPromptWithKB(
     "MEDIATOR",
     "Agent facilitator pentru selectarea benchmark-urilor în evaluarea posturilor",
     prisma,
-    {
-      additionalContext: `
-TASK: Selectează benchmark-uri din lista de joburi pentru o sesiune de evaluare.
-COMPANIE: ${company?.description ?? "N/A"}
-MISIUNE: ${company?.mission ?? "N/A"}
-VIZIUNE: ${company?.vision ?? "N/A"}
-VALORI: ${(company?.values ?? []).join(", ") || "N/A"}`,
-    }
+    { additionalContext: companyContext }
   )
 
   const userMessage = `Analizează următoarele ${jobs.length} posturi și selectează aproximativ ${targetCount} benchmark-uri.
@@ -841,11 +842,19 @@ export async function suggestSlotting(sessionId: string, jobId: string, prisma: 
 
   const targetJob = targetSj.job
 
-  // Context pentru AI
+  // Company Profiler Engine — context complet pentru slotting
+  const { getAgentContext: getSlotCtx } = await import("@/lib/company-profiler")
+  const slotProfilerCtx = await getSlotCtx(session.tenantId, "JE").catch(() => null)
+
+  const slotCompanyContext = slotProfilerCtx
+    ? `PROFIL COMPANIE:\n${slotProfilerCtx.companyEssence}\n${slotProfilerCtx.deviationsToFlag.length > 0 ? `\nDEVIAȚII RELEVANTE:\n${slotProfilerCtx.deviationsToFlag.map(d => `- ${d}`).join("\n")}` : ""}`
+    : undefined
+
   const systemPrompt = await buildAgentPromptWithKB(
     "MEDIATOR",
     "Agent facilitator pentru slotting-ul posturilor non-benchmark",
     prisma,
+    { additionalContext: slotCompanyContext },
   )
 
   const userMessage = `SLOTTING: Clasifică postul non-benchmark comparându-l cu benchmark-urile evaluate.
@@ -1547,6 +1556,9 @@ export async function finalizeSession(sessionId: string, prisma: any) {
     gradesUsed,
     participantsCount: session.participants.length,
   }, prisma)
+
+  // Company Profiler: acțiune semnificativă — sesiune finalizată
+  import("@/lib/company-profiler").then(m => m.onSignificantAction(session.tenantId)).catch(() => {})
 
   return {
     status: "COMPLETED",
