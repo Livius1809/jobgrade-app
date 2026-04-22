@@ -252,6 +252,7 @@ export default function OwnerInbox() {
                       replyText={replyText}
                       setReplyText={setReplyText}
                       onSend={(text) => respond(n.id, "INFO_PROVIDED", text)}
+                      onAck={() => respond(n.id, "APPROVED")}
                       onClarify={() => respond(n.id, "CLARIFICATION", "Precizati mai exact ce informatii va trebuie si in ce scop.")}
                       sending={sending === n.id}
                     />
@@ -354,43 +355,111 @@ function responseLabel(kind: string | null): string {
 
 // ═══ Componente raspuns per tip ═══════════════════════════════════════════
 
-function InformationResponse({ reqData, replyText, setReplyText, onSend, onClarify, sending }: {
+function InformationResponse({ reqData, replyText, setReplyText, onSend, onAck, onClarify, sending }: {
   reqData: RequestData; replyText: string; setReplyText: (t: string) => void
-  onSend: (text: string) => void; onClarify: () => void; sending: boolean
+  onSend: (text: string) => void; onAck: () => void; onClarify: () => void; sending: boolean
 }) {
+  const [showInput, setShowInput] = useState(false)
+
+  // Extragem itemii concreți din context (liste numerotate, bullet points)
+  const requestItems = extractRequestItems(reqData.context || "")
+  const isFYI = !requestItems.length && !/necesit|solicit|furniza|lipsesc|trebuie/i.test(reqData.context || "")
+
   return (
     <div>
-      <p className="text-[10px] text-blue-600 font-semibold mb-2">
-        Ce informatii furnizati:
-      </p>
-      <textarea
-        value={replyText}
-        onChange={e => setReplyText(e.target.value)}
-        placeholder={reqData.whatIsNeeded
-          ? `Furnizati: ${cleanTechJargon(reqData.whatIsNeeded)}`
-          : "Scrieti informatia solicitata..."
-        }
-        className="w-full border border-blue-200 rounded-lg p-3 text-xs text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
-        rows={3}
-        autoFocus
-      />
-      <div style={{ height: "8px" }} />
+      {/* Dacă agentul cere lucruri concrete, le arătăm clar */}
+      {requestItems.length > 0 && (
+        <div className="mb-3">
+          <p className="text-[10px] text-blue-600 font-semibold mb-1.5">Ce se solicita concret:</p>
+          <ul className="space-y-1">
+            {requestItems.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-[11px] text-slate-700">
+                <span className="text-blue-400 shrink-0 mt-0.5">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => onSend(replyText)}
-          disabled={sending || replyText.trim().length < 3}
-          className="text-[10px] font-medium bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40"
-        >
-          {sending ? "Se trimite..." : "Ofer informatia"}
-        </button>
-        <button onClick={onClarify} disabled={sending}
-          className="text-[10px] font-medium bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-40"
-        >
-          Ce anume va trebuie?
-        </button>
+        {/* Dacă e doar informativ (FYI), buton principal e "Am luat act" */}
+        {isFYI ? (
+          <button onClick={onAck} disabled={sending}
+            className="text-[10px] font-medium bg-emerald-600 text-white px-4 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-40"
+          >
+            {sending ? "..." : "Am luat act"}
+          </button>
+        ) : (
+          <button onClick={() => setShowInput(true)}
+            className="text-[10px] font-medium bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Ofer informatia
+          </button>
+        )}
+
+        {!isFYI && (
+          <button onClick={onClarify} disabled={sending}
+            className="text-[10px] font-medium bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-40"
+          >
+            Ce anume va trebuie?
+          </button>
+        )}
+
+        {!isFYI && !showInput && (
+          <button onClick={onAck} disabled={sending}
+            className="text-[10px] font-medium bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-40"
+          >
+            Am luat act
+          </button>
+        )}
       </div>
+
+      {showInput && (
+        <>
+          <div style={{ height: "8px" }} />
+          <textarea
+            value={replyText}
+            onChange={e => setReplyText(e.target.value)}
+            placeholder={requestItems.length > 0
+              ? `Furnizati informatiile de mai sus sau indicati unde le pot gasi...`
+              : "Scrieti informatia solicitata..."
+            }
+            className="w-full border border-blue-200 rounded-lg p-3 text-xs text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+            rows={3}
+            autoFocus
+          />
+          <div style={{ height: "6px" }} />
+          <button
+            onClick={() => onSend(replyText)}
+            disabled={sending || replyText.trim().length < 3}
+            className="text-[10px] font-medium bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40"
+          >
+            {sending ? "Se trimite..." : "Trimite informatia"}
+          </button>
+        </>
+      )}
     </div>
   )
+}
+
+/** Extrage itemii concreți din contextul cererii (liste numerotate, bullets) */
+function extractRequestItems(context: string): string[] {
+  if (!context) return []
+  const items: string[] = []
+
+  // Pattern: (1) ..., (2) ..., 1. ..., 2. ..., - ...
+  const lines = context.split(/[;\n]/)
+  for (const line of lines) {
+    const cleaned = line
+      .replace(/^\s*(?:\(\d+\)\s*|\d+[\.\)]\s*|-\s+|\*\s+)/, "")
+      .trim()
+    if (cleaned.length > 10 && /necesit|lipsesc|furniza|trebuie|solicit|acces|informati|date|lista|registr|specific|configur|detalii|context/i.test(cleaned)) {
+      items.push(cleanTechJargon(cleaned))
+    }
+  }
+
+  return items.slice(0, 6)
 }
 
 function AccessResponse({ reqData, onGrant, onDeny, onClarify, sending }: {
