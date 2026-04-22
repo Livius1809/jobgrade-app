@@ -562,6 +562,16 @@ interface EvalResult {
   score: number
 }
 
+/**
+ * Credite per variantă de evaluare — deduse din costuri reale (DB prod: provider_costs + ai_operation_tiers)
+ *
+ * A (Auto AI): inclus în pachetul de 60 cr/poz — Haiku, amp 1.20
+ * B (Comisie + AI): +1 cr/poz suplimentar — mediation-facilitation Sonnet, amp 1.50
+ * C (Comisie + Consultant): +20 cr/poz suplimentar — consultant 150-200 EUR/oră, ~7 min/poz
+ * D (Hibrid): +1 cr/poz suplimentar — A complet + B pe ~30% posturi
+ *
+ * Sursa: docs/pricing-methodology-v2.md secțiunea 7.2
+ */
 const VARIANTS: Array<{
   id: EvalVariant
   icon: string
@@ -569,8 +579,8 @@ const VARIANTS: Array<{
   description: string
   who: string
   time: string
-  /** Multiplicator credite față de baza (positions * 60) */
-  creditMultiplier: number
+  /** Credite suplimentare per poziție (peste cele 60 incluse în pachet) */
+  extraCreditsPerPosition: number
 }> = [
   {
     id: "auto",
@@ -579,7 +589,7 @@ const VARIANTS: Array<{
     description: "AI analizeaza fisele de post si evalueaza pe 6 criterii obiective. Dumneavoastra validati si semnati raportul.",
     who: "AI evalueaza, personal acreditat supervizeaza",
     time: "10-30 secunde",
-    creditMultiplier: 1,
+    extraCreditsPerPosition: 0,
   },
   {
     id: "comisie-ai",
@@ -588,7 +598,7 @@ const VARIANTS: Array<{
     description: "Membrii comisiei dumneavoastra evalueaza individual. AI identifica divergentele si mediaza consensul.",
     who: "Comisia dumneavoastra evalueaza, AI mediaza",
     time: "2-5 zile (depinde de nr. posturi si disponibilitatea comisiei)",
-    creditMultiplier: 1.2,
+    extraCreditsPerPosition: 1,
   },
   {
     id: "comisie-consultant",
@@ -597,7 +607,7 @@ const VARIANTS: Array<{
     description: "Membrii comisiei dumneavoastra evalueaza. Un consultant acreditat din echipa noastra faciliteaza consensul.",
     who: "Comisia dumneavoastra evalueaza, consultantul nostru mediaza",
     time: "1-2 saptamani",
-    creditMultiplier: 1.8,
+    extraCreditsPerPosition: 20,
   },
   {
     id: "hibrid",
@@ -606,7 +616,7 @@ const VARIANTS: Array<{
     description: "Se ruleaza mai intai evaluarea AI. Raportul generat devine baza de discutie pentru comisie. Comisia ajusteaza de unde are nevoie.",
     who: "AI genereaza prima versiune, comisia valideaza si ajusteaza",
     time: "AI: 30s + comisie: 1-3 zile",
-    creditMultiplier: 1.35,
+    extraCreditsPerPosition: 1,
   },
 ]
 
@@ -820,8 +830,11 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
                   <div className="flex flex-wrap gap-3 text-[9px]">
                     <span className="text-slate-400"><span className="font-semibold text-slate-500">Cine:</span> {v.who}</span>
                     <span className="text-slate-400"><span className="font-semibold text-slate-500">Timp:</span> {v.time}</span>
-                    {jobCount > 0 && (
-                      <span className="text-slate-400"><span className="font-semibold text-slate-500">Cost:</span> {Math.ceil(jobCount * 60 * v.creditMultiplier)} credite</span>
+                    {jobCount > 0 && v.extraCreditsPerPosition > 0 && (
+                      <span className="text-amber-600"><span className="font-semibold">+{jobCount * v.extraCreditsPerPosition} credite</span> suplimentare</span>
+                    )}
+                    {jobCount > 0 && v.extraCreditsPerPosition === 0 && (
+                      <span className="text-emerald-600 font-semibold">Inclus in pachet</span>
                     )}
                   </div>
                 </div>
@@ -833,13 +846,11 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
           ))}
         </div>
 
-        {/* Avertizare credite suplimentare dacă varianta depășește pachetul de bază */}
+        {/* Avertizare credite suplimentare */}
         {variant && (() => {
           const selectedVariant = VARIANTS.find(v => v.id === variant)
-          if (!selectedVariant || selectedVariant.creditMultiplier <= 1 || jobCount === 0) return null
-          const baseCost = jobCount * 60
-          const variantCost = Math.ceil(baseCost * selectedVariant.creditMultiplier)
-          const extraCredits = variantCost - baseCost
+          if (!selectedVariant || selectedVariant.extraCreditsPerPosition === 0 || jobCount === 0) return null
+          const extraCredits = jobCount * selectedVariant.extraCreditsPerPosition
           return (
             <>
               <div style={{ height: "16px" }} />

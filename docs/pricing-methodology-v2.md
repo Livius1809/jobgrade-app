@@ -261,7 +261,7 @@ Pachetul Baza (layer 1) cu 10 poziții:
 
 ## 7.2 Cele 4 variante de evaluare — COST DIFERENȚIAT
 
-**TODO OWNER:** Prețurile de mai jos sunt calculate din resurse. Multiplicatorii trebuie validați.
+**DEDUS DIN DB PROD** (provider_costs + ai_operation_tiers, 22.04.2026)
 
 ### Varianta A: Evaluare automată AI
 | Componentă | Per poziție | Notă |
@@ -303,16 +303,29 @@ Pachetul Baza (layer 1) cu 10 poziții:
 | **Preț cu marjă ×5** | **14.40 RON** | → ~1.8 credite/poz |
 | **Raport față de Varianta A** | **×1.53** | +53% |
 
-### Rezumat multiplicatori variante evaluare
+### Rezumat — credite suplimentare per variantă
 
-| Varianta | Cost acoperitor/poz | Credite/poz | Multiplicator vs. A |
-|----------|-------------------|-------------|-------------------|
-| A: Auto AI | 1.88 RON | 1.2 cr | ×1.0 |
-| B: Comisie + AI | 2.55 RON | 1.6 cr | ×1.35 |
-| C: Comisie + Consultant | 16.50 RON | 4.1 cr | ×3.5 |
-| D: Hibrid AI→Comisie | 2.88 RON | 1.8 cr | ×1.53 |
+**Sursa:** DB prod (provider_costs: human-specialist-min = 150-200 EUR/oră, ai_operation_tiers: mediation-facilitation amp 1.50)
 
-**NOTĂ:** Acestea sunt creditele SUPLIMENTARE per poziție DOAR pentru componenta de evaluare. Pachetul complet (60 cr/poz) include și fișe, structură, rapoarte, chat.
+| Varianta | Cost acoperitor/poz | Credite suplimentare/poz | Calcul |
+|----------|-------------------|--------------------------|--------|
+| A: Auto AI | 2.88 RON | **0** (inclus în 60 cr/poz pachet) | Haiku, amp 1.20 |
+| B: Comisie + AI | 5.48 RON | **+1 cr/poz** | mediation-facilitation Sonnet, amp 1.50 |
+| C: Comisie + Consultant | 106.54 RON | **+20 cr/poz** | 175 EUR/oră × 7 min/poz, marjă ×1.5 |
+| D: Hibrid AI→Comisie | 4.52 RON | **+1 cr/poz** | A complet + B pe ~30% posturi |
+
+**Exemplu 20 poziții:**
+- A: 0 suplimentar (inclus)
+- B: +20 credite = +160 RON
+- C: +400 credite = +3.200 RON
+- D: +20 credite = +160 RON
+
+**Verificare fezabilitate:**
+- C (20 poz): 3.200 RON vs consultant tradițional ~36.500 RON (100 poz, 40h) → economie 56%
+- Marja C: (3.200 - 2.131) / 3.200 = 33% (marjă mică, dominată de cost uman)
+- Marja A/B/D: >93% (dominat de AI, cost neglijabil)
+
+**NOTĂ:** Cele 60 cr/poz din pachet acoperă evaluarea AI + fișe + structură + rapoarte + chat. Creditele suplimentare sunt DOAR pentru componenta de evaluare diferențiată.
 
 ---
 
