@@ -569,8 +569,8 @@ const VARIANTS: Array<{
   description: string
   who: string
   time: string
-  includedInPackage: boolean
-  extraCreditsPercent?: number
+  /** Multiplicator credite față de baza (positions * 60) */
+  creditMultiplier: number
 }> = [
   {
     id: "auto",
@@ -579,7 +579,7 @@ const VARIANTS: Array<{
     description: "AI analizeaza fisele de post si evalueaza pe 6 criterii obiective. Dumneavoastra validati si semnati raportul.",
     who: "AI evalueaza, personal acreditat supervizeaza",
     time: "10-30 secunde",
-    includedInPackage: true,
+    creditMultiplier: 1,
   },
   {
     id: "comisie-ai",
@@ -588,7 +588,7 @@ const VARIANTS: Array<{
     description: "Membrii comisiei dumneavoastra evalueaza individual. AI identifica divergentele si mediaza consensul.",
     who: "Comisia dumneavoastra evalueaza, AI mediaza",
     time: "2-5 zile (depinde de nr. posturi si disponibilitatea comisiei)",
-    includedInPackage: true,
+    creditMultiplier: 1.2,
   },
   {
     id: "comisie-consultant",
@@ -597,7 +597,7 @@ const VARIANTS: Array<{
     description: "Membrii comisiei dumneavoastra evalueaza. Un consultant acreditat din echipa noastra faciliteaza consensul.",
     who: "Comisia dumneavoastra evalueaza, consultantul nostru mediaza",
     time: "1-2 saptamani",
-    includedInPackage: true,
+    creditMultiplier: 1.8,
   },
   {
     id: "hibrid",
@@ -606,8 +606,7 @@ const VARIANTS: Array<{
     description: "Se ruleaza mai intai evaluarea AI. Raportul generat devine baza de discutie pentru comisie. Comisia ajusteaza de unde are nevoie.",
     who: "AI genereaza prima versiune, comisia valideaza si ajusteaza",
     time: "AI: 30s + comisie: 1-3 zile",
-    includedInPackage: false,
-    extraCreditsPercent: 35,
+    creditMultiplier: 1.35,
   },
 ]
 
@@ -821,10 +820,10 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
                   <div className="flex flex-wrap gap-3 text-[9px]">
                     <span className="text-slate-400"><span className="font-semibold text-slate-500">Cine:</span> {v.who}</span>
                     <span className="text-slate-400"><span className="font-semibold text-slate-500">Timp:</span> {v.time}</span>
+                    {jobCount > 0 && (
+                      <span className="text-slate-400"><span className="font-semibold text-slate-500">Cost:</span> {Math.ceil(jobCount * 60 * v.creditMultiplier)} credite</span>
+                    )}
                   </div>
-                  {v.includedInPackage && (
-                    <p className="text-[9px] text-emerald-600 mt-1.5">Inclus in pachetul achizitionat</p>
-                  )}
                 </div>
                 {variant === v.id && (
                   <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs shrink-0">✓</span>
@@ -834,15 +833,19 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
           ))}
         </div>
 
-        {/* Avertizare credite suplimentare la hibrid */}
-        {variant === "hibrid" && (() => {
-          const extraCredits = Math.ceil(jobCount * 60 * 0.4 / 8)
+        {/* Avertizare credite suplimentare dacă varianta depășește pachetul de bază */}
+        {variant && (() => {
+          const selectedVariant = VARIANTS.find(v => v.id === variant)
+          if (!selectedVariant || selectedVariant.creditMultiplier <= 1 || jobCount === 0) return null
+          const baseCost = jobCount * 60
+          const variantCost = Math.ceil(baseCost * selectedVariant.creditMultiplier)
+          const extraCredits = variantCost - baseCost
           return (
             <>
               <div style={{ height: "16px" }} />
               <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "14px" }}>
                 <p className="text-xs text-amber-800">
-                  Varianta hibrid nu este inclusa integral in pachetul de baza. Pentru derularea procesului mai sunt necesare <span className="font-bold">{extraCredits} credite suplimentare</span>.
+                  Aceasta varianta nu este inclusa integral in pachetul de baza. Pentru derularea procesului mai sunt necesare <span className="font-bold">{extraCredits} credite suplimentare</span>.
                 </p>
               </div>
             </>
