@@ -430,30 +430,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
           {/* ─── Upload PDF/Word ─── */}
           {panelOpen === "upload-fise" && (
-            <>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Încărcați fișele de post existente în format PDF sau Word. Le procesăm automat și extragem informațiile relevante.
-              </p>
-              <div style={{ height: "20px" }} />
-              <div className="bg-amber-50 rounded-xl border-2 border-dashed border-amber-300 flex flex-col items-center justify-center text-center" style={{ padding: "32px" }}>
-                <span className="text-3xl">📤</span>
-                <div style={{ height: "12px" }} />
-                <p className="text-sm font-medium text-slate-700">Trageți fișierele aici</p>
-                <p className="text-xs text-slate-400">sau</p>
-                <div style={{ height: "8px" }} />
-                <button className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors">
-                  Alegeți fișiere
-                </button>
-                <div style={{ height: "8px" }} />
-                <p className="text-[10px] text-slate-400">PDF, DOC, DOCX · max 10 MB per fișier</p>
-              </div>
-              <div style={{ height: "20px" }} />
-              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-                Procesează fișierele
-              </button>
-              <div style={{ height: "8px" }} />
-              <p className="text-[9px] text-slate-400 text-center">AI extrage automat: titlu, responsabilități, competențe, cerințe.</p>
-            </>
+            <UploadJobDescriptionPanel onComplete={() => setPanelOpen(null)} />
           )}
 
           {/* ─── Adaugă angajat manual ─── */}
@@ -1188,5 +1165,218 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
         </>
       )}
     </>
+  )
+}
+
+// ── Upload PDF/Word ──────────────────────────────────────────────────────────
+
+function UploadJobDescriptionPanel({ onComplete }: { onComplete: () => void }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [result, setResult] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleUpload() {
+    if (!file) return
+    setUploading(true)
+    setError(null)
+    setResult(null)
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/v1/jobs/upload-description", { method: "POST", body: formData })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Eroare la procesare.")
+      } else {
+        setResult(data.extracted)
+      }
+    } catch {
+      setError("Eroare de conexiune.")
+    }
+    setUploading(false)
+  }
+
+  async function handleSave() {
+    if (!result) return
+    setSaving(true)
+
+    try {
+      const res = await fetch("/api/v1/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: result.title,
+          department: result.department,
+          purpose: result.purpose,
+          responsibilities: result.responsibilities,
+          requirements: result.requirements,
+          conditions: result.conditions,
+        }),
+      })
+
+      if (res.ok) {
+        onComplete()
+      } else {
+        const data = await res.json()
+        setError(data.message || "Eroare la salvare.")
+      }
+    } catch {
+      setError("Eroare de conexiune.")
+    }
+    setSaving(false)
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f) { setFile(f); setResult(null); setError(null) }
+  }
+
+  function onFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (f) { setFile(f); setResult(null); setError(null) }
+  }
+
+  // Dacă avem rezultat AI — arătăm preview
+  if (result) {
+    return (
+      <>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Am extras informațiile din <span className="font-medium">{file?.name}</span>.
+          Verificați și salvați:
+        </p>
+        <div style={{ height: "16px" }} />
+
+        {!result.isJobDescription && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700" style={{ padding: "12px" }}>
+            Documentul nu pare a fi o fișă de post standard. Am extras ce am putut.
+            {result.notes && <span className="block mt-1 text-amber-600">{result.notes}</span>}
+          </div>
+        )}
+
+        <div style={{ height: "12px" }} />
+        <div className="space-y-3">
+          <ExtractedField label="Titlu post" value={result.title} />
+          <ExtractedField label="Departament" value={result.department} />
+          <ExtractedField label="Scop" value={result.purpose} />
+          <ExtractedField label="Responsabilitati" value={result.responsibilities} long />
+          <ExtractedField label="Cerinte" value={result.requirements} long />
+          {result.conditions && <ExtractedField label="Conditii de munca" value={result.conditions} />}
+        </div>
+
+        <div style={{ height: "20px" }} />
+        {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+        <div className="flex gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving || !result.title}
+            className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+          >
+            {saving ? "Se salveaza..." : "Salveaza postul"}
+          </button>
+          <button
+            onClick={() => { setResult(null); setFile(null) }}
+            className="px-4 py-3 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Alt fisier
+          </button>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Incarcati fisele de post existente in format PDF sau Word. Le procesam automat si extragem informatiile relevante.
+      </p>
+      <div style={{ height: "20px" }} />
+
+      <div
+        className={`rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center transition-colors ${
+          dragOver ? "border-indigo-400 bg-indigo-50" : "border-amber-300 bg-amber-50"
+        }`}
+        style={{ padding: "32px" }}
+        onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+      >
+        <span className="text-3xl">{file ? "📄" : "📤"}</span>
+        <div style={{ height: "12px" }} />
+
+        {file ? (
+          <>
+            <p className="text-sm font-medium text-slate-700">{file.name}</p>
+            <p className="text-[10px] text-slate-400">{(file.size / 1024).toFixed(0)} KB</p>
+            <div style={{ height: "8px" }} />
+            <button
+              onClick={() => { setFile(null); setError(null) }}
+              className="text-[10px] text-red-500 hover:underline"
+            >
+              Sterge
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-slate-700">Trageti fisierul aici</p>
+            <p className="text-xs text-slate-400">sau</p>
+            <div style={{ height: "8px" }} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              onChange={onFileSelect}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors"
+            >
+              Alegeti fisier
+            </button>
+            <div style={{ height: "8px" }} />
+            <p className="text-[10px] text-slate-400">PDF, DOC, DOCX — max 10 MB</p>
+          </>
+        )}
+      </div>
+
+      {error && (
+        <>
+          <div style={{ height: "12px" }} />
+          <p className="text-xs text-red-600">{error}</p>
+        </>
+      )}
+
+      <div style={{ height: "20px" }} />
+      <button
+        onClick={handleUpload}
+        disabled={!file || uploading}
+        className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+      >
+        {uploading ? "Se proceseaza..." : "Proceseaza fisierul"}
+      </button>
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">AI extrage automat: titlu, responsabilitati, competente, cerinte.</p>
+    </>
+  )
+}
+
+function ExtractedField({ label, value, long }: { label: string; value?: string; long?: boolean }) {
+  if (!value) return null
+  return (
+    <div>
+      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{label}</p>
+      <p className={`text-xs text-slate-700 leading-relaxed bg-slate-50 rounded-lg border border-slate-100 ${long ? "whitespace-pre-wrap" : ""}`} style={{ padding: "10px" }}>
+        {value}
+      </p>
+    </div>
   )
 }

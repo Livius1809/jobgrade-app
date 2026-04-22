@@ -27,6 +27,16 @@ const ALLOWED_TYPES: Record<string, { mimeTypes: string[]; magicBytes?: number[]
     mimeTypes: ["application/pdf"],
     magicBytes: [[0x25, 0x50, 0x44, 0x46]], // %PDF
   },
+  ".docx": {
+    mimeTypes: [
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+    magicBytes: [[0x50, 0x4B, 0x03, 0x04]], // ZIP archive (DOCX = ZIP)
+  },
+  ".doc": {
+    mimeTypes: ["application/msword"],
+    magicBytes: [[0xD0, 0xCF, 0x11, 0xE0]], // OLE2 compound
+  },
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
