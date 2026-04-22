@@ -386,14 +386,7 @@ export default async function OwnerDashboard() {
               <ReportLink href="/owner/reports/costs" title="Costuri" description="LLM, infra" icon="💰" />
             </div>
 
-            {data.situationsSummary && data.situationsSummary.total > 0 && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <MiniStat label="Decizii" value={data.situationsSummary.decisionRequired} accent={data.situationsSummary.decisionRequired > 0 ? "coral" : "slate"} />
-                <MiniStat label="Auto-remediere" value={data.situationsSummary.autoRemediating} accent="indigo" />
-                <MiniStat label="Gap cunoscut" value={data.situationsSummary.knownGap} accent="slate" />
-                <MiniStat label="Zgomot config" value={data.situationsSummary.configNoise} accent="slate" />
-              </div>
-            )}
+            {/* Sumar situații scos — redundant cu secțiunea Decizii */}
 
             {/* ═══ II. SITUAȚIE EXTERNĂ ═══ */}
             <div id="externa" className="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl border border-violet-100" style={{ padding: "28px" }}>
