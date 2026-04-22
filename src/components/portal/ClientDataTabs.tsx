@@ -788,38 +788,48 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
             className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
           />
 
-          {/* Indicator relevanță */}
+          {/* Indicator relevanță — scor total + sugestii naturale */}
           {relevance && (
             <>
               <div style={{ height: "8px" }} />
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${relevance.score >= 80 ? "bg-emerald-500" : relevance.score >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                    className={`h-full rounded-full transition-all duration-500 ${relevance.score >= 100 ? "bg-emerald-500" : relevance.score >= 60 ? "bg-amber-400" : "bg-red-400"}`}
                     style={{ width: `${relevance.score}%` }}
                   />
                 </div>
-                <span className={`text-xs font-bold ${relevance.score >= 80 ? "text-emerald-600" : relevance.score >= 50 ? "text-amber-600" : "text-red-500"}`}>
+                <span className={`text-sm font-bold ${relevance.score >= 100 ? "text-emerald-600" : relevance.score >= 60 ? "text-amber-600" : "text-red-500"}`}>
                   {relevance.score}%
                 </span>
               </div>
 
-              <div style={{ height: "8px" }} />
-              <div className="grid grid-cols-3 gap-1">
-                {Object.entries(relevance.criteria).map(([key, val]: [string, any]) => {
-                  const labels: Record<string, string> = {
-                    education: "Educație", communication: "Comunicare", problemSolving: "Rez. probleme",
-                    decisionMaking: "Decizii", businessImpact: "Impact", workConditions: "Condiții"
-                  }
-                  return (
-                    <div key={key} className={`rounded border text-center ${val.score >= 80 ? "border-emerald-200 bg-emerald-50" : val.score >= 40 ? "border-amber-200 bg-amber-50" : "border-red-200 bg-red-50"}`} style={{ padding: "4px" }}>
-                      <span className="text-[8px] text-slate-400">{labels[key] || key}</span>
-                      <p className={`text-[10px] font-bold ${val.score >= 80 ? "text-emerald-700" : val.score >= 40 ? "text-amber-700" : "text-red-600"}`}>{val.score}%</p>
-                      {val.hint && val.score < 80 && <p className="text-[8px] text-slate-400">{val.hint}</p>}
+              {/* Sugestii — doar cele cu hint (sub 100%), formulate natural */}
+              {relevance.score < 100 && (() => {
+                const hints = Object.values(relevance.criteria)
+                  .filter((c: any) => c.hint && c.score < 100)
+                  .map((c: any) => c.hint)
+                if (hints.length === 0) return null
+                return (
+                  <>
+                    <div style={{ height: "8px" }} />
+                    <div className="bg-amber-50 rounded-lg border border-amber-200" style={{ padding: "10px" }}>
+                      <p className="text-[9px] text-amber-700 font-bold uppercase">Mai adaugă</p>
+                      <div style={{ height: "4px" }} />
+                      {hints.map((h: string, i: number) => (
+                        <p key={i} className="text-xs text-amber-800 leading-relaxed">• {h}</p>
+                      ))}
                     </div>
-                  )
-                })}
-              </div>
+                  </>
+                )
+              })()}
+
+              {relevance.score >= 100 && (
+                <>
+                  <div style={{ height: "4px" }} />
+                  <p className="text-[10px] text-emerald-600 text-center font-medium">Informația e completă — poți salva.</p>
+                </>
+              )}
             </>
           )}
 
@@ -880,30 +890,7 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
             <p className="text-xs text-slate-700 whitespace-pre-wrap">{jobDesc.requirements}</p>
           </div>
 
-          {/* Mapare criterii */}
-          {jobDesc.criteriaMapping && (
-            <>
-              <div style={{ height: "8px" }} />
-              <div className="bg-indigo-50 rounded-xl border border-indigo-200" style={{ padding: "12px" }}>
-                <p className="text-[9px] text-indigo-700 font-bold uppercase">Mapare criterii evaluare</p>
-                <div style={{ height: "6px" }} />
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(jobDesc.criteriaMapping).map(([key, val]: [string, any]) => {
-                    const labels: Record<string, string> = {
-                      education: "Educație", communication: "Comunicare", problemSolving: "Rez. probleme",
-                      decisionMaking: "Decizii", businessImpact: "Impact", workConditions: "Condiții"
-                    }
-                    return (
-                      <div key={key} className="bg-white rounded border border-indigo-100 text-center" style={{ padding: "6px" }}>
-                        <span className="text-[9px] text-slate-400">{labels[key] || key}</span>
-                        <p className="text-sm font-bold text-indigo-700">{val.level}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </>
-          )}
+          {/* Maparea pe criterii se salvează intern — NU se afișează clientului */}
 
           {/* Întrebări lipsă */}
           {jobDesc.missingInfo && jobDesc.missingInfo.length > 0 && (
@@ -1103,33 +1090,7 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
             </div>
           </div>
 
-          {/* Mapare criterii (intern — alimentează evaluarea) */}
-          {result.criteriaMapping && (
-            <>
-              <div style={{ height: "12px" }} />
-              <div className="bg-indigo-50 rounded-xl border border-indigo-200" style={{ padding: "16px" }}>
-                <p className="text-[10px] text-indigo-700 font-bold uppercase tracking-wide">Mapare pe criterii de evaluare</p>
-                <div style={{ height: "8px" }} />
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(result.criteriaMapping).map(([key, val]) => {
-                    const labels: Record<string, string> = {
-                      education: "Educație", communication: "Comunicare", problemSolving: "Rezolvare probleme",
-                      decisionMaking: "Luarea deciziilor", businessImpact: "Impact afaceri", workConditions: "Condiții"
-                    }
-                    return (
-                      <div key={key} className="bg-white rounded-lg border border-indigo-100" style={{ padding: "8px" }}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] text-slate-500">{labels[key] || key}</span>
-                          <span className="text-xs font-bold text-indigo-700">{val.level}</span>
-                        </div>
-                        <p className="text-[9px] text-slate-400 mt-1">{val.summary}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </>
-          )}
+          {/* Maparea pe criterii se salvează intern — NU se afișează clientului (secret de serviciu) */}
 
           {/* Întrebări — informații lipsă */}
           {result.missingInfo && result.missingInfo.length > 0 && (
