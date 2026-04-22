@@ -54,6 +54,10 @@
 - 920a018 — chat 60 min
 - f470ea6 — multiplicatori reali din DB
 
+## BUG-uri observate pe Evoluție organism (/owner/reports/agents)
+1. **Task-uri amânate/depășite**: nu sunt aliniate la T0 — rămân vechi, irelevante. Trebuie reset.
+2. **Învățare Claude 0%**: 514 tasks COMPLETED cu 514 apeluri Claude dar învățarea de la Claude = 0%. Query-ul filtrează pe `source = 'SELF_INTERVIEW'` dar task-urile executate de Claude se loghează cu alt source. De investigat maparea surse KB.
+
 ## De făcut mâine
 1. **Verificare COG** — task CRITICAL creat, așteptăm raportul la ciclul de execuție
 2. **Fine tuning pricing** — pe baza observațiilor COG
