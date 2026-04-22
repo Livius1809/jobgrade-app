@@ -139,14 +139,14 @@ const TAB_COLORS: Record<string, { bar: string; fill: string; text: string; bord
 
 // Ce taburi apar per layer:
 // Baza (1): Posturi, Fișe de post
-// Nivelul 1 (2): + Stat de funcții (pay gap)
+// Nivelul 1 (2): + Stat salarii (pay gap, conformitate)
 // Nivelul 2 (3): + Date salariale (benchmark)
 // Nivelul 3 (4): + Departamente (dezvoltare org)
 const TABS_PER_LAYER: Record<number, string[]> = {
   1: ["posturi", "fise"],
-  2: ["posturi", "fise", "stat-functii"],
-  3: ["posturi", "fise", "stat-functii", "salarii"],
-  4: ["posturi", "fise", "stat-functii", "salarii", "departamente"],
+  2: ["posturi", "fise", "stat-salarii"],
+  3: ["posturi", "fise", "stat-salarii", "salarii"],
+  4: ["posturi", "fise", "stat-salarii", "salarii", "departamente"],
 }
 
 export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange, forceClosePanel = false, parentPanelLeft }: ClientDataTabsProps) {
@@ -202,8 +202,8 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
       status: jobCount >= 3 ? "done" : jobCount > 0 ? "partial" : "empty",
       count: jobCount,
       actions: [
-        { label: "Adaugă manual", onClick: () => setPanelOpen("posturi"), primary: jobCount === 0, opensPanel: true },
-        { label: "Importă din Excel", onClick: () => setPanelOpen("import-excel"), opensPanel: true },
+        { label: "Adaugă", onClick: () => setPanelOpen("posturi"), primary: jobCount === 0, opensPanel: true },
+        { label: "Import stat funcții", onClick: () => setPanelOpen("import-stat-functii"), opensPanel: true },
       ],
     },
     {
@@ -218,21 +218,21 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
       ],
     },
     {
-      id: "stat-functii",
-      label: "Stat de funcții",
-      icon: "👥",
-      description: "Lista angajaților cu poziția, departamentul și salariul actual. Necesar pentru analiza pay gap.",
+      id: "stat-salarii",
+      label: "Stat salarii",
+      icon: "💰",
+      description: "Statul de salarii — angajați, posturi, salarii brute. Necesar pentru analiza pay gap și conformitate.",
       status: employeeCount > 0 ? "done" : "empty",
       count: employeeCount,
       actions: [
-        { label: "Importă din Excel", href: "/pay-gap/employees", primary: true },
-        { label: "Adaugă manual", onClick: () => setPanelOpen("stat-functii"), opensPanel: true },
+        { label: "Importă fișier", onClick: () => setPanelOpen("import-stat-salarii"), primary: true, opensPanel: true },
+        { label: "Adaugă", onClick: () => setPanelOpen("add-angajat"), opensPanel: true },
       ],
     },
     {
       id: "salarii",
       label: "Date salariale",
-      icon: "💰",
+      icon: "📊",
       description: "Grila salarială actuală, beneficii, compensații. Necesar pentru benchmark și pachete.",
       status: hasSalaryData ? "done" : "empty",
       actions: [
@@ -261,7 +261,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
   const tabProgress: Record<string, number> = {
     posturi: Math.min(100, Math.round((liveJobCount / Math.max(3, 1)) * 100)),
     fise: 0,
-    "stat-functii": employeeCount > 0 ? 100 : 0,
+    "stat-salarii": employeeCount > 0 ? 100 : 0,
     salarii: hasSalaryData ? 100 : 0,
     departamente: hasDepartments ? 100 : 0,
   }
@@ -411,21 +411,23 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
             <div className="flex items-center gap-3">
               <span className="text-2xl">
                 {panelOpen === "posturi" && "📋"}
-                {panelOpen === "import-excel" && "📥"}
+                {panelOpen === "import-stat-functii" && "📥"}
                 {panelOpen === "fise" && "📄"}
                 {panelOpen === "upload-fise" && "📤"}
-                {panelOpen === "stat-functii" && "👥"}
+                {panelOpen === "import-stat-salarii" && "💰"}
+                {panelOpen === "add-angajat" && "👤"}
               </span>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
                   {panelOpen === "posturi" && "Adaugă post"}
-                  {panelOpen === "import-excel" && "Importă posturi din Excel"}
+                  {panelOpen === "import-stat-functii" && "Import stat de funcții"}
                   {panelOpen === "fise" && "Compune fișă de post"}
                   {panelOpen === "upload-fise" && "Încarcă fișe de post"}
-                  {panelOpen === "stat-functii" && "Adaugă angajat"}
+                  {panelOpen === "import-stat-salarii" && "Import stat salarii"}
+                  {panelOpen === "add-angajat" && "Adaugă angajat"}
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">
-                  {panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : panelOpen === "import-excel" ? "Import XLSX" : "Manual"}
+                  {panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : panelOpen === "import-stat-functii" ? "XLSX / PDF / Imagine" : panelOpen === "import-stat-salarii" ? "XLSX / XML" : panelOpen === "posturi" ? "Cu sugestii AI" : "Manual"}
                 </span>
               </div>
             </div>
@@ -450,60 +452,24 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
             <GenerateJobDescPanel jobs={jobs} onSwitchToPosturi={() => setPanelOpen("posturi")} />
           )}
 
-          {/* ─── Import Excel ─── */}
-          {panelOpen === "import-excel" && (
-            <ImportExcelPanel onComplete={() => setPanelOpen(null)} />
+          {/* ─── Import Stat Funcții (XLSX/PDF/Imagine) ─── */}
+          {panelOpen === "import-stat-functii" && (
+            <ImportStatFunctiiPanel onComplete={() => setPanelOpen(null)} />
           )}
 
-          {/* ─── Upload PDF/Word ─── */}
+          {/* ─── Upload PDF/Word fișe ─── */}
           {panelOpen === "upload-fise" && (
             <UploadJobDescriptionPanel onComplete={() => setPanelOpen(null)} />
           )}
 
-          {/* ─── Adaugă angajat manual ─── */}
-          {panelOpen === "stat-functii" && (
-            <>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Introduceți datele angajatului. Necesar: nume, post, salariu brut.
-              </p>
-              <div style={{ height: "20px" }} />
-              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Nume angajat</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Popescu Ion" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                </div>
-                <div style={{ height: "12px" }} />
-                <div>
-                  <label className="text-xs text-slate-600 font-medium">Post ocupat</label>
-                  <div style={{ height: "4px" }} />
-                  <input type="text" placeholder="ex: Analist financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                </div>
-                <div style={{ height: "12px" }} />
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs text-slate-600 font-medium">Salariu brut (RON)</label>
-                    <div style={{ height: "4px" }} />
-                    <input type="number" placeholder="–" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-xs text-slate-600 font-medium">Gen (F/M)</label>
-                    <div style={{ height: "4px" }} />
-                    <select className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white">
-                      <option value="">–</option>
-                      <option value="F">F</option>
-                      <option value="M">M</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div style={{ height: "20px" }} />
-              <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-                Salvează angajatul
-              </button>
-            </>
+          {/* ─── Import Stat Salarii (XLSX/XML) ─── */}
+          {panelOpen === "import-stat-salarii" && (
+            <ImportStatSalariiPanel onComplete={() => setPanelOpen(null)} />
+          )}
+
+          {/* ─── Adaugă angajat ─── */}
+          {panelOpen === "add-angajat" && (
+            <AddAngajatPanel onComplete={() => setPanelOpen(null)} />
           )}
         </div>,
         document.body
@@ -1517,5 +1483,336 @@ function ImportExcelPanel({ onComplete }: { onComplete: () => void }) {
       <div style={{ height: "8px" }} />
       <p className="text-[9px] text-slate-400 text-center">Coloana Titlu este obligatorie. Restul sunt optionale.</p>
     </>
+  )
+}
+
+// ── Import Stat Funcții (XLSX/PDF/PNG) ───────────────────────────────────────
+
+function ImportStatFunctiiPanel({ onComplete }: { onComplete: () => void }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [result, setResult] = useState<{ positions: Array<{ title: string; department?: string; level?: string; reportsTo?: string }> } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const isImage = file && /\.(png|jpg|jpeg)$/i.test(file.name)
+  const isPdf = file && /\.pdf$/i.test(file.name)
+
+  async function handleUpload() {
+    if (!file) return
+    setUploading(true)
+    setError(null)
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/v1/jobs/import-stat-functii", { method: "POST", body: formData })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Eroare la procesare.")
+      } else {
+        setResult({ positions: data.positions || [] })
+      }
+    } catch {
+      setError("Eroare de conexiune.")
+    }
+    setUploading(false)
+  }
+
+  async function handleSaveAll() {
+    if (!result?.positions.length) return
+    setSaving(true)
+    setError(null)
+
+    try {
+      for (const pos of result.positions) {
+        await fetch("/api/v1/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: pos.title, department: pos.department }),
+        })
+      }
+      onComplete()
+    } catch {
+      setError("Eroare la salvare.")
+    }
+    setSaving(false)
+  }
+
+  if (result && result.positions.length > 0) {
+    return (
+      <>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Am extras <span className="font-bold">{result.positions.length} pozitii</span> din <span className="font-medium">{file?.name}</span>.
+          Verificati si salvati:
+        </p>
+        <div style={{ height: "16px" }} />
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="text-left py-2 px-3 font-semibold text-slate-500">Post</th>
+                <th className="text-left py-2 px-3 font-semibold text-slate-500">Departament</th>
+                <th className="text-left py-2 px-3 font-semibold text-slate-500">Nivel</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.positions.map((p, i) => (
+                <tr key={i} className={i % 2 ? "bg-slate-50/50" : ""}>
+                  <td className="py-1.5 px-3 font-medium text-slate-800">{p.title}</td>
+                  <td className="py-1.5 px-3 text-slate-500">{p.department || "—"}</td>
+                  <td className="py-1.5 px-3 text-slate-500">{p.level || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ height: "16px" }} />
+        {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+        <div className="flex gap-3">
+          <button onClick={handleSaveAll} disabled={saving}
+            className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+          >
+            {saving ? "Se salveaza..." : `Salveaza ${result.positions.length} posturi`}
+          </button>
+          <button onClick={() => { setResult(null); setFile(null) }}
+            className="px-4 py-3 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Alt fisier
+          </button>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Incarcati statul de functii. Acceptam Excel (.xlsx), PDF sau imagine (PNG/JPG) — inclusiv organigrame. AI extrage automat pozitiile, departamentele si nivelele ierarhice.
+      </p>
+      <div style={{ height: "8px" }} />
+      <div className="bg-amber-50 border border-amber-200 rounded-lg text-[10px] text-amber-700" style={{ padding: "10px" }}>
+        Importul din fisier consuma credite. Adaugarea manuala este gratuita.
+      </div>
+      <div style={{ height: "16px" }} />
+      <FileDropZone
+        file={file}
+        dragOver={dragOver}
+        setDragOver={setDragOver}
+        setFile={(f) => { setFile(f); setError(null); setResult(null) }}
+        fileInputRef={fileInputRef}
+        accept=".xlsx,.pdf,.png,.jpg,.jpeg"
+        hint="XLSX, PDF, PNG, JPG — max 10 MB"
+      />
+      {error && <><div style={{ height: "12px" }} /><p className="text-xs text-red-600">{error}</p></>}
+      <div style={{ height: "20px" }} />
+      <button onClick={handleUpload} disabled={!file || uploading}
+        className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+      >
+        {uploading ? (isImage ? "AI analizeaza imaginea..." : isPdf ? "Se proceseaza PDF..." : "Se importa...") : "Extrage pozitiile"}
+      </button>
+    </>
+  )
+}
+
+// ── Import Stat Salarii (XLSX/XML) ───────────────────────────────────────────
+
+function ImportStatSalariiPanel({ onComplete }: { onComplete: () => void }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [result, setResult] = useState<{ imported: number } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleUpload() {
+    if (!file) return
+    setUploading(true)
+    setError(null)
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/v1/payroll/import", { method: "POST", body: formData })
+      const data = await res.json()
+      if (!res.ok) setError(data.message || "Eroare la import.")
+      else setResult({ imported: data.imported || data.count || 0 })
+    } catch { setError("Eroare de conexiune.") }
+    setUploading(false)
+  }
+
+  if (result) {
+    return (
+      <>
+        <div className="bg-emerald-50 rounded-xl border border-emerald-200 text-center" style={{ padding: "24px" }}>
+          <span className="text-3xl">✓</span>
+          <div style={{ height: "12px" }} />
+          <p className="text-sm font-semibold text-emerald-800">{result.imported} inregistrari importate</p>
+        </div>
+        <div style={{ height: "16px" }} />
+        <button onClick={onComplete} className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+          Inchide
+        </button>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Incarcati statul de salarii. Acceptam Excel (.xlsx), XML sau exporturi din softurile de salarizare (Saga, Revisal, etc.).
+      </p>
+      <p className="text-[10px] text-slate-400 mt-1">Coloane asteptate: Nume, Post, Departament, Salariu brut, Gen (F/M).</p>
+      <div style={{ height: "16px" }} />
+      <FileDropZone
+        file={file}
+        dragOver={dragOver}
+        setDragOver={setDragOver}
+        setFile={(f) => { setFile(f); setError(null); setResult(null) }}
+        fileInputRef={fileInputRef}
+        accept=".xlsx,.xml,.csv"
+        hint="XLSX, XML, CSV — max 10 MB"
+      />
+      {error && <><div style={{ height: "12px" }} /><p className="text-xs text-red-600">{error}</p></>}
+      <div style={{ height: "20px" }} />
+      <button onClick={handleUpload} disabled={!file || uploading}
+        className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+      >
+        {uploading ? "Se importa..." : "Importa statul de salarii"}
+      </button>
+    </>
+  )
+}
+
+// ── Adaugă angajat ───────────────────────────────────────────────────────────
+
+function AddAngajatPanel({ onComplete }: { onComplete: () => void }) {
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  async function handleSave() {
+    if (!formRef.current) return
+    const fd = new FormData(formRef.current)
+    const name = fd.get("name") as string
+    const jobTitle = fd.get("jobTitle") as string
+    const salary = fd.get("salary") as string
+    const gender = fd.get("gender") as string
+
+    if (!name || !jobTitle) { setError("Numele si postul sunt obligatorii."); return }
+
+    setSaving(true); setError(null)
+    try {
+      const res = await fetch("/api/v1/payroll/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: [{ name, jobTitle, salary: salary ? Number(salary) : undefined, gender: gender || undefined }] }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => { setSaved(false); formRef.current?.reset() }, 1500)
+      } else {
+        const data = await res.json()
+        setError(data.message || "Eroare la salvare.")
+      }
+    } catch { setError("Eroare de conexiune.") }
+    setSaving(false)
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Adaugati un angajat. Necesar: nume si post. Salariul si genul sunt necesare pentru analiza pay gap.
+      </p>
+      <div style={{ height: "16px" }} />
+      <form ref={formRef}>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-600 font-medium">Nume angajat</label>
+            <div style={{ height: "4px" }} />
+            <input name="name" type="text" placeholder="ex: Popescu Ion" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-600 font-medium">Post ocupat</label>
+            <div style={{ height: "4px" }} />
+            <input name="jobTitle" type="text" placeholder="ex: Analist financiar" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-slate-600 font-medium">Salariu brut (RON)</label>
+              <div style={{ height: "4px" }} />
+              <input name="salary" type="number" placeholder="—" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-slate-600 font-medium">Gen</label>
+              <div style={{ height: "4px" }} />
+              <select name="gender" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white">
+                <option value="">—</option>
+                <option value="F">F</option>
+                <option value="M">M</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
+      {error && <><div style={{ height: "8px" }} /><p className="text-xs text-red-600">{error}</p></>}
+      <div style={{ height: "16px" }} />
+      <button onClick={handleSave} disabled={saving}
+        className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"}`}
+      >
+        {saved ? "✓ Salvat" : saving ? "Se salveaza..." : "Salveaza angajatul"}
+      </button>
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">Puteti adauga mai multi pe rând. Formularul se reseteaza dupa fiecare salvare.</p>
+    </>
+  )
+}
+
+// ── FileDropZone reutilizabil ────────────────────────────────────────────────
+
+function FileDropZone({ file, dragOver, setDragOver, setFile, fileInputRef, accept, hint }: {
+  file: File | null; dragOver: boolean
+  setDragOver: (v: boolean) => void; setFile: (f: File | null) => void
+  fileInputRef: React.RefObject<HTMLInputElement | null>; accept: string; hint: string
+}) {
+  return (
+    <div
+      className={`rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center transition-colors ${
+        dragOver ? "border-indigo-400 bg-indigo-50" : "border-amber-300 bg-amber-50"
+      }`}
+      style={{ padding: "32px" }}
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) setFile(f) }}
+    >
+      <span className="text-3xl">{file ? "📄" : "📥"}</span>
+      <div style={{ height: "12px" }} />
+      {file ? (
+        <>
+          <p className="text-sm font-medium text-slate-700">{file.name}</p>
+          <p className="text-[10px] text-slate-400">{(file.size / 1024).toFixed(0)} KB</p>
+          <div style={{ height: "8px" }} />
+          <button onClick={() => setFile(null)} className="text-[10px] text-red-500 hover:underline">Sterge</button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm font-medium text-slate-700">Trageti fisierul aici</p>
+          <p className="text-xs text-slate-400">sau</p>
+          <div style={{ height: "8px" }} />
+          <input ref={fileInputRef} type="file" accept={accept} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f) }} />
+          <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors">
+            Alegeti fisier
+          </button>
+          <div style={{ height: "8px" }} />
+          <p className="text-[10px] text-slate-400">{hint}</p>
+        </>
+      )}
+    </div>
   )
 }
