@@ -138,7 +138,7 @@ export default async function AgentsReportPage() {
     } as any
 
     // ═══ ÎNVĂȚARE + KB total ═══
-    const [kbThisWeek, kbPrevWeek, kbTotal] = await Promise.all([
+    const [kbThisWeek, kbPrevWeek, kbTotal, laTotal] = await Promise.all([
       p.$queryRaw`
         SELECT
           count(*) as total,
@@ -149,6 +149,7 @@ export default async function AgentsReportPage() {
       ` as Promise<any[]>,
       p.kBEntry.count({ where: { createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } } }).catch(() => 0),
       p.kBEntry.count().catch(() => 0),
+      p.learningArtifact.count().catch(() => 0),
     ])
 
     const kbRow = kbThisWeek[0] || {}
@@ -160,7 +161,7 @@ export default async function AgentsReportPage() {
     learning = {
       total: totalThisWeek,
       prevTotal: Number(kbPrevWeek || 0),
-      totalKB: Number(kbTotal || 0),
+      totalKB: Number(kbTotal || 0) + Number(laTotal || 0),
       fromInternal,
       fromClients,
       fromClaude,
@@ -205,14 +206,18 @@ export default async function AgentsReportPage() {
         GROUP BY "assignedTo"
       ` as Promise<any[]>,
       p.$queryRaw`
-        SELECT "agentRole" as role, count(*) as learned
-        FROM kb_entries WHERE "createdAt" > ${oneWeekAgo}
-        GROUP BY "agentRole"
+        SELECT role, sum(learned) as learned FROM (
+          SELECT "agentRole" as role, count(*) as learned FROM kb_entries WHERE "createdAt" > ${oneWeekAgo} GROUP BY "agentRole"
+          UNION ALL
+          SELECT "studentRole" as role, count(*) as learned FROM learning_artifacts WHERE "createdAt" > ${oneWeekAgo} GROUP BY "studentRole"
+        ) combined GROUP BY role
       ` as Promise<any[]>,
       p.$queryRaw`
-        SELECT "agentRole" as role, count(*) as total
-        FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus"
-        GROUP BY "agentRole"
+        SELECT role, sum(total) as total FROM (
+          SELECT "agentRole" as role, count(*) as total FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
+          UNION ALL
+          SELECT "studentRole" as role, count(*) as total FROM learning_artifacts GROUP BY "studentRole"
+        ) combined GROUP BY role
       ` as Promise<any[]>,
     ])
 

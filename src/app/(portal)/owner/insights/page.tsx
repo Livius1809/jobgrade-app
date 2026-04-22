@@ -132,9 +132,11 @@ export default async function InsightsPage() {
         GROUP BY "assignedTo"
       ) t ON t.role = ad."agentRole"
       LEFT JOIN (
-        SELECT "agentRole" as role, count(*) as learned
-        FROM kb_entries WHERE "createdAt" > ${oneWeekAgo}
-        GROUP BY "agentRole"
+        SELECT role, sum(learned) as learned FROM (
+          SELECT "agentRole" as role, count(*) as learned FROM kb_entries WHERE "createdAt" > ${oneWeekAgo} GROUP BY "agentRole"
+          UNION ALL
+          SELECT "studentRole" as role, count(*) as learned FROM learning_artifacts WHERE "createdAt" > ${oneWeekAgo} GROUP BY "studentRole"
+        ) _kb GROUP BY role
       ) kb ON kb.role = ad."agentRole"
       WHERE ad."isActive" = true
       ORDER BY ad.level, ad."agentRole"
@@ -231,14 +233,18 @@ export default async function InsightsPage() {
 
     // ── COG P5: VULNERABILITĂȚI CONFORMITATE ──
     complianceItems = await p.$queryRaw`
-      SELECT content, tags, "createdAt"
-      FROM kb_entries
-      WHERE "agentRole" = 'CJA'
-        AND status = 'PERMANENT'::"KBStatus"
-        AND (
-          content ILIKE '%GDPR%' OR content ILIKE '%AI Act%' OR content ILIKE '%Directiva%2023%'
-          OR content ILIKE '%conformitate%' OR content ILIKE '%risc%'
-        )
+      SELECT * FROM (
+        SELECT content, tags, "createdAt"
+        FROM kb_entries
+        WHERE "agentRole" = 'CJA'
+          AND status = 'PERMANENT'::"KBStatus"
+          AND (content ILIKE '%GDPR%' OR content ILIKE '%AI Act%' OR content ILIKE '%Directiva%2023%' OR content ILIKE '%conformitate%' OR content ILIKE '%risc%')
+        UNION ALL
+        SELECT rule as content, ARRAY[]::text[] as tags, "createdAt"
+        FROM learning_artifacts
+        WHERE "studentRole" IN ('CJA', 'cja-agent', 'DPA')
+          AND (rule ILIKE '%GDPR%' OR rule ILIKE '%AI Act%' OR rule ILIKE '%Directiva%2023%' OR rule ILIKE '%conformitate%' OR rule ILIKE '%risc%')
+      ) combined
       ORDER BY "createdAt" DESC
       LIMIT 5
     `.catch(() => []) as any[]
