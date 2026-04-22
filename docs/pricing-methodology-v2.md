@@ -404,6 +404,150 @@ Cost suplimentar Starter: 636 × 8 = **5.088 RON**
 
 ---
 
+# 11. INVENTAR COMPLET OPERAȚII CLIENT — PER PAGINĂ ȘI ACȚIUNE
+
+## 11.1 Operații GRATUITE (incluse în abonament, fără consum credite)
+
+| Operație | Pagină/Trigger | Resurse | Cost real | Notă |
+|----------|---------------|---------|-----------|------|
+| Navigare portal | Portal principal | 7 DB queries paralele | <$0.001 | Stage, profile, jobs, sessions, credits |
+| Vizualizare progres (4 pași) | Portal | Calcul client-side | $0 | Profile → Jobs → Evaluate → Report |
+| Smart Activation (badge-uri dinamice) | Portal | Company Profiler (cache 60s) | <$0.001 | Ce servicii sunt deblocate |
+| Adăugare post manual (cu sugestii) | Tab Posturi | DB write + autocomplete static | <$0.001 | 80+ poziții RO predefinite |
+| Import posturi din Excel | Tab Posturi | ExcelJS parse + DB write batch | <$0.001 | Fără AI |
+| Import stat salarii XLSX/CSV | Tab Stat salarii | ExcelJS parse + DB write batch | <$0.001 | Fără AI |
+| Adăugare angajat manual | Tab Stat salarii | DB write | <$0.001 | |
+| Vizualizare sesiuni | Sessions page | DB read | <$0.001 | |
+| Creare sesiune evaluare | Sessions new | DB write (sesiune + jobs + participanți) | <$0.001 | |
+| Scorare individuală (comisie) | Evaluate page | DB write per criteriu | <$0.001 | 6 criterii × N posturi |
+| Consens: vot | Consensus page | DB write | <$0.001 | |
+| Consens: recalibrare | Consensus page | DB logic | <$0.001 | |
+| Consens: decizie | Consensus page | DB logic | <$0.001 | |
+| JE Process Engine (toate acțiunile) | je-process | DB logic complexă | <$0.001 | Pitariu, slotting, benchmarks |
+| Finalizare sesiune | Complete | DB finalizare | <$0.001 | |
+| Vizualizare rezultate | Results page | DB read | <$0.001 | |
+| Vizualizare raport (fără export) | Report flipbook | DB read + render client | <$0.001 | |
+| Dashboard pay gap (vizualizare) | Pay gap dashboard | DB read + calcul indicatori | <$0.001 | |
+| Profil companie CRUD | Company page | DB read/write | <$0.001 | |
+| Lookup ANAF | Company extract | API extern ANAF V9 | $0 | Gratuit, API public |
+| Detectare escalare (chat) | Toate chat-urile | Regex matching | $0 | Fără AI |
+| Jurnal activități | Billing log | DB write | <$0.001 | |
+| Account export/import/reset | Account pages | DB + crypto | <$0.01 | |
+
+## 11.2 Operații PLĂTITE (consum credite)
+
+### Servicii AI per acțiune
+
+| Operație | Trigger | Model AI | Cost acoperitor | Credite debitate | Cod credit |
+|----------|---------|----------|----------------|-----------------|------------|
+| Generare fișă de post AI | Buton "Compune cu AI" | Sonnet | 1.88 RON | Inclus în 12 cr/poz pachet | — |
+| Verificare relevanță (mod manual) | Typing debounced | Haiku | 0.41 RON | Gratuit (inclus) | — |
+| Generare anunț recrutare | AI Tools | Sonnet | 1.11 RON | **4 credite** | JOB_AD |
+| Generare fișă KPI | AI Tools | Sonnet | 1.60 RON | **3 credite** | KPI_SHEET |
+| Extragere MVV website/CAEN | Buton MVV | Sonnet | 0.65 RON | **2 credite** | COMPANY_EXTRACT |
+| Upload fișă PDF/Word → structurare | Upload panel | Sonnet | 1.31 RON | Inclus | — |
+| Import stat funcții (XLSX/PDF) | Import panel | Sonnet | 2.45 RON | TODO: de definit | — |
+| Import stat funcții (imagine PNG/JPG) | Import panel | Sonnet+Vision | 2.45 RON | TODO: de definit | — |
+| Evaluare automată AI per poziție | Buton "Pornește evaluarea" | Sonnet | 1.88 RON | Inclus în 60 cr/poz pachet | — |
+| Analiză post-evaluare | Post-sesiune | Sonnet | 3.02 RON | **4 credite** | SESSION_ANALYSIS |
+| Analiză job aprofundată | AI Tools | Sonnet | 3.02 RON | **4 credite** | JOB_ANALYSIS |
+| Generare grade salariale | Salary grades | Sonnet | 1.88 RON | **5 credite** | GENERATE_GRADES |
+| Simulare remunerare | Simulator | Sonnet | 1.60 RON | **3 credite** | SIMULATE_REMUNERATION |
+| Raport pay gap | Pay gap report | Sonnet | 3.02 RON | **3 credite** | PAY_GAP_REPORT |
+| Recalibrare consens | Recalibration | Sonnet | 1.88 RON | **2 credite** | RECALIBRATION_ROUND |
+
+### Export rapoarte
+
+| Export | Format | Cost acoperitor | Credite | Cod |
+|--------|--------|----------------|---------|-----|
+| Export PDF | PDF | 0.02 RON | **5 credite** | EXPORT_PDF |
+| Export Excel | XLSX | 0.01 RON | **5 credite** | EXPORT_EXCEL |
+| Export JSON | JSON | <0.01 RON | **5 credite** | EXPORT_JSON |
+| Export XML | XML | <0.01 RON | **5 credite** | EXPORT_XML |
+
+### Chat cu agenți AI
+
+| Agent | Rol | Model | Cost/mesaj acoperitor | Credite/mesaj | Abonament inclus |
+|-------|-----|-------|----------------------|---------------|-----------------|
+| SOA | Vânzări, onboarding | Sonnet | 0.74 RON | ~0.5 cr | 135 min/lună incluse |
+| HR Counselor | Facilitare evaluare | Sonnet | 0.74 RON | ~0.5 cr | — |
+| CSA | Suport client | Sonnet | 0.74 RON | ~0.5 cr | — |
+| CSSA | Suport senior | Sonnet | 0.74 RON | ~0.5 cr | — |
+
+## 11.3 Operații GRATUITE de implementat (TODO)
+
+| Operație | Scop | Cost intern | Justificare gratuitate |
+|----------|------|-------------|----------------------|
+| **Chat ghidaj platformă** | Clientul întreabă cum se folosește platforma | 0.74 RON/mesaj | Investiție în adopție — fidelizare |
+| **Flying wheel (prezentare personalizată)** | Document de prezentare pe topicele de interes | ~3 RON/generare | Ghidaj = onboarding natural → conversie |
+| **Chat exploatare platformă** | Întrebări tehnice: "cum fac X?" | 0.74 RON/mesaj | Reducere churn, reducere suport uman |
+
+**Notă:** Aceste operații trebuie implementate cu flag `isFreeGuidance` pe chat-uri. Costul e absorbit de marjă (la 93-99% marjă, suportăm ~5-10 mesaje/lună gratuite per client fără impact).
+
+## 11.4 Operații BACKGROUND per client (invizibile)
+
+| Operație | Trigger | Frecvență | Cost/rulare | Notă |
+|----------|---------|-----------|-------------|------|
+| Company Profiler recalc | Chat, raport, evaluare | Per request (cache 60s) | ~$0.07 | Include coerență AI |
+| MVV Progressive Builder | onSignificantAction() | La adăugare post, evaluare, salarii | ~$0.02 | Rebuild draft MVV |
+| HR Counselor Shadow | Fiecare chat B2B | Per mesaj | ~$0.03 | Observare invizibilă — maturity, engagement |
+| Client Memory update | Shadow detect insight | Per insight | <$0.01 | DB write |
+| Escalation chain | Chat detect conflict/legal | Per mesaj (regex) | $0 | Fără AI |
+
+## 11.5 STORAGE per client (OPEX stocare)
+
+| Componentă | Dimensiune estimată | Per ce | Creștere lunară |
+|-----------|-------------------|-------|----------------|
+| Profil companie + MVV | ~3 KB | Per client | Minimă |
+| Posturi + fișe | ~2 KB × nr. posturi | Per poziție | La adăugare |
+| Evaluări (scoruri) | ~500 B × posturi × evaluatori × criterii | Per sesiune | La evaluare |
+| Sesiuni (metadate) | ~1.5 KB | Per sesiune | La creare |
+| Chat history | ~2 KB × nr. mesaje | Per mesaj | Continuu |
+| AI Generations (log) | ~8 KB per generare | Per generare | La consum |
+| Credit transactions | ~200 B | Per tranzacție | La consum |
+| Client Memory (shadow) | ~1 KB per insight | Per insight | Continuu |
+| Pay gap reports | ~3 KB | Per an | Anual |
+| Export cache | Temporar (nu persistent) | — | 0 |
+| **TOTAL estimat client activ** | **~400-600 KB/an** | | |
+| **Cost Neon storage** | **<$0.001/an/client** | $0.75/GiB | Neglijabil |
+
+---
+
+# 12. REZUMAT PENTRU APROBARE OWNER
+
+## Ce acoperă abonamentul (399 RON/lună) — CAPEX
+- Infrastructură: Vercel, Neon, Upstash, DNS
+- Organism background: 45 agenți (reflecție, proactivitate, distilare)
+- Furnizori: Resend, Sentry, ntfy, GitHub Actions
+- ElevenLabs (voce) — de confirmat plan
+- **Total CAPEX: ~822-942 RON/lună**
+- **Break-even: 3 clienți**
+
+## Ce acoperă creditele (1 credit = 8 RON) — OPEX
+- Toate operațiile AI (Anthropic Sonnet/Haiku)
+- Generări documente (fișe, anunțuri, KPI, rapoarte)
+- Evaluare automată AI
+- Chat cu agenți (SOA, HR Counselor, CSA, CSSA)
+- Export rapoarte (PDF, Excel, JSON, XML)
+- **Cost acoperitor mediu per credit: 0.05-0.53 RON**
+- **Marjă OPEX: 93-99%**
+
+## Ce e GRATUIT (investiție în adopție)
+- Navigare, vizualizare, stage tracking
+- Adăugare posturi manual, import Excel
+- Scorare în comisie (DB only)
+- Vizualizare rapoarte (fără export)
+- Lookup ANAF
+- TODO: chat ghidaj platformă, flying wheel
+
+## PENDING aprobare
+- [ ] Multiplicatori variante evaluare (secțiunea 7.2)
+- [ ] Prețuri credite pentru import stat funcții (S-07)
+- [ ] Chat gratuit: câte mesaje/lună pe ghidaj platformă?
+- [ ] ElevenLabs: plan confirmat + cost
+
+---
+
 *Document viu. Se actualizează la fiecare modificare de serviciu, preț resurse, sau model AI.*
 *Următoarea revizuire: la schimbarea prețurilor Anthropic sau la adăugarea unui serviciu nou.*
 *Responsabil: COG (operațional) + DMA (date) + Marketing (strategie).*
