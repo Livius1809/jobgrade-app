@@ -81,7 +81,7 @@ export default async function InsightsPage() {
     }
 
     // ── 3. FEEDBACK LOOPS ──
-    const [tasksFeedback, kbUpdatesWeek] = await Promise.all([
+    const [tasksFeedback, kbUpdatesWeekOld, kbUpdatesWeekNew] = await Promise.all([
       p.$queryRaw`
         SELECT
           count(*) as total,
@@ -94,7 +94,8 @@ export default async function InsightsPage() {
       `.catch(() => [{ total: 0, with_feedback: 0, completed: 0, avg_hours: null }]) as any[],
 
       p.kBEntry.count({ where: { createdAt: { gte: oneWeekAgo } } }).catch(() => 0),
-    ])
+      p.learningArtifact.count({ where: { createdAt: { gte: oneWeekAgo } } }).catch(() => 0),
+    ]) as any[]
 
     const tf = tasksFeedback[0] || {}
     const totalTasks = Number(tf.total || 0)
@@ -105,10 +106,10 @@ export default async function InsightsPage() {
       total: totalTasks,
       completed: completedTasks,
       withFeedback,
-      kbUpdates: kbUpdatesWeek,
+      kbUpdates: Number(kbUpdatesWeekOld || 0) + Number(kbUpdatesWeekNew || 0),
       feedbackRate: totalTasks > 0 ? Math.round(withFeedback / totalTasks * 100) : 0,
       avgHours: tf.avg_hours ? Math.round(Number(tf.avg_hours)) : null,
-      loopClosed: Math.min(withFeedback, kbUpdatesWeek), // task cu feedback ȘI KB update
+      loopClosed: Math.min(withFeedback, Number(kbUpdatesWeekOld || 0) + Number(kbUpdatesWeekNew || 0)), // task cu feedback ȘI KB update
     }
 
     // ── 6. HARTA TERMICĂ ──
@@ -218,7 +219,11 @@ export default async function InsightsPage() {
         SELECT "aboutRole" as role, count(*) as open_esc FROM escalations WHERE status = 'OPEN' GROUP BY "aboutRole"
       ) e ON e.role = ad."agentRole"
       LEFT JOIN (
-        SELECT "agentRole" as role, count(*) as total FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
+        SELECT role, sum(total) as total FROM (
+          SELECT "agentRole" as role, count(*) as total FROM kb_entries WHERE status = 'PERMANENT'::"KBStatus" GROUP BY "agentRole"
+          UNION ALL
+          SELECT "studentRole" as role, count(*) as total FROM learning_artifacts GROUP BY "studentRole"
+        ) combined GROUP BY role
       ) kb ON kb.role = ad."agentRole"
       WHERE ad."isActive" = true AND ad."isManager" = true
       ORDER BY m."performanceScore" DESC NULLS LAST
@@ -249,17 +254,37 @@ export default async function InsightsPage() {
     // ── 5. CARTEA DE ÎNVĂȚARE PER AGENT ──
     const agentLearning = await p.$queryRaw`
       SELECT
-        kb."agentRole" as role,
+        combined.role,
         ad."displayName" as name,
-        count(*) as total_learned,
-        count(*) FILTER (WHERE kb.source = 'PROPAGATED' OR kb.source = 'EXPERT_HUMAN') as from_internal,
-        count(*) FILTER (WHERE kb.source = 'DISTILLED_INTERACTION') as from_clients,
-        count(*) FILTER (WHERE kb.source = 'SELF_INTERVIEW') as from_claude,
-        count(*) FILTER (WHERE kb."createdAt" > ${oneWeekAgo}) as learned_week
-      FROM kb_entries kb
-      JOIN agent_definitions ad ON ad."agentRole" = kb."agentRole" AND ad."isActive" = true
-      WHERE kb.status = 'PERMANENT'::"KBStatus"
-      GROUP BY kb."agentRole", ad."displayName"
+        sum(combined.total) as total_learned,
+        sum(combined.from_internal) as from_internal,
+        sum(combined.from_clients) as from_clients,
+        sum(combined.from_claude) as from_claude,
+        sum(combined.learned_week) as learned_week
+      FROM (
+        SELECT
+          kb."agentRole" as role,
+          count(*) as total,
+          count(*) FILTER (WHERE kb.source = 'PROPAGATED' OR kb.source = 'EXPERT_HUMAN') as from_internal,
+          count(*) FILTER (WHERE kb.source = 'DISTILLED_INTERACTION') as from_clients,
+          count(*) FILTER (WHERE kb.source = 'SELF_INTERVIEW') as from_claude,
+          count(*) FILTER (WHERE kb."createdAt" > ${oneWeekAgo}) as learned_week
+        FROM kb_entries kb
+        WHERE kb.status = 'PERMANENT'::"KBStatus"
+        GROUP BY kb."agentRole"
+        UNION ALL
+        SELECT
+          la."studentRole" as role,
+          count(*) as total,
+          count(*) FILTER (WHERE la."teacherRole" IN ('OWNER','course-owner','kb-bridge-expert','kb-ro','reference-book','brand')) as from_internal,
+          count(*) FILTER (WHERE la."teacherRole" = 'learning-funnel') as from_clients,
+          count(*) FILTER (WHERE la."teacherRole" = 'claude' OR la."teacherRole" LIKE 'course-%') as from_claude,
+          count(*) FILTER (WHERE la."createdAt" > ${oneWeekAgo}) as learned_week
+        FROM learning_artifacts la
+        GROUP BY la."studentRole"
+      ) combined
+      JOIN agent_definitions ad ON ad."agentRole" = combined.role AND ad."isActive" = true
+      GROUP BY combined.role, ad."displayName"
       ORDER BY total_learned DESC
       LIMIT 15
     `.catch(() => []) as any[]
@@ -320,11 +345,18 @@ export default async function InsightsPage() {
 
     // ── 10. FEED ÎNVĂȚARE RECENT ──
     recentLearning = await p.$queryRaw`
-      SELECT kb."agentRole" as role, ad."displayName" as name, kb.content, kb.source, kb."createdAt"
-      FROM kb_entries kb
-      JOIN agent_definitions ad ON ad."agentRole" = kb."agentRole"
-      WHERE kb."createdAt" > ${oneWeekAgo} AND kb.status = 'PERMANENT'::"KBStatus"
-      ORDER BY kb."createdAt" DESC
+      SELECT * FROM (
+        SELECT kb."agentRole" as role, ad."displayName" as name, kb.content, kb.source, kb."createdAt"
+        FROM kb_entries kb
+        JOIN agent_definitions ad ON ad."agentRole" = kb."agentRole"
+        WHERE kb."createdAt" > ${oneWeekAgo} AND kb.status = 'PERMANENT'::"KBStatus"
+        UNION ALL
+        SELECT la."studentRole" as role, ad."displayName" as name, left(la.rule, 300) as content, la."teacherRole" as source, la."createdAt"
+        FROM learning_artifacts la
+        JOIN agent_definitions ad ON ad."agentRole" = la."studentRole"
+        WHERE la."createdAt" > ${oneWeekAgo}
+      ) combined
+      ORDER BY "createdAt" DESC
       LIMIT 10
     `.catch(() => []) as any[]
 
