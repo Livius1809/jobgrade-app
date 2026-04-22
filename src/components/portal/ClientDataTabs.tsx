@@ -527,7 +527,8 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
   const [savedJobId, setSavedJobId] = useState<string | null>(null)
   const [mode, setMode] = useState<"assisted" | "manual">("assisted")
   const [manualText, setManualText] = useState("")
-  const [relevance, setRelevance] = useState<{ score: number; criteria: Record<string, { score: number; hint: string }> } | null>(null)
+  const [relevance, setRelevance] = useState<{ score: number; criteria: Record<string, { score: number; hint: string; options?: Array<{ text: string; code: string }> }> } | null>(null)
+  const [selectedCodes, setSelectedCodes] = useState<Record<string, string>>({})
   const [checkingRelevance, setCheckingRelevance] = useState(false)
   const relevanceTimer = useRef<any>(null)
 
@@ -622,6 +623,7 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
           departmentId,
           purpose: level ? `Nivel: ${level}` : undefined,
           responsibilities: mode === "manual" ? manualText : undefined,
+          description: mode === "manual" && Object.keys(selectedCodes).length > 0 ? JSON.stringify(selectedCodes) : undefined,
           status: "ACTIVE",
         }),
       })
@@ -804,20 +806,47 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
                 </span>
               </div>
 
-              {/* Sugestii — doar cele cu hint (sub 100%), formulate natural */}
+              {/* Sugestii cu opțiuni click-abile */}
               {relevance.score < 100 && (() => {
-                const hints = Object.values(relevance.criteria)
-                  .filter((c: any) => c.hint && c.score < 100)
-                  .map((c: any) => c.hint)
-                if (hints.length === 0) return null
+                const incomplete = Object.entries(relevance.criteria)
+                  .filter(([, c]: [string, any]) => c.score < 100 && c.hint)
+                if (incomplete.length === 0) return null
                 return (
                   <>
                     <div style={{ height: "8px" }} />
-                    <div className="bg-amber-50 rounded-lg border border-amber-200" style={{ padding: "10px" }}>
-                      <p className="text-[9px] text-amber-700 font-bold uppercase">Mai adaugă</p>
-                      <div style={{ height: "4px" }} />
-                      {hints.map((h: string, i: number) => (
-                        <p key={i} className="text-xs text-amber-800 leading-relaxed">• {h}</p>
+                    <div className="bg-amber-50 rounded-lg border border-amber-200" style={{ padding: "12px" }}>
+                      <p className="text-[9px] text-amber-700 font-bold uppercase">Completează informația</p>
+                      <div style={{ height: "8px" }} />
+                      {incomplete.map(([key, c]: [string, any], idx: number) => (
+                        <div key={key} style={{ marginBottom: idx < incomplete.length - 1 ? "10px" : "0" }}>
+                          <p className="text-xs text-amber-800 font-medium">{c.hint}</p>
+                          {c.options && c.options.length > 0 && (
+                            <div style={{ marginTop: "4px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                              {c.options.map((opt: { text: string; code: string }, oi: number) => {
+                                const isSelected = selectedCodes[key] === opt.code
+                                return (
+                                  <button
+                                    key={oi}
+                                    type="button"
+                                    onClick={() => {
+                                      setManualText(prev => prev + (prev ? "\n" : "") + opt.text)
+                                      setSelectedCodes(prev => ({ ...prev, [key]: opt.code }))
+                                      // Re-check relevanță
+                                      setTimeout(() => checkRelevance(manualText + "\n" + opt.text), 200)
+                                    }}
+                                    className={`text-left text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                                      isSelected
+                                        ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+                                        : "border-amber-200 bg-white text-amber-900 hover:bg-amber-100 hover:border-amber-300"
+                                    }`}
+                                  >
+                                    {isSelected ? "✓ " : `${oi + 1}. `}{opt.text}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </>

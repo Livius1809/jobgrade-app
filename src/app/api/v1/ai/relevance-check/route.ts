@@ -51,13 +51,19 @@ ${text.slice(0, 2000)}
 
 Returnează STRICT JSON:
 {
-  "education": { "score": 0-100, "hint": "ce mai trebuie adăugat sau gol dacă e OK" },
-  "communication": { "score": 0-100, "hint": "" },
-  "problemSolving": { "score": 0-100, "hint": "" },
-  "decisionMaking": { "score": 0-100, "hint": "" },
-  "businessImpact": { "score": 0-100, "hint": "" },
-  "workConditions": { "score": 0-100, "hint": "" }
+  "education": { "score": 0-100, "hint": "intrebare naturala", "options": [{"text": "varianta 1 limbaj natural", "code": "C"}, {"text": "varianta 2", "code": "E"}] },
+  "communication": { "score": 0-100, "hint": "", "options": [] },
+  "problemSolving": { "score": 0-100, "hint": "", "options": [] },
+  "decisionMaking": { "score": 0-100, "hint": "", "options": [] },
+  "businessImpact": { "score": 0-100, "hint": "", "options": [] },
+  "workConditions": { "score": 0-100, "hint": "", "options": [] }
 }
+
+IMPORTANT pentru options:
+- "text" = formulare naturală pe care clientul o vede și o selectează
+- "code" = litera internă de scorare (A-G) — NU se afișează clientului
+- Oferă 2-3 variante ordonate de la nivel scăzut la nivel înalt
+- Options GOALE dacă score = 100
 
 Score 100 = informația e suficientă.
 Score 0 = nicio informație relevantă.
