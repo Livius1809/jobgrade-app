@@ -302,7 +302,23 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
   const cardsRef = useRef<HTMLDivElement>(null)
   const [panelLeft, setPanelLeft] = useState(0)
 
+  // Stare maturitate de la Company Profiler
+  const [maturity, setMaturity] = useState<{
+    level: string
+    score: number
+    layerReadiness: Record<number, { ready: boolean; readyCount: number; totalCount: number; missing: string[] }>
+    activationSignals: Array<{ service: string; message: string; justUnlocked: boolean; readinessPercent: number }>
+  } | null>(null)
+
   useEffect(() => { setMounted(true) }, [])
+
+  // Fetch maturitate la mount
+  useEffect(() => {
+    fetch("/api/v1/company/maturity")
+      .then(r => r.json())
+      .then(data => { if (data.level) setMaturity(data) })
+      .catch(() => {})
+  }, [])
 
   // Calculează left-ul panoului = marginea dreaptă a cardurilor + gap
   useEffect(() => {
@@ -351,7 +367,17 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                 </div>
                 <div className="flex items-center gap-1">
                   {isPurchased && <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">ACTIV</span>}
-                  {!isPurchased && purchasedLayer > 0 && <span className={`text-[9px] font-bold ${c.text} px-1.5 py-0.5 rounded ${c.bg}`}>UPGRADE</span>}
+                  {!isPurchased && maturity && (() => {
+                    const lr = maturity.layerReadiness[pkg.number]
+                    if (lr?.ready) {
+                      return <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded animate-pulse">PREGĂTIT</span>
+                    }
+                    if (lr && lr.readyCount > 0) {
+                      return <span className={`text-[9px] font-bold ${c.text} px-1.5 py-0.5 rounded ${c.bg}`}>{lr.readyCount}/{lr.totalCount}</span>
+                    }
+                    return null
+                  })()}
+                  {!isPurchased && !maturity && purchasedLayer > 0 && <span className={`text-[9px] font-bold ${c.text} px-1.5 py-0.5 rounded ${c.bg}`}>UPGRADE</span>}
                   <span className="text-lg">{pkg.icon}</span>
                 </div>
               </div>
@@ -361,6 +387,22 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                 </p>
               )}
               <p className="text-[10px] text-slate-400 mt-2 line-clamp-2">{pkg.description}</p>
+
+              {/* Mesaj dinamic de la Company Profiler */}
+              {!isPurchased && maturity && (() => {
+                const lr = maturity.layerReadiness[pkg.number]
+                // Serviciu tocmai deblocat
+                const signal = maturity.activationSignals.find(s => s.justUnlocked)
+                if (lr?.ready && signal) {
+                  return <p className="text-[9px] text-emerald-600 mt-1.5 font-medium">{signal.message}</p>
+                }
+                // Ce mai lipsește
+                if (lr && !lr.ready && lr.missing.length > 0) {
+                  const uniqueMissing = [...new Set(lr.missing)].slice(0, 2)
+                  return <p className="text-[9px] text-slate-400 mt-1.5">Mai e nevoie de: {uniqueMissing.join("; ")}</p>
+                }
+                return null
+              })()}
             </button>
           )
         })}
