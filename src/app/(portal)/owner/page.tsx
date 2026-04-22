@@ -402,6 +402,14 @@ export default async function OwnerDashboard() {
               </div>
             </div>
 
+            {/* Rapoarte situație internă */}
+            <div className="flex gap-3">
+              <ReportLink href="/owner/insights" title="Experiențe de învățare" description="Feedback loops, autonomie" icon="🧠" />
+              <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Maturitate, KB hit" icon="📊" />
+              <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="Performanță, cicluri" icon="📅" />
+              <ReportLink href="/owner/reports/costs" title="Costuri" description="LLM, infra" icon="💰" />
+            </div>
+
             {/* Sumar situații */}
             {data.situationsSummary && data.situationsSummary.total > 0 && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -449,6 +457,8 @@ export default async function OwnerDashboard() {
               </div>
               <div style={{ height: "12px" }} />
               <p className="text-[9px] text-slate-400 text-center">Datele se populează automat din ciclurile CIA. Semnalele relevante ajung la departamentele responsabile.</p>
+              <div style={{ height: "16px" }} />
+              <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
             </div>
 
             {/* ═══════════════════════════════════════════════════════ */}
@@ -507,39 +517,32 @@ export default async function OwnerDashboard() {
               <p className="text-xs text-slate-500">Comunică cu echipa, accesează rapoarte și controlează organismul</p>
             </div>
 
-            {/* Discută + Bibliotecă */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Link href="/owner/team" className="block rounded-2xl border border-indigo-100 bg-white hover:bg-indigo-50 transition-all group" style={{ padding: "28px" }}>
-                <span className="text-2xl">💬</span>
-                <div style={{ height: "12px" }} />
+            {/* Discută + Bibliotecă + Control */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link href="/owner/team" className="block rounded-2xl border border-indigo-100 bg-white hover:bg-indigo-50 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">💬</span>
+                <div style={{ height: "8px" }} />
                 <h3 className="text-sm font-bold text-slate-900">Discută cu echipa</h3>
                 <div style={{ height: "4px" }} />
-                <p className="text-xs text-slate-400">Agent — nivel ierarhic, departament, sau individual</p>
+                <p className="text-[10px] text-slate-400">Nivel ierarhic, departament, individual</p>
               </Link>
-              <Link href="/owner/docs" className="block rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all group" style={{ padding: "28px" }}>
-                <span className="text-2xl">📚</span>
-                <div style={{ height: "12px" }} />
+              <Link href="/owner/docs" className="block rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">📚</span>
+                <div style={{ height: "8px" }} />
                 <h3 className="text-sm font-bold text-slate-900">Biblioteca echipei</h3>
                 <div style={{ height: "4px" }} />
-                <p className="text-xs text-slate-400">Documente partajate — agenții le accesează automat din KB</p>
+                <p className="text-[10px] text-slate-400">Documente partajate, KB automat</p>
+              </Link>
+              <Link href="/owner/reports/evolution" className="block rounded-2xl border border-amber-100 bg-white hover:bg-amber-50 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">🪞</span>
+                <div style={{ height: "8px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Evoluție Owner</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-[10px] text-slate-400">Aliniere, pattern-uri, reflecție</p>
               </Link>
             </div>
 
-            {/* Rapoarte */}
-            <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Rapoarte</p>
-              <div style={{ height: "16px" }} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ReportLink href="/owner/insights" title="Experiențe de învățare" description="Evoluție organism, feedback loops, autonomie" icon="🧠" />
-                <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Pipeline, maturitate, direcție creștere" icon="📊" />
-                <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Aliniere L1+L2+L3, pattern-uri, reflecție" icon="🪞" />
-                <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="KB, performanță, cicluri, escaladări" icon="📅" />
-                <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
-                <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM tokens, infra, per agent și zi" icon="💰" />
-              </div>
-            </div>
-
-            {/* Control + Pilot + Acces rapid */}
+            {/* Control organism + Pilot + Acces rapid */}
             <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Control organism</p>
               <div style={{ height: "16px" }} />
@@ -554,12 +557,10 @@ export default async function OwnerDashboard() {
               <div className="flex flex-wrap gap-3">
                 <QuickLink href="/media-books" label="Media Books" />
                 <QuickLink href="/portal" label="Portal B2B" />
-                <QuickLink href="/personal" label="Portal B2C" />
                 <QuickLink href="/jobs" label="Fișe de post" />
                 <QuickLink href="/sessions" label="Sesiuni" />
                 <QuickLink href="/owner/payroll" label="Payroll" />
                 <QuickLink href="/owner/situations" label="Situații" />
-                <QuickLink href="/reports" label="Rapoarte export" />
                 <QuickLink href="/settings/users" label="Utilizatori" />
                 <QuickLink href="/settings/billing" label="Facturare" />
               </div>
