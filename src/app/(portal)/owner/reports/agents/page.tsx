@@ -138,34 +138,48 @@ export default async function AgentsReportPage() {
     } as any
 
     // ═══ ÎNVĂȚARE + KB total ═══
-    const [kbThisWeek, kbPrevWeek, kbTotal, laTotal] = await Promise.all([
+    const [kbThisWeek, kbPrevWeek, kbTotal, laTotal, laThisWeek, laPrevWeek] = await Promise.all([
       p.$queryRaw`
         SELECT
           count(*) as total,
-          count(*) FILTER (WHERE source = 'PROPAGATED' OR source = 'EXPERT_HUMAN') as from_internal,
+          count(*) FILTER (WHERE source = 'PROPAGATED') as from_internal,
           count(*) FILTER (WHERE source = 'DISTILLED_INTERACTION') as from_clients,
-          count(*) FILTER (WHERE source = 'SELF_INTERVIEW') as from_claude
+          count(*) FILTER (WHERE source IN ('SELF_INTERVIEW', 'EXPERT_HUMAN')) as from_seed
         FROM kb_entries WHERE "createdAt" > ${oneWeekAgo}
       ` as Promise<any[]>,
       p.kBEntry.count({ where: { createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } } }).catch(() => 0),
       p.kBEntry.count().catch(() => 0),
       p.learningArtifact.count().catch(() => 0),
+      // Learning artifacts din execuții Claude (POST_EXECUTION) — ASTEA LIPSEAU
+      p.$queryRaw`
+        SELECT
+          count(*) as total,
+          count(*) FILTER (WHERE "sourceType" = 'POST_EXECUTION') as from_execution,
+          count(*) FILTER (WHERE "sourceType" = 'EXTRAPOLATION') as from_extrapolation
+        FROM learning_artifacts WHERE "createdAt" > ${oneWeekAgo}
+      ` as Promise<any[]>,
+      p.learningArtifact.count({ where: { createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } } }).catch(() => 0),
     ])
 
     const kbRow = kbThisWeek[0] || {}
-    const totalThisWeek = Number(kbRow.total || 0)
+    const laRow = laThisWeek[0] || {}
+    const kbTotal7d = Number(kbRow.total || 0)
+    const laTotal7d = Number(laRow.total || 0)
+    const totalThisWeek = kbTotal7d + laTotal7d
     const fromInternal = Number(kbRow.from_internal || 0)
     const fromClients = Number(kbRow.from_clients || 0)
-    const fromClaude = Number(kbRow.from_claude || 0)
+    const fromSeed = Number(kbRow.from_seed || 0)
+    // Claude = seeduire (SELF_INTERVIEW din KB) + execuții (POST_EXECUTION din learning_artifacts)
+    const fromClaude = fromSeed + Number(laRow.from_execution || 0) + Number(laRow.from_extrapolation || 0)
 
     learning = {
       total: totalThisWeek,
-      prevTotal: Number(kbPrevWeek || 0),
+      prevTotal: Number(kbPrevWeek || 0) + Number(laPrevWeek || 0),
       totalKB: Number(kbTotal || 0) + Number(laTotal || 0),
       fromInternal,
       fromClients,
       fromClaude,
-      fromSeed: 0, // seed-ul inițial e inclus în fromClaude (SELF_INTERVIEW)
+      fromSeed: 0,
       fromExternal: Math.max(0, totalThisWeek - fromInternal - fromClients - fromClaude),
     }
 
