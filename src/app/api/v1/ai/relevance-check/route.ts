@@ -62,9 +62,18 @@ Returnează STRICT JSON:
 Score 100 = informația e suficientă.
 Score 0 = nicio informație relevantă.
 Score sub 100 = lipsesc detalii.
-Hint = instrucțiune formulată NATURAL, fără a menționa criteriul.
-NU spune "criteriul Educație" — spune "Adaugă ce nivel de studii și experiență necesită acest post".
-NU spune "criteriul Impact" — spune "Descrie ce impact concret are acest post asupra organizației".
+Hint = întrebare naturală + 2-3 variante concrete de răspuns din care clientul alege.
+Formulează hint-ul ca ghidare cu exemple, NU ca întrebare seacă.
+NU menționa criteriul sau termenul tehnic.
+
+Exemple de hint-uri BUNE:
+- "Ce pregătire necesită postul? De exemplu: studii medii cu experiență practică, studii superioare de specialitate, sau studii postuniversitare cu certificări"
+- "Cu cine comunică persoana? De exemplu: doar echipa internă, clienți și parteneri externi, sau conducerea și instituții externe"
+- "Ce probleme rezolvă? De exemplu: probleme de rutină cu soluții cunoscute, probleme complexe care necesită analiză, sau situații noi fără precedent"
+- "Ce decizii ia? De exemplu: decizii operaționale de zi cu zi, decizii care afectează departamentul, sau decizii strategice pentru organizație"
+- "Ce impact are asupra organizației? De exemplu: contribuie la executarea sarcinilor, coordonează o echipă sau un proiect, sau influențează direcția strategică"
+- "În ce condiții lucrează? De exemplu: birou standard, deplasări frecvente, sau condiții speciale (zgomot, temperaturi, risc fizic)"
+
 Hint GOLL DOAR dacă score = 100.`
       }],
     })
