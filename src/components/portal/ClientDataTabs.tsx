@@ -425,55 +425,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
           {/* ─── Compune fișă AI ─── */}
           {panelOpen === "fise" && (
-            <>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {jobs.length > 0
-                  ? "Selectează un post din lista ta. AI generează fișa completă: responsabilități, competențe, cerințe."
-                  : "Adaugă mai întâi posturi, apoi revino aici pentru a genera fișele."}
-              </p>
-              <div style={{ height: "20px" }} />
-              {jobs.length > 0 ? (
-                <>
-                  <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-                    <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
-                    <div style={{ height: "12px" }} />
-                    <div>
-                      <label className="text-xs text-slate-600 font-medium">Selectează postul</label>
-                      <div style={{ height: "4px" }} />
-                      <select className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white">
-                        <option value="">— Alege un post —</option>
-                        {jobs.map(j => (
-                          <option key={j.id} value={j.id}>{j.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={{ height: "12px" }} />
-                    <div>
-                      <label className="text-xs text-slate-600 font-medium">Detalii suplimentare (opțional)</label>
-                      <div style={{ height: "4px" }} />
-                      <textarea rows={3} placeholder="Ce face persoana pe acest post? Responsabilități specifice?" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none" />
-                    </div>
-                  </div>
-                  <div style={{ height: "20px" }} />
-                  <button className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-                    Generează fișa de post cu AI
-                  </button>
-                  <div style={{ height: "8px" }} />
-                  <p className="text-[9px] text-slate-400 text-center">Consumă 12 credite per fișă generată. Poți edita rezultatul.</p>
-                </>
-              ) : (
-                <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center" style={{ padding: "24px" }}>
-                  <p className="text-xs text-slate-400">Nu ai posturi adăugate.</p>
-                  <div style={{ height: "8px" }} />
-                  <button
-                    onClick={() => setPanelOpen("posturi")}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
-                  >
-                    Adaugă posturi mai întâi →
-                  </button>
-                </div>
-              )}
-            </>
+            <GenerateJobDescPanel jobs={jobs} onSwitchToPosturi={() => setPanelOpen("posturi")} />
           )}
 
           {/* ─── Upload PDF/Word ─── */}
@@ -770,6 +722,159 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
 
       <div style={{ height: "8px" }} />
       <p className="text-[9px] text-slate-400 text-center">Poți adăuga mai multe posturi fără a închide panoul.</p>
+    </>
+  )
+}
+
+// ─── Generare fișă de post cu AI ──────────────────────────────────────
+
+function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: string; title: string }>; onSwitchToPosturi: () => void }) {
+  const [selectedJobId, setSelectedJobId] = useState("")
+  const [generating, setGenerating] = useState(false)
+  const [result, setResult] = useState<{ purpose: string; responsibilities: string; requirements: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  const selectedJob = jobs.find(j => j.id === selectedJobId)
+
+  const handleGenerate = async () => {
+    if (!selectedJob) { setError("Selectează un post."); return }
+    setGenerating(true); setError(null); setResult(null); setSaved(false)
+    try {
+      const res = await fetch("/api/v1/ai/job-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: selectedJob.title }),
+      })
+      const data = await res.json()
+      if (res.ok && data.purpose) {
+        setResult(data)
+      } else {
+        setError(data.message || "Eroare la generare.")
+      }
+    } catch { setError("Eroare de rețea.") }
+    finally { setGenerating(false) }
+  }
+
+  const handleSave = async () => {
+    if (!result || !selectedJobId) return
+    setSaved(false)
+    try {
+      await fetch(`/api/v1/jobs/${selectedJobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purpose: result.purpose,
+          responsibilities: result.responsibilities,
+          requirements: result.requirements,
+        }),
+      })
+      setSaved(true)
+    } catch { setError("Eroare la salvare.") }
+  }
+
+  if (jobs.length === 0) {
+    return (
+      <>
+        <p className="text-sm text-slate-600">Adaugă mai întâi posturi, apoi revino aici pentru a genera fișele.</p>
+        <div style={{ height: "16px" }} />
+        <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center" style={{ padding: "24px" }}>
+          <p className="text-xs text-slate-400">Nu ai posturi adăugate.</p>
+          <div style={{ height: "8px" }} />
+          <button onClick={onSwitchToPosturi} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+            Adaugă posturi mai întâi →
+          </button>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Selectează un post. AI generează fișa completă: scop, responsabilități, cerințe.
+      </p>
+      <div style={{ height: "20px" }} />
+
+      <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+        <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
+        <div style={{ height: "12px" }} />
+        <div>
+          <label className="text-xs text-slate-600 font-medium">Selectează postul</label>
+          <div style={{ height: "4px" }} />
+          <select
+            value={selectedJobId}
+            onChange={(e) => { setSelectedJobId(e.target.value); setResult(null); setSaved(false) }}
+            className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
+          >
+            <option value="">— Alege un post —</option>
+            {jobs.map(j => (
+              <option key={j.id} value={j.id}>{j.title}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ height: "16px" }} />
+
+      <button
+        onClick={handleGenerate}
+        disabled={generating || !selectedJobId}
+        className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {generating ? "Se generează..." : "Generează fișa de post cu AI"}
+      </button>
+
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">Consumă 12 credite per fișă generată. Poți edita rezultatul.</p>
+
+      {error && (
+        <>
+          <div style={{ height: "12px" }} />
+          <p className="text-[10px] text-red-500 font-medium text-center">{error}</p>
+        </>
+      )}
+
+      {result && (
+        <>
+          <div style={{ height: "20px" }} />
+          <div className="bg-white rounded-xl border border-emerald-200" style={{ padding: "16px" }}>
+            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wide">Fișă generată — {selectedJob?.title}</p>
+
+            <div style={{ height: "12px" }} />
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase">Scopul postului</p>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-700 leading-relaxed">{result.purpose}</p>
+            </div>
+
+            <div style={{ height: "12px" }} />
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase">Responsabilități</p>
+              <div style={{ height: "4px" }} />
+              <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{result.responsibilities}</div>
+            </div>
+
+            <div style={{ height: "12px" }} />
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase">Cerințe</p>
+              <div style={{ height: "4px" }} />
+              <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{result.requirements}</div>
+            </div>
+          </div>
+
+          <div style={{ height: "12px" }} />
+          <button
+            onClick={handleSave}
+            disabled={saved}
+            className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
+              saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
+          >
+            {saved ? "✓ Salvat pe post" : "Salvează fișa pe post"}
+          </button>
+        </>
+      )}
     </>
   )
 }
