@@ -24,6 +24,7 @@ import { checkAlignment } from "./alignment-checker"
 import { evaluateCostGate } from "./cost-gate"
 import { logExecutionTelemetry, updateAgentBudget } from "./execution-telemetry"
 import { extractPostExecutionLearning } from "./learning-pipeline"
+import { learningFunnel } from "./learning-funnel"
 
 export interface IntelligentRunResult {
   thresholdResult: ThresholdResult
@@ -294,6 +295,20 @@ export async function runIntelligentBatch(
         execResult.result,
         0.5
       )
+    }
+
+    // ═══ PAS 9: PÂLNIA DE ÎNVĂȚARE ═══
+    try {
+      await learningFunnel({
+        agentRole: task.assignedTo,
+        type: "TASK",
+        input: `${task.title}: ${task.description.slice(0, 300)}`,
+        output: execResult.result?.slice(0, 1000) || execResult.outcome,
+        success: execResult.outcome === "COMPLETED",
+      })
+    } catch (e) {
+      // Pâlnia nu trebuie să blocheze execuția
+      console.log("[FUNNEL] Error (non-blocking):", (e as Error).message?.slice(0, 80))
     }
 
     results.push({

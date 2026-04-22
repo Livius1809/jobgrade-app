@@ -85,6 +85,13 @@ export async function GET(request: NextRequest) {
       if (result.tasksExecuted === 0 && result.tasksSkippedKB === 0) break
     }
 
+    // NIVEL 4: Propagare departamentală (la fiecare ciclu)
+    let propagated = 0
+    try {
+      const { propagateDepartmentLearning } = await import("@/lib/agents/learning-funnel")
+      propagated = await propagateDepartmentLearning()
+    } catch {}
+
     return NextResponse.json({
       ok: true,
       batches: batchCount,
@@ -92,7 +99,8 @@ export async function GET(request: NextRequest) {
       totalProcessed,
       totalExecuted,
       totalBlocked,
-      results: allResults.slice(0, 20), // primele 20 pentru debugging
+      propagatedLearning: propagated,
+      results: allResults.slice(0, 20),
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
