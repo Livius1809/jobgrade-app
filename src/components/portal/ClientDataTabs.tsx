@@ -738,6 +738,7 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [validated, setValidated] = useState(false)
 
   const selectedJob = jobs.find(j => j.id === selectedJobId)
 
@@ -808,7 +809,7 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
           <div style={{ height: "4px" }} />
           <select
             value={selectedJobId}
-            onChange={(e) => { setSelectedJobId(e.target.value); setResult(null); setSaved(false) }}
+            onChange={(e) => { setSelectedJobId(e.target.value); setResult(null); setSaved(false); setValidated(false) }}
             className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white"
           >
             <option value="">— Alege un post —</option>
@@ -909,16 +910,45 @@ function GenerateJobDescPanel({ jobs, onSwitchToPosturi }: { jobs: Array<{ id: s
             </>
           )}
 
-          <div style={{ height: "12px" }} />
-          <button
-            onClick={handleSave}
-            disabled={saved}
-            className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
-              saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
-            }`}
-          >
-            {saved ? "✓ Salvat pe post" : "Salvează fișa pe post"}
-          </button>
+          <div style={{ height: "16px" }} />
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saved}
+              className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
+                saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
+              }`}
+            >
+              {saved ? "✓ Salvat" : "Salvează fișa"}
+            </button>
+            <button
+              onClick={async () => {
+                if (!selectedJobId || !result) return
+                await fetch(`/api/v1/jobs/${selectedJobId}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    purpose: result.purpose,
+                    responsibilities: result.responsibilities,
+                    requirements: result.requirements,
+                    status: "ACTIVE",
+                  }),
+                }).catch(() => {})
+                setSaved(true)
+                setValidated(true)
+              }}
+              disabled={validated || !saved}
+              className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
+                validated
+                  ? "bg-emerald-500 text-white"
+                  : !saved
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+              }`}
+            >
+              {validated ? "✓ Validat de client" : "Validez fișa de post"}
+            </button>
+          </div>
         </>
       )}
     </>
