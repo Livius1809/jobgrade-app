@@ -225,8 +225,49 @@ export default async function AgentsReportPage() {
     const kbMapWeek = new Map(agentKB.map((r: any) => [r.role, Number(r.learned)]))
     const kbMapTotal = new Map(agentKBTotal.map((r: any) => [r.role, Number(r.total)]))
 
+    // Maturitate per agent: 5 straturi + KB hit rate
+    const maturityData = await p.$queryRaw`
+      SELECT
+        la."studentRole" as role,
+        count(*) FILTER (WHERE la."problemClass" = 'procedure') > 0 as has_sop,
+        count(*) FILTER (WHERE la."problemClass" IN ('domain-knowledge', 'domain-ro-evaluare-posturi', 'domain-ro-benchmarking-salarial')) > 0 as has_domain,
+        count(*) FILTER (WHERE la."problemClass" = 'business-knowledge') > 0 as has_business,
+        count(*) FILTER (WHERE la."problemClass" = 'field-moral-procedure') > 0 as has_field,
+        count(*) FILTER (WHERE la."problemClass" LIKE 'course-%' OR la."problemClass" LIKE 'skill-%') > 0 as has_skills
+      FROM learning_artifacts la
+      GROUP BY la."studentRole"
+    `.catch(() => []) as any[]
+    const maturityMap = new Map(maturityData.map((r: any) => [r.role, r]))
+
+    // KB hit rate din telemetry (ultimele 7 zile)
+    const hitRateData = await p.$queryRaw`
+      SELECT
+        "agentRole" as role,
+        count(*) as total,
+        count(*) FILTER (WHERE "kbHit" = true) as hits
+      FROM execution_telemetry
+      WHERE "createdAt" > ${new Date(Date.now() - 7 * 24 * 3600000)}
+      GROUP BY "agentRole"
+    `.catch(() => []) as any[]
+    const hitRateMap = new Map(hitRateData.map((r: any) => [r.role, { total: Number(r.total), hits: Number(r.hits) }]))
+
     agents = definitions.map((d: any) => {
       const t = taskMap.get(d.agentRole) || { total: 0, completed: 0, postponed: 0 }
+      const m = maturityMap.get(d.agentRole) || {}
+      const hr = hitRateMap.get(d.agentRole) || { total: 0, hits: 0 }
+
+      // Maturitate: 5 straturi × 20% fiecare
+      const layers = [m.has_sop, m.has_domain, m.has_business, m.has_field, m.has_skills]
+      const seedScore = layers.filter(Boolean).length * 20
+
+      // KB hit rate
+      const kbHitRate = hr.total > 0 ? Math.round(hr.hits / hr.total * 100) : null
+
+      // Maturitate globală: seeduire (60%) + hit rate (40%)
+      const maturityScore = kbHitRate !== null
+        ? Math.round(seedScore * 0.6 + kbHitRate * 0.4)
+        : seedScore
+
       return {
         role: d.agentRole, name: d.displayName || d.agentRole,
         level: d.level, isManager: d.isManager,
@@ -234,6 +275,9 @@ export default async function AgentsReportPage() {
         completionRate: t.total > 0 ? Math.round(t.completed / t.total * 100) : null,
         learnedWeek: kbMapWeek.get(d.agentRole) || 0,
         kbTotal: kbMapTotal.get(d.agentRole) || 0,
+        maturityScore,
+        seedScore,
+        kbHitRate,
       }
     }).filter((a: any) => a.tasks > 0 || a.learnedWeek > 0 || a.kbTotal > 0)
 
@@ -413,11 +457,13 @@ export default async function AgentsReportPage() {
                 <tr>
                   <th className="text-left px-3 py-2">Agent</th>
                   <th className="text-left px-3 py-2">Nivel</th>
-                  <th className="text-right px-3 py-2">KB total</th>
+                  <th className="text-right px-3 py-2">KB</th>
+                  <th className="text-right px-3 py-2">Seed %</th>
+                  <th className="text-right px-3 py-2">KB Hit</th>
+                  <th className="text-right px-3 py-2">Maturitate</th>
                   <th className="text-right px-3 py-2">Învățat 7z</th>
                   <th className="text-right px-3 py-2">Tasks</th>
                   <th className="text-right px-3 py-2">Done</th>
-                  <th className="text-right px-3 py-2">Amânat</th>
                   <th className="text-right px-3 py-2">Rata</th>
                 </tr>
               </thead>
@@ -430,6 +476,17 @@ export default async function AgentsReportPage() {
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-400">{a.level}</td>
                     <td className="px-3 py-2 text-right font-mono text-slate-600">{a.kbTotal}</td>
+                    <td className="px-3 py-2 text-right">
+                      <span className={`font-bold ${a.seedScore >= 80 ? "text-emerald-600" : a.seedScore >= 40 ? "text-amber-600" : "text-red-600"}`}>
+                        {a.seedScore}%
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-violet-600">{a.kbHitRate !== null ? `${a.kbHitRate}%` : "—"}</td>
+                    <td className="px-3 py-2 text-right">
+                      <span className={`font-bold ${a.maturityScore >= 80 ? "text-emerald-600" : a.maturityScore >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                        {a.maturityScore}%
+                      </span>
+                    </td>
                     <td className="px-3 py-2 text-right font-mono text-indigo-600">{a.learnedWeek || "—"}</td>
                     <td className="px-3 py-2 text-right font-mono">{a.tasks || "—"}</td>
                     <td className="px-3 py-2 text-right font-mono text-emerald-600">{a.completed || "—"}</td>
