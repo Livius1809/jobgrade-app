@@ -276,8 +276,14 @@ Absorbit de: marja pe credite consumate (93-99%)
 
 | Mod | Badge | Cost | Inclus lunar | Clasificare |
 |-----|-------|------|-------------|-------------|
-| **FAMILIARIZARE** | 🟢 | 0 cr | 135 min (3 × 45 min) | Platformă, servicii, funcționalități |
+| **FAMILIARIZARE** | 🟢 | 0 cr | 60 min/lună | Platformă, servicii, funcționalități |
 | **CONSULTANȚĂ** | 🟡 | 3 cr/min | Din sold credite | Norme, lege, cod muncă, ITM, proceduri |
+
+### Logica minutelor gratuite:
+- **Scop:** familiarizare cu platforma — clientul nou explorează, întreabă cum funcționează
+- **60 min/lună** — suficient pentru onboarding, scade natural cu vechimea clientului
+- Clientul vechi nu mai are nevoie — știe deja platforma
+- Consumul real estimat: 30-40 min luna 1, sub 10 min din luna 3+
 
 ### Mecanism:
 - Counter minute gratuite: localStorage, reset lunar
@@ -287,10 +293,9 @@ Absorbit de: marja pe credite consumate (93-99%)
 - Badge permanent vizibil
 
 ### Cost intern familiarizare (absorbit de abonament):
-- ~1.20 RON/mesaj × ~2 mesaje/min × 135 min = **~324 RON/client/lună**
-- La abonament 399 RON → **81% din abonament** consumat de chat gratuit
-- **ATENȚIE:** La 135 min efective, costul depășește abonamentul. De monitorizat consumul real.
-- Soluție: dacă media reală e sub 30 min/lună/client → cost ~72 RON → 18% din abonament (sustenabil)
+- ~1.20 RON/mesaj × ~2 mesaje/min × 60 min = **~144 RON/client/lună**
+- La abonament 399 RON → **36% din abonament** — sustenabil
+- Consumul real scade cu vechimea → cost efectiv ~30-50 RON/lună din luna 3+
 
 ---
 

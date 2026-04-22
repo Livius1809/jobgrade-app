@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 const SEEN_KEY = "jobgrade_consultant_intro_seen_v2"
-const FREE_MINUTES_PER_MONTH = 135 // 3 sesiuni × 45 min (Q2 COG)
+const FREE_MINUTES_PER_MONTH = 60 // Familiarizare platformă — scade natural cu vechimea clientului
 const COST_PER_MINUTE_CREDITS = 3 // 3 credite/min consultanță (Q2 COG)
 
 /**
