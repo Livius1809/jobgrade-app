@@ -189,6 +189,8 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
   const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [mvvSource, setMvvSource] = useState<"website" | "generated" | "manual" | null>(null)
+  const [mvvValidated, setMvvValidated] = useState(!!mission && !!vision)
   const formRef = useRef<HTMLFormElement>(null)
 
   const handleAnafLookup = async () => {
@@ -209,25 +211,43 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
     finally { setAnafLoading(false) }
   }
 
-  const handleExtract = async () => {
+  const handleExtract = async (fromWebsite: boolean) => {
     if (!formRef.current) return
-    const website = new FormData(formRef.current).get("website") as string || ""
-    if (!website) { setError("Completează URL-ul website-ului."); return }
-    setExtracting(true); setError(null); setSuccess(null)
+    const fd = new FormData(formRef.current)
+    const website = fd.get("website") as string || ""
+
+    if (fromWebsite && !website) { setError("Completează URL-ul website-ului."); return }
+
+    setExtracting(true); setError(null); setSuccess(null); setMvvValidated(false)
     try {
+      const payload: any = {}
+      if (fromWebsite && website) payload.website = website
+      // Trimitem și datele CAEN pentru generare din obiect de activitate
+      payload.companyName = fd.get("tenantName") || undefined
+      payload.caenName = fd.get("caenName") || undefined
+      payload.cui = fd.get("cui") || undefined
+
       const res = await fetch("/api/v1/ai/company-extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ website }),
+        body: JSON.stringify(payload),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.message || "Eroare la extragere."); return }
+      if (!res.ok) { setError(json.message || "Eroare la generare."); return }
       const form = formRef.current!
       if (json.mission) (form.querySelector('[name="mission"]') as HTMLTextAreaElement).value = json.mission
       if (json.vision) (form.querySelector('[name="vision"]') as HTMLTextAreaElement).value = json.vision
       if (json.description) (form.querySelector('[name="description"]') as HTMLTextAreaElement).value = json.description
-      setSuccess("Misiune și viziune extrase din website. Verifică și salvează.")
-    } catch { setError("Eroare la extragerea informațiilor.") }
+
+      const source = json.source === "website" ? "website" : "generated"
+      setMvvSource(source)
+
+      if (source === "website") {
+        setSuccess("MVV extras din website. Verifică dacă reflectă realitatea și confirmă.")
+      } else {
+        setSuccess("MVV generat din obiectul de activitate. Acesta este un DRAFT — editează-l pentru a reflecta realitatea companiei tale, apoi confirmă.")
+      }
+    } catch { setError("Eroare la generare.") }
     finally { setExtracting(false) }
   }
 
@@ -296,10 +316,25 @@ function ProfileForm({ cui, mission, vision, onClose }: { cui: string | null; mi
               <div style={{ height: "4px" }} />
               <input name="website" type="text" placeholder="ex: www.firma.ro" className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
             </div>
-            <button type="button" onClick={handleExtract} disabled={extracting} className="px-3 py-2 text-xs font-medium bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 disabled:opacity-50 shrink-0">
+            <button type="button" onClick={() => handleExtract(true)} disabled={extracting} className="px-3 py-2 text-xs font-medium bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 disabled:opacity-50 shrink-0">
               {extracting ? "Se extrage..." : "Preia MVV"}
             </button>
           </div>
+
+          {/* Generare MVV din CAEN (fără website) */}
+          <div style={{ height: "8px" }} />
+          <button type="button" onClick={() => handleExtract(false)} disabled={extracting} className="w-full px-3 py-2 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 disabled:opacity-50 border border-indigo-200">
+            {extracting ? "Se generează..." : "Generează draft MVV din obiectul de activitate"}
+          </button>
+
+          {mvvSource && (
+            <>
+              <div style={{ height: "6px" }} />
+              <p className={`text-[9px] text-center ${mvvSource === "website" ? "text-emerald-600" : "text-amber-600"}`}>
+                {mvvSource === "website" ? "MVV preluat din website — verifică și confirmă" : "Draft generat din CAEN — editează pentru a reflecta realitatea companiei"}
+              </p>
+            </>
+          )}
 
           <div style={{ height: "12px" }} />
           <div>
