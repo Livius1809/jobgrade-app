@@ -355,8 +355,6 @@ export default async function OwnerDashboard() {
               <p className="text-xs text-slate-500">Sănătatea organismului, performanță, straturi</p>
             </div>
 
-            <OwnerInbox />
-
             <OrganismPulse
               verdict={data.vitalSigns.verdict}
               summary={data.vitalSigns.summary}
@@ -415,6 +413,8 @@ export default async function OwnerDashboard() {
               <div style={{ height: "4px" }} />
               <p className="text-xs text-slate-500">Ce necesită atenția ta — doar strategic, nu tehnic</p>
             </div>
+
+            <OwnerInbox />
 
             {ownerDecisions.length > 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>

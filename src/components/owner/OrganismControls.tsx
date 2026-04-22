@@ -48,11 +48,11 @@ export default function OrganismControls() {
         for (const c of d.configs || []) map[c.key] = c.value
         // Fallback to env defaults if not in DB yet
         if (!map["EXECUTOR_CRON_ENABLED"]) map["EXECUTOR_CRON_ENABLED"] = "true"
-        if (!map["SIGNAL_FILTER_LEVEL"]) map["SIGNAL_FILTER_LEVEL"] = "focused"
+        if (!map["SIGNAL_FILTER_LEVEL"]) map["SIGNAL_FILTER_LEVEL"] = "critical"
         setConfigs(map)
       })
       .catch(() => {
-        setConfigs({ EXECUTOR_CRON_ENABLED: "true", SIGNAL_FILTER_LEVEL: "focused" })
+        setConfigs({ EXECUTOR_CRON_ENABLED: "true", SIGNAL_FILTER_LEVEL: "critical" })
       })
       .finally(() => setLoading(false))
   }, [])

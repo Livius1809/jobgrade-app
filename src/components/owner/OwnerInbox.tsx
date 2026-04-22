@@ -31,62 +31,109 @@ export default function OwnerInbox() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
-    })
+    }).catch(() => {})
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
-  const unread = notifications.filter(n => !n.read)
+  async function handleResponse(id: string, response: string) {
+    await fetch("/api/v1/owner/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, read: true }),
+    }).catch(() => {})
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    setExpanded(null)
+  }
+
+  // Filtrare: exclude mesaje tehnice gestionate de COG
+  const COG_PATTERNS = /no_activity|dormant|reactivare|sincronizare|activare agent|diagnostic inactivitate/i
+  const ownerMessages = notifications.filter(n => !COG_PATTERNS.test(n.title))
+  const cogFiltered = notifications.length - ownerMessages.length
+  const unread = ownerMessages.filter(n => !n.read)
 
   if (loading) return null
-  if (notifications.length === 0) return null
+  if (ownerMessages.length === 0 && cogFiltered === 0) return null
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-sm font-bold text-indigo-dark">
-          Mesaje de la structură
-        </h2>
-        {unread.length > 0 && (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral text-white text-[10px] font-bold">
-            {unread.length}
-          </span>
+    <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Mesaje de la structură</p>
+          {unread.length > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-bold">
+              {unread.length}
+            </span>
+          )}
+        </div>
+        {cogFiltered > 0 && (
+          <p className="text-[9px] text-slate-400">{cogFiltered} tehnice gestionate de COG</p>
         )}
       </div>
-      <div className="space-y-2">
-        {notifications.slice(0, 10).map(n => (
-          <div
-            key={n.id}
-            className={`rounded-lg border p-4 cursor-pointer transition-colors ${
-              n.read
-                ? "border-border/50 bg-surface/50"
-                : "border-indigo/30 bg-indigo/5"
-            }`}
-            onClick={() => {
-              setExpanded(expanded === n.id ? null : n.id)
-              if (!n.read) markRead(n.id)
-            }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  {!n.read && <span className="w-2 h-2 rounded-full bg-coral flex-shrink-0" />}
-                  <p className={`text-sm font-medium truncate ${n.read ? "text-text-secondary" : "text-indigo-dark"}`}>
-                    {n.title}
-                  </p>
+
+      {ownerMessages.length === 0 ? (
+        <>
+          <div style={{ height: "12px" }} />
+          <p className="text-xs text-slate-400 text-center">Nicio notificare strategică nouă.</p>
+        </>
+      ) : (
+        <>
+          <div style={{ height: "16px" }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {ownerMessages.slice(0, 10).map(n => (
+              <div
+                key={n.id}
+                className={`rounded-xl border transition-colors ${
+                  n.read ? "border-slate-100 bg-slate-50/50" : "border-amber-200 bg-amber-50"
+                }`}
+                style={{ padding: "16px" }}
+              >
+                <div className="flex items-start justify-between gap-3 cursor-pointer" onClick={() => {
+                  setExpanded(expanded === n.id ? null : n.id)
+                  if (!n.read) markRead(n.id)
+                }}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {!n.read && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+                      <p className={`text-sm font-medium ${n.read ? "text-slate-400" : "text-slate-900"}`}>
+                        {n.title}
+                      </p>
+                    </div>
+                    {expanded === n.id && (
+                      <>
+                        <div style={{ height: "8px" }} />
+                        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{n.body}</p>
+                      </>
+                    )}
+                  </div>
+                  <span className="text-[9px] text-slate-300 shrink-0">
+                    {new Date(n.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short" })}
+                  </span>
                 </div>
+
                 {expanded === n.id && (
-                  <p className="text-sm text-text-warm mt-3 leading-relaxed whitespace-pre-wrap">
-                    {n.body}
-                  </p>
+                  <>
+                    <div style={{ height: "12px" }} />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleResponse(n.id, "confirmed")}
+                        className="text-[10px] font-medium bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 transition-colors"
+                      >
+                        Am luat act
+                      </button>
+                      <button
+                        onClick={() => handleResponse(n.id, "clarification")}
+                        className="text-[10px] font-medium bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors"
+                      >
+                        Necesit lămuriri
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
-              <span className="text-[10px] text-text-secondary/50 flex-shrink-0">
-                {new Date(n.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   )
 }
