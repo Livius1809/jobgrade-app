@@ -379,25 +379,25 @@ export default async function OwnerDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Rapoarte interne — creștere sănătoasă */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <ReportLink href="/owner/insights" title="Experiențe de învățare" description="Feedback loops, autonomie" icon="🧠" />
               <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Maturitate, KB hit" icon="📊" />
               <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="Performanță, cicluri" icon="📅" />
-              <ReportLink href="/owner/reports/costs" title="Costuri" description="LLM, infra" icon="💰" />
             </div>
-
-            {/* Sumar situații scos — redundant cu secțiunea Decizii */}
 
             {/* ═══ II. SITUAȚIE EXTERNĂ ═══ */}
             <div id="externa" className="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl border border-violet-100" style={{ padding: "28px" }}>
               <h2 className="text-lg font-bold text-slate-900">II. Situație externă</h2>
               <div style={{ height: "4px" }} />
-              <p className="text-xs text-slate-500">Legislație, competiție, piață, tehnologie</p>
+              <p className="text-xs text-slate-500">Mediul în care operează: obiective, costuri, legislație, competiție</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Plan strategic actualizat săptămânal" icon="📈" />
-              <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Aliniere, pattern-uri, reflecție" icon="🪞" />
+            {/* Rapoarte externe — constrângeri mediu */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Obiective, strategie, termene" icon="📈" />
+              <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM, infra, per agent" icon="💰" />
+              <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Aliniere, pattern-uri" icon="🪞" />
             </div>
 
             {/* ═══ III. DECIZII ═══ */}
