@@ -474,17 +474,46 @@ Cost suplimentar Starter: 636 × 8 = **5.088 RON**
 | CSA | Suport client | Sonnet | 0.74 RON | ~0.5 cr | — |
 | CSSA | Suport senior | Sonnet | 0.74 RON | ~0.5 cr | — |
 
-## 11.3 Operații GRATUITE de implementat (TODO)
+## 11.3 Chat Consultant HR — Tarifare diferențiată (IMPLEMENTAT)
 
-| Operație | Scop | Cost intern | Justificare gratuitate |
-|----------|------|-------------|----------------------|
-| **Chat ghidaj platformă** | Clientul întreabă cum se folosește platforma | 0.74 RON/mesaj | Investiție în adopție — fidelizare |
-| **Flying wheel (prezentare personalizată)** | Document de prezentare pe topicele de interes | ~3 RON/generare | Ghidaj = onboarding natural → conversie |
-| **Chat exploatare platformă** | Întrebări tehnice: "cum fac X?" | 0.74 RON/mesaj | Reducere churn, reducere suport uman |
+**Componentă:** `src/components/guide/NarrativeGuide.tsx` (commit ae96ae1, 17.04.2026)
 
-**Notă:** Aceste operații trebuie implementate cu flag `isFreeGuidance` pe chat-uri. Costul e absorbit de marjă (la 93-99% marjă, suportăm ~5-10 mesaje/lună gratuite per client fără impact).
+### Două moduri tarifare cu indicator permanent:
 
-## 11.4 Operații BACKGROUND per client (invizibile)
+| Mod | Badge | Cost | Minute incluse | Clasificare |
+|-----|-------|------|----------------|-------------|
+| **FAMILIARIZARE** | 🟢 gratuit | 0 credite | 135 min/lună (3 × 45 min) | Întrebări despre platformă, servicii, funcționalități |
+| **CONSULTANȚĂ** | 🟡 plătit | 3 credite/min | Din soldul client | Întrebări profesionale (norme, lege, cod muncă, ITM, proceduri, audit) |
+
+### Mecanism implementat:
+- **Counter minute gratuite** — persistent localStorage, reset lunar automat
+- **Clasificare intent** — regex pe keywords profesionale (normă, lege, cod muncă, concediu, demisie, preaviz, ITM, ANAF, salariu, contract, procedură, regulament, audit, conformitate, directivă)
+- **Notificare tranziție** — când clientul trece de la familiarizare la consultanță: "Întrebarea ta implică consultanță profesională. De aici se consumă 3 credite/minut."
+- **Confirmare explicită** — butoane "Da, continui" / "Rămân pe familiarizare"
+- **Badge permanent vizibil** — clientul vede MEREU în ce mod se află
+
+### Cost intern per mod:
+
+| Mod | Cost AI/mesaj (Sonnet) | Cost acoperitor/mesaj | Credite debitate | Marja |
+|-----|----------------------|----------------------|-----------------|-------|
+| Familiarizare | $0.027 | 0.74 RON | 0 (absorbit de abonament) | Negativ (investiție adopție) |
+| Consultanță | $0.027 | 0.74 RON | 3 cr/min ≈ 24 RON/min | ~97% |
+
+### Impact pe CAPEX:
+135 min gratuite/lună × $0.027/mesaj × ~2 mesaje/min = **~$7.30/client/lună** absorbit de abonament.
+La 399 RON abonament → **~40 RON cost** din 399 = **10% din abonament**.
+
+## 11.4 Flying Wheel / Ghidaj contextual (IMPLEMENTAT)
+
+**Componentă:** `src/components/guide/NarrativeGuide.tsx`
+
+- Bubble flotantă jos-dreapta pe toate paginile portalului
+- Mesaje contextuale per pagină (walkthrough cu `return_to` URL)
+- Ghidaj pe pașii parcurși + document pe topicele de interes
+- **Gratuit** — inclus în experiența de bază
+- Cost: doar render client-side (zero AI dacă nu trimite mesaj)
+
+## 11.5 Operații BACKGROUND per client (invizibile)
 
 | Operație | Trigger | Frecvență | Cost/rulare | Notă |
 |----------|---------|-----------|-------------|------|
@@ -494,7 +523,7 @@ Cost suplimentar Starter: 636 × 8 = **5.088 RON**
 | Client Memory update | Shadow detect insight | Per insight | <$0.01 | DB write |
 | Escalation chain | Chat detect conflict/legal | Per mesaj (regex) | $0 | Fără AI |
 
-## 11.5 STORAGE per client (OPEX stocare)
+## 11.6 STORAGE per client (OPEX stocare)
 
 | Componentă | Dimensiune estimată | Per ce | Creștere lunară |
 |-----------|-------------------|-------|----------------|
