@@ -521,6 +521,10 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
   const [suggestion, setSuggestion] = useState<string | null>(null)
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [jobDesc, setJobDesc] = useState<any>(null)
+  const [validated, setValidated] = useState(false)
+  const [savedJobId, setSavedJobId] = useState<string | null>(null)
 
   // Sugestii titlu + departament la schimbarea titlului
   const handleTitleChange = (val: string) => {
@@ -595,9 +599,35 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
         }),
       })
       if (res.ok) {
+        const jobData = await res.json()
+        setSavedJobId(jobData.id)
         setSaved(true)
         onJobAdded?.()
-        setTimeout(() => { setTitle(""); setDept(""); setCustomDept(""); setLevel(""); setSaved(false) }, 1500)
+
+        // Auto-generează fișă AI + mapare pe criterii
+        setGenerating(true)
+        try {
+          const aiRes = await fetch("/api/v1/ai/job-description", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: title.trim(), department: finalDept || undefined }),
+          })
+          const aiData = await aiRes.json()
+          if (aiRes.ok && aiData.purpose) {
+            setJobDesc(aiData)
+            // Salvează automat fișa pe post
+            await fetch(`/api/v1/jobs/${jobData.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                purpose: aiData.purpose,
+                responsibilities: aiData.responsibilities,
+                requirements: aiData.requirements,
+              }),
+            }).catch(() => {})
+          }
+        } catch {}
+        finally { setGenerating(false) }
       } else {
         const data = await res.json()
         setError(data.message || "Eroare la salvare")
@@ -720,8 +750,108 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
         </button>
       </div>
 
-      <div style={{ height: "8px" }} />
-      <p className="text-[9px] text-slate-400 text-center">Poți adăuga mai multe posturi fără a închide panoul.</p>
+      {/* Generare AI în curs */}
+      {generating && (
+        <>
+          <div style={{ height: "12px" }} />
+          <p className="text-xs text-indigo-600 text-center animate-pulse">Se generează fișa de post cu AI...</p>
+        </>
+      )}
+
+      {/* Rezultat fișă AI generată automat */}
+      {jobDesc && !generating && (
+        <>
+          <div style={{ height: "16px" }} />
+          <div className="bg-white rounded-xl border border-emerald-200" style={{ padding: "16px" }}>
+            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wide">Fișă generată AI — {title}</p>
+            <div style={{ height: "8px" }} />
+            <p className="text-[10px] text-slate-500 font-bold">Scop</p>
+            <p className="text-xs text-slate-700">{jobDesc.purpose}</p>
+            <div style={{ height: "6px" }} />
+            <p className="text-[10px] text-slate-500 font-bold">Responsabilități</p>
+            <p className="text-xs text-slate-700 whitespace-pre-wrap">{jobDesc.responsibilities}</p>
+            <div style={{ height: "6px" }} />
+            <p className="text-[10px] text-slate-500 font-bold">Cerințe</p>
+            <p className="text-xs text-slate-700 whitespace-pre-wrap">{jobDesc.requirements}</p>
+          </div>
+
+          {/* Mapare criterii */}
+          {jobDesc.criteriaMapping && (
+            <>
+              <div style={{ height: "8px" }} />
+              <div className="bg-indigo-50 rounded-xl border border-indigo-200" style={{ padding: "12px" }}>
+                <p className="text-[9px] text-indigo-700 font-bold uppercase">Mapare criterii evaluare</p>
+                <div style={{ height: "6px" }} />
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(jobDesc.criteriaMapping).map(([key, val]: [string, any]) => {
+                    const labels: Record<string, string> = {
+                      education: "Educație", communication: "Comunicare", problemSolving: "Rez. probleme",
+                      decisionMaking: "Decizii", businessImpact: "Impact", workConditions: "Condiții"
+                    }
+                    return (
+                      <div key={key} className="bg-white rounded border border-indigo-100 text-center" style={{ padding: "6px" }}>
+                        <span className="text-[9px] text-slate-400">{labels[key] || key}</span>
+                        <p className="text-sm font-bold text-indigo-700">{val.level}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Întrebări lipsă */}
+          {jobDesc.missingInfo && jobDesc.missingInfo.length > 0 && (
+            <>
+              <div style={{ height: "8px" }} />
+              <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "10px" }}>
+                <p className="text-[9px] text-amber-700 font-bold uppercase">Clarifică pentru evaluare mai precisă</p>
+                {jobDesc.missingInfo.map((q: string, i: number) => (
+                  <p key={i} className="text-[10px] text-amber-800">• {q}</p>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Buton validare */}
+          <div style={{ height: "12px" }} />
+          <button
+            onClick={async () => {
+              if (!savedJobId) return
+              await fetch("/api/v1/billing/log-activity", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  type: "JOB_DESCRIPTION_VALIDATED",
+                  description: `Fișă de post validată de client: ${title}`,
+                  jobId: savedJobId,
+                }),
+              }).catch(() => {})
+              setValidated(true)
+            }}
+            disabled={validated}
+            className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+              validated ? "bg-emerald-500 text-white" : "bg-emerald-600 text-white hover:bg-emerald-700"
+            }`}
+          >
+            {validated ? "✓ Fișă validată" : "Validez fișa de post"}
+          </button>
+        </>
+      )}
+
+      {!jobDesc && !generating && saved && (
+        <>
+          <div style={{ height: "8px" }} />
+          <p className="text-[9px] text-slate-400 text-center">Post salvat. Poți adăuga altul sau genera fișa din tab-ul "Fișe de post".</p>
+        </>
+      )}
+
+      {!saved && !generating && (
+        <>
+          <div style={{ height: "8px" }} />
+          <p className="text-[9px] text-slate-400 text-center">Poți adăuga mai multe posturi fără a închide panoul.</p>
+        </>
+      )}
     </>
   )
 }
