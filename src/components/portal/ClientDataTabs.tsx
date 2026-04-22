@@ -525,6 +525,29 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
   const [jobDesc, setJobDesc] = useState<any>(null)
   const [validated, setValidated] = useState(false)
   const [savedJobId, setSavedJobId] = useState<string | null>(null)
+  const [mode, setMode] = useState<"assisted" | "manual">("assisted")
+  const [manualText, setManualText] = useState("")
+  const [relevance, setRelevance] = useState<{ score: number; criteria: Record<string, { score: number; hint: string }> } | null>(null)
+  const [checkingRelevance, setCheckingRelevance] = useState(false)
+  const relevanceTimer = useRef<any>(null)
+
+  const checkRelevance = (text: string) => {
+    if (relevanceTimer.current) clearTimeout(relevanceTimer.current)
+    if (text.length < 30) { setRelevance(null); return }
+    relevanceTimer.current = setTimeout(async () => {
+      setCheckingRelevance(true)
+      try {
+        const res = await fetch("/api/v1/ai/relevance-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, text }),
+        })
+        const data = await res.json()
+        if (res.ok) setRelevance(data)
+      } catch {}
+      finally { setCheckingRelevance(false) }
+    }, 1500)
+  }
 
   // Sugestii titlu + departament la schimbarea titlului
   const handleTitleChange = (val: string) => {
@@ -570,8 +593,11 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
 
   const finalDept = dept === "__other__" ? customDept : dept
 
+  const canSave = mode === "assisted" || (mode === "manual" && relevance && relevance.score >= 80)
+
   const handleSave = async () => {
     if (!title.trim()) { setError("Titlul postului e obligatoriu."); return }
+    if (mode === "manual" && (!relevance || relevance.score < 80)) { setError("Completează fișa până la minim 80% relevanță."); return }
     setSaving(true); setError(null)
     try {
       // Creăm/găsim departamentul (opțional)
@@ -595,6 +621,7 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
           title: title.trim(),
           departmentId,
           purpose: level ? `Nivel: ${level}` : undefined,
+          responsibilities: mode === "manual" ? manualText : undefined,
           status: "ACTIVE",
         }),
       })
@@ -604,7 +631,8 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
         setSaved(true)
         onJobAdded?.()
 
-        // Auto-generează fișă AI + mapare pe criterii
+        // Auto-generează fișă AI + mapare pe criterii (doar în mod assisted)
+        if (mode === "manual") { setGenerating(false); return }
         setGenerating(true)
         try {
           const aiRes = await fetch("/api/v1/ai/job-description", {
@@ -729,6 +757,81 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
         </div>
       </div>
 
+      {/* Toggle: AI generează sau Scriu singur */}
+      <div style={{ height: "12px" }} />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setMode("assisted")}
+          className={`flex-1 text-[10px] font-medium py-1.5 rounded-lg transition-colors ${mode === "assisted" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}
+        >
+          AI generează fișa
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("manual")}
+          className={`flex-1 text-[10px] font-medium py-1.5 rounded-lg transition-colors ${mode === "manual" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}
+        >
+          Scriu singur
+        </button>
+      </div>
+
+      {/* Mod manual — textarea + relevanță timp real */}
+      {mode === "manual" && (
+        <>
+          <div style={{ height: "12px" }} />
+          <textarea
+            rows={8}
+            value={manualText}
+            onChange={(e) => { setManualText(e.target.value); checkRelevance(e.target.value) }}
+            placeholder="Descrie postul în cuvintele tale: ce face persoana, ce studii/experiență necesită, cu cine comunică, ce decizii ia, ce impact are, în ce condiții lucrează..."
+            className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white resize-none"
+          />
+
+          {/* Indicator relevanță */}
+          {relevance && (
+            <>
+              <div style={{ height: "8px" }} />
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${relevance.score >= 80 ? "bg-emerald-500" : relevance.score >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                    style={{ width: `${relevance.score}%` }}
+                  />
+                </div>
+                <span className={`text-xs font-bold ${relevance.score >= 80 ? "text-emerald-600" : relevance.score >= 50 ? "text-amber-600" : "text-red-500"}`}>
+                  {relevance.score}%
+                </span>
+              </div>
+
+              <div style={{ height: "8px" }} />
+              <div className="grid grid-cols-3 gap-1">
+                {Object.entries(relevance.criteria).map(([key, val]: [string, any]) => {
+                  const labels: Record<string, string> = {
+                    education: "Educație", communication: "Comunicare", problemSolving: "Rez. probleme",
+                    decisionMaking: "Decizii", businessImpact: "Impact", workConditions: "Condiții"
+                  }
+                  return (
+                    <div key={key} className={`rounded border text-center ${val.score >= 80 ? "border-emerald-200 bg-emerald-50" : val.score >= 40 ? "border-amber-200 bg-amber-50" : "border-red-200 bg-red-50"}`} style={{ padding: "4px" }}>
+                      <span className="text-[8px] text-slate-400">{labels[key] || key}</span>
+                      <p className={`text-[10px] font-bold ${val.score >= 80 ? "text-emerald-700" : val.score >= 40 ? "text-amber-700" : "text-red-600"}`}>{val.score}%</p>
+                      {val.hint && val.score < 80 && <p className="text-[8px] text-slate-400">{val.hint}</p>}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {checkingRelevance && (
+            <>
+              <div style={{ height: "4px" }} />
+              <p className="text-[9px] text-indigo-500 text-center animate-pulse">Analiză relevanță...</p>
+            </>
+          )}
+        </>
+      )}
+
       <div style={{ height: "16px" }} />
 
       {error && (
@@ -741,12 +844,14 @@ function AddJobPanel({ onClose, onJobAdded }: { onClose: () => void; onJobAdded?
       <div className="flex gap-3">
         <button
           onClick={handleSave}
-          disabled={saving || saved}
+          disabled={saving || saved || !canSave}
           className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-colors shadow-sm ${
-            saved ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+            saved ? "bg-emerald-500 text-white" :
+            !canSave ? "bg-slate-200 text-slate-400 cursor-not-allowed" :
+            "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
           }`}
         >
-          {saved ? "✓ Salvat — poți adăuga altul" : saving ? "Se salvează..." : "Salvează postul"}
+          {saved ? "✓ Salvat" : saving ? "Se salvează..." : mode === "manual" && (!relevance || relevance.score < 80) ? `Relevanță ${relevance?.score || 0}% — completează` : "Salvează postul"}
         </button>
       </div>
 
