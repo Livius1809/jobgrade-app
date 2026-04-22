@@ -1,26 +1,26 @@
 /**
- * Vercel Cron endpoint — processes ASSIGNED agent tasks.
+ * Executor endpoint — procesează task-urile ASSIGNED ale agenților.
  *
- * Runs every 5 minutes via Vercel Cron Jobs. Calls the internal task
- * executor with `cron: true` (respects EXECUTOR_CRON_ENABLED kill-switch).
+ * Poate fi apelat:
+ * - Din cron GitHub Actions (la 2h)
+ * - Manual cu x-internal-key (oricând)
  *
- * Auth: Vercel injects CRON_SECRET automatically for cron-invoked requests.
- * Manual calls require `Authorization: Bearer ${CRON_SECRET}`.
+ * Auth: CRON_SECRET (Vercel) SAU x-internal-key
  *
- * Architecture note (L1+L2+L3 governance):
- * - L1 (CÂMPUL): moral-core validates each task output before marking COMPLETED
- * - L2 (Consultanți): agents can request L2 expertise during execution via KB lookup
- * - L3 (Legal): CJA reviews tasks tagged 'legal' or containing compliance signals
- * The executor itself is L4 infrastructure; governance is applied at task level.
+ * Principii:
+ * - FĂRĂ guard de ore — task-urile se execută când există
+ * - Kill-switch ON by default — dacă nu e explicit "false", rulează
+ * - Procesează TOATĂ coada, nu doar batch de 5
+ * - Task-uri BLOCKED > 24h → retry automat (reset la ASSIGNED)
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import { runIntelligentBatch } from "@/lib/agents/intelligent-executor"
 
-export const maxDuration = 300 // 5 min — matches execute-task route
+export const maxDuration = 300 // 5 min
 
 export async function GET(request: NextRequest) {
-  // Auth: CRON_SECRET (Vercel) SAU x-internal-key (n8n/GitHub Actions)
+  // Auth
   const authHeader = request.headers.get("authorization")
   const internalKey = request.headers.get("x-internal-key")
   const isAuthorized = authHeader === `Bearer ${process.env.CRON_SECRET}` ||
@@ -29,52 +29,74 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // Guard ore: skip doar pentru cron automat (nu pentru apeluri manuale cu x-internal-key)
-  const isManual = !!internalKey
-  if (!isManual) {
-    const now = new Date()
-    const eetHour = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getHours()
-    const eetDay = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Bucharest" })).getDay()
-    if (eetDay === 0 || eetDay === 6 || eetHour < 8 || eetHour >= 22) {
-      return NextResponse.json({ ok: true, skipped: true, reason: "Outside business hours (L-V 08-22 EET)" })
-    }
+  // Kill-switch: ON by default — oprește DOAR dacă e explicit "false"
+  let executorEnabled = true
+  const envVal = process.env.EXECUTOR_CRON_ENABLED
+  if (envVal === "false" || envVal === "0") {
+    executorEnabled = false
   }
-
-  // Kill-switch: check DB config first, env var fallback
-  let executorEnabled = process.env.EXECUTOR_CRON_ENABLED === "true"
   try {
     const { prisma } = await import("@/lib/prisma")
-    const dbConfig = await prisma.systemConfig.findUnique({ where: { key: "EXECUTOR_CRON_ENABLED" } })
-    if (dbConfig) executorEnabled = dbConfig.value === "true"
+    const dbConfig = await prisma.systemConfig.findUnique({ where: { key: "EXECUTOR_CRON_ENABLED" } }).catch(() => null)
+    if (dbConfig?.value === "false") executorEnabled = false
+    if (dbConfig?.value === "true") executorEnabled = true
   } catch { /* DB unavailable — use env var */ }
 
   if (!executorEnabled) {
-    return NextResponse.json({
-      ok: false,
-      reason: "EXECUTOR_CRON_ENABLED kill-switch is not 'true'",
-    })
+    return NextResponse.json({ ok: false, reason: "Kill-switch explicit false" })
   }
 
   try {
-    const result = await runIntelligentBatch(5)
+    // Retry: deblocăm task-uri BLOCKED > 24h (punct 4)
+    const { prisma } = await import("@/lib/prisma")
+    const retried = await prisma.agentTask.updateMany({
+      where: {
+        status: "BLOCKED",
+        blockedAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+      data: {
+        status: "ASSIGNED",
+        blockerType: null,
+        blockerDescription: null,
+        blockedAt: null,
+      },
+    }).catch(() => ({ count: 0 }))
+
+    // Procesează toată coada — batch-uri de 10 până nu mai sunt task-uri
+    let totalProcessed = 0
+    let totalExecuted = 0
+    let totalBlocked = 0
+    let allResults: any[] = []
+    let batchCount = 0
+    const maxBatches = 10 // safety: max 100 task-uri per ciclu
+
+    while (batchCount < maxBatches) {
+      const result = await runIntelligentBatch(10)
+
+      if (result.tasksProcessed === 0) break // nu mai sunt task-uri
+
+      totalProcessed += result.tasksProcessed
+      totalExecuted += result.tasksExecuted
+      totalBlocked += result.tasksBlockedAlignment + result.tasksBlockedBudget
+      allResults = allResults.concat(result.results)
+      batchCount++
+
+      // Dacă toate task-urile din batch sunt blocked/skipped, oprim (evităm loop infinit)
+      if (result.tasksExecuted === 0 && result.tasksSkippedKB === 0) break
+    }
 
     return NextResponse.json({
       ok: true,
-      threshold: result.thresholdResult,
-      tasksProcessed: result.tasksProcessed,
-      tasksSkippedKB: result.tasksSkippedKB,
-      tasksBlockedAlignment: result.tasksBlockedAlignment,
-      tasksBlockedBudget: result.tasksBlockedBudget,
-      tasksExecuted: result.tasksExecuted,
-      results: result.results,
-      totalDurationMs: result.totalDurationMs,
+      batches: batchCount,
+      retriedFromBlocked: retried.count,
+      totalProcessed,
+      totalExecuted,
+      totalBlocked,
+      results: allResults.slice(0, 20), // primele 20 pentru debugging
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
     console.error("[cron/executor] Error:", error.message)
-    return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   }
 }

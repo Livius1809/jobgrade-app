@@ -32,7 +32,7 @@ export interface AlignmentResult {
 }
 
 // ═══ Cuvinte/pattern-uri interzise statice (Nivel 1) ═══
-const BLOCKED_PATTERNS = [
+export const BLOCKED_PATTERNS = [
   /discrimina(re|t|ți)/i,
   /manipula(re|t)/i,
   /ocoli(re|t).*lege/i,

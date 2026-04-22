@@ -156,28 +156,33 @@ export async function runIntelligentBatch(
       continue
     }
 
-    // ═══ PAS 4: ALIGNMENT CHECK (P6) ═══
-    // Routine = orice task operațional standard (skip alignment AI costisitor)
-    // Non-routine = doar task-uri cu taguri sensibile explicit
+    // ═══ PAS 4: ALIGNMENT CHECK (P6) — SIMPLIFICAT ═══
+    // Doar Nivel 1 (pattern-uri interzise). Task creat de COG/Owner/Claude = deja validat.
+    // Alignment AI complet DOAR pentru taguri sensibile explicite.
     const hasSensitiveTag = (task.tags ?? []).some((t: string) =>
       ["legal", "client-facing", "strategy", "financial", "hr-decision"].includes(t)
     )
-    const isRoutine = !hasSensitiveTag
 
-    const alignment = await checkAlignment(
-      task.assignedTo,
-      task.title,
-      task.description,
-      task.tags ?? [],
-      isRoutine // skip Nivel 4 AI pentru routine
-    )
+    let alignment: { allowed: boolean; level: number; result: string; reasoning: string; artifactCreated: boolean }
+
+    if (!hasSensitiveTag) {
+      // Nivel 1 rapid: doar pattern-uri interzise
+      const { BLOCKED_PATTERNS } = await import("./alignment-checker")
+      const hasBlockedPattern = BLOCKED_PATTERNS.some((p: RegExp) =>
+        p.test(task.title) || p.test(task.description)
+      )
+      alignment = hasBlockedPattern
+        ? { allowed: false, level: 1, result: "MISALIGNED", reasoning: "Pattern interzis detectat", artifactCreated: false }
+        : { allowed: true, level: 1, result: "ALIGNED", reasoning: "Task operațional — bypass alignment", artifactCreated: false }
+    } else {
+      // Alignment complet doar pentru task-uri sensibile
+      alignment = await checkAlignment(task.assignedTo, task.title, task.description, task.tags ?? [], false)
+    }
 
     alignmentLevel = alignment.level
 
     if (!alignment.allowed) {
       tasksBlockedAlignment++
-
-      // Marcăm task-ul ca BLOCKED cu motiv alignment
       await prisma.agentTask.update({
         where: { id: task.id },
         data: {
@@ -186,7 +191,6 @@ export async function runIntelligentBatch(
           blockerDescription: `Alignment check: ${alignment.result} (Nivel ${alignment.level}). ${alignment.reasoning}`,
         },
       })
-
       results.push({
         taskId: task.id,
         outcome: `ALIGNMENT_${alignment.result}`,
