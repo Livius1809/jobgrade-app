@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     await prisma.payGapReport.update({
       where: { id: parsed.data.reportId },
       data: {
-        indicators: { ...indicators, justifications },
+        indicators: JSON.parse(JSON.stringify({ ...indicators, justifications })),
       },
     })
 
