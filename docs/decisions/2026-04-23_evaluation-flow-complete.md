@@ -282,27 +282,67 @@ DE ANALIZAT → ÎN DISCUȚIE → PROPUNERE → CONSENS
 
 ## ETAPA 4: VALIDARE INDIVIDUALĂ (post-consens)
 
-### 4.1 Fiecare membru validează
-- Vede tabelul final (consens) vs tabelul lui inițial
-- Pe fiecare criteriu unde s-a schimbat vs varianta lui:
-  - Marchează "Accept schimbarea" sau "Contest" (cu motivare)
-- Dacă acceptă tot → semnătură digitală pe varianta finală
+### 4.1 Validare individuală per membru
+- Fiecare membru vede: tabel cu coloana "Scorarea mea inițială" vs coloana "Consens"
+- Evidențiate: criteriile unde consensul diferă de varianta inițială
+- Pe fiecare criteriu schimbat: buton **"Accept"** (simplu, fără semnătură)
+- Membrii validează doar **secțiunile proprii** (fișele din calupul lor)
+- Validare simplă — nu semnătură, pentru că:
+  - Procesul verbal consemnează tot (cine ce a propus, când, ce s-a schimbat)
+  - Semnătura oficială aparține doar Directorului General / reprezentantului legal (Etapa 5)
 
-### 4.2 Actualizare tabel individual
-- Tabelul membrului se actualizează automat cu scorurile de consens
-- Devine READ ONLY
+### 4.2 Dacă un membru nu e de acord
+- **Nu mai poate contesta** — a avut ocazia să-și modifice scorul de N ori în discuția de grup
+- Dacă insistă → se poate relua procesul pe acel criteriu, dar:
+  - Decizia de reluare aparține **HR Admin sau Owner** (nu membrului)
+  - Reluarea consumă **credite suplimentare**
+- Procesul verbal consemnează poziția finală a fiecărui membru, inclusiv dacă a rămas în dezacord
+
+### 4.3 Termene și responsabilități
+- **HR Admin setează termenul** de validare la configurarea procesului
+- HR Admin este responsabil să aducă toți membrii la masa de validare
+- Platforma trimite **mesaje de informare** membrilor care nu au validat
+- Mesajele sunt **consemnate în Jurnalul procesului**
+
+### 4.4 Jurnalul procesului
+- Se populează automat de la **inițierea procesului**
+- Preia setup-ul inițial (membri, fișe alocate, termene)
+- Consemnează **tot**:
+  - Fiecare acțiune: cine, ce, când
+  - Scorările individuale (pre-scorare)
+  - Voturile din discuția de grup
+  - Argumentele postate
+  - Intervențiile AI (clarificări, abordări propuse)
+  - Schimbările de opinie (de la ce la ce, cu ce argument)
+  - Consensurile obținute per criteriu per fișă
+  - Validările individuale
+  - Mesajele de informare trimise
+- Structurat pe **categorii de acțiuni** (ca să fie ușor de citit):
+  - Setup | Pre-scorare | Discuție grup | Mediere AI | Validare | Notificări
+- Disponibil ca **document descărcabil** (PDF) la finalul procesului
+
+### 4.5 Actualizare tabel individual
+- La validare: tabelul membrului se actualizează automat cu scorurile de consens
+- Devine **READ ONLY** pentru acel membru
 - Membrul nu mai poate modifica
 
-### 4.3 Finalizare etapă comisie
-- Când toți membrii au validat → tabelul general devine READ ONLY pentru membri
-- Etapa se închide automat
+### 4.6 Finalizare etapă comisie
+- Când toți membrii au validat → tabelul general devine **READ ONLY** pentru toți membrii
+- Etapa de evaluare comisie se închide automat
+- Se trece la **Etapa 5**: tabelul devine modificabil pentru Director General / Owner / Reprezentant legal
+- Validarea generală + semnătura (electronică + olografă) aparține DG/Owner
+- Documentul este **opozabil organelor competente**
 
 **STATUS COD:**
-- [ ] Ecran validare "varianta mea vs consens" — de implementat
-- [ ] Accept/Contest per criteriu — de implementat
-- [ ] Semnătură digitală per membru — parțial (validare sesiune există, dar nu per membru)
+- [x] Validare sesiune cu semnătură electronică + olografă (MasterReportFlipbook) — există
+- [x] Audit trail per sesiune (SessionJournal din je-process-engine) — parțial
+- [ ] Ecran "varianta mea vs consens" per membru — de implementat
+- [ ] Buton Accept simplu per criteriu schimbat — de implementat
 - [ ] Tabel read-only post-validare — de implementat
 - [ ] Auto-close etapă la validare toți — de implementat
+- [ ] Jurnalul procesului complet (structurat pe categorii) — de implementat
+- [ ] Export Jurnal PDF — de implementat
+- [ ] Mesaje informare + consemnare în jurnal — de implementat
 
 ---
 
