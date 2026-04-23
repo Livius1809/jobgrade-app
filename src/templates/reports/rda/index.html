@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raport de Diagnostic Analitic — {{companyName}}</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- PAGINA 1: Copertă -->
+  <div class="page cover">
+    <div class="cover-content">
+      <div class="logo">JobGrade</div>
+      <h1>Raport de Diagnostic Analitic</h1>
+      <h2>{{companyName}}</h2>
+      <div class="cover-meta">
+        <p>CUI: {{cui}}</p>
+        <p>{{address}}</p>
+        <p class="date">Generat: {{date}}</p>
+      </div>
+      <div class="cover-badge">CONFIDENȚIAL</div>
+    </div>
+  </div>
+
+  <!-- PAGINA 2: Metodologie -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-title">Metodologia de evaluare</span>
+      <span class="page-company">{{companyName}}</span>
+    </div>
+
+    <div class="methodology">
+      <p class="intro">
+        Evaluarea posturilor se realizează prin metoda analitică pe puncte,
+        utilizând 4 criterii principale descompuse în 6 subcriterii.
+      </p>
+
+      <div class="criterion">
+        <h3>I. Competență profesională</h3>
+        <p class="subcriteria">Subcriterii: Educație / Experiență, Comunicare</p>
+        <p>Evaluarea nivelului de cunoștințe, calificări, experiență profesională și abilități
+        de comunicare necesare pentru exercitarea atribuțiilor postului.</p>
+      </div>
+
+      <div class="criterion">
+        <h3>II. Complexitatea muncii</h3>
+        <p class="subcriteria">Subcriterii: Rezolvarea problemelor, Luarea deciziilor</p>
+        <p>Evaluarea gradului de complexitate a sarcinilor, nivelul de analiză și sinteză necesar,
+        precum și autonomia în luarea deciziilor.</p>
+      </div>
+
+      <div class="criterion">
+        <h3>III. Responsabilitate și impact</h3>
+        <p class="subcriteria">Subcriteriu: Impact asupra afacerii</p>
+        <p>Evaluarea nivelului de responsabilitate asumat și a impactului direct sau indirect
+        al activității asupra rezultatelor organizației.</p>
+      </div>
+
+      <div class="criterion">
+        <h3>IV. Condiții de muncă</h3>
+        <p class="subcriteria">Subcriteriu: Condiții de lucru</p>
+        <p>Evaluarea condițiilor fizice și psihice în care se desfășoară activitatea.</p>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      CONFIDENȚIAL — Acest document conține informații confidențiale destinate exclusiv conducerii organizației.
+      Reproducerea, distribuirea sau divulgarea fără acordul scris al emitentului este interzisă.
+      Documentul are caracter opozabil organelor competente conform legislației muncii în vigoare.
+    </div>
+  </div>
+
+  <!-- PAGINA 3: Ierarhia posturilor (conținut dinamic, generat din cod) -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-title">Ierarhia posturilor</span>
+      <span class="page-company">{{companyName}}</span>
+    </div>
+
+    <div id="hierarchy-table">
+      <!-- Populat dinamic din JS/API -->
+    </div>
+  </div>
+
+  <!-- PAGINA FINALĂ: Semnătură -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-title">Validare și semnătură</span>
+      <span class="page-company">{{companyName}}</span>
+    </div>
+
+    <div class="validation-text">
+      <p>
+        Subsemnatul/a, în calitate de Director General / Reprezentant legal al organizației,
+        certific că am verificat ierarhia posturilor rezultată din procesul de evaluare și
+        confirm că aceasta reflectă structura organizațională și nivelurile de complexitate ale posturilor.
+      </p>
+    </div>
+
+    <div class="signature-area">
+      <div class="signature-block">
+        <div class="signature-label">Director General / Reprezentant legal</div>
+        <div class="signature-line"></div>
+        <div class="signature-hint">Semnătură și ștampilă</div>
+      </div>
+      <div class="signature-block">
+        <div class="signature-label">Data</div>
+        <div class="signature-line"></div>
+        <div class="signature-hint">Data semnării</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Procesul verbal al evaluării (jurnalul procesului) este disponibil ca anexă separată.
+      Documentul devine opozabil după semnarea de către reprezentantul legal al organizației.
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <span>JobGrade.ro — Document opozabil</span>
+    <span>{{date}}</span>
+  </footer>
+
+</body>
+</html>
