@@ -111,25 +111,40 @@ export async function runIntelligentBatch(
     let costUSD: number | undefined
     let learningCreated = false
 
-    // ═══ PAS 3: KB-FIRST (P3) ═══
-    // Task-urile care cer ACȚIUNI CONCRETE (testare, audit, observare) nu se rezolvă din KB.
-    // KB răspunde la "ce știi?" — dar testarea cere "du-te și verifică".
-    const actionTags = ["e2e", "smoke-test", "audit", "test", "verificare", "observare"]
-    const actionTypes: string[] = ["REVIEW", "INVESTIGATION"]
-    const requiresAction = actionTypes.includes(task.taskType) &&
-      (task.tags ?? []).some((t: string) => actionTags.includes(t.toLowerCase()))
+    // ═══ PAS 3: KB-FIRST (P3) — DISTINCȚIE ȘTIU vs FAC ═══
+    //
+    // PRINCIPIU: "Știu că știu să fac" ≠ "Am făcut"
+    //
+    // KB poate REZOLVA (înlocui execuția) DOAR pentru task-uri de CUNOAȘTERE:
+    //   - KB_RESEARCH: "Ce zice Art. 9?" → KB e răspunsul
+    //   - KB_VALIDATION: "E corect acest SOP?" → KB e răspunsul
+    //   - DATA_ANALYSIS cu tag "lookup": "Ce date avem despre X?" → KB e răspunsul
+    //
+    // Pentru ORICE task de ACȚIUNE, KB devine CONTEXT (injectat în prompt),
+    // nu RĂSPUNS (marcat COMPLETED):
+    //   - CONTENT_CREATION: trebuie să producă conținut NOU
+    //   - PROCESS_EXECUTION: trebuie să execute un proces
+    //   - OUTREACH: trebuie să contacteze pe cineva
+    //   - REVIEW: trebuie să verifice ceva CONCRET
+    //   - INVESTIGATION: trebuie să cerceteze și să raporteze FAPTE
+    //
+    const KNOWLEDGE_TASK_TYPES = ["KB_RESEARCH", "KB_VALIDATION"]
+    const isKnowledgeTask = KNOWLEDGE_TASK_TYPES.includes(task.taskType) ||
+      (task.taskType === "DATA_ANALYSIS" && (task.tags ?? []).some((t: string) => t === "lookup"))
 
-    const kbResult = requiresAction
-      ? { hit: false, level: "MISS" as const, confidence: 0 }
-      : await resolveFromKB(
-          task.assignedTo,
-          task.title,
-          task.description,
-          0.85 // threshold aprobat Owner D3
-        )
+    // Căutăm în KB indiferent — dar folosim rezultatul diferit
+    const kbResult = await resolveFromKB(
+      task.assignedTo,
+      task.title,
+      task.description,
+      0.85
+    )
 
-    if (kbResult.hit) {
-      // Rezolvat din KB — marcăm COMPLETED fără apel AI
+    // KB ca context pentru task-uri de acțiune (injectat în prompt la PAS 6)
+    const kbContext = kbResult.hit ? kbResult.content?.slice(0, 1000) : undefined
+
+    if (kbResult.hit && isKnowledgeTask) {
+      // DOAR task-uri de cunoaștere: KB e răspunsul complet
       kbHit = true
       tasksSkippedKB++
 
@@ -165,6 +180,7 @@ export async function runIntelligentBatch(
       })
       continue
     }
+    // Task de acțiune cu KB hit → kbContext va fi injectat la execuție (PAS 6)
 
     // ═══ PAS 4: ALIGNMENT CHECK (P6) — SIMPLIFICAT ═══
     // Doar Nivel 1 (pattern-uri interzise). Task creat de COG/Owner/Claude = deja validat.
@@ -245,6 +261,16 @@ export async function runIntelligentBatch(
     costUSD = costGate.estimatedCostUSD
 
     // ═══ PAS 6: EXECUTE (task-executor original) ═══
+    // Injectăm KB context în descrierea taskului (agentul știe ce știe, dar FACE)
+    if (kbContext) {
+      await prisma.agentTask.update({
+        where: { id: task.id },
+        data: {
+          description: task.description + `\n\n[CONTEXT DIN CUNOȘTINȚELE EXISTENTE — folosește ca referință, NU ca răspuns final]\n${kbContext}`,
+        },
+      })
+    }
+
     let execResult: ExecutorResult
     try {
       execResult = await executeTask(task.id)
