@@ -268,7 +268,7 @@ export default async function AgentsReportPage() {
     const hitRateMap = new Map(hitRateData.map((r: any) => [r.role, { total: Number(r.total), hits: Number(r.hits) }]))
 
     agents = definitions.map((d: any) => {
-      const t = taskMap.get(d.agentRole) || { total: 0, completed: 0, postponed: 0 }
+      const t = taskMap.get(d.agentRole) || { total: 0, completed: 0, kbResolved: 0, realExecuted: 0, postponed: 0 }
       const m = maturityMap.get(d.agentRole) || {}
       const hr = hitRateMap.get(d.agentRole) || { total: 0, hits: 0 }
 
