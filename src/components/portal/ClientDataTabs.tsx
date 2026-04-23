@@ -259,7 +259,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
   // Progress per tab (0-100) — folosim jobs.length (live) dacă e disponibil
   const liveJobCount = jobs.length > 0 ? jobs.length : jobCount
   const tabProgress: Record<string, number> = {
-    posturi: Math.min(100, Math.round((liveJobCount / Math.max(3, 1)) * 100)),
+    posturi: Math.min(100, Math.round((liveJobCount / Math.max(2, 1)) * 100)),
     fise: 0,
     "stat-salarii": employeeCount > 0 ? 100 : 0,
     salarii: hasSalaryData ? 100 : 0,
@@ -333,14 +333,14 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
             <p className="text-sm text-slate-600 leading-relaxed">{activeTabDef.description}</p>
 
-            {/* Mesaj minim 3 posturi */}
-            {activeTabDef.id === "posturi" && liveJobCount < 3 && (
+            {/* Mesaj minim 2 posturi */}
+            {activeTabDef.id === "posturi" && liveJobCount < 2 && (
               <>
                 <div style={{ height: "12px" }} />
                 <div className="bg-blue-50 rounded-lg border border-blue-200 px-3 py-2.5 flex items-center gap-2">
                   <span className="text-blue-500 text-sm shrink-0">ℹ️</span>
                   <p className="text-xs text-blue-700">
-                    <span className="font-bold">{liveJobCount}/3 posturi adăugate</span> — sunt necesare minim 3 posturi pentru a putea lansa evaluarea.
+                    <span className="font-bold">{liveJobCount}/2 poziții adăugate</span> — sunt necesare minim 2 poziții pentru a putea lansa ierarhizarea.
                     {liveJobCount === 0 && " Adăugați primul post folosind butonul de mai jos."}
                   </p>
                 </div>

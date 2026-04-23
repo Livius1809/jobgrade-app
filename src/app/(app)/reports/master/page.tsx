@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { getMasterReportData } from "@/lib/reports/master-report-data"
 import { redirect } from "next/navigation"
-import { MasterReportWrapper } from "@/app/demo/MasterReportWrapper"
+import { MasterReportWrapper } from "@/components/reports/MasterReportWrapper"
 
 export const dynamic = "force-dynamic"
 

@@ -1,5 +1,5 @@
 import { getMasterReportData } from "@/lib/reports/master-report-data"
-import { MasterReportWrapper } from "./MasterReportWrapper"
+import { MasterReportWrapper } from "@/components/reports/MasterReportWrapper"
 
 export const metadata = {
   title: "Demo — Raport Master — JobGrade",

@@ -224,7 +224,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               className={`rounded-2xl border transition-all ${
                 isValidated ? "bg-emerald-50 border-emerald-200" :
                 sessionCount > 0 ? "bg-indigo-50 border-indigo-200" :
-                jobCount >= 3 ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100" :
+                jobCount >= 2 ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100" :
                 "bg-slate-50 border-slate-200 opacity-60"
               }`}
               style={{ padding: "28px" }}
@@ -239,23 +239,23 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                     {isValidated ? "✓" : "⚖️"}
                   </div>
                   <div>
-                    <h3 className={`text-base font-bold ${jobCount < 3 ? "text-slate-400" : "text-slate-900"}`}>
+                    <h3 className={`text-base font-bold ${jobCount < 2 ? "text-slate-400" : "text-slate-900"}`}>
                       Evaluare și ierarhizare
                     </h3>
                     <div style={{ height: "4px" }} />
-                    <p className={`text-sm ${jobCount < 3 ? "text-slate-300" : "text-slate-500"}`}>
+                    <p className={`text-sm ${jobCount < 2 ? "text-slate-300" : "text-slate-500"}`}>
                       {isValidated
                         ? "Evaluarea e validată. Raportul e disponibil."
                         : sessionCount > 0
                           ? "Evaluarea e completă. Verifică rezultatele și validează."
-                          : jobCount >= 3
+                          : jobCount >= 2
                             ? "AI evaluează posturile pe 6 criterii obiective. Rezultat în secunde."
-                            : `${jobCount}/3 posturi adăugate — mai ${jobCount === 0 ? "adaugă cel puțin 3 posturi" : `adaugă ${3 - jobCount} ${3 - jobCount === 1 ? "post" : "posturi"}`} pentru a debloca evaluarea.`}
+                            : `${jobCount}/2 poziții adăugate — mai ${jobCount === 0 ? "adaugă cel puțin 2 poziții" : `adaugă ${2 - jobCount} ${2 - jobCount === 1 ? "poziție" : "poziții"}`} pentru a debloca evaluarea.`}
                     </p>
                   </div>
                 </div>
 
-                {jobCount >= 3 && (
+                {jobCount >= 2 && (
                   <button
                     onClick={() => openPanel("eval")}
                     className={`text-xs px-4 py-2 rounded-lg font-medium transition-colors shrink-0 ${
@@ -755,7 +755,7 @@ function EvaluationPanel({ onComplete, creditBalance = 0, purchasedLayer = 0 }: 
       ])
 
       const jobIds = (Array.isArray(jobsRes) ? jobsRes : jobsRes.jobs || []).map((j: any) => j.id)
-      if (jobIds.length < 3) throw new Error("Sunt necesare cel putin 3 posturi pentru evaluare.")
+      if (jobIds.length < 2) throw new Error("Sunt necesare cel puțin 2 poziții pentru ierarhizare.")
 
       const userId = sessionRes?.user?.id
       if (!userId) throw new Error("Nu s-a putut identifica utilizatorul curent.")
@@ -799,7 +799,7 @@ function EvaluationPanel({ onComplete, creditBalance = 0, purchasedLayer = 0 }: 
     try {
       const jobsRes = await fetch("/api/v1/jobs").then(r => r.json())
       const jobIds = (Array.isArray(jobsRes) ? jobsRes : jobsRes.jobs || []).map((j: any) => j.id)
-      if (jobIds.length < 3) throw new Error("Sunt necesare cel putin 3 posturi.")
+      if (jobIds.length < 2) throw new Error("Sunt necesare cel puțin 2 poziții.")
 
       const participantIds = memberIds && memberIds.length > 0 ? memberIds : (() => { throw new Error("Selectati membrii comisiei.") })()
 

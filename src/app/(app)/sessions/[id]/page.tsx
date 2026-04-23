@@ -112,6 +112,15 @@ export default async function SessionDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
+          {(session!.user.role === "OWNER" || session!.user.role === "COMPANY_ADMIN") &&
+            (evalSession.status === "COMPLETED" || evalSession.status === "OWNER_VALIDATION") && (
+            <Link
+              href={`/sessions/${id}/sign`}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+            >
+              Semnează raportul
+            </Link>
+          )}
           <Link
             href={`/sessions/${id}/journal`}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"

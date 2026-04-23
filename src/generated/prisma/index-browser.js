@@ -280,6 +280,8 @@ exports.Prisma.EvaluationSessionScalarFieldEnum = {
   completedAt: 'completedAt',
   validatedAt: 'validatedAt',
   validatedBy: 'validatedBy',
+  signatureData: 'signatureData',
+  signedAt: 'signedAt',
   createdById: 'createdById',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

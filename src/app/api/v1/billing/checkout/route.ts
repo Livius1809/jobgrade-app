@@ -11,8 +11,8 @@ const schema = z.object({
   packageId: z.string().optional(),
   billing: z.enum(["monthly", "annual"]).optional(),
   layer: z.number().min(1).max(4).optional(),
-  positions: z.number().min(1).optional(),
-  employees: z.number().min(1).optional(),
+  positions: z.number().min(1).optional(), // validated contextually below
+  employees: z.number().min(1).optional(), // validated contextually below
   annual: z.boolean().optional(),
   creditPackageId: z.string().optional(),
 })
@@ -28,6 +28,32 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = schema.parse(body)
     const APP_URL = getAppUrl()
+
+    // Validare contextuală minim poziții/salariați per layer
+    if (data.type === "service" && data.layer) {
+      if (data.layer === 1) {
+        // Modul 1 (Ordine internă): minim 2 poziții + 2 salariați
+        if ((data.positions ?? 0) < 2) {
+          return NextResponse.json(
+            { message: "Modulul 1 necesită minim 2 poziții pentru ierarhizare." },
+            { status: 400 }
+          )
+        }
+        if ((data.employees ?? 0) < 2) {
+          return NextResponse.json(
+            { message: "Modulul 1 necesită minim 2 salariați." },
+            { status: 400 }
+          )
+        }
+      }
+      // Modul 2+ (Pay gap): minim 1 angajat (≠ administrator)
+      if (data.layer >= 2 && (data.employees ?? 0) < 1) {
+        return NextResponse.json(
+          { message: "Analiza decalajelor necesită minim 1 salariat." },
+          { status: 400 }
+        )
+      }
+    }
 
     // Get or create Stripe customer
     const tenant = await prisma.tenant.findUnique({
