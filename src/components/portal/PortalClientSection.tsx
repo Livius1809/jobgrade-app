@@ -333,6 +333,28 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               </div>
             </div>
           )}
+
+          {/* Panou lateral rapoarte */}
+          {reportPanel && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-indigo-400 bg-indigo-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📊</span>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Raport de Diagnostic Analitic</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">RDA</span>
+                  </div>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
+              </div>
+              <div style={{ height: "20px" }} />
+              <ReportPanel />
+            </div>,
+            document.body
+          )}
         </>
       )}
     </>
@@ -620,6 +642,14 @@ const VARIANTS: Array<{
   },
 ]
 
+interface TeamMember {
+  id: string
+  firstName: string
+  lastName: string
+  role: string
+  email: string
+}
+
 function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
   const [variant, setVariant] = useState<EvalVariant | null>(null)
   const [phase, setPhase] = useState<EvalPhase>("choose")
@@ -628,6 +658,10 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [validating, setValidating] = useState(false)
   const [jobCount, setJobCount] = useState(0)
+  // Comisie
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [loadingTeam, setLoadingTeam] = useState(false)
 
   // Fetch nr posturi pentru calcul credite hibrid
   useEffect(() => {
@@ -728,21 +762,16 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
     }
   }
 
-  async function startCommitteeSession() {
+  async function startCommitteeSession(memberIds?: string[]) {
     setPhase("running")
     setError(null)
 
     try {
-      const [jobsRes, sessionRes] = await Promise.all([
-        fetch("/api/v1/jobs").then(r => r.json()),
-        fetch("/api/auth/session").then(r => r.json()).catch(() => null),
-      ])
-
+      const jobsRes = await fetch("/api/v1/jobs").then(r => r.json())
       const jobIds = (Array.isArray(jobsRes) ? jobsRes : jobsRes.jobs || []).map((j: any) => j.id)
       if (jobIds.length < 3) throw new Error("Sunt necesare cel putin 3 posturi.")
 
-      const userId = sessionRes?.user?.id
-      if (!userId) throw new Error("Nu s-a putut identifica utilizatorul.")
+      const participantIds = memberIds && memberIds.length > 0 ? memberIds : (() => { throw new Error("Selectati membrii comisiei.") })()
 
       const label = variant === "comisie-consultant" ? "Comisie + Consultant" : "Comisie + AI"
 
@@ -752,7 +781,7 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         body: JSON.stringify({
           name: `${label} — ${new Date().toLocaleDateString("ro-RO")}`,
           jobIds,
-          participantIds: [userId], // TODO: adăugare membri comisie din formular
+          participantIds,
         }),
       })
 
@@ -761,8 +790,6 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
       const sid = (await createRes.json()).id
       setSessionId(sid)
 
-      // Comisie: sesiunea rămâne IN_PROGRESS — membrii evaluează individual
-      // Schimbăm statusul la IN_PROGRESS
       await fetch(`/api/v1/sessions/${sid}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -779,7 +806,48 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
   function handleStart() {
     if (variant === "auto") startAutoEvaluation()
     else if (variant === "hibrid") startAutoEvaluation() // prima fază e identică cu auto
-    else startCommitteeSession()
+    else {
+      // Comisie (B/C): trebuie configurare comisie mai întâi
+      setPhase("configure")
+      loadTeamMembers()
+    }
+  }
+
+  async function loadTeamMembers() {
+    setLoadingTeam(true)
+    try {
+      const res = await fetch("/api/auth/session").then(r => r.json()).catch(() => null)
+      const tenantId = res?.user?.tenantId
+      if (!tenantId) return
+
+      // Fetch toți utilizatorii tenant-ului
+      const usersRes = await fetch("/api/v1/users?tenantId=" + tenantId).catch(() => null)
+      if (usersRes?.ok) {
+        const data = await usersRes.json()
+        const users = (data.users || data || []).map((u: any) => ({
+          id: u.id,
+          firstName: u.firstName || u.name?.split(" ")[0] || "",
+          lastName: u.lastName || u.name?.split(" ").slice(1).join(" ") || "",
+          role: u.role || "REPRESENTATIVE",
+          email: u.email || "",
+        }))
+        setTeamMembers(users)
+        // Pre-selectăm user-ul curent
+        if (res?.user?.id) setSelectedMembers([res.user.id])
+      }
+    } catch {}
+    setLoadingTeam(false)
+  }
+
+  function toggleMember(id: string) {
+    setSelectedMembers(prev =>
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    )
+  }
+
+  async function launchCommitteeWithMembers() {
+    if (selectedMembers.length < 1) { setError("Selectati cel putin un membru."); return }
+    startCommitteeSession(selectedMembers)
   }
 
   async function validateResults() {
@@ -878,6 +946,111 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         <div style={{ height: "8px" }} />
         <p className="text-[9px] text-slate-400 text-center">
           6 criterii: Educatie, Comunicare, Rezolvare probleme, Luarea deciziilor, Impact afaceri, Conditii de munca.
+        </p>
+      </>
+    )
+  }
+
+  // ── Configurare comisie (B/C) ──
+  if (phase === "configure") {
+    const selectedVariant = VARIANTS.find(v => v.id === variant)
+    const extraCr = selectedVariant ? jobCount * selectedVariant.extraCreditsPerPosition : 0
+
+    return (
+      <>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Selectati membrii comisiei de evaluare. Fiecare membru va evalua individual toate posturile pe cele 6 criterii.
+        </p>
+
+        <div style={{ height: "16px" }} />
+
+        {loadingTeam ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+            <p className="text-xs text-slate-400 mt-3">Se incarca echipa...</p>
+          </div>
+        ) : teamMembers.length === 0 ? (
+          <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+            <p className="text-xs text-amber-800">
+              Nu s-au gasit utilizatori in cont. Invitati membrii comisiei din Setari → Utilizatori.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Membri comisie</p>
+            {teamMembers.map(m => {
+              const isSelected = selectedMembers.includes(m.id)
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => toggleMember(m.id)}
+                  className={`w-full text-left rounded-lg border-2 transition-all ${
+                    isSelected ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                  style={{ padding: "12px" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`text-sm font-medium ${isSelected ? "text-indigo-700" : "text-slate-800"}`}>
+                        {m.firstName} {m.lastName}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{m.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] text-slate-400">{m.role}</span>
+                      {isSelected && (
+                        <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs">✓</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        <div style={{ height: "16px" }} />
+        <p className="text-[10px] text-slate-500">
+          {selectedMembers.length} {selectedMembers.length === 1 ? "membru selectat" : "membri selectati"}
+          {selectedMembers.length > 0 && ` — fiecare evalueaza ${jobCount} posturi × 6 criterii`}
+        </p>
+
+        {/* Cost suplimentar */}
+        {extraCr > 0 && (
+          <>
+            <div style={{ height: "12px" }} />
+            <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "14px" }}>
+              <p className="text-xs text-amber-800">
+                Aceasta varianta necesita <span className="font-bold">{extraCr} credite suplimentare</span> fata de pachetul de baza.
+              </p>
+            </div>
+          </>
+        )}
+
+        <div style={{ height: "20px" }} />
+        {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
+
+        <div className="flex gap-3">
+          <button
+            onClick={launchCommitteeWithMembers}
+            disabled={selectedMembers.length < 1}
+            className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
+          >
+            Lanseaza sesiunea ({selectedMembers.length} {selectedMembers.length === 1 ? "membru" : "membri"})
+          </button>
+          <button
+            onClick={() => { setPhase("choose"); setError(null) }}
+            className="px-4 py-3 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Inapoi
+          </button>
+        </div>
+
+        <div style={{ height: "8px" }} />
+        <p className="text-[9px] text-slate-400 text-center">
+          {variant === "comisie-consultant"
+            ? "Consultantul nostru acreditat va fi notificat si va facilita consensul."
+            : "AI va identifica divergentele si va media consensul intre membri."}
         </p>
       </>
     )
@@ -997,7 +1170,7 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         <>
           <div style={{ height: "8px" }} />
           <button
-            onClick={() => { setVariant("comisie-ai"); setPhase("choose") }}
+            onClick={() => { setVariant("comisie-ai"); setPhase("configure"); loadTeamMembers() }}
             className="w-full py-2 rounded-lg border border-indigo-200 text-indigo-700 text-xs font-medium hover:bg-indigo-50 transition-colors"
           >
             Trece la faza 2: comisia ajusteaza rezultatele
