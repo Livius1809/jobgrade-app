@@ -215,8 +215,8 @@ export default async function AgentsReportPage() {
         SELECT "assignedTo" as role,
           count(*) as total,
           count(*) FILTER (WHERE status = 'COMPLETED') as completed,
-          count(*) FILTER (WHERE status = 'COMPLETED' AND result LIKE '[KB-RESOLVED%') as kb_resolved,
-          count(*) FILTER (WHERE status = 'COMPLETED' AND (result IS NULL OR result NOT LIKE '[KB-RESOLVED%')) as real_executed,
+          count(*) FILTER (WHERE status = 'COMPLETED' AND "kbHit" = true) as kb_resolved,
+          count(*) FILTER (WHERE status = 'COMPLETED' AND ("kbHit" = false OR "kbHit" IS NULL)) as real_executed,
           count(*) FILTER (WHERE status = 'BLOCKED') as postponed
         FROM agent_tasks WHERE "createdAt" > ${oneWeekAgo}
         GROUP BY "assignedTo"

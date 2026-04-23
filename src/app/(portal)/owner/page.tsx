@@ -245,8 +245,26 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
       // Vital signs absent — ok, rămâne undefined
     }
 
+    // #10: Signal funnel — de la semnale la execuție
+    const signalFunnel = {
+      received: signalCount24h as number,
+      pending: signalsPendingCount as number,
+      convertedToTasks: reactiveTasksCount as number,
+      executed: tasksExecuted24h.completed,
+      conversionRate: (signalCount24h as number) > 0
+        ? Math.round(((reactiveTasksCount as number) / (signalCount24h as number)) * 100)
+        : 0,
+    }
+
+    // #12: Measurement gaps penalizare — objectives fără metrici scad health
+    const totalObjectives = (outcomesRaw as any[]).length
+    const gapRatio = totalObjectives > 0 ? measurementGaps / totalObjectives : 0
+    const healthPenalty = Math.round(gapRatio * 30) // max 30% penalizare
+
     const inputs: any = {
       signalCount24h, strategicThemes: [],
+      signalFunnel,
+      healthPenalty,
       // NEW: signal pipeline metrics
       signalsPending: signalsPendingCount,
       reactiveTasksCreated24h: reactiveTasksCount,

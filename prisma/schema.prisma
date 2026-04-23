@@ -2391,6 +2391,7 @@ model AgentTask {
   result          String?         @db.Text  // ce a produs executorul
   resultQuality   Int?            // 0-100, evaluat de manager la review
   failureReason   String?         @db.Text
+  kbHit           Boolean         @default(false)  // true = rezolvat din KB (știut), false = executat real (făcut)
 
   // Feedback loop
   reviewedBy      String?         // managerul care a evaluat rezultatul
@@ -3617,6 +3618,7 @@ model LearningArtifact {
   sourceType          String   @default("ESCALATION") // ESCALATION | POST_EXECUTION | EXTRAPOLATION
   appliedCount        Int      @default(0) // de cate ori a fost aplicat cu succes
   effectivenessScore  Float    @default(0) // 0-1, creste cu fiecare aplicare reusita
+  validated           Boolean  @default(false) // true = folosit cu succes în task aprobat de manager
   expiresAt           DateTime? // expirare daca nu e folosit >90 zile
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

@@ -41,11 +41,16 @@ export async function resolveFromKB(
 
   // ═══ Nivel 1: SOP / PROCEDURĂ ═══
   // Agentul are procedură definită? (cea mai valoroasă — score 1.0)
+  // Doar artefacte validate (folosite cu succes) sau cu score ridicat (seeduire)
   const procedure = await prisma.learningArtifact.findFirst({
     where: {
       studentRole: agentRole,
       problemClass: "procedure",
       effectivenessScore: { gte: 0.8 },
+      OR: [
+        { validated: true },
+        { effectivenessScore: { gte: 0.9 } }, // seeduire originală — trusted
+      ],
     },
     orderBy: { effectivenessScore: "desc" },
   })
@@ -71,14 +76,18 @@ export async function resolveFromKB(
   }
 
   // ═══ Nivel 2: CUNOȘTINȚE DOMENIU (rule conține keywords din task) ═══
-  // Căutăm în TOATE tipurile de cunoștințe ale agentului
+  // Doar artefacte validate sau cu score ridicat
   for (const keyword of keywords.slice(0, 5)) {
     const match = await prisma.learningArtifact.findFirst({
       where: {
         studentRole: agentRole,
         rule: { contains: keyword, mode: "insensitive" },
         effectivenessScore: { gte: 0.5 },
-        problemClass: { not: "procedure" }, // procedura deja verificată
+        problemClass: { not: "procedure" },
+        OR: [
+          { validated: true },
+          { effectivenessScore: { gte: 0.8 } },
+        ],
       },
       orderBy: { effectivenessScore: "desc" },
     })
@@ -189,11 +198,16 @@ async function getRelatedAgentRoles(agentRole: string): Promise<string[]> {
 /**
  * Salvează cunoașterea dobândită în KB după o execuție reușită.
  */
+/**
+ * Salvează cunoașterea dobândită după execuție aprobată de manager.
+ * Artefactul se creează cu validated=true (managerul a confirmat calitatea)
+ * și confidence din parametru (default 0.7 = aprobat, 0.5 = auto).
+ */
 export async function saveToKBAfterExecution(
   agentRole: string,
   taskTitle: string,
   taskResult: string,
-  confidence: number = 0.6
+  confidence: number = 0.7
 ): Promise<void> {
   await prisma.learningArtifact.create({
     data: {
@@ -204,6 +218,8 @@ export async function saveToKBAfterExecution(
       studentRole: agentRole,
       sourceType: "POST_EXECUTION",
       effectivenessScore: confidence,
+      validated: confidence >= 0.7, // aprobat de manager = validated
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
     },
   })
 }

@@ -154,6 +154,7 @@ export async function runIntelligentBatch(
           status: "COMPLETED",
           completedAt: new Date(),
           result: `[KB-RESOLVED level=${kbResult.level}] ${kbResult.content?.slice(0, 500)}`,
+          kbHit: true,
         },
       })
 
