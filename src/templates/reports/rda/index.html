@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Raport de Diagnostic Analitic — {{companyName}}</title>
+  <title>Raport de Evaluare a Posturilor de Lucru — {{companyName}}</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- PAGINA 1: Copertă -->
+  <!-- ═══ PAGINA 1: Copertă ═══ -->
   <div class="page cover">
     <div class="cover-content">
-      <div class="logo">JobGrade</div>
-      <h1>Raport de Diagnostic Analitic</h1>
+      <img src="/logo.svg" alt="JobGrade" class="cover-logo">
+      <h1>Raport de Evaluare<br>a Posturilor de Lucru</h1>
       <h2>{{companyName}}</h2>
       <div class="cover-meta">
         <p>CUI: {{cui}}</p>
@@ -23,68 +23,263 @@
     </div>
   </div>
 
-  <!-- PAGINA 2: Metodologie -->
+  <!-- ═══ PAGINA 2: Cuprins ═══ -->
   <div class="page">
+    <div class="page-header">
+      <span class="page-title">Cuprins</span>
+      <span class="page-company">{{companyName}}</span>
+    </div>
+
+    <nav class="toc">
+      <ol>
+        <li><a href="#metodologie">Metodologia de evaluare</a><span class="toc-page">3</span></li>
+        <li><a href="#ierarhie">Ierarhia posturilor</a><span class="toc-page">4</span></li>
+        <li><a href="#clase-salariale">Clase salariale și trepte</a><span class="toc-page">5</span></li>
+        <li><a href="#pay-gap">Analiza decalaj salarial</a><span class="toc-page">6</span></li>
+        <li><a href="#benchmark">Benchmark salarial vs piață</a><span class="toc-page">7</span></li>
+        <li><a href="#dezvoltare">Dezvoltare organizațională</a><span class="toc-page">8</span></li>
+        <li><a href="#anexe">Anexe</a><span class="toc-page">9</span></li>
+        <li><a href="#validare">Validare și semnătură</a><span class="toc-page">10</span></li>
+      </ol>
+    </nav>
+
+    <div class="toc-summary">
+      <div class="toc-stat">
+        <span class="toc-stat-value">{{positionCount}}</span>
+        <span class="toc-stat-label">Posturi evaluate</span>
+      </div>
+      <div class="toc-stat">
+        <span class="toc-stat-value">{{employeeCount}}</span>
+        <span class="toc-stat-label">Angajați analizați</span>
+      </div>
+      <div class="toc-stat">
+        <span class="toc-stat-value">{{departmentCount}}</span>
+        <span class="toc-stat-label">Departamente</span>
+      </div>
+      <div class="toc-stat">
+        <span class="toc-stat-value">{{evaluationType}}</span>
+        <span class="toc-stat-label">Tip evaluare</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGINA 3: Metodologie ═══ -->
+  <div class="page" id="metodologie">
     <div class="page-header">
       <span class="page-title">Metodologia de evaluare</span>
       <span class="page-company">{{companyName}}</span>
     </div>
 
-    <div class="methodology">
-      <p class="intro">
-        Evaluarea posturilor se realizează prin metoda analitică pe puncte,
-        utilizând 4 criterii principale descompuse în 6 subcriterii.
-      </p>
+    <p class="intro">
+      Evaluarea posturilor se realizează prin metoda analitică pe puncte,
+      utilizând 4 criterii principale prevăzute de Directiva UE 2023/970 (Art. 4),
+      descompuse în 6 subcriterii de evaluare.
+    </p>
 
+    <div class="criteria-grid">
       <div class="criterion">
-        <h3>I. Competență profesională</h3>
-        <p class="subcriteria">Subcriterii: Educație / Experiență, Comunicare</p>
-        <p>Evaluarea nivelului de cunoștințe, calificări, experiență profesională și abilități
-        de comunicare necesare pentru exercitarea atribuțiilor postului.</p>
+        <div class="criterion-number">I</div>
+        <div class="criterion-body">
+          <h3>Competență profesională</h3>
+          <p class="subcriteria">Educație / Experiență · Comunicare</p>
+          <p>Evaluarea nivelului de cunoștințe, calificări, experiență profesională
+          și abilități de comunicare necesare pentru exercitarea atribuțiilor postului.</p>
+        </div>
       </div>
 
       <div class="criterion">
-        <h3>II. Complexitatea muncii</h3>
-        <p class="subcriteria">Subcriterii: Rezolvarea problemelor, Luarea deciziilor</p>
-        <p>Evaluarea gradului de complexitate a sarcinilor, nivelul de analiză și sinteză necesar,
-        precum și autonomia în luarea deciziilor.</p>
+        <div class="criterion-number">II</div>
+        <div class="criterion-body">
+          <h3>Complexitatea muncii</h3>
+          <p class="subcriteria">Rezolvarea problemelor · Luarea deciziilor</p>
+          <p>Evaluarea gradului de complexitate a sarcinilor, nivelul de analiză
+          și sinteză necesar și autonomia în luarea deciziilor.</p>
+        </div>
       </div>
 
       <div class="criterion">
-        <h3>III. Responsabilitate și impact</h3>
-        <p class="subcriteria">Subcriteriu: Impact asupra afacerii</p>
-        <p>Evaluarea nivelului de responsabilitate asumat și a impactului direct sau indirect
-        al activității asupra rezultatelor organizației.</p>
+        <div class="criterion-number">III</div>
+        <div class="criterion-body">
+          <h3>Responsabilitate și impact</h3>
+          <p class="subcriteria">Impact asupra afacerii</p>
+          <p>Evaluarea nivelului de responsabilitate asumat și a impactului direct
+          sau indirect al activității asupra rezultatelor organizației.</p>
+        </div>
       </div>
 
       <div class="criterion">
-        <h3>IV. Condiții de muncă</h3>
-        <p class="subcriteria">Subcriteriu: Condiții de lucru</p>
-        <p>Evaluarea condițiilor fizice și psihice în care se desfășoară activitatea.</p>
+        <div class="criterion-number">IV</div>
+        <div class="criterion-body">
+          <h3>Condiții de muncă</h3>
+          <p class="subcriteria">Condiții de lucru</p>
+          <p>Evaluarea condițiilor fizice și psihice în care se desfășoară activitatea,
+          inclusiv riscuri profesionale și solicitări speciale.</p>
+        </div>
       </div>
     </div>
 
     <div class="disclaimer">
-      CONFIDENȚIAL — Acest document conține informații confidențiale destinate exclusiv conducerii organizației.
+      Acest document conține informații confidențiale destinate exclusiv conducerii organizației.
       Reproducerea, distribuirea sau divulgarea fără acordul scris al emitentului este interzisă.
       Documentul are caracter opozabil organelor competente conform legislației muncii în vigoare.
     </div>
   </div>
 
-  <!-- PAGINA 3: Ierarhia posturilor (conținut dinamic, generat din cod) -->
-  <div class="page">
+  <!-- ═══ PAGINA 4: Ierarhia posturilor ═══ -->
+  <div class="page" id="ierarhie">
     <div class="page-header">
       <span class="page-title">Ierarhia posturilor</span>
       <span class="page-company">{{companyName}}</span>
     </div>
 
-    <div id="hierarchy-table">
-      <!-- Populat dinamic din JS/API -->
+    <p class="intro">Rezultatele evaluării, ordonate descrescător după punctajul total obținut.</p>
+
+    <table class="data-table" id="hierarchy-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th class="col-position">Poziție</th>
+          <th class="col-dept">Departament</th>
+          <th class="col-letters">Cunoștințe</th>
+          <th class="col-letters">Efort</th>
+          <th class="col-letters">Responsabilitate</th>
+          <th class="col-letters">Condiții</th>
+          <th class="col-score">Punctaj</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- {{hierarchy_rows}} — populat dinamic -->
+        <tr class="placeholder-row">
+          <td colspan="8">Datele se încarcă din sesiunea de evaluare</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="table-legend">
+      <span class="legend-item"><strong>Cunoștințe</strong> = Educație · Comunicare</span>
+      <span class="legend-item"><strong>Efort</strong> = Rezolvare probleme</span>
+      <span class="legend-item"><strong>Responsabilitate</strong> = Decizie · Impact</span>
+      <span class="legend-item"><strong>Condiții</strong> = Condiții muncă</span>
     </div>
   </div>
 
-  <!-- PAGINA FINALĂ: Semnătură -->
-  <div class="page">
+  <!-- ═══ PAGINA 5: Clase salariale (LAYER 1) ═══ -->
+  <div class="page" id="clase-salariale">
+    <div class="page-header">
+      <span class="page-title">Clase salariale și trepte</span>
+      <span class="page-badge layer1">LAYER 1 — Conformitate</span>
+    </div>
+
+    <p class="intro">
+      Clasele salariale sunt construite prin metoda Pitariu cu progresie geometrică
+      pe verticală (factor 1.15). Fiecare clasă conține trepte de aliniere salarială.
+    </p>
+
+    <div id="salary-grades-container">
+      <!-- {{salary_grades}} — carduri clase + grafic Pitariu -->
+      <div class="placeholder">Grafic Pitariu + carduri clase salariale</div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGINA 6: Pay Gap (LAYER 1) ═══ -->
+  <div class="page" id="pay-gap">
+    <div class="page-header">
+      <span class="page-title">Analiza decalaj salarial</span>
+      <span class="page-badge layer1">LAYER 1 — Conformitate</span>
+    </div>
+
+    <p class="intro">
+      Conform Art. 9 din Directiva UE 2023/970, organizația raportează transparența
+      salarială pe baza a 7 indicatori obligatorii. Dacă diferența medie depășește 5%,
+      se declanșează automat o evaluare comună (Art. 10).
+    </p>
+
+    <div id="pay-gap-categories">
+      <!-- {{pay_gap_cards}} — carduri per categorie cu flag OK/ATENȚIE/SEMNIFICATIV -->
+      <div class="placeholder">Categorii pay gap cu flag-uri</div>
+    </div>
+
+    <div class="conclusion-box" id="pay-gap-conclusion">
+      <!-- {{pay_gap_conclusion}} -->
+    </div>
+  </div>
+
+  <!-- ═══ PAGINA 7: Benchmark (LAYER 2) ═══ -->
+  <div class="page" id="benchmark">
+    <div class="page-header">
+      <span class="page-title">Benchmark salarial vs piață</span>
+      <span class="page-badge layer2">LAYER 2 — Competitivitate</span>
+    </div>
+
+    <p class="intro">
+      Comparația salariilor interne cu piața pe percentilele P25, P50, P75.
+      Surse: INS TEMPO, studii salariale sectoriale, portaluri de recrutare.
+    </p>
+
+    <table class="data-table" id="benchmark-table">
+      <thead>
+        <tr>
+          <th>Poziție</th>
+          <th>Intern</th>
+          <th>P25</th>
+          <th>P50 (Mediană)</th>
+          <th>P75</th>
+          <th>Compa-ratio</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- {{benchmark_rows}} -->
+        <tr class="placeholder-row"><td colspan="7">Date benchmark</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ PAGINA 8: Dezvoltare (LAYER 3) ═══ -->
+  <div class="page" id="dezvoltare">
+    <div class="page-header">
+      <span class="page-title">Dezvoltare organizațională</span>
+      <span class="page-badge layer3">LAYER 3 — Dezvoltare</span>
+    </div>
+
+    <div id="development-content">
+      <!-- {{development_recommendations}} -->
+      <div class="placeholder">Recomandări de dezvoltare pe baza evaluării</div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGINA 9: Anexe ═══ -->
+  <div class="page" id="anexe">
+    <div class="page-header">
+      <span class="page-title">Anexe</span>
+      <span class="page-company">{{companyName}}</span>
+    </div>
+
+    <h3>A. Fișe de post evaluate</h3>
+    <div id="job-descriptions-summary">
+      <!-- {{job_descriptions}} -->
+      <div class="placeholder">Sumar fișe de post</div>
+    </div>
+
+    <h3>B. Date salariale de intrare</h3>
+    <div id="payroll-summary">
+      <!-- {{payroll_summary}} -->
+      <div class="placeholder">Sumar date salariale</div>
+    </div>
+
+    <h3>C. Referințe legale</h3>
+    <ul class="legal-refs">
+      <li>Directiva (UE) 2023/970 privind transparența salarială</li>
+      <li>Art. 4: Criterii de evaluare (Competențe, Efort, Responsabilitate, Condiții)</li>
+      <li>Art. 9: Obligația de raportare a 7 indicatori</li>
+      <li>Art. 10: Evaluarea comună la decalaj ≥ 5%</li>
+      <li>Art. 23: Sancțiuni (amenzi 10.000 — 30.000 RON per angajat)</li>
+      <li>Proiect lege transpunere România (martie 2026)</li>
+    </ul>
+  </div>
+
+  <!-- ═══ PAGINA 10: Validare + Semnătură ═══ -->
+  <div class="page" id="validare">
     <div class="page-header">
       <span class="page-title">Validare și semnătură</span>
       <span class="page-company">{{companyName}}</span>
@@ -92,35 +287,50 @@
 
     <div class="validation-text">
       <p>
-        Subsemnatul/a, în calitate de Director General / Reprezentant legal al organizației,
-        certific că am verificat ierarhia posturilor rezultată din procesul de evaluare și
-        confirm că aceasta reflectă structura organizațională și nivelurile de complexitate ale posturilor.
+        Subsemnatul/a, în calitate de <strong>{{validatorRole}}</strong> al organizației
+        <strong>{{companyName}}</strong> (CUI {{cui}}), certific că am verificat ierarhia
+        posturilor rezultată din procesul de evaluare și confirm că aceasta reflectă
+        structura organizațională și nivelurile de complexitate ale posturilor.
+      </p>
+      <p>
+        Evaluarea a fost realizată prin <strong>{{evaluationType}}</strong>
+        {{#committee}}cu participarea comisiei de evaluare formată din:
+        {{committeeMembers}}.{{/committee}}
       </p>
     </div>
 
     <div class="signature-area">
       <div class="signature-block">
-        <div class="signature-label">Director General / Reprezentant legal</div>
+        <div class="signature-label">{{validatorRole}}</div>
+        <div class="signature-name">{{validatorName}}</div>
+        <div class="signature-canvas" id="signature-electronic">
+          <!-- Semnătură electronică -->
+        </div>
+        <div class="signature-line"></div>
+        <div class="signature-hint">Semnătură electronică</div>
+      </div>
+      <div class="signature-block">
+        <div class="signature-label">Semnătură olografă</div>
+        <div class="signature-space"></div>
         <div class="signature-line"></div>
         <div class="signature-hint">Semnătură și ștampilă</div>
       </div>
       <div class="signature-block">
         <div class="signature-label">Data</div>
+        <div class="signature-date">{{signatureDate}}</div>
         <div class="signature-line"></div>
         <div class="signature-hint">Data semnării</div>
       </div>
     </div>
 
     <div class="footer-note">
-      Procesul verbal al evaluării (jurnalul procesului) este disponibil ca anexă separată.
-      Documentul devine opozabil după semnarea de către reprezentantul legal al organizației.
+      <p>Procesul verbal al evaluării (jurnalul procesului) este disponibil ca anexă separată.</p>
+      <p>Documentul devine opozabil după semnarea de către reprezentantul legal al organizației.</p>
     </div>
   </div>
 
-  <footer class="page-footer">
-    <span>JobGrade.ro — Document opozabil</span>
-    <span>{{date}}</span>
-  </footer>
+  <!-- ═══ FOOTER GLOBAL ═══ -->
+  <!-- Footer-ul pe fiecare pagină e generat prin CSS @page -->
 
 </body>
 </html>
