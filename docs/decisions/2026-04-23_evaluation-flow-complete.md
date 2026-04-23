@@ -192,27 +192,74 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
   - Ton neutru, informativ, fără presiune
 - **Rațional:** motivare naturală spre eficiență, nu restricție. Companiile cu divergențe mari au cea mai mare nevoie de serviciu.
 
-### 3.6 AI mediază — valoare adăugată reală (varianta B)
+### 3.6 AI ca mediator viu — arhitectura cunoașterii transversale
 
-**AI-ul nu e un arbitru rece. E un mediator care CUNOAȘTE fiecare participant.**
+**AI-ul nu e arbitru și nu face sinteză+recomandare. E mediator viu care evoluează împreună cu membrii.**
 
-Profiler-ul acumulează progresiv cunoaștere despre:
-- Cum gândește fiecare membru (pattern-uri de scorare, tendințe, argumente preferate)
-- Unde tinde să supraevalueze sau subevalueze (bias-uri inconștiente)
-- Ce tipuri de argumente îl conving pe fiecare (date, logică, experiență, autoritate)
-- Relațiile între membri (cine influențează pe cine, cine rezistă, cine cedează rapid)
+#### Cum acumulează cunoașterea
 
-**Medierea progresivă a AI-ului:**
-- La **runda 1**: AI observă, colectează voturi, identifică divergențe
-- La **runda 2**: AI sintetizează argumentele, identifică punctele comune, propune compromis argumentat
-- La **runda 3+**: AI folosește cunoașterea acumulată:
-  - "Marinescu tinde să evalueze Educația mai strict — în 3 din 5 fișe anterioare a ales un nivel sub majoritate"
-  - "Stan și Ionescu au ajuns la acord rapid pe fișele tehnice dar divergează pe cele manageriale"
-  - Propune compromis calibrat pe felul în care gândesc participanții
-- Cu cât procesul avansează, cu atât medierea AI devine mai valoroasă
-- **Interesul nostru:** toți cei implicați să vadă valoare reală în medierea AI
+**La Etapa 2 (pre-scorare individuală):**
+- AI lucrează cu FIECARE membru pe fișele din calupul lui
+- Pe fiecare fișă: highlight text relevant per criteriu → matching cu descriptorul literei → discuție → consens AI ↔ membru
+- La finalul pre-scorării, AI a învățat **cum gândește fiecare membru**:
+  - Ce tipuri de responsabilități consideră importante
+  - Unde tinde să fie strict vs generos
+  - Ce argumente îl conving
+  - Ce pattern-uri de scorare repetă
+  - Ce inconsistențe are (scorări diferite pe posturi similare)
 
-**Diferențiator:** niciun competitor nu are mediere care învață din comportamentul evaluatorilor. Hay/Mercer au mediator uman care nu se calibrează. AI-ul nostru se calibrează pe fiecare client, pe fiecare membru, pe fiecare criteriu.
+**La Etapa 3 (discuția de grup):**
+- Se deschide o fișă (pre-scorată de Membru A)
+- AI vine cu **consensul deja obținut cu A** ca punct de plecare
+- Ceilalți membri votează
+- AI **știe deja cum gândește fiecare** din pre-scorările individuale
+- Treaba AI-ului nu e să recomande un scor — ci să **găsească varianta de compromis între tipurile de gândire** ale membrilor
+
+#### Cum mediază
+
+**AI-ul nu impune. Participă la discuție:**
+1. **Înțelege** punctele de vedere ale fiecăruia (le cunoaște deja din pre-scorare)
+2. **Cere clarificări** ("Marinescu, pe fișa Director IT ai acordat E pe Educație pentru cerințe similare — ce e diferit aici?")
+3. **Identifică inconsistențe** transversale ("Stan, pe ultimele 3 fișe manageriale ai acordat D pe Comunicare, dar aici alegi C — ce te determină?")
+4. **Propune abordări** — nu soluții: "Ați putea analiza responsabilitatea X din fișă prin prisma criteriului Y — credeți că necesită E sau D?"
+5. **Evoluează** — cu fiecare interacțiune înțelege mai bine cum gândește fiecare
+
+#### De ce e valoros
+
+- **Traducător între tipuri de gândire:** nu caută media matematică (D+E = D.5), ci varianta care are sens pentru toți, ținând cont de cum gândește fiecare
+- **Memorie transversală:** ține minte toate scorările tuturor membrilor pe toate fișele — niciun mediator uman nu poate face asta
+- **Identifică pattern-uri:** "membrii din producție tind să subevalueze comunicarea pe posturi non-tehnice"
+- **Crește cu procesul:** prima fișă discutată = mediere generică; a 10-a fișă = mediere calibrată fin pe fiecare participant
+- **Interesul nostru:** toți cei implicați să vadă valoare reală în medierea AI — să spună "fără AI asta dura de 3 ori mai mult"
+
+**Diferențiator:** niciun competitor nu are mediere care învață din comportamentul evaluatorilor. Hay/Mercer au mediator uman care nu se calibrează. AI-ul nostru se calibrează pe fiecare client, pe fiecare membru, pe fiecare criteriu, pe fiecare fișă.
+
+### 3.7 Fluxul Kanban per criteriu (pre-scorare + discuție)
+
+Fiecare criteriu din fișa activă trece prin coloane:
+
+```
+DE ANALIZAT → ÎN DISCUȚIE → PROPUNERE → CONSENS
+```
+
+**Faza 1 — DE ANALIZAT (highlight pe text):**
+- Se afișează fișa de post complet
+- AI face highlight pe porțiunea de text relevantă pentru criteriul curent
+- Concomitent afișează descriptorul literei din metodologie
+- Matching vizual: text din fișă ↔ descriptor literă → focus restrâns
+
+**Faza 2 — ÎN DISCUȚIE:**
+- La pre-scorare: AI + membru discută, cer clarificări reciproc
+- La discuția de grup: AI vine cu consensul din pre-scorare, ceilalți votează
+- Divergențe → panoul de argumentare se activează
+
+**Faza 3 — PROPUNERE:**
+- AI propune o abordare (nu o soluție) bazată pe cunoașterea acumulată
+- Membrii aleg: accept / propun altceva cu argumentare
+
+**Faza 4 — CONSENS:**
+- Progress bar 100% → "CONSENS" + litera → read-only
+- Se trece automat la următorul criteriu (highlight se mută)
 
 ### 3.7 Finalizare criteriu → finalizare fișă
 - Criteriu cu consens (100%) → progress bar dispare → "CONSENS" + litera → read-only
