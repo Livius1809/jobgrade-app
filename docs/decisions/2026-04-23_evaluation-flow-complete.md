@@ -148,7 +148,7 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
 - Progress general sus: bară + "X/Y fișe finalizate"
 
 **Dreapta — Fișa activă:**
-- Header: titlu post, inițiator (nume + funcție + departament) în colțul dreapta-sus
+- Header: sus de tot **reprezentantul departamentului** (nume + funcție + departament), dedesubt **titlul fișei de post**
 - Tabel principal: rânduri = membri, coloane = cele 6 criterii (litere A-G)
   - Rând 1 (PRE-SCORARE): litera inițiatorului pe fiecare criteriu — read-only, referință permanentă
   - Rânduri 2-N (VOTURI): litera fiecărui membru — se actualizează live
@@ -277,8 +277,9 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
 **Interfața la Bloc 3 (Varianta D):**
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ FIȘA: Director Producție                                        │
 │ Reprezentant dept: Popescu Ion · Dir. Producție · Producție      │
+├──────────────────────────────────────────────────────────────────┤
+│ FIȘA: Director Producție                                        │
 ├──────────────────────────────────────────────────────────────────┤
 │              │ Educație │ Comunicare │ ... │                     │
 │ ─────────────┼──────────┼────────────┼─────│                     │
