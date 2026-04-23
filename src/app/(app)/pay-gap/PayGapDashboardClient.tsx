@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { PayGapIndicators } from "@/lib/pay-gap"
 
@@ -311,6 +311,11 @@ export default function PayGapDashboardClient({
         </table>
       </div>
 
+      {/* Justificări diferențe — Art. 9 */}
+      {reportId && ind.g_by_grade.some(g => g.mean_base_gap !== null && Math.abs(g.mean_base_gap) >= 5) && (
+        <JustificationsSection reportId={reportId} categories={ind.g_by_grade.filter(g => g.mean_base_gap !== null && Math.abs(g.mean_base_gap!) >= 5)} />
+      )}
+
       {/* Methodology note */}
       <div className="bg-blue-50 rounded-xl p-4 text-xs text-blue-700 space-y-1">
         <p className="font-semibold">Metodologie & conformitate</p>
@@ -324,6 +329,156 @@ export default function PayGapDashboardClient({
           notifică administratorii.
         </p>
       </div>
+    </div>
+  )
+}
+
+// ─── Justificări diferențe salariale (Art. 9) ─────────────────────────
+
+const CRITERIA_LABELS: Record<string, string> = {
+  VECHIME: "Vechime în organizație",
+  PERFORMANTA: "Performanță individuală",
+  COMPETENTE: "Competențe suplimentare",
+  CONDITII_MUNCA: "Condiții de muncă diferite",
+  PIATA_MUNCII: "Cerere/ofertă pe piața muncii",
+  NEGOCIERE_INDIVIDUALA: "Negociere individuală la angajare",
+  ALTELE: "Alte criterii obiective",
+}
+
+function JustificationsSection({ reportId, categories }: {
+  reportId: string
+  categories: Array<{ grade: string; mean_base_gap: number | null }>
+}) {
+  const [justifications, setJustifications] = useState<Array<{
+    category: string; justification: string; criteria: string[]; updatedAt?: string
+  }>>([])
+  const [editing, setEditing] = useState<string | null>(null)
+  const [text, setText] = useState("")
+  const [selectedCriteria, setSelectedCriteria] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/v1/pay-gap/justifications?reportId=${reportId}`)
+      .then(r => r.json())
+      .then(d => setJustifications(d.justifications || []))
+      .catch(() => {})
+  }, [reportId])
+
+  const startEdit = (cat: string) => {
+    const existing = justifications.find(j => j.category === cat)
+    setText(existing?.justification || "")
+    setSelectedCriteria(existing?.criteria || [])
+    setEditing(cat)
+  }
+
+  const save = async () => {
+    if (!editing) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/v1/pay-gap/justifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, category: editing, justification: text, criteria: selectedCriteria }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setJustifications(data.justifications || [])
+        setEditing(null)
+      }
+    } catch {}
+    setSaving(false)
+  }
+
+  const toggleCriterion = (c: string) => {
+    setSelectedCriteria(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
+  }
+
+  return (
+    <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "20px" }}>
+      <h3 className="text-sm font-bold text-amber-800 mb-1">Justificări diferențe salariale (Art. 9)</h3>
+      <p className="text-xs text-amber-700 mb-4">
+        Categoriile cu decalaj ≥ 5% necesită justificare documentată pe criterii obiective.
+      </p>
+
+      {categories.map(cat => {
+        const existing = justifications.find(j => j.category === cat.grade)
+        const isEditing = editing === cat.grade
+
+        return (
+          <div key={cat.grade} className="bg-white rounded-lg border border-amber-200 mb-3" style={{ padding: "14px" }}>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <span className="text-sm font-medium text-slate-800">{cat.grade}</span>
+                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                  {cat.mean_base_gap !== null ? `${Math.abs(cat.mean_base_gap).toFixed(1)}%` : "—"}
+                </span>
+              </div>
+              {!isEditing && (
+                <button onClick={() => startEdit(cat.grade)}
+                  className="text-xs px-3 py-1 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium">
+                  {existing ? "Editează" : "Documentează"}
+                </button>
+              )}
+            </div>
+
+            {existing && !isEditing && (
+              <div className="text-xs text-slate-600 mt-1">
+                <p>{existing.justification}</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {existing.criteria.map(c => (
+                    <span key={c} className="px-2 py-0.5 bg-slate-100 rounded text-slate-500 text-[10px]">
+                      {CRITERIA_LABELS[c] || c}
+                    </span>
+                  ))}
+                </div>
+                {existing.updatedAt && (
+                  <p className="text-[9px] text-slate-400 mt-1">
+                    Actualizat: {new Date(existing.updatedAt).toLocaleDateString("ro-RO")}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {isEditing && (
+              <div className="mt-2 space-y-3">
+                <div>
+                  <label className="text-[10px] text-amber-700 font-bold uppercase">Criterii obiective</label>
+                  <div style={{ height: "4px" }} />
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(CRITERIA_LABELS).map(([k, v]) => (
+                      <button key={k} onClick={() => toggleCriterion(k)}
+                        className={`text-xs px-2 py-1 rounded-lg border transition-colors ${
+                          selectedCriteria.includes(k)
+                            ? "bg-indigo-100 border-indigo-300 text-indigo-700 font-medium"
+                            : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                        }`}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-amber-700 font-bold uppercase">Justificare</label>
+                  <div style={{ height: "4px" }} />
+                  <textarea value={text} onChange={e => setText(e.target.value)} rows={3}
+                    placeholder="Descrieți motivele obiective ale diferenței salariale..."
+                    className="w-full text-sm border-2 border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-200 bg-white" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={save} disabled={saving || !text.trim() || selectedCriteria.length === 0}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-40">
+                    {saving ? "Se salvează..." : "Salvează"}
+                  </button>
+                  <button onClick={() => setEditing(null)}
+                    className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50">
+                    Anulează
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

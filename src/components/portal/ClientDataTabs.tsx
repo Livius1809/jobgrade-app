@@ -1713,7 +1713,11 @@ function ImportStatSalariiPanel({ onComplete }: { onComplete: () => void }) {
           <p className="text-sm font-semibold text-emerald-800">{result.imported} inregistrari importate</p>
         </div>
         <div style={{ height: "16px" }} />
-        <button onClick={onComplete} className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+        <a href="/pay-gap" className="block w-full py-3 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition-colors shadow-sm text-center">
+          Analiza decalaj salarial →
+        </a>
+        <div style={{ height: "8px" }} />
+        <button onClick={onComplete} className="w-full py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">
           Inchide
         </button>
       </>

@@ -391,9 +391,8 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
       })),
     }))
 
-  // Pay gap simplificat din payroll
-  const payGapCategories: MasterPayGapCategory[] = []
-  // TODO: calcul real din payroll grouped by job title × work schedule
+  // Pay gap real din payroll — grupat pe poziție × normă de lucru
+  const payGapCategories: MasterPayGapCategory[] = await buildPayGapCategories(tenantId, payroll)
 
   return {
     isDemo: false,
@@ -493,4 +492,96 @@ async function buildProfilerSection(tenantId: string): Promise<MasterReportData[
   } catch {
     return undefined
   }
+}
+
+/**
+ * Construiește categorii pay gap reale din payroll.
+ * Grupare pe jobCategory (poziție) — compară F vs M pe aceeași poziție.
+ * K-anonymity: minim 2 persoane per gen (altfel suprimă).
+ */
+async function buildPayGapCategories(
+  tenantId: string,
+  payroll: Array<{ jobTitle?: string | null; salary?: number | null; gender?: string | null; name?: string | null }>
+): Promise<MasterPayGapCategory[]> {
+  // Încercăm și din EmployeeSalaryRecord (sursa preferată, are gender explicit)
+  const records = await prisma.employeeSalaryRecord.findMany({
+    where: { tenantId },
+    orderBy: { periodYear: "desc" },
+  })
+
+  type Entry = { gender: string; salary: number; category: string }
+  const entries: Entry[] = []
+
+  if (records.length > 0) {
+    // Sursă 1: EmployeeSalaryRecord (import stat salarii)
+    for (const r of records) {
+      if (r.gender && r.baseSalary > 0) {
+        entries.push({
+          gender: r.gender,
+          salary: r.baseSalary,
+          category: r.jobCategory || r.department || "General",
+        })
+      }
+    }
+  } else if (payroll.length > 0) {
+    // Sursă 2: PayrollEntry (import vechi)
+    for (const p of payroll) {
+      if (p.gender && p.salary && p.salary > 0) {
+        entries.push({
+          gender: p.gender,
+          salary: p.salary,
+          category: p.jobTitle || "General",
+        })
+      }
+    }
+  }
+
+  if (entries.length === 0) return []
+
+  // Grupare pe categorie
+  const groups = new Map<string, { male: number[]; female: number[] }>()
+  for (const e of entries) {
+    const key = e.category
+    if (!groups.has(key)) groups.set(key, { male: [], female: [] })
+    const g = groups.get(key)!
+    if (e.gender === "MALE") g.male.push(e.salary)
+    else if (e.gender === "FEMALE") g.female.push(e.salary)
+  }
+
+  const categories: MasterPayGapCategory[] = []
+  for (const [cat, g] of groups) {
+    // K-anonymity: minim 2 per gen
+    if (g.male.length < 2 || g.female.length < 2) continue
+
+    const avgM = g.male.reduce((a, b) => a + b, 0) / g.male.length
+    const avgF = g.female.reduce((a, b) => a + b, 0) / g.female.length
+    const gapPct = avgM > 0 ? ((avgM - avgF) / avgM) * 100 : 0
+
+    let flag: "OK" | "ATENȚIE" | "SEMNIFICATIV"
+    let justification = "—"
+
+    if (Math.abs(gapPct) < 5) {
+      flag = "OK"
+    } else if (Math.abs(gapPct) < 10) {
+      flag = "ATENȚIE"
+      justification = `Decalaj de ${Math.abs(gapPct).toFixed(1)}% depășește pragul de 5%. Se recomandă verificarea criteriilor obiective (vechime, performanță) și documentarea justificării.`
+    } else {
+      flag = "SEMNIFICATIV"
+      justification = `Decalaj semnificativ de ${Math.abs(gapPct).toFixed(1)}%. Impune evaluare comună conform Art. 10 din Directiva EU 2023/970. Plan de corecție obligatoriu.`
+    }
+
+    categories.push({
+      category: `${cat} · normă întreagă`,
+      women: `${Math.round(avgF).toLocaleString("ro-RO")} RON`,
+      men: `${Math.round(avgM).toLocaleString("ro-RO")} RON`,
+      gap: `${Math.abs(gapPct).toFixed(1)}%`,
+      flag,
+      justification,
+    })
+  }
+
+  return categories.sort((a, b) => {
+    const order = { SEMNIFICATIV: 0, "ATENȚIE": 1, OK: 2 }
+    return (order[a.flag] ?? 2) - (order[b.flag] ?? 2)
+  })
 }
