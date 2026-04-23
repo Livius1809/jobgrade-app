@@ -1,13 +1,17 @@
 import { defineConfig } from "@playwright/test"
 
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3001"
+const isRemote = BASE_URL.startsWith("https")
+
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 30000,
+  timeout: 60000,
   retries: 1,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: BASE_URL,
     headless: true,
     screenshot: "only-on-failure",
+    trace: "on-first-retry",
   },
   projects: [
     {
@@ -15,9 +19,12 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
   ],
-  webServer: {
-    command: "npm run dev",
-    port: 3000,
-    reuseExistingServer: true,
-  },
+  // Web server doar pentru teste locale
+  ...(!isRemote && {
+    webServer: {
+      command: "npm run dev",
+      port: 3001,
+      reuseExistingServer: true,
+    },
+  }),
 })
