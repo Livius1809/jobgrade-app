@@ -97,6 +97,12 @@ ACCES COD SURSĂ (doar COA/COG): Poți interoga codul platformei direct:
   ACTION: CODE_QUERY action="schema-model" modelName="Job"
   ACTION: CODE_QUERY action="list-files" directory="src/app/api/v1"
 Folosește pentru: verificare fezabilitate, existență feature, configurare, răspuns la întrebări tehnice.
+TESTARE API (COA/QAA/QLA/SQA): Poți testa endpoint-urile platformei direct:
+  ACTION: API_TEST method="GET" path="/api/v1/jobs" expectedStatus=200
+  ACTION: API_TEST method="POST" path="/api/v1/sessions" body="{}" expectedStatus=400
+  ACTION: API_TEST method="GET" path="/api/v1/company/maturity" expectedStatus=200 expectedContains="level"
+Rezultatul include: status, timp răspuns, verificări (status/contains/JSON/time), preview body.
+Dacă testul FAIL → creează ticket cu detalii. Folosește pentru E2E testing, smoke tests, verificare după deploy.
 ═══════════════════════════════════════════════════════════════════════════════
 `
   } catch {
@@ -721,13 +727,16 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
 // ─── Action Executor — COG poate executa acțiuni operaționale ────────────────
 
 // Roluri care pot emite acțiuni operaționale
-const OPERATIONAL_ROLES = new Set(["COG", "COA", "COCSA"])
+const OPERATIONAL_ROLES = new Set(["COG", "COA", "COCSA", "QAA", "QLA", "SQA"])
 
 // Pattern: ACTION: SET_CONFIG key=SIGNAL_FILTER_LEVEL value=critical reason="prea multe semnale irelevante"
 const ACTION_PATTERN = /ACTION:\s*SET_CONFIG\s+key=(\S+)\s+value=(\S+)(?:\s+reason="([^"]*)")?/g
 
 // Pattern: ACTION: CODE_QUERY action="capabilities"
 const CODE_QUERY_PATTERN = /ACTION:\s*CODE_QUERY\s+action="([^"]+)"(?:\s+(\w+)="([^"]*)")?(?:\s+(\w+)="([^"]*)")?/g
+
+// Pattern: ACTION: API_TEST method="GET" path="/api/v1/jobs" expectedStatus=200
+const API_TEST_PATTERN = /ACTION:\s*API_TEST\s+method="([^"]+)"\s+path="([^"]+)"(?:\s+body="([^"]*)")?(?:\s+expectedStatus=(\d+))?(?:\s+expectedContains="([^"]*)")?/g
 
 // Pattern: ACTION: NOTIFY_OWNER title="Titlul" body="Mesajul complet"
 const NOTIFY_PATTERN = /ACTION:\s*NOTIFY_OWNER\s+title="([^"]+)"\s+body="([^"]+)"/g
@@ -854,7 +863,70 @@ async function executeOperationalActions(result: string, agentRole: string): Pro
     }
   }
 
-  // CODE_QUERY actions (doar COA/COG)
+  // API_TEST actions (QAA/QLA/SQA/COA/COG)
+  if (OPERATIONAL_ROLES.has(agentRole)) {
+    let apiTestMatch: RegExpExecArray | null
+    while ((apiTestMatch = API_TEST_PATTERN.exec(result)) !== null) {
+      const [, method, testPath, body, expectedStatus, expectedContains] = apiTestMatch
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        const res = await fetch(`${baseUrl}/api/v1/coa/api-test`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-internal-key": process.env.INTERNAL_API_KEY || "",
+          },
+          body: JSON.stringify({
+            method,
+            path: testPath,
+            body: body ? JSON.parse(body) : undefined,
+            expectedStatus: expectedStatus ? Number(expectedStatus) : undefined,
+            expectedContains,
+          }),
+        })
+
+        const data = await res.json()
+        const summary = `${data.test} ${method} ${testPath} → ${data.status} (${data.durationMs}ms)`
+
+        if (data.test === "FAIL") {
+          // Creează ticket bug automat
+          await (prisma as any).agentTask.create({
+            data: {
+              businessId: "biz_jobgrade",
+              taskType: "REVIEW",
+              title: `[BUG] API test FAIL: ${method} ${testPath}`,
+              description: `Test automat eșuat:\n${JSON.stringify(data.checks, null, 2)}\nPreview: ${data.responsePreview?.slice(0, 200)}`,
+              assignedTo: "COA",
+              assignedBy: agentRole,
+              priority: "HIGH",
+              status: "ASSIGNED",
+              tags: ["bug", "api-test", "auto-detected"],
+            },
+          }).catch(() => {})
+          actions.push(`[API_TEST] ${summary} → TICKET CREAT`)
+        } else {
+          actions.push(`[API_TEST] ${summary}`)
+        }
+
+        // Salvăm rezultatul în KB
+        await (prisma as any).kBEntry.create({
+          data: {
+            agentRole,
+            kbType: "PERMANENT",
+            content: `[API_TEST] ${summary}\nChecks: ${JSON.stringify(data.checks)}`,
+            tags: ["api-test", data.test.toLowerCase(), testPath.replace(/\//g, "-")],
+            confidence: 1,
+            status: "PERMANENT",
+            source: "SELF_INTERVIEW",
+          },
+        }).catch(() => {})
+      } catch (e: any) {
+        actions.push(`[API_TEST_FAILED] ${method} ${testPath}: ${e.message}`)
+      }
+    }
+  }
+
+  // CODE_QUERY actions (COA/COG)
   if (OPERATIONAL_ROLES.has(agentRole)) {
     let cqMatch: RegExpExecArray | null
     while ((cqMatch = CODE_QUERY_PATTERN.exec(result)) !== null) {
