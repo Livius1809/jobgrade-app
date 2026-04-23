@@ -92,14 +92,25 @@ const PRIORITY_DEADLINES: Record<TaskPriority, number> = {
 function inferTaskType(role: string, description: string): TaskType {
   const desc = description.toLowerCase()
 
-  // Override-uri contextuale (din conținutul descrierii)
-  if (desc.includes("cercetare") || desc.includes("research") || desc.includes("documentare")) return "KB_RESEARCH"
-  if (desc.includes("validare") || desc.includes("verificare") || desc.includes("audit")) return "KB_VALIDATION"
-  if (desc.includes("analiză") || desc.includes("analiz") || desc.includes("raport")) return "DATA_ANALYSIS"
-  if (desc.includes("creare") || desc.includes("redactare") || desc.includes("scrie")) return "CONTENT_CREATION"
-  if (desc.includes("review") || desc.includes("evaluare")) return "REVIEW"
-  if (desc.includes("investigare") || desc.includes("incident") || desc.includes("diagnoz")) return "INVESTIGATION"
-  if (desc.includes("contact") || desc.includes("outreach") || desc.includes("email")) return "OUTREACH"
+  // ═══ PRINCIPIU: ȘTIU vs FAC ═══
+  // KB_RESEARCH/KB_VALIDATION = "ce știi?" → KB poate rezolva singur
+  // Restul = "fă ceva" → KB e context, nu răspuns
+  //
+  // Atenție: "verificare", "audit", "validare", "raport" sunt ACȚIUNI,
+  // nu cereri de cunoaștere. Agentul trebuie să FACĂ, nu să RECITE.
+
+  // Acțiuni concrete (FAC) — prioritare
+  if (desc.includes("scrie") || desc.includes("redactare") || desc.includes("creare conținut") || desc.includes("generare")) return "CONTENT_CREATION"
+  if (desc.includes("testare") || desc.includes("test ") || desc.includes("smoke") || desc.includes("e2e")) return "REVIEW"
+  if (desc.includes("verifică") || desc.includes("verificare") || desc.includes("audit") || desc.includes("review")) return "REVIEW"
+  if (desc.includes("investigare") || desc.includes("incident") || desc.includes("diagnoz") || desc.includes("cercetare cauze")) return "INVESTIGATION"
+  if (desc.includes("contact") || desc.includes("outreach") || desc.includes("email") || desc.includes("trimite")) return "OUTREACH"
+  if (desc.includes("execut") || desc.includes("implementare") || desc.includes("configurare") || desc.includes("setup")) return "PROCESS_EXECUTION"
+  if (desc.includes("raport") || desc.includes("analiză") || desc.includes("analiz") || desc.includes("calcul")) return "DATA_ANALYSIS"
+
+  // Cunoaștere (ȘTIU) — doar cereri explicite de informație
+  if (desc.includes("ce știm despre") || desc.includes("documentare") || desc.includes("research") || desc.includes("adună informații")) return "KB_RESEARCH"
+  if (desc.includes("validare kb") || desc.includes("validare cunoștin") || desc.includes("e corect ce știm")) return "KB_VALIDATION"
 
   // Default pe rol
   return ROLE_DEFAULT_TASK_TYPE[role] ?? "PROCESS_EXECUTION"
