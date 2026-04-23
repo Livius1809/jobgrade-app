@@ -85,9 +85,30 @@
 
 **Ritm acum: WARNING** (obiective sub target + vital signs WEAKENED, dar nu criză)
 
+## Obiective organism cascadate (continuare sesiune)
+
+### COG a executat real — 5 obiective STRATEGICE definite
+Task forțat prin /api/v1/agents/execute-task, COG a produs plan concret (nu recitat).
+Obiectivul principal: **Lansare platformă 2 pachete B2B + 1 pachet B2C, Q2 2026**.
+
+### Cascadare automată implementată
+- **DOWN**: obiectiv STRATEGIC creat → auto-cascade TACTICAL + OPERATIONAL (34 sub-obiective)
+- **UP**: rollupAllObjectives() în cron — media currentValue urcă automat de la copii la părinte
+- 39 obiective active (5 STRATEGIC + 25 TACTICAL + 9 OPERATIONAL)
+
+### Cleanup task-uri orfane
+- 95 task-uri legate de obiective noi
+- 147 task-uri orfane CANCELLED (create din inerție)
+- 185 task-uri ASSIGNED rămase (toate cu obiectiv!)
+
+### Ritm CRITICAL → WARNING
+- Cauze rezolvate: vital signs stale, zero obiective, regulă agresivă
+- 4 obiective → 39 obiective (cascadate)
+- Rollup automat va actualiza currentValue la fiecare ciclu cron
+
 ## De continuat
 1. **Adobe design** — iconuri Illustrator + template RDA Dreamweaver (Owner)
-2. **Verificare 19/19 PASS** — rulare test după deploy fix master report
-3. **Monitorizare organism** — 322 task-uri ASSIGNED, procesare cu review gate
-4. **Pachet 2 restant** — Salary Grade Manager UI dedicat
-5. **Portal/Pachet 2** — continuare flux client
+2. **Verificare 19/19 PASS** — rulare test după deploy
+3. **Monitorizare organism** — primele cicluri cu cascade + rollup + review gate
+4. **Salary Grade Manager UI** — lipsă din Pachet 2
+5. **B2C MVP** — obiectiv COG, currentValue 0% → de implementat
