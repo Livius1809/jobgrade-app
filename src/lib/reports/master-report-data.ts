@@ -392,7 +392,12 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
     }))
 
   // Pay gap real din payroll — grupat pe poziție × normă de lucru
-  const payGapCategories: MasterPayGapCategory[] = await buildPayGapCategories(tenantId, payroll)
+  let payGapCategories: MasterPayGapCategory[] = []
+  try {
+    payGapCategories = await buildPayGapCategories(tenantId, payroll)
+  } catch (e) {
+    console.error("[master-report] buildPayGapCategories failed:", (e as Error).message?.slice(0, 100))
+  }
 
   return {
     isDemo: false,

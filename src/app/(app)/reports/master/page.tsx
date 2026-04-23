@@ -14,11 +14,19 @@ export default async function MasterReportPage() {
   const session = await auth()
   if (!session?.user?.tenantId) redirect("/login")
 
-  const data = await getMasterReportData(session.user.tenantId)
+  let data
+  let isDemo = false
+  try {
+    data = await getMasterReportData(session.user.tenantId)
+  } catch (e) {
+    console.error("[master-report] getRealData failed, falling back to demo:", (e as Error).message?.slice(0, 100))
+    data = await getMasterReportData("demo")
+    isDemo = true
+  }
 
   return (
     <div className="flex justify-center px-6">
-      <MasterReportWrapper data={data} initialTheme="sobru" isDemo={false} />
+      <MasterReportWrapper data={data} initialTheme="sobru" isDemo={isDemo} />
     </div>
   )
 }
