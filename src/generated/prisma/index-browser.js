@@ -356,6 +356,7 @@ exports.Prisma.VoteScalarFieldEnum = {
   criterionId: 'criterionId',
   userId: 'userId',
   subfactorId: 'subfactorId',
+  round: 'round',
   createdAt: 'createdAt'
 };
 
@@ -367,6 +368,32 @@ exports.Prisma.FacilitatorDecisionScalarFieldEnum = {
   facilitatorId: 'facilitatorId',
   subfactorId: 'subfactorId',
   rationale: 'rationale',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.DiscussionCommentScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  jobId: 'jobId',
+  criterionId: 'criterionId',
+  userId: 'userId',
+  round: 'round',
+  content: 'content',
+  isAi: 'isAi',
+  parentId: 'parentId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.MemberValidationScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  jobId: 'jobId',
+  userId: 'userId',
+  criterionId: 'criterionId',
+  preScore: 'preScore',
+  consensus: 'consensus',
+  accepted: 'accepted',
+  acceptedAt: 'acceptedAt',
   createdAt: 'createdAt'
 };
 
@@ -602,7 +629,13 @@ exports.Prisma.NotificationScalarFieldEnum = {
   body: 'body',
   link: 'link',
   read: 'read',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  sourceRole: 'sourceRole',
+  requestKind: 'requestKind',
+  requestData: 'requestData',
+  responseKind: 'responseKind',
+  responseData: 'responseData',
+  respondedAt: 'respondedAt'
 };
 
 exports.Prisma.KBEntryScalarFieldEnum = {
@@ -1872,7 +1905,29 @@ exports.NotificationType = exports.$Enums.NotificationType = {
   EMPLOYEE_REQUEST_OVERDUE: 'EMPLOYEE_REQUEST_OVERDUE',
   PAY_GAP_THRESHOLD_EXCEEDED: 'PAY_GAP_THRESHOLD_EXCEEDED',
   COG_MESSAGE: 'COG_MESSAGE',
-  AGENT_MESSAGE: 'AGENT_MESSAGE'
+  AGENT_MESSAGE: 'AGENT_MESSAGE',
+  OWNER_REQUEST: 'OWNER_REQUEST'
+};
+
+exports.OwnerRequestKind = exports.$Enums.OwnerRequestKind = {
+  INFORMATION: 'INFORMATION',
+  ACCESS: 'ACCESS',
+  DECISION: 'DECISION',
+  ACTION: 'ACTION',
+  VALIDATION: 'VALIDATION'
+};
+
+exports.OwnerResponseKind = exports.$Enums.OwnerResponseKind = {
+  INFO_PROVIDED: 'INFO_PROVIDED',
+  ACCESS_GRANTED: 'ACCESS_GRANTED',
+  ACCESS_DENIED: 'ACCESS_DENIED',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  ADJUSTED: 'ADJUSTED',
+  ACTION_DONE: 'ACTION_DONE',
+  VALIDATED: 'VALIDATED',
+  DELEGATED: 'DELEGATED',
+  CLARIFICATION: 'CLARIFICATION'
 };
 
 exports.KBType = exports.$Enums.KBType = {
@@ -2461,6 +2516,8 @@ exports.Prisma.ModelName = {
   ConsensusStatus: 'ConsensusStatus',
   Vote: 'Vote',
   FacilitatorDecision: 'FacilitatorDecision',
+  DiscussionComment: 'DiscussionComment',
+  MemberValidation: 'MemberValidation',
   JobResult: 'JobResult',
   SalaryGrade: 'SalaryGrade',
   SalaryStep: 'SalaryStep',

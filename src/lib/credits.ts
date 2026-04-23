@@ -16,6 +16,7 @@ export const CREDIT_COSTS = {
   EXPORT_XML: 5,
   PAY_GAP_REPORT: 3,
   RECALIBRATION_ROUND: 2,
+  AI_MEDIATION_ROUND: 2,
 } as const
 
 export async function getBalance(tenantId: string): Promise<number> {

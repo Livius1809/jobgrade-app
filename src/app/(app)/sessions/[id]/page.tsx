@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { formatDateTime } from "@/lib/utils"
 import SessionActions from "@/components/sessions/SessionActions"
+import AdminProgressDashboard from "@/components/sessions/AdminProgressDashboard"
 
 export const metadata = { title: "Sesiune de evaluare" }
 
@@ -110,12 +111,28 @@ export default async function SessionDetailPage({
           </div>
         </div>
 
-        <SessionActions
-          sessionId={id}
-          status={evalSession.status}
-          isParticipant={isParticipant}
-          myCompletedAt={myParticipant?.completedAt ?? null}
-        />
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/sessions/${id}/journal`}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+          >
+            Jurnal proces
+          </Link>
+          {isParticipant && (
+            <Link
+              href={`/sessions/${id}/validate`}
+              className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+            >
+              Validare post-consens
+            </Link>
+          )}
+          <SessionActions
+            sessionId={id}
+            status={evalSession.status}
+            isParticipant={isParticipant}
+            myCompletedAt={myParticipant?.completedAt ?? null}
+          />
+        </div>
       </div>
 
       {/* Stats */}
@@ -230,14 +247,24 @@ export default async function SessionDetailPage({
                         </Link>
                       )}
                       {(evalSession.status === "COMPLETED" ||
+                        evalSession.status === "IN_PROGRESS" ||
+                        evalSession.status === "VOTING" ||
                         session!.user.role === "COMPANY_ADMIN" ||
                         session!.user.role === "OWNER") && (
-                        <Link
-                          href={`/sessions/${id}/consensus/${sj.id}`}
-                          className="text-sm text-purple-600 hover:underline ml-3"
-                        >
-                          Consens
-                        </Link>
+                        <>
+                          <Link
+                            href={`/sessions/${id}/consensus/${sj.id}`}
+                            className="text-sm text-purple-600 hover:underline ml-3"
+                          >
+                            Consens
+                          </Link>
+                          <Link
+                            href={`/sessions/${id}/discussion/${sj.id}`}
+                            className="text-sm text-indigo-600 hover:underline ml-3"
+                          >
+                            Discuție
+                          </Link>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -276,6 +303,14 @@ export default async function SessionDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Admin progress dashboard */}
+      {(session!.user.role === "COMPANY_ADMIN" || session!.user.role === "OWNER" || session!.user.role === "FACILITATOR") && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Progres detaliat per membru</h2>
+          <AdminProgressDashboard sessionId={id} />
+        </div>
+      )}
     </div>
   )
 }

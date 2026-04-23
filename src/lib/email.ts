@@ -136,6 +136,156 @@ export async function sendSessionInviteEmail({
   })
 }
 
+// ── Committee onboarding email ──────────────────────────────────────
+
+export async function sendCommitteeOnboardingEmail({
+  to,
+  firstName,
+  sessionName,
+  deadline,
+  sessionId,
+  customMessage,
+  jobCount,
+}: {
+  to: string
+  firstName: string
+  sessionName: string
+  deadline?: Date
+  sessionId: string
+  customMessage?: string
+  jobCount: number
+}) {
+  const sessionUrl = `${APP_URL}/sessions/${sessionId}`
+  const deadlineStr = deadline
+    ? deadline.toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" })
+    : null
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ro">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
+  <div style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+    <div style="background:#4F46E5;padding:28px 32px;">
+      <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">JobGrade</h1>
+      <p style="margin:4px 0 0;color:#C7D2FE;font-size:12px;">Evaluare și ierarhizare posturi</p>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="margin:0 0 12px;font-size:18px;color:#111827;">Bine ai venit în comisia de evaluare, ${firstName}!</h2>
+
+      ${customMessage ? `<p style="color:#4B5563;font-size:14px;line-height:1.6;margin:0 0 16px;">${customMessage}</p>` : ""}
+
+      <p style="color:#4B5563;font-size:14px;line-height:1.6;margin:0 0 16px;">
+        Faceți parte din comisia de evaluare pentru sesiunea <strong>„${sessionName}"</strong>.
+        Veți evalua <strong>${jobCount} fișe de post</strong> pe cele 6 criterii de scorare.
+      </p>
+
+      <div style="background:#F0F0FF;border-radius:8px;padding:16px;margin:0 0 20px;">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#4F46E5;">Ce urmează:</p>
+        <ol style="margin:0;padding-left:20px;color:#4B5563;font-size:13px;line-height:1.8;">
+          <li>Conectați-vă la platformă folosind link-ul de mai jos</li>
+          <li>Evaluați individual fișele de post alocate pe fiecare criteriu</li>
+          <li>Participați la discuția de grup pentru atingerea consensului</li>
+          <li>Validați rezultatul final al procesului</li>
+        </ol>
+      </div>
+
+      <div style="background:#FFF7ED;border-radius:8px;padding:16px;margin:0 0 20px;">
+        <p style="margin:0;font-size:12px;color:#92400E;line-height:1.6;">
+          <strong>Principii de consens:</strong> Schimbați opinia doar pe bază de logică.
+          Nu evitați conflictul constructiv. Fiecare criteriu trebuie agreat de toți membrii.
+          Diversitatea opiniilor este sănătoasă și naturală.
+        </p>
+      </div>
+
+      ${deadlineStr
+        ? `<p style="color:#DC2626;font-size:14px;font-weight:600;margin:0 0 20px;">Termen limită: ${deadlineStr}</p>`
+        : ""}
+
+      <a href="${sessionUrl}"
+         style="display:inline-block;background:#4F46E5;color:#ffffff;text-decoration:none;
+                padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;">
+        Accesează sesiunea de evaluare →
+      </a>
+    </div>
+    <div style="padding:16px 32px;background:#F9FAFB;border-top:1px solid #E5E7EB;">
+      <p style="margin:0;color:#9CA3AF;font-size:11px;">
+        Acest email a fost trimis automat de platforma JobGrade.ro.
+        Nu răspundeți la acest mesaj — pentru asistență contactați administratorul sesiunii.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Invitație comisie evaluare: ${sessionName}`,
+    html,
+  })
+}
+
+// ── Evaluation reminder ─────────────────────────────────────────────
+
+export async function sendEvaluationReminderEmail({
+  to,
+  firstName,
+  sessionName,
+  deadline,
+  sessionId,
+  pendingJobs,
+}: {
+  to: string
+  firstName: string
+  sessionName: string
+  deadline?: Date
+  sessionId: string
+  pendingJobs: number
+}) {
+  const sessionUrl = `${APP_URL}/sessions/${sessionId}`
+  const deadlineStr = deadline
+    ? deadline.toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" })
+    : null
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ro">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
+  <div style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+    <div style="background:#DC2626;padding:20px 32px;">
+      <h1 style="margin:0;color:#ffffff;font-size:18px;font-weight:700;">Memento — Evaluare în curs</h1>
+    </div>
+    <div style="padding:32px;">
+      <p style="color:#4B5563;font-size:14px;line-height:1.6;margin:0 0 16px;">
+        ${firstName}, aveți <strong>${pendingJobs} ${pendingJobs === 1 ? "fișă de post" : "fișe de post"}</strong>
+        de evaluat în sesiunea <strong>„${sessionName}"</strong>.
+      </p>
+      ${deadlineStr
+        ? `<p style="color:#DC2626;font-size:14px;font-weight:600;margin:0 0 20px;">Termen limită: ${deadlineStr}</p>`
+        : ""}
+      <a href="${sessionUrl}"
+         style="display:inline-block;background:#DC2626;color:#ffffff;text-decoration:none;
+                padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
+        Continuă evaluarea →
+      </a>
+    </div>
+    <div style="padding:12px 32px;background:#F9FAFB;border-top:1px solid #E5E7EB;">
+      <p style="margin:0;color:#9CA3AF;font-size:10px;">JobGrade.ro — Memento automat</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Memento: ${pendingJobs} evaluări rămase — ${sessionName}`,
+    html,
+  })
+}
+
 // ── Password reset ──────────────────────────────────────────────────
 export async function sendPasswordResetEmail({
   to,

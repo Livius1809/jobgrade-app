@@ -1808,3 +1808,136 @@ async function getFinalLettersForJob(
 
   return letters
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// POST-CONSENSUS VALIDATION (Bloc 4)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Inițializează recordurile de validare post-consens pentru toți participanții.
+ * Compară pre-scorările individuale cu rezultatul consensului.
+ * Creează MemberValidation doar unde scorurile diferă.
+ */
+export async function initPostConsensusValidation(
+  sessionId: string,
+  prisma: any
+) {
+  const participants = await prisma.sessionParticipant.findMany({
+    where: { sessionId },
+    select: { userId: true },
+  })
+
+  const sessionJobs = await prisma.sessionJob.findMany({
+    where: { sessionId },
+    include: {
+      job: { select: { id: true } },
+    },
+  })
+
+  const criteria = await prisma.criterion.findMany({
+    where: { isActive: true },
+    select: { id: true },
+  })
+
+  // Get all pre-scores
+  const evaluations = await prisma.evaluation.findMany({
+    where: { sessionId },
+    include: {
+      assignment: { select: { userId: true, sessionJobId: true } },
+      subfactor: { select: { code: true } },
+    },
+  })
+
+  // Map: userId -> sessionJobId -> criterionId -> code
+  const preScoreMap: Record<string, Record<string, Record<string, string>>> = {}
+  for (const ev of evaluations) {
+    const uid = ev.assignment.userId
+    const sjId = ev.assignment.sessionJobId
+    if (!preScoreMap[uid]) preScoreMap[uid] = {}
+    if (!preScoreMap[uid][sjId]) preScoreMap[uid][sjId] = {}
+    preScoreMap[uid][sjId][ev.criterionId] = ev.subfactor.code
+  }
+
+  // Get consensus results
+  const consensusStatuses = await prisma.consensusStatus.findMany({
+    where: { sessionId },
+    include: { finalSubfactor: { select: { code: true } } },
+  })
+  const facilitatorDecisions = await prisma.facilitatorDecision.findMany({
+    where: { sessionId },
+    include: { subfactor: { select: { code: true } } },
+  })
+  const votes = await prisma.vote.findMany({
+    where: { sessionId },
+    include: { subfactor: { select: { code: true } } },
+  })
+
+  // Build consensus: jobId -> criterionId -> code
+  const consensusMap: Record<string, Record<string, string>> = {}
+  for (const cs of consensusStatuses) {
+    if (cs.finalSubfactor) {
+      if (!consensusMap[cs.jobId]) consensusMap[cs.jobId] = {}
+      consensusMap[cs.jobId][cs.criterionId] = cs.finalSubfactor.code
+    }
+  }
+  for (const fd of facilitatorDecisions) {
+    if (!consensusMap[fd.jobId]) consensusMap[fd.jobId] = {}
+    if (!consensusMap[fd.jobId][fd.criterionId]) {
+      consensusMap[fd.jobId][fd.criterionId] = fd.subfactor.code
+    }
+  }
+  // Vote mode fallback
+  const voteCounts: Record<string, Record<string, Record<string, number>>> = {}
+  for (const v of votes) {
+    if (!voteCounts[v.jobId]) voteCounts[v.jobId] = {}
+    if (!voteCounts[v.jobId][v.criterionId]) voteCounts[v.jobId][v.criterionId] = {}
+    const c = v.subfactor.code
+    voteCounts[v.jobId][v.criterionId][c] = (voteCounts[v.jobId][v.criterionId][c] || 0) + 1
+  }
+  for (const [jId, critMap] of Object.entries(voteCounts)) {
+    for (const [cId, cc] of Object.entries(critMap as Record<string, Record<string, number>>)) {
+      if (!consensusMap[jId]?.[cId]) {
+        const mode = Object.entries(cc).sort((a, b) => b[1] - a[1])[0]?.[0]
+        if (mode) {
+          if (!consensusMap[jId]) consensusMap[jId] = {}
+          consensusMap[jId][cId] = mode
+        }
+      }
+    }
+  }
+
+  // Create MemberValidation records where pre-score differs from consensus
+  const creates: any[] = []
+  for (const p of participants) {
+    for (const sj of sessionJobs) {
+      const userScores = preScoreMap[p.userId]?.[sj.id] || {}
+      const consScores = consensusMap[sj.job.id] || {}
+
+      for (const crit of criteria) {
+        const pre = userScores[crit.id]
+        const cons = consScores[crit.id]
+        if (pre && cons && pre !== cons) {
+          creates.push({
+            sessionId,
+            jobId: sj.job.id,
+            userId: p.userId,
+            criterionId: crit.id,
+            preScore: pre,
+            consensus: cons,
+            accepted: false,
+          })
+        }
+      }
+    }
+  }
+
+  if (creates.length > 0) {
+    // Use skipDuplicates to avoid conflicts on re-run
+    await prisma.memberValidation.createMany({
+      data: creates,
+      skipDuplicates: true,
+    })
+  }
+
+  return { created: creates.length, participants: participants.length }
+}

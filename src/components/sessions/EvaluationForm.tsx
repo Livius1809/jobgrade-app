@@ -50,6 +50,11 @@ export default function EvaluationForm({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [savedAt, setSavedAt] = useState<Date | null>(null)
+  const [showCompletionCard, setShowCompletionCard] = useState(false)
+  const [aiSuggestions, setAiSuggestions] = useState<
+    Record<string, { code: string; subfactorId: string | null; reasoning: string; highlights: string[] }>
+  >({})
+  const [aiLoading, setAiLoading] = useState<string | null>(null)
 
   const totalPoints = criteria.reduce((sum, crit) => {
     const subfactorId = scores[crit.id]
@@ -60,6 +65,36 @@ export default function EvaluationForm({
 
   const completedCriteria = criteria.filter((c) => scores[c.id]).length
   const allCompleted = completedCriteria === criteria.length
+
+  async function requestAiSuggestion(criterionId: string) {
+    setAiLoading(criterionId)
+    try {
+      const res = await fetch(
+        `/api/v1/sessions/${sessionId}/jobs/${sessionJobId}/ai-suggest`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ criterionId }),
+        }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setAiSuggestions((prev) => ({
+          ...prev,
+          [criterionId]: {
+            code: data.suggestedCode,
+            subfactorId: data.suggestedSubfactorId,
+            reasoning: data.reasoning,
+            highlights: data.highlights || [],
+          },
+        }))
+      }
+    } catch {
+      // silent
+    } finally {
+      setAiLoading(null)
+    }
+  }
 
   async function saveDraft() {
     setSaving(true)
@@ -123,13 +158,113 @@ export default function EvaluationForm({
         setError(json.message || "Eroare la trimitere.")
         setSubmitting(false)
       } else {
-        router.push(`/sessions/${sessionId}`)
-        router.refresh()
+        setShowCompletionCard(true)
+        setSubmitting(false)
       }
     } catch {
       setError("Eroare la trimitere.")
       setSubmitting(false)
     }
+  }
+
+  if (showCompletionCard) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+          <div className="text-center mb-4">
+            <div className="text-3xl mb-2">✅</div>
+            <h2 className="text-lg font-bold text-green-800">Evaluarea a fost trimisă</h2>
+            <p className="text-sm text-green-700 mt-1">
+              {jobTitle} — {completedCriteria} criterii evaluate
+            </p>
+          </div>
+        </div>
+
+        {/* Ce ai făcut */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">Ce ați realizat</h3>
+          <div className="text-sm text-gray-600 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-green-500">✓</span>
+              <span>{completedCriteria} criterii evaluate pe fișa de post „{jobTitle}"</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-500">✓</span>
+              <span>Tabel sumar cu literele alese:</span>
+            </div>
+            <div className="flex flex-wrap gap-2 ml-6">
+              {criteria.map((crit) => {
+                const sfId = scores[crit.id]
+                const sf = crit.subfactors.find((s) => s.id === sfId)
+                return (
+                  <span key={crit.id} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    {crit.name}: <span className="font-bold">{sf?.code ?? "—"}</span>
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Ce urmează */}
+        <div className="bg-blue-50 rounded-xl border border-blue-200 p-5 space-y-3">
+          <h3 className="text-sm font-bold text-blue-900">Ce urmează</h3>
+          <div className="text-sm text-blue-800 space-y-1.5">
+            <div className="flex items-start gap-2">
+              <span className="text-blue-500 shrink-0">1.</span>
+              <span><strong>Discuția de grup</strong> — toți membrii comisiei vor evalua toate fișele de post.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-blue-500 shrink-0">2.</span>
+              <span>Se pornește de la <strong>varianta dumneavoastră</strong> pe fișele din calupul alocat.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-blue-500 shrink-0">3.</span>
+              <span>AI-ul mediator identifică divergențele și facilitează atingerea <strong>consensului</strong>.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Principii consens */}
+        <div className="bg-amber-50 rounded-xl border border-amber-200 p-5 space-y-2">
+          <h3 className="text-sm font-bold text-amber-900">Cum contribuiți la atingerea consensului</h3>
+          <ul className="text-xs text-amber-800 space-y-1.5 list-none">
+            <li className="flex items-start gap-2">
+              <span className="text-amber-500 shrink-0">•</span>
+              <span>Susțineți-vă poziția inițială cu argumente raportate la <strong>criteriile de scorare</strong></span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-amber-500 shrink-0">•</span>
+              <span>Acceptați argumente valide de la ceilalți membri</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-amber-500 shrink-0">•</span>
+              <span>Consens ≠ vot — e un proces de acord bazat pe <strong>fapte și logică</strong></span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-amber-500 shrink-0">•</span>
+              <span>Schimbați opinia doar pe bază de logică, nu pentru a evita conflictul</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-amber-500 shrink-0">•</span>
+              <span>Diversitatea opiniilor este sănătoasă și naturală</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="flex justify-center">
+          <button
+            onClick={() => {
+              router.push(`/sessions/${sessionId}`)
+              router.refresh()
+            }}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Înapoi la sesiune
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -195,14 +330,70 @@ export default function EvaluationForm({
                   </p>
                 )}
               </div>
-              {selectedSf && (
-                <div className="text-right shrink-0 ml-4">
+              <div className="flex items-center gap-2 shrink-0 ml-4">
+                {selectedSf && (
                   <div className="text-lg font-bold text-indigo-dark">
                     {selectedSf.code}
                   </div>
-                </div>
-              )}
+                )}
+                {!isSubmitted && (
+                  <button
+                    type="button"
+                    onClick={() => requestAiSuggestion(crit.id)}
+                    disabled={aiLoading === crit.id}
+                    className="px-2.5 py-1 bg-purple-100 text-purple-700 text-xs rounded-lg hover:bg-purple-200 disabled:opacity-50 transition-colors flex items-center gap-1"
+                  >
+                    {aiLoading === crit.id ? (
+                      <>
+                        <span className="animate-spin w-3 h-3 border border-purple-600 border-t-transparent rounded-full" />
+                        AI...
+                      </>
+                    ) : (
+                      "Sugestie AI"
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* AI Suggestion card */}
+            {aiSuggestions[crit.id] && (
+              <div className="mb-3 ml-8 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-purple-700 flex items-center gap-1">
+                    <span className="bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded text-[10px]">AI</span>
+                    Sugestie: {aiSuggestions[crit.id].code}
+                  </span>
+                  {!isSubmitted && aiSuggestions[crit.id].subfactorId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sfId = aiSuggestions[crit.id].subfactorId
+                        if (sfId) {
+                          setScores((prev) => ({ ...prev, [crit.id]: sfId }))
+                        }
+                      }}
+                      className="px-2 py-1 bg-purple-600 text-white text-[10px] rounded hover:bg-purple-700 transition-colors"
+                    >
+                      Adoptă
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-purple-800 leading-relaxed">
+                  {aiSuggestions[crit.id].reasoning}
+                </p>
+                {aiSuggestions[crit.id].highlights.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="text-[10px] text-purple-600 font-medium">Fragmente relevante din fișa postului:</div>
+                    {aiSuggestions[crit.id].highlights.map((h, i) => (
+                      <div key={i} className="text-[10px] text-purple-700 bg-purple-100 rounded px-2 py-1 italic">
+                        &ldquo;{h}&rdquo;
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Subfactors */}
             <div className="space-y-2">

@@ -648,6 +648,18 @@ interface TeamMember {
   lastName: string
   role: string
   email: string
+  jobTitle?: string
+  departmentId?: string
+  departmentName?: string
+  phone?: string
+}
+
+interface NewMemberForm {
+  firstName: string
+  lastName: string
+  email: string
+  jobTitle: string
+  phone: string
 }
 
 function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
@@ -662,6 +674,12 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [loadingTeam, setLoadingTeam] = useState(false)
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [newMember, setNewMember] = useState<NewMemberForm>({ firstName: "", lastName: "", email: "", jobTitle: "", phone: "" })
+  const [addingMember, setAddingMember] = useState(false)
+  const [inviteMessage, setInviteMessage] = useState("Sunteți invitat(ă) să participați la procesul de evaluare și ierarhizare a posturilor din cadrul companiei. Veți primi acces la platformă unde puteți evalua individual fișele de post alocate pe cele 6 criterii de scorare.")
+  const [showInvitePreview, setShowInvitePreview] = useState(false)
+  const [confirmInitiate, setConfirmInitiate] = useState(false)
 
   // Fetch nr posturi pentru calcul credite hibrid
   useEffect(() => {
@@ -845,6 +863,45 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
     )
   }
 
+  async function handleAddNewMember() {
+    if (!newMember.firstName || !newMember.lastName || !newMember.email) return
+    setAddingMember(true)
+    try {
+      const res = await fetch("/api/v1/users/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: newMember.email,
+          firstName: newMember.firstName,
+          lastName: newMember.lastName,
+          jobTitle: newMember.jobTitle || undefined,
+          role: "REPRESENTATIVE",
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const added: TeamMember = {
+          id: data.user?.id || data.id || "",
+          firstName: newMember.firstName,
+          lastName: newMember.lastName,
+          email: newMember.email,
+          role: "REPRESENTATIVE",
+          jobTitle: newMember.jobTitle,
+          phone: newMember.phone,
+        }
+        setTeamMembers(prev => [...prev, added])
+        if (added.id) setSelectedMembers(prev => [...prev, added.id])
+        setNewMember({ firstName: "", lastName: "", email: "", jobTitle: "", phone: "" })
+        setShowAddMember(false)
+      }
+    } catch {}
+    setAddingMember(false)
+  }
+
+  function handleRemoveMember(id: string) {
+    setSelectedMembers(prev => prev.filter(m => m !== id))
+  }
+
   async function launchCommitteeWithMembers() {
     if (selectedMembers.length < 1) { setError("Selectati cel putin un membru."); return }
     startCommitteeSession(selectedMembers)
@@ -959,7 +1016,7 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
     return (
       <>
         <p className="text-sm text-slate-600 leading-relaxed">
-          Selectati membrii comisiei de evaluare. Fiecare membru va evalua individual toate posturile pe cele 6 criterii.
+          Configurați comisia de evaluare. Definiți membrii, verificați datele de contact și personalizați mesajul de invitație.
         </p>
 
         <div style={{ height: "16px" }} />
@@ -967,90 +1024,211 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
         {loadingTeam ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
-            <p className="text-xs text-slate-400 mt-3">Se incarca echipa...</p>
-          </div>
-        ) : teamMembers.length === 0 ? (
-          <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
-            <p className="text-xs text-amber-800">
-              Nu s-au gasit utilizatori in cont. Invitati membrii comisiei din Setari → Utilizatori.
-            </p>
+            <p className="text-xs text-slate-400 mt-3">Se încarcă echipa...</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Membri comisie</p>
-            {teamMembers.map(m => {
-              const isSelected = selectedMembers.includes(m.id)
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => toggleMember(m.id)}
-                  className={`w-full text-left rounded-lg border-2 transition-all ${
-                    isSelected ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                  style={{ padding: "12px" }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`text-sm font-medium ${isSelected ? "text-indigo-700" : "text-slate-800"}`}>
-                        {m.firstName} {m.lastName}
-                      </p>
-                      <p className="text-[10px] text-slate-400">{m.email}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] text-slate-400">{m.role}</span>
-                      {isSelected && (
-                        <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs">✓</span>
-                      )}
+          <div className="space-y-3">
+            {/* Header membri */}
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Membri comisie</p>
+              <button
+                onClick={() => setShowAddMember(!showAddMember)}
+                className="text-[10px] text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+              >
+                + Invită membru nou
+              </button>
+            </div>
+
+            {/* Formular adăugare membru nou */}
+            {showAddMember && (
+              <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-4 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={newMember.firstName}
+                    onChange={e => setNewMember(p => ({ ...p, firstName: e.target.value }))}
+                    placeholder="Prenume *"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <input
+                    value={newMember.lastName}
+                    onChange={e => setNewMember(p => ({ ...p, lastName: e.target.value }))}
+                    placeholder="Nume *"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <input
+                  value={newMember.email}
+                  onChange={e => setNewMember(p => ({ ...p, email: e.target.value }))}
+                  placeholder="Email * (primește invitația)"
+                  type="email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={newMember.jobTitle}
+                    onChange={e => setNewMember(p => ({ ...p, jobTitle: e.target.value }))}
+                    placeholder="Funcție (ex: Director Producție)"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <input
+                    value={newMember.phone}
+                    onChange={e => setNewMember(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="Telefon (opțional)"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddNewMember}
+                    disabled={addingMember || !newMember.firstName || !newMember.lastName || !newMember.email}
+                    className="px-4 py-2 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                  >
+                    {addingMember ? "Se adaugă..." : "Adaugă și invită"}
+                  </button>
+                  <button
+                    onClick={() => setShowAddMember(false)}
+                    className="px-3 py-2 text-xs text-slate-500 hover:text-slate-700"
+                  >
+                    Anulează
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista membri existenți */}
+            {teamMembers.length === 0 && !showAddMember ? (
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+                <p className="text-xs text-amber-800">
+                  Nu s-au găsit utilizatori. Folosiți butonul &ldquo;Invită membru nou&rdquo; pentru a adăuga membrii comisiei.
+                </p>
+              </div>
+            ) : (
+              teamMembers.map(m => {
+                const isSelected = selectedMembers.includes(m.id)
+                return (
+                  <div
+                    key={m.id}
+                    className={`rounded-lg border-2 transition-all ${
+                      isSelected ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-white"
+                    }`}
+                    style={{ padding: "12px" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <button onClick={() => toggleMember(m.id)} className="flex-1 text-left">
+                        <p className={`text-sm font-medium ${isSelected ? "text-indigo-700" : "text-slate-800"}`}>
+                          {m.firstName} {m.lastName}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-0.5">
+                          {m.jobTitle && <span className="text-[10px] text-slate-500">{m.jobTitle}</span>}
+                          {m.departmentName && <span className="text-[10px] text-slate-400">· {m.departmentName}</span>}
+                          <span className="text-[10px] text-slate-400">· {m.email}</span>
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isSelected ? (
+                          <>
+                            <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs">✓</span>
+                            <button onClick={() => handleRemoveMember(m.id)} className="text-[10px] text-red-400 hover:text-red-600" title="Elimină">✕</button>
+                          </>
+                        ) : (
+                          <button onClick={() => toggleMember(m.id)} className="text-[10px] text-indigo-500 hover:text-indigo-700">Selectează</button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </button>
-              )
-            })}
+                )
+              })
+            )}
+
+            {/* Summary */}
+            <p className="text-[10px] text-slate-500">
+              {selectedMembers.length} {selectedMembers.length === 1 ? "membru selectat" : "membri selectați"}
+              {selectedMembers.length > 0 && ` — fiecare evaluează ${jobCount} posturi × 6 criterii`}
+            </p>
           </div>
         )}
-
-        <div style={{ height: "16px" }} />
-        <p className="text-[10px] text-slate-500">
-          {selectedMembers.length} {selectedMembers.length === 1 ? "membru selectat" : "membri selectati"}
-          {selectedMembers.length > 0 && ` — fiecare evalueaza ${jobCount} posturi × 6 criterii`}
-        </p>
 
         {/* Cost suplimentar */}
         {extraCr > 0 && (
-          <>
-            <div style={{ height: "12px" }} />
-            <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "14px" }}>
-              <p className="text-xs text-amber-800">
-                Aceasta varianta necesita <span className="font-bold">{extraCr} credite suplimentare</span> fata de pachetul de baza.
-              </p>
-            </div>
-          </>
+          <div className="bg-amber-50 rounded-xl border border-amber-200 p-3 mt-3">
+            <p className="text-xs text-amber-800">
+              Această variantă necesită <span className="font-bold">{extraCr} credite suplimentare</span> față de pachetul de bază.
+            </p>
+          </div>
         )}
 
-        <div style={{ height: "20px" }} />
+        {/* Mesaj invitație */}
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Mesaj invitație</p>
+            <button
+              onClick={() => setShowInvitePreview(!showInvitePreview)}
+              className="text-[10px] text-indigo-600 hover:text-indigo-800"
+            >
+              {showInvitePreview ? "Ascunde preview" : "Preview"}
+            </button>
+          </div>
+          <textarea
+            value={inviteMessage}
+            onChange={e => setInviteMessage(e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50"
+            placeholder="Personalizați mesajul de invitație..."
+          />
+          {showInvitePreview && (
+            <div className="bg-white rounded-lg border border-gray-200 p-3">
+              <p className="text-[10px] text-gray-500 mb-1 font-medium">Preview email:</p>
+              <p className="text-xs text-gray-700 leading-relaxed">{inviteMessage}</p>
+              <div className="mt-2 text-[9px] text-gray-400 italic">
+                + Link de activare cont + instrucțiuni de utilizare
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bifă inițiere */}
+        <div className="mt-4 bg-blue-50 rounded-xl border border-blue-200 p-4 space-y-2">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={confirmInitiate}
+              onChange={e => setConfirmInitiate(e.target.checked)}
+              className="mt-1 shrink-0"
+            />
+            <div>
+              <p className="text-xs font-medium text-blue-800">Inițiază sesiunea de evaluare</p>
+              <p className="text-[10px] text-blue-600 mt-0.5 leading-relaxed">
+                Membrii vor primi email de invitație cu link de activare. Fiecare va evalua individual fișele alocate pe cele 6 criterii.
+                După finalizarea pre-scorării, se deschide discuția de grup pentru atingerea consensului.
+              </p>
+            </div>
+          </label>
+        </div>
+
+        <div style={{ height: "16px" }} />
         {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
 
         <div className="flex gap-3">
           <button
             onClick={launchCommitteeWithMembers}
-            disabled={selectedMembers.length < 1}
+            disabled={selectedMembers.length < 1 || !confirmInitiate}
             className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
           >
-            Lanseaza sesiunea ({selectedMembers.length} {selectedMembers.length === 1 ? "membru" : "membri"})
+            Lansează sesiunea ({selectedMembers.length} {selectedMembers.length === 1 ? "membru" : "membri"})
           </button>
           <button
-            onClick={() => { setPhase("choose"); setError(null) }}
+            onClick={() => { setPhase("choose"); setError(null); setConfirmInitiate(false) }}
             className="px-4 py-3 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            Inapoi
+            Înapoi
           </button>
         </div>
 
         <div style={{ height: "8px" }} />
         <p className="text-[9px] text-slate-400 text-center">
           {variant === "comisie-consultant"
-            ? "Consultantul nostru acreditat va fi notificat si va facilita consensul."
-            : "AI va identifica divergentele si va media consensul intre membri."}
+            ? "Consultantul nostru acreditat va fi notificat și va facilita consensul."
+            : "AI va identifica divergențele și va media consensul între membri."}
         </p>
       </>
     )
@@ -1190,60 +1368,154 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
 
 function ReportPanel() {
   const [loading, setLoading] = useState(true)
-  const [reportReady, setReportReady] = useState(false)
+  const [sessions, setSessions] = useState<any[]>([])
+  const [exporting, setExporting] = useState<string | null>(null)
 
   useEffect(() => {
-    // Verificăm dacă raportul e disponibil
     fetch("/api/v1/sessions")
       .then(r => r.json())
       .then(data => {
-        const sessions = data.sessions || []
-        const validated = sessions.find((s: any) => s.status === "VALIDATED" || s.status === "COMPLETED")
-        setReportReady(!!validated)
+        setSessions((data.sessions || []).filter((s: any) =>
+          s.status === "VALIDATED" || s.status === "COMPLETED" || s.status === "OWNER_VALIDATION"
+        ))
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [])
 
+  async function handleExport(sessionId: string, format: string) {
+    setExporting(`${sessionId}-${format}`)
+    try {
+      const res = await fetch(`/api/v1/sessions/${sessionId}/export/${format}`)
+      if (!res.ok) {
+        alert("Eroare la export. Verificați soldul de credite.")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      const ext = format === "excel" ? "xlsx" : format
+      a.download = `raport-${sessionId.slice(0, 8)}.${ext}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert("Eroare de rețea.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="text-center" style={{ padding: "40px 0" }}>
         <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-slate-400 mt-3">Se verifica raportul...</p>
+        <p className="text-xs text-slate-400 mt-3">Se verifică rapoartele...</p>
       </div>
     )
   }
 
-  if (!reportReady) {
+  if (sessions.length === 0) {
     return (
       <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
         <p className="text-xs text-amber-800">
-          Raportul nu este inca disponibil. Finalizati evaluarea si validati rezultatele.
+          Niciun raport disponibil. Finalizați evaluarea și validați rezultatele.
         </p>
       </div>
     )
   }
 
+  const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    COMPLETED: { label: "Finalizat", color: "bg-green-100 text-green-700" },
+    VALIDATED: { label: "Validat", color: "bg-blue-100 text-blue-700" },
+    OWNER_VALIDATION: { label: "Validare Owner", color: "bg-amber-100 text-amber-700" },
+  }
+
   return (
-    <>
+    <div className="space-y-4">
       <p className="text-sm text-slate-600 leading-relaxed">
-        Raportul de Diagnostic Analitic (RDA) este disponibil. Puteti vizualiza, descarca sau valida cu semnatura.
+        Rapoartele de Diagnostic Analitic (RDA) pentru sesiunile finalizate.
       </p>
-      <div style={{ height: "16px" }} />
-      <div className="flex gap-3">
-        <a
-          href="/reports/master"
-          target="_blank"
-          rel="noopener"
-          className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold text-center hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          Deschide raportul
-        </a>
-      </div>
-      <div style={{ height: "8px" }} />
+
+      {sessions.map((s: any) => {
+        const status = STATUS_LABELS[s.status] || { label: s.status, color: "bg-gray-100 text-gray-600" }
+        return (
+          <div key={s.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-sm text-gray-900">{s.name}</div>
+                <div className="text-xs text-gray-500">
+                  {new Date(s.createdAt).toLocaleDateString("ro-RO")}
+                </div>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${status.color}`}>
+                {status.label}
+              </span>
+            </div>
+
+            {/* Preview link */}
+            <div className="flex gap-2">
+              <a
+                href={`/sessions/${s.id}/results`}
+                target="_blank"
+                rel="noopener"
+                className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold text-center hover:bg-indigo-700 transition-colors"
+              >
+                Vizualizează ierarhia
+              </a>
+              {(s.status === "COMPLETED" || s.status === "VALIDATED") && (
+                <a
+                  href={`/reports/master?session=${s.id}`}
+                  target="_blank"
+                  rel="noopener"
+                  className="flex-1 py-2 rounded-lg bg-purple-600 text-white text-xs font-semibold text-center hover:bg-purple-700 transition-colors"
+                >
+                  Raport complet
+                </a>
+              )}
+            </div>
+
+            {/* Export buttons */}
+            <div className="flex gap-1.5">
+              {["pdf", "excel", "json", "xml"].map((fmt) => (
+                <button
+                  key={fmt}
+                  onClick={() => handleExport(s.id, fmt)}
+                  disabled={exporting === `${s.id}-${fmt}`}
+                  className="flex-1 py-1.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors uppercase"
+                >
+                  {exporting === `${s.id}-${fmt}` ? "..." : fmt}
+                </button>
+              ))}
+            </div>
+
+            {/* Validation link */}
+            {s.status === "OWNER_VALIDATION" && (
+              <a
+                href={`/sessions/${s.id}/validate`}
+                className="block text-center py-2 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors"
+              >
+                Validare în curs — verifică
+              </a>
+            )}
+
+            {/* Journal link */}
+            <a
+              href={`/sessions/${s.id}/journal`}
+              target="_blank"
+              rel="noopener"
+              className="block text-center text-[10px] text-gray-400 hover:text-gray-600"
+            >
+              Jurnal proces →
+            </a>
+          </div>
+        )
+      })}
+
       <p className="text-[9px] text-slate-400 text-center">
-        Raportul include: ierarhia posturilor, clase salariale si pagina de validare cu semnatura.
+        Rapoartele includ: ierarhia posturilor, clase salariale, proces verbal și pagina de validare cu semnătură.
+        Exportul consumă credite din sold.
       </p>
-    </>
+    </div>
   )
 }

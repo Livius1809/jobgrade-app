@@ -132,12 +132,20 @@ export default async function ConsensusPage({
             {sessionJob.assignments.length} evaluatori au trimis
           </p>
         </div>
-        <Link
-          href={`/sessions/${sessionId}/results`}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          Vezi ierarhia →
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/sessions/${sessionId}/discussion/${sessionJobId}`}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+          >
+            Discuție de grup →
+          </Link>
+          <Link
+            href={`/sessions/${sessionId}/results`}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Vezi ierarhia →
+          </Link>
+        </div>
       </div>
 
       {sessionJob.assignments.length === 0 ? (

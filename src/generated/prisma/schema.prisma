@@ -81,6 +81,8 @@ model User {
   notifications          Notification[]
   representedJobs        Job[]                   @relation("JobRepresentative")
   validatedSessions      EvaluationSession[]     @relation("sessionValidator")
+  discussionComments     DiscussionComment[]
+  memberValidations      MemberValidation[]
 
   @@unique([tenantId, email])
   @@map("users")
@@ -251,6 +253,8 @@ model Criterion {
   votes                Vote[]
   facilitatorDecisions FacilitatorDecision[]
   overrides            ScoreOverride[]
+  discussionComments   DiscussionComment[]
+  memberValidations    MemberValidation[]
 
   @@map("criteria")
 }
@@ -308,6 +312,8 @@ model EvaluationSession {
   jobResults           JobResult[]
   salaryGrades         SalaryGrade[]
   overrides            ScoreOverride[]
+  discussionComments   DiscussionComment[]
+  memberValidations    MemberValidation[]
 
   @@map("evaluation_sessions")
 }
@@ -441,6 +447,7 @@ model Vote {
   criterionId String
   userId      String
   subfactorId String
+  round       Int      @default(1)
   createdAt   DateTime @default(now())
 
   session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -469,6 +476,56 @@ model FacilitatorDecision {
 
   @@unique([sessionId, jobId, criterionId])
   @@map("facilitator_decisions")
+}
+
+// ─────────────────────────────────────────
+// DISCUȚIE GRUP (Bloc 3)
+// ─────────────────────────────────────────
+
+model DiscussionComment {
+  id          String   @id @default(cuid())
+  sessionId   String
+  jobId       String
+  criterionId String
+  userId      String? // null = AI mediator
+  round       Int      @default(1)
+  content     String   @db.Text
+  isAi        Boolean  @default(false)
+  parentId    String? // reply threading
+  createdAt   DateTime @default(now())
+
+  session   EvaluationSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User?               @relation(fields: [userId], references: [id])
+  criterion Criterion           @relation(fields: [criterionId], references: [id])
+  parent    DiscussionComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   DiscussionComment[] @relation("CommentReplies")
+
+  @@index([sessionId, jobId, criterionId])
+  @@map("discussion_comments")
+}
+
+// ─────────────────────────────────────────
+// VALIDARE POST-CONSENS (Bloc 4)
+// ─────────────────────────────────────────
+
+model MemberValidation {
+  id          String    @id @default(cuid())
+  sessionId   String
+  jobId       String
+  userId      String
+  criterionId String
+  preScore    String // litera pre-scorare originală (ex: "D")
+  consensus   String // litera consens final (ex: "E")
+  accepted    Boolean   @default(false)
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id])
+  criterion Criterion         @relation(fields: [criterionId], references: [id])
+
+  @@unique([sessionId, jobId, userId, criterionId])
+  @@map("member_validations")
 }
 
 // ─────────────────────────────────────────
@@ -861,6 +918,14 @@ model Notification {
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
 
+  // ── Cerere structurată de la agent ──
+  sourceRole   String? // Agentul care solicită (COG, DOA, etc.)
+  requestKind  OwnerRequestKind? // Ce tip de răspuns așteaptă
+  requestData  String?            @db.Text // JSON: detalii specifice cererii
+  responseKind OwnerResponseKind? // Ce a răspuns Owner-ul
+  responseData String?            @db.Text // JSON: datele/acțiunea furnizată
+  respondedAt  DateTime? // Când a răspuns
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read, createdAt])
@@ -1026,6 +1091,30 @@ enum NotificationType {
   PAY_GAP_THRESHOLD_EXCEEDED
   COG_MESSAGE
   AGENT_MESSAGE
+  OWNER_REQUEST // Cerere structurată de la structură către Owner
+}
+
+// Ce tip de răspuns așteaptă agentul de la Owner
+enum OwnerRequestKind {
+  INFORMATION // Agentul are nevoie de date/informații specifice
+  ACCESS // Agentul cere acces la o resursă/funcționalitate
+  DECISION // Agentul cere o decizie strategică (aprob/resping/ajustez)
+  ACTION // Agentul cere Owner-ului să facă ceva concret
+  VALIDATION // Agentul cere validarea unui rezultat/raport
+}
+
+// Ce a furnizat Owner-ul ca răspuns
+enum OwnerResponseKind {
+  INFO_PROVIDED // A furnizat informația cerută
+  ACCESS_GRANTED // A acordat accesul
+  ACCESS_DENIED // A refuzat accesul
+  APPROVED // A aprobat
+  REJECTED // A respins
+  ADJUSTED // A aprobat cu modificări
+  ACTION_DONE // A executat acțiunea cerută
+  VALIDATED // A validat rezultatul
+  DELEGATED // A delegat altcuiva
+  CLARIFICATION // A cerut lămuriri suplimentare
 }
 
 enum Gender {
