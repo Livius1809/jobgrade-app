@@ -234,6 +234,68 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
 
 **Diferențiator:** niciun competitor nu are mediere care învață din comportamentul evaluatorilor. Hay/Mercer au mediator uman care nu se calibrează. AI-ul nostru se calibrează pe fiecare client, pe fiecare membru, pe fiecare criteriu, pe fiecare fișă.
 
+---
+
+## VARIANTE C ȘI D — DIFERENȚE FAȚĂ DE B
+
+### Varianta C: Comisie + Facilitator uman
+
+**Principiu:** Facilitatorul uman asigură confort (interacțiune om-om) dar produce o lungire a procesului și e mai scump. Prezența lui e importantă și din punct de vedere legal.
+
+**Ce e diferit față de B:**
+- AI-ul **NU mai mediază direct** comisia
+- AI-ul **îi dă sfaturi facilitatorului uman** — analize, pattern-uri, inconsistențe, abordări recomandate
+- Facilitatorul uman **își formulează propriile opinii** pe baza sfaturilor AI + experiența sa
+- Facilitatorul transmite opiniile membrilor comisiei (interacțiune om-om)
+- **Rol în cod:** `FACILITATOR_UMAN` — acces la panoul AI cu sfaturi, dar medierea e a lui
+
+**Ce e identic cu B:**
+- Bloc 1 (configurare comisie) — identic
+- Bloc 2 (pre-scorare individuală cu AI) — identic
+- Bloc 3 interfața (tabel, progress bar, lista fișe) — identic
+- Bloc 4 (validare post-consens) — identic
+- Principiile directoare — identice
+- Jurnalul procesului — identic (consemnează și intervențiile facilitatorului)
+
+### Varianta D: Hibrid (AI automat → Comisie)
+
+**Principiu:** Se rulează mai întâi Varianta A (AI evaluează complet), apoi comisia pornește de la rezultatul AI.
+
+**Fluxul:**
+1. Se rulează Varianta A (evaluare automată AI) → rezultate + raport
+2. Întrebăm clientul: **"Ce faceți mai departe?"**
+   - "Validez direct" → trece la semnătură (ca la Varianta A)
+   - "Trec la comisie" → se deschide configuratorul de proces (Bloc 1)
+3. Dacă optează pentru comisie:
+   - **Se sare peste Bloc 2** (pre-scorarea individuală) — AI a făcut-o deja pe toate fișele
+   - **Inițiatorul** pe fiecare fișă = **"Evaluare AI"** (nu un membru uman)
+   - Dar **reprezentantul departamentului** care conține poziția în dezbatere apare **sus, deasupra fișei de post** (nume, funcție, departament) — e referința umană
+   - Membrii comisiei apar dedesubt, votează, discută
+   - Bloc 3 (discuția de grup) pornește cu scorurile AI ca referință
+   - Bloc 4 (validare) — identic
+
+**Interfața la Bloc 3 (Varianta D):**
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ FIȘA: Director Producție                                        │
+│ Reprezentant dept: Popescu Ion · Dir. Producție · Producție      │
+├──────────────────────────────────────────────────────────────────┤
+│              │ Educație │ Comunicare │ ... │                     │
+│ ─────────────┼──────────┼────────────┼─────│                     │
+│ EVALUARE AI  │    E     │     D      │ ... │  ← inițiator       │
+│ (referință)  │          │            │     │                     │
+│ ─────────────┼──────────┼────────────┼─────│                     │
+│ Popescu I.   │    E     │     D      │ ... │                     │
+│ Ionescu M.   │    E     │     C ⚠️   │ ... │                     │
+│ Marinescu A. │    D ⚠️  │     D      │ ... │                     │
+│ Stan L.      │    E     │     D      │ ... │                     │
+│ ─────────────┼──────────┼────────────┼─────│                     │
+│              │ ████100% │ ███░ 75%   │ ... │                     │
+│              │ CONSENS  │            │     │                     │
+│              │    E     │            │     │                     │
+└──────────────────────────────────────────────────────────────────┘
+```
+
 ### 3.7 Fluxul Kanban per criteriu (pre-scorare + discuție)
 
 Fiecare criteriu din fișa activă trece prin coloane:
