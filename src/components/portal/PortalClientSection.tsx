@@ -1185,3 +1185,65 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
     </>
   )
 }
+
+// ── Panou Rapoarte ──────────────────────────────────────────────────────────
+
+function ReportPanel() {
+  const [loading, setLoading] = useState(true)
+  const [reportReady, setReportReady] = useState(false)
+
+  useEffect(() => {
+    // Verificăm dacă raportul e disponibil
+    fetch("/api/v1/sessions")
+      .then(r => r.json())
+      .then(data => {
+        const sessions = data.sessions || []
+        const validated = sessions.find((s: any) => s.status === "VALIDATED" || s.status === "COMPLETED")
+        setReportReady(!!validated)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="text-center" style={{ padding: "40px 0" }}>
+        <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-slate-400 mt-3">Se verifica raportul...</p>
+      </div>
+    )
+  }
+
+  if (!reportReady) {
+    return (
+      <div className="bg-amber-50 rounded-xl border border-amber-200" style={{ padding: "16px" }}>
+        <p className="text-xs text-amber-800">
+          Raportul nu este inca disponibil. Finalizati evaluarea si validati rezultatele.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Raportul de Diagnostic Analitic (RDA) este disponibil. Puteti vizualiza, descarca sau valida cu semnatura.
+      </p>
+      <div style={{ height: "16px" }} />
+      <div className="flex gap-3">
+        <a
+          href="/reports/master"
+          target="_blank"
+          rel="noopener"
+          className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold text-center hover:bg-indigo-700 transition-colors shadow-sm"
+        >
+          Deschide raportul
+        </a>
+      </div>
+      <div style={{ height: "8px" }} />
+      <p className="text-[9px] text-slate-400 text-center">
+        Raportul include: ierarhia posturilor, clase salariale si pagina de validare cu semnatura.
+      </p>
+    </>
+  )
+}

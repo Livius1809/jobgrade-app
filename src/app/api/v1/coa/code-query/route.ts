@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       // Lista condensată a capabilităților platformei
       const apiDir = path.join(ROOT, "src/app/api")
       let routeCount = 0
-      function countRoutes(dir) {
+      function countRoutes(dir: string) {
         if (!fs.existsSync(dir)) return
         for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
           if (e.isDirectory()) countRoutes(path.join(dir, e.name))
