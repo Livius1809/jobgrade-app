@@ -711,6 +711,28 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
     ? `${payload.result}\n\n--- ACȚIUNI EXECUTATE AUTOMAT ---\n${actions.join("\n")}`
     : payload.result
 
+  // ═══ REVIEW GATE: ȘTIU vs FAC ═══
+  // Task-urile de ACȚIUNE trec prin REVIEW_PENDING — managerul verifică rezultatul.
+  // Task-urile de CUNOAȘTERE (KB_RESEARCH, KB_VALIDATION) → direct COMPLETED.
+  // Decompuneri (needs-subtasks) → direct COMPLETED (managerul vede sub-task-urile).
+  const KNOWLEDGE_TYPES = new Set(["KB_RESEARCH", "KB_VALIDATION"])
+  const requiresReview = !KNOWLEDGE_TYPES.has(task.taskType)
+
+  if (requiresReview) {
+    await (prisma as any).agentTask.update({
+      where: { id: task.id },
+      data: {
+        status: "REVIEW_PENDING",
+        acceptedAt: task.acceptedAt || now,
+        startedAt: task.startedAt || now,
+        completedAt: now,
+        result: resultWithActions,
+      },
+    })
+    return { outcome: "COMPLETED", subTaskIds }
+  }
+
+  // Cunoaștere pură → direct COMPLETED (fără review)
   await (prisma as any).agentTask.update({
     where: { id: task.id },
     data: {

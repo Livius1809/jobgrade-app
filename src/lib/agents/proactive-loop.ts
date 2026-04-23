@@ -461,13 +461,16 @@ async function reviewCompletedTasks(
   prisma: any,
   dryRun?: boolean
 ): Promise<void> {
-  // Găsește taskuri COMPLETED ale subordonaților care nu au fost încă reviewuite
+  // Găsește taskuri REVIEW_PENDING ale subordonaților (gate obligatoriu)
+  // + COMPLETED vechi nereviewuite (backward compat)
   const completedTasks = await prisma.agentTask.findMany({
     where: {
       assignedTo: { in: config.subordinates },
       assignedBy: config.agentRole,
-      status: "COMPLETED",
-      reviewedAt: null,
+      OR: [
+        { status: "REVIEW_PENDING" },
+        { status: "COMPLETED", reviewedAt: null },
+      ],
     },
     orderBy: { completedAt: "asc" },
     take: 10,
@@ -513,10 +516,11 @@ Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback cons
       }
 
       if (review.approved) {
-        // Aprobat — marchează ca reviewed
+        // Aprobat — REVIEW_PENDING → COMPLETED + reviewed
         await prisma.agentTask.update({
           where: { id: task.id },
           data: {
+            status: "COMPLETED",
             reviewedBy: config.agentRole,
             reviewedAt: new Date(),
             reviewNote: `APPROVED: ${review.feedback}`,
