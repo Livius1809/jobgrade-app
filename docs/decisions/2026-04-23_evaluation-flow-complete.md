@@ -64,20 +64,54 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
 - Membrul primește email → click link → activare cont → login
 - Vede doar fișele alocate lui
 
-### 2.2 Scorare per fișă
-- Deschide fișa de post
-- Scorează pe cele 6 criterii (selectează litera A-G per criteriu)
-- Cu sau fără ajutor AI:
-  - Cu AI: sugestie de scor cu argumentare (opțional, ghidare)
-  - Fără AI: membrul alege singur
-- Poate adăuga justificări/comentarii per criteriu
+### 2.2 Scorare per fișă — cu ghidaj AI (la fel ca la introducere fișe)
+
+**Mecanismul AI la scorare (identic cu cel de la elaborare fișe):**
+- AI înțelege fiecare informație din fișa de post prin comparație cu criteriul de scorare
+- La etapa de introducere fișe (HR Admin), Profiler-ul DEJA știe ce scor ar aloca
+- **Mini-consens AI ↔ reprezentant individual:**
+  - AI propune scor + argumentare pe fiecare criteriu
+  - Dacă reprezentantul e de acord → adoptă varianta AI
+  - Dacă reprezentantul nu e de acord → argumentează
+  - AI pe baza argumentelor poate:
+    - Schimba formularea din narativul fișei de post
+    - Schimba litera de încadrare
+    - (pot exista detalii pe care varianta inițială nu le-a integrat în conceperea fișei)
+- Rezultat: o variantă agreată AI ↔ reprezentant per fiecare fișă
+
+**Fără AI (opțional):**
+- Membrul scorează singur, fără sugestii
 
 ### 2.3 Rezultat individual
 - Tabel centralizat per membru: Poziție × 6 Litere (A-G)
 - Membrul poate revizui și modifica până la termenul limită
 - Când e gata: buton "Am terminat scorarea"
 
-### 2.4 Monitorizare progres
+### 2.4 Cartuș informativ la terminarea scorării
+
+**La finalizarea etapei individuale, se deschide un cartuș care arată:**
+
+1. **Ce ai făcut din proces:**
+   - N fișe scorate, N criterii, tabel sumar cu literele tale
+   
+2. **Ce urmează:**
+   - Discuția de grup — toți membrii scorează TOATE fișele
+   - Se pornește de la varianta ta pe fișele din calupul tău
+
+3. **Consiliere — cum contribui la atingerea consensului:**
+   - Cum îți susții poziția inițială cu argumente raportate la criteriile de scorare
+   - Cum accepți argumente valide de la ceilalți membri
+   - **Principiile de consens afișate:**
+     - Consens ≠ vot — e proces de acord bazat pe fapte și logică
+     - Fiecare item trebuie discutat și agreat de TOȚI membrii
+     - Natural ca opiniile să difere — diversitatea e sănătoasă
+     - NU îți schimba opinia ca să eviți conflictul — schimb-o pe bază de logică
+     - NU evita conflictul (plecând, sub-grupuri, medierea cifrelor)
+     - NU împinge agresiv propria clasare — expune-ți vederea obiectiv
+     - NU intra cu mentalitatea câștig-pierdere
+   - **Aceste principii se afișează ȘI în discuția de grup** (vizibile permanent)
+
+### 2.5 Monitorizare progres
 - Admin vede: cine a terminat, cine nu, termen
 - Reminder automat la termen aproape
 
@@ -85,8 +119,12 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
 - [x] Pagină evaluare cu 6 criterii (/sessions/[id]/evaluate/[jobId]) — există
 - [x] Verificare participant (SessionParticipant) — există
 - [x] Formular scorare (EvaluationForm) — există
+- [x] Principii consens documentate (procesul-complet-job-evaluation.md) — există
 - [ ] Alocare fișe per membru (acum toți văd toate posturile) — de implementat
-- [ ] AI sugestie scor cu argumentare — de implementat
+- [ ] AI ghidaj la scorare (mini-consens AI ↔ reprezentant) — de implementat
+- [ ] AI schimbă formulare fișă + literă pe baza argumentelor — de implementat
+- [ ] Cartuș informativ la finalizare scorare — de implementat
+- [ ] Afișare principii consens permanent — de implementat
 - [ ] Buton "Am terminat scorarea" cu status tracking — parțial (completedAt există)
 - [ ] Dashboard progres admin — parțial (SessionActions)
 - [ ] Reminder automat — de implementat
