@@ -138,34 +138,87 @@ Admin alocă fișele de post deja încărcate/elaborate fiecărui membru:
 - Se evidențiază divergențele (unde scorurile diferă cu ≥2 nivele)
 - Se vede media, modul, deviația standard per criteriu
 
-### 3.2 Mecanismul de pornire a discuției
-- Pe fiecare fișă de post, se pornește de la PRE-SCORAREA membrului responsabil (cel care a avut calupul)
-- Toți ceilalți membri scorează aceeași fișă
-- Sistemul compară automat:
-  - Varianta inițială (pre-scorarea membrului responsabil)
-  - Voturile celorlalți membri
-  - Identifică divergențe per criteriu
+### 3.2 Interfața discuției de grup
 
-### 3.3 Discuție per criteriu divergent
-- Pe fiecare criteriu cu divergență:
-  - Se vede scorul inițial (pre-scorare) vs scorurile celorlalți
-  - Fiecare membru poate posta comentariu/argumentare
-  - Poate modifica scorul (recalibrare)
-  - AI sintetizează argumentele și propune compromis
-- Formatul: tip forum/chat per criteriu cu voturi — ușor de urmărit pentru membri și de mediat pentru AI
+**Layout-ul ecranului:**
 
-### 3.4 Mecanismul de consens (3+1 sub-etape)
-1. **Automat**: dacă toți au dat aceeași literă → consens automat, se trece la următoarea fișă
-2. **Recalibrare**: cei din minoritate primesc argumentele majorității + info suplimentar → pot recalibra
-3. **Vot final**: dacă tot nu e consens → vot, majoritate simplă câștigă
-4. **Facilitare AI** (var B): dacă votul e la egalitate → AI analizează toate argumentele, propune scor de compromis cu motivare → membrii acceptă sau contestă → dacă majoritate acceptă, devine scor final
+**Stânga — Lista fișelor cu progres:**
+- Fiecare fișă arată: titlu post + membru responsabil (inițiator) + departament
+- Status vizual per fișă: ✅ verde (consens + validat), 🟡 galben (activă), ⚪ gri (de discutat)
+- Progress general sus: bară + "X/Y fișe finalizate"
 
-### 3.5 AI mediază (varianta B) — mecanismul detaliat
-- AI primește: pre-scorarea inițială, scorurile tuturor membrilor, argumentele postate
-- AI analizează și propune compromis cu motivare explicită
-- Membrii pot accepta sau contesta (cu motivare)
-- Dacă acceptat de majoritate → devine scorul final pe acel criteriu
-- Dacă contestat → facilitare manuală (owner decide)
+**Dreapta — Fișa activă:**
+- Header: titlu post, inițiator (nume + funcție + departament) în colțul dreapta-sus
+- Tabel principal: rânduri = membri, coloane = cele 6 criterii (litere A-G)
+  - Rând 1 (PRE-SCORARE): litera inițiatorului pe fiecare criteriu — read-only, referință permanentă
+  - Rânduri 2-N (VOTURI): litera fiecărui membru — se actualizează live
+  - ⚠️ pe celulele care diferă de majoritate
+  - Sub fiecare coloană: **progress bar** (% consens = câți de acord / total)
+  - **Când progress bar ajunge la 100%** → bara dispare → apare **"CONSENS" + litera rezultat** (verde, bold)
+- Progress per fișă sus: "Consens: ██████░░░░ 2/6 criterii"
+- Când toate 6 coloanele = CONSENS → bară 100% → "✅ CONSENS COMPLET" → buton Finalizează
+
+**Sub tabel — Panoul de discuție per criteriu:**
+- Se activează la click pe un criteriu divergent (⚠️)
+- Arată argumentele postate de fiecare membru
+- AI sintetizează și recomandă
+- Butoane: Accept / Mențin + argumentez (text obligatoriu)
+
+**Colț jos — Principii directoare (toggle, permanent accesibil)**
+
+### 3.3 Mecanismul de pornire a discuției
+- Se deschide fișa activă → apare pre-scorarea inițiatorului (referință permanentă)
+- Toți membrii votează pe toate cele 6 criterii
+- Sistemul compară automat → marchează ✅ consens sau ⚠️ divergent
+- Progresul barelor pe coloane reflectă starea live
+
+### 3.4 Editare și dezbatere — principiu deschis
+- **Toți membrii pot schimba opinia pe baza argumentelor** — inclusiv cei care inițial erau de acord cu inițiatorul
+- Respectă principiul din metodologie: "schimbă-ți opinia doar pe bază de logică"
+- Fiecare schimbare necesită argumentare (text minim)
+- Argumentele noi sunt vizibile tuturor și pot genera noi argumente
+- **Nu există limită de timp** — procesul e viu, dezbaterea e sănătoasă
+
+### 3.5 Pricing pe runde de mediere
+- **Inclus în pachet: 3 runde de mediere per criteriu**
+  - Runda 1: votul inițial + detectare divergențe
+  - Runda 2: argumentare + recalibrare
+  - Runda 3: AI sinteză + recomandare + vot final
+- **Din runda 4 încolo: contra credite**
+  - Fiecare rundă suplimentară de argumentare = credite din sold
+  - AI mediere suplimentară = credite din sold
+  - Fără limită de runde — pot discuta cât doresc
+  - Comunicare: "Discuția pe acest criteriu continuă. De aici se consumă X credite per rundă din soldul dumneavoastră."
+  - Ton neutru, informativ, fără presiune
+- **Rațional:** motivare naturală spre eficiență, nu restricție. Companiile cu divergențe mari au cea mai mare nevoie de serviciu.
+
+### 3.6 AI mediază — valoare adăugată reală (varianta B)
+
+**AI-ul nu e un arbitru rece. E un mediator care CUNOAȘTE fiecare participant.**
+
+Profiler-ul acumulează progresiv cunoaștere despre:
+- Cum gândește fiecare membru (pattern-uri de scorare, tendințe, argumente preferate)
+- Unde tinde să supraevalueze sau subevalueze (bias-uri inconștiente)
+- Ce tipuri de argumente îl conving pe fiecare (date, logică, experiență, autoritate)
+- Relațiile între membri (cine influențează pe cine, cine rezistă, cine cedează rapid)
+
+**Medierea progresivă a AI-ului:**
+- La **runda 1**: AI observă, colectează voturi, identifică divergențe
+- La **runda 2**: AI sintetizează argumentele, identifică punctele comune, propune compromis argumentat
+- La **runda 3+**: AI folosește cunoașterea acumulată:
+  - "Marinescu tinde să evalueze Educația mai strict — în 3 din 5 fișe anterioare a ales un nivel sub majoritate"
+  - "Stan și Ionescu au ajuns la acord rapid pe fișele tehnice dar divergează pe cele manageriale"
+  - Propune compromis calibrat pe felul în care gândesc participanții
+- Cu cât procesul avansează, cu atât medierea AI devine mai valoroasă
+- **Interesul nostru:** toți cei implicați să vadă valoare reală în medierea AI
+
+**Diferențiator:** niciun competitor nu are mediere care învață din comportamentul evaluatorilor. Hay/Mercer au mediator uman care nu se calibrează. AI-ul nostru se calibrează pe fiecare client, pe fiecare membru, pe fiecare criteriu.
+
+### 3.7 Finalizare criteriu → finalizare fișă
+- Criteriu cu consens (100%) → progress bar dispare → "CONSENS" + litera → read-only
+- Când toate 6 = CONSENS → buton "Finalizează fișa"
+- Inițiatorul vede varianta finală vs varianta lui inițială → validează modificările
+- Fișa se colorează verde în lista din stânga → se deschide automat următoarea
 
 **STATUS COD:**
 - [x] Vizualizare comparativă (ConsensusView) — există (distribuție, medie, CV)
