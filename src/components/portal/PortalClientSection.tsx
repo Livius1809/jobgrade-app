@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import PackageExplorer from "./PackageExplorer"
 import ClientDataTabs from "./ClientDataTabs"
@@ -250,7 +250,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                           ? "Evaluarea e completă. Verifică rezultatele și validează."
                           : jobCount >= 3
                             ? "AI evaluează posturile pe 6 criterii obiective. Rezultat în secunde."
-                            : "Mai întâi adaugă cel puțin 3 posturi."}
+                            : `${jobCount}/3 posturi adăugate — mai ${jobCount === 0 ? "adaugă cel puțin 3 posturi" : `adaugă ${3 - jobCount} ${3 - jobCount === 1 ? "post" : "posturi"}`} pentru a debloca evaluarea.`}
                     </p>
                   </div>
                 </div>
@@ -290,7 +290,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                 <button onClick={() => setActivePanel(null)} className="text-indigo-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity" title="Închide">✕</button>
               </div>
               <div style={{ height: "20px" }} />
-              <EvaluationPanel onComplete={() => { setActivePanel(null); window.location.reload() }} />
+              <EvaluationPanel onComplete={() => { setActivePanel(null); window.location.reload() }} creditBalance={creditBalance} purchasedLayer={purchasedLayer} />
             </div>,
             document.body
           )}
@@ -582,6 +582,8 @@ interface EvalResult {
   department: string
   grade: string
   score: number
+  criteria?: Record<string, string> // criterionName -> letterCode
+  jobId?: string
 }
 
 /**
@@ -662,13 +664,21 @@ interface NewMemberForm {
   phone: string
 }
 
-function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
+const LAYER_NAMES: Record<number, { name: string; features: string }> = {
+  1: { name: "Baza", features: "Evaluare + Ordine internă" },
+  2: { name: "Conformitate", features: "+ Structură salarială + Pay Gap" },
+  3: { name: "Competitivitate", features: "+ Benchmark piață" },
+  4: { name: "Dezvoltare", features: "+ Dezvoltare organizațională" },
+}
+
+function EvaluationPanel({ onComplete, creditBalance = 0, purchasedLayer = 0 }: { onComplete: () => void; creditBalance?: number; purchasedLayer?: number }) {
   const [variant, setVariant] = useState<EvalVariant | null>(null)
   const [phase, setPhase] = useState<EvalPhase>("choose")
   const [results, setResults] = useState<EvalResult[]>([])
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [validating, setValidating] = useState(false)
+  const [expandedResultIdx, setExpandedResultIdx] = useState<number | null>(null)
   const [jobCount, setJobCount] = useState(0)
   // Comisie
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -725,6 +735,8 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
             department: h.department || "—",
             grade: h.grade || h.letterGrade || "—",
             score: h.totalScore || h.score || 0,
+            criteria: h.letters || h.criteria || {},
+            jobId: h.jobId || h.id,
           })))
           setPhase("results")
         }
@@ -903,7 +915,16 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
   }
 
   async function launchCommitteeWithMembers() {
-    if (selectedMembers.length < 1) { setError("Selectati cel putin un membru."); return }
+    if (selectedMembers.length < 1) { setError("Selectați cel puțin un membru."); return }
+
+    // Pre-flight: verificare credite
+    const selectedVariant = VARIANTS.find(v => v.id === variant)
+    const extraCreditsNeeded = selectedVariant ? jobCount * selectedVariant.extraCreditsPerPosition : 0
+    if (extraCreditsNeeded > 0 && creditBalance < extraCreditsNeeded) {
+      setError(`Credite insuficiente. Aveți ${creditBalance} credite, dar sunt necesare ${extraCreditsNeeded} credite suplimentare (${jobCount} posturi × ${selectedVariant?.extraCreditsPerPosition} credite/post). Achiziționați credite suplimentare din secțiunea Setări → Facturare.`)
+      return
+    }
+
     startCommitteeSession(selectedMembers)
   }
 
@@ -925,10 +946,20 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
 
   // ── Alegere variantă ──
   if (phase === "choose") {
+    const layerInfo = LAYER_NAMES[purchasedLayer]
     return (
       <>
+        {layerInfo && (
+          <div className="bg-indigo-50 rounded-lg border border-indigo-200 px-3 py-2.5 flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-indigo-700">Nivel {purchasedLayer}: {layerInfo.name}</span>
+              <span className="text-[10px] text-indigo-500">{layerInfo.features}</span>
+            </div>
+            <span className="text-[10px] text-indigo-400">{creditBalance} credite disponibile</span>
+          </div>
+        )}
         <p className="text-sm text-slate-600 leading-relaxed">
-          Alegeti cum doriti sa se desfasoare evaluarea posturilor. In toate variantele, dumneavoastra validati si semnati raportul final.
+          Alegeți cum doriți să se desfășoare evaluarea posturilor. În toate variantele, dumneavoastră validați și semnați raportul final.
         </p>
         <div style={{ height: "16px" }} />
 
@@ -1247,26 +1278,11 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
             <p className="text-xs text-slate-400 mt-2">Fiecare post e analizat individual pe 6 criterii.</p>
           </>
         ) : (
-          <>
-            <span className="text-4xl">👥</span>
-            <div style={{ height: "16px" }} />
-            <p className="text-sm font-medium text-slate-700">Sesiunea de evaluare a fost creata</p>
-            <p className="text-xs text-slate-400 mt-2">
-              Membrii comisiei pot accesa sesiunea pentru a evalua individual fiecare post.
-              {variant === "comisie-consultant" && " Consultantul nostru va fi notificat pentru facilitare."}
-            </p>
-            <div style={{ height: "16px" }} />
-            {sessionId && (
-              <a
-                href={`/sessions/${sessionId}`}
-                target="_blank"
-                rel="noopener"
-                className="text-xs text-indigo-600 hover:underline"
-              >
-                Deschide sesiunea de evaluare →
-              </a>
-            )}
-          </>
+          <CommitteeProgressView
+            sessionId={sessionId}
+            variant={variant}
+            onResultsReady={() => { if (sessionId) loadResults(sessionId) }}
+          />
         )}
       </div>
     )
@@ -1307,26 +1323,56 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
             </tr>
           </thead>
           <tbody>
-            {results.sort((a, b) => b.score - a.score).map((r, i) => (
-              <tr key={i} className={`border-b border-slate-50 ${i % 2 === 0 ? "" : "bg-slate-50/50"}`}>
-                <td className="py-2 px-3 font-medium text-slate-800">{r.position}</td>
-                <td className="py-2 px-3 text-slate-500">{r.department}</td>
-                <td className="py-2 px-3 text-center">
-                  <span className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-[11px] font-bold ${
-                    r.grade === "A" ? "bg-indigo-100 text-indigo-700" :
-                    r.grade === "B" ? "bg-blue-100 text-blue-700" :
-                    r.grade === "C" ? "bg-cyan-100 text-cyan-700" :
-                    r.grade === "D" ? "bg-emerald-100 text-emerald-700" :
-                    r.grade === "E" ? "bg-amber-100 text-amber-700" :
-                    r.grade === "F" ? "bg-orange-100 text-orange-700" :
-                    "bg-slate-100 text-slate-600"
-                  }`}>
-                    {r.grade}
-                  </span>
-                </td>
-                <td className="py-2 px-3 text-right font-mono text-slate-600">{r.score}</td>
-              </tr>
-            ))}
+            {results.sort((a, b) => b.score - a.score).map((r, i) => {
+              const isExpanded = expandedResultIdx === i
+              const CRITERION_LABELS: Record<string, string> = {
+                Knowledge: "Educație", Communications: "Comunicare",
+                ProblemSolving: "Rezolvare probleme", DecisionMaking: "Luarea deciziilor",
+                BusinessImpact: "Impact afaceri", WorkingConditions: "Condiții muncă",
+              }
+              return (
+                <React.Fragment key={i}>
+                  <tr
+                    className={`border-b border-slate-50 cursor-pointer hover:bg-indigo-50/50 transition-colors ${i % 2 === 0 ? "" : "bg-slate-50/50"}`}
+                    onClick={() => setExpandedResultIdx(isExpanded ? null : i)}
+                  >
+                    <td className="py-2 px-3 font-medium text-slate-800">
+                      <span className="text-gray-400 mr-1">{isExpanded ? "▼" : "▶"}</span>
+                      {r.position}
+                    </td>
+                    <td className="py-2 px-3 text-slate-500">{r.department}</td>
+                    <td className="py-2 px-3 text-center">
+                      <span className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-[11px] font-bold ${
+                        r.grade === "A" ? "bg-indigo-100 text-indigo-700" :
+                        r.grade === "B" ? "bg-blue-100 text-blue-700" :
+                        r.grade === "C" ? "bg-cyan-100 text-cyan-700" :
+                        r.grade === "D" ? "bg-emerald-100 text-emerald-700" :
+                        r.grade === "E" ? "bg-amber-100 text-amber-700" :
+                        r.grade === "F" ? "bg-orange-100 text-orange-700" :
+                        "bg-slate-100 text-slate-600"
+                      }`}>
+                        {r.grade}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono text-slate-600">{r.score}</td>
+                  </tr>
+                  {isExpanded && r.criteria && Object.keys(r.criteria).length > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-2 bg-indigo-50/50">
+                        <div className="flex flex-wrap gap-2 pl-5">
+                          {Object.entries(r.criteria).map(([key, letter]) => (
+                            <div key={key} className="flex items-center gap-1.5 bg-white rounded-lg border border-gray-200 px-2.5 py-1.5">
+                              <span className="text-[10px] text-gray-500">{CRITERION_LABELS[key] || key}</span>
+                              <span className="text-xs font-bold text-indigo-700">{letter as string}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -1365,6 +1411,136 @@ function EvaluationPanel({ onComplete }: { onComplete: () => void }) {
 }
 
 // ── Panou Rapoarte ──────────────────────────────────────────────────────────
+
+// ─── Progres comisie (vizibil din portal) ─────────────────────────────
+
+function CommitteeProgressView({ sessionId, variant, onResultsReady }: {
+  sessionId: string | null
+  variant: EvalVariant | null
+  onResultsReady: () => void
+}) {
+  const [progress, setProgress] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!sessionId) return
+    const load = () => {
+      fetch(`/api/v1/sessions/${sessionId}/admin-progress`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setProgress(data) })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }
+    load()
+    const interval = setInterval(load, 15000)
+    return () => clearInterval(interval)
+  }, [sessionId])
+
+  // Check if all done → auto-transition to results
+  useEffect(() => {
+    if (!progress) return
+    const allDone = progress.totals.completed === progress.totals.totalMembers && progress.totals.totalMembers > 0
+    if (allDone) onResultsReady()
+  }, [progress, onResultsReady])
+
+  if (!sessionId) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-sm text-slate-500">Sesiunea nu a fost creată.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4 text-left">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">👥</span>
+        <div>
+          <p className="text-sm font-medium text-slate-700">Comisia evaluează</p>
+          <p className="text-[10px] text-slate-400">
+            {variant === "comisie-consultant" ? "Consultantul nostru facilitează consensul." : "AI mediază consensul între membri."}
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <div className="w-6 h-6 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+        </div>
+      ) : progress ? (
+        <>
+          {/* Overall progress */}
+          <div className="bg-white rounded-lg border border-gray-200 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-gray-700">Progres general</span>
+              <span className="text-xs font-bold text-indigo-600">
+                {progress.totals.completed}/{progress.totals.totalMembers} finalizat
+              </span>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                style={{ width: `${progress.totals.totalMembers > 0 ? (progress.totals.completed / progress.totals.totalMembers) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Per-member status */}
+          <div className="space-y-1.5">
+            {(progress.members || []).map((m: any) => {
+              const pct = m.totalJobs > 0 ? Math.round((m.submittedJobs / m.totalJobs) * 100) : 0
+              return (
+                <div key={m.userId} className="flex items-center gap-3 bg-white rounded-lg border border-gray-100 px-3 py-2">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${
+                    m.status === "completed" || m.status === "ready" ? "bg-green-500" :
+                    m.status === "in_progress" ? "bg-yellow-500" :
+                    m.status === "started" ? "bg-orange-400" : "bg-gray-300"
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-gray-900 truncate">
+                      {m.firstName} {m.lastName}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${pct === 100 ? "bg-green-500" : "bg-indigo-400"}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-gray-500 w-12 text-right">
+                      {m.submittedJobs}/{m.totalJobs}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Deadline warning */}
+          {progress.session.daysLeft !== null && progress.session.daysLeft <= 3 && (
+            <div className={`rounded-lg p-2.5 text-xs ${
+              progress.session.daysLeft <= 0 ? "bg-red-50 text-red-700 border border-red-200" :
+              "bg-amber-50 text-amber-700 border border-amber-200"
+            }`}>
+              {progress.session.daysLeft <= 0 ? "Termen depășit" :
+                `${progress.session.daysLeft} ${progress.session.daysLeft === 1 ? "zi" : "zile"} rămase`}
+            </div>
+          )}
+        </>
+      ) : null}
+
+      <a
+        href={`/sessions/${sessionId}`}
+        target="_blank"
+        rel="noopener"
+        className="block text-center text-xs text-indigo-600 hover:underline"
+      >
+        Deschide sesiunea de evaluare →
+      </a>
+    </div>
+  )
+}
 
 function ReportPanel() {
   const [loading, setLoading] = useState(true)
@@ -1477,14 +1653,24 @@ function ReportPanel() {
 
             {/* Export buttons */}
             <div className="flex gap-1.5">
-              {["pdf", "excel", "json", "xml"].map((fmt) => (
+              {([
+                { fmt: "pdf", cost: 5 },
+                { fmt: "excel", cost: 5 },
+                { fmt: "json", cost: 5 },
+                { fmt: "xml", cost: 5 },
+              ]).map(({ fmt, cost }) => (
                 <button
                   key={fmt}
-                  onClick={() => handleExport(s.id, fmt)}
+                  onClick={() => {
+                    if (confirm(`Export ${fmt.toUpperCase()} — se vor deduce ${cost} credite din sold. Continuați?`)) {
+                      handleExport(s.id, fmt)
+                    }
+                  }}
                   disabled={exporting === `${s.id}-${fmt}`}
                   className="flex-1 py-1.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors uppercase"
+                  title={`${cost} credite`}
                 >
-                  {exporting === `${s.id}-${fmt}` ? "..." : fmt}
+                  {exporting === `${s.id}-${fmt}` ? "..." : <>{fmt} <span className="text-gray-400">({cost}cr)</span></>}
                 </button>
               ))}
             </div>

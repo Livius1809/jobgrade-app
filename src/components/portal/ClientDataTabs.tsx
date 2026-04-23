@@ -333,6 +333,20 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
 
             <p className="text-sm text-slate-600 leading-relaxed">{activeTabDef.description}</p>
 
+            {/* Mesaj minim 3 posturi */}
+            {activeTabDef.id === "posturi" && liveJobCount < 3 && (
+              <>
+                <div style={{ height: "12px" }} />
+                <div className="bg-blue-50 rounded-lg border border-blue-200 px-3 py-2.5 flex items-center gap-2">
+                  <span className="text-blue-500 text-sm shrink-0">ℹ️</span>
+                  <p className="text-xs text-blue-700">
+                    <span className="font-bold">{liveJobCount}/3 posturi adăugate</span> — sunt necesare minim 3 posturi pentru a putea lansa evaluarea.
+                    {liveJobCount === 0 && " Adăugați primul post folosind butonul de mai jos."}
+                  </p>
+                </div>
+              </>
+            )}
+
             {/* Lista posturilor existente — doar pe tab Posturi */}
             {activeTabDef.id === "posturi" && jobs.length > 0 && (
               <>
@@ -1543,12 +1557,24 @@ function ImportStatFunctiiPanel({ onComplete }: { onComplete: () => void }) {
     setSaving(false)
   }
 
+  function updatePosition(idx: number, field: string, value: string) {
+    if (!result) return
+    const updated = [...result.positions]
+    updated[idx] = { ...updated[idx], [field]: value }
+    setResult({ positions: updated })
+  }
+
+  function removePosition(idx: number) {
+    if (!result) return
+    setResult({ positions: result.positions.filter((_, i) => i !== idx) })
+  }
+
   if (result && result.positions.length > 0) {
     return (
       <>
         <p className="text-sm text-slate-600 leading-relaxed">
-          Am extras <span className="font-bold">{result.positions.length} pozitii</span> din <span className="font-medium">{file?.name}</span>.
-          Verificati si salvati:
+          Am extras <span className="font-bold">{result.positions.length} poziții</span> din <span className="font-medium">{file?.name}</span>.
+          Verificați, editați dacă e nevoie și salvați:
         </p>
         <div style={{ height: "16px" }} />
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -1558,31 +1584,63 @@ function ImportStatFunctiiPanel({ onComplete }: { onComplete: () => void }) {
                 <th className="text-left py-2 px-3 font-semibold text-slate-500">Post</th>
                 <th className="text-left py-2 px-3 font-semibold text-slate-500">Departament</th>
                 <th className="text-left py-2 px-3 font-semibold text-slate-500">Nivel</th>
+                <th className="py-2 px-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {result.positions.map((p, i) => (
                 <tr key={i} className={i % 2 ? "bg-slate-50/50" : ""}>
-                  <td className="py-1.5 px-3 font-medium text-slate-800">{p.title}</td>
-                  <td className="py-1.5 px-3 text-slate-500">{p.department || "—"}</td>
-                  <td className="py-1.5 px-3 text-slate-500">{p.level || "—"}</td>
+                  <td className="py-1 px-2">
+                    <input
+                      value={p.title}
+                      onChange={e => updatePosition(i, "title", e.target.value)}
+                      className="w-full px-1.5 py-1 border border-transparent hover:border-gray-300 focus:border-indigo-400 rounded text-xs font-medium text-slate-800 focus:outline-none"
+                    />
+                  </td>
+                  <td className="py-1 px-2">
+                    <input
+                      value={p.department || ""}
+                      onChange={e => updatePosition(i, "department", e.target.value)}
+                      className="w-full px-1.5 py-1 border border-transparent hover:border-gray-300 focus:border-indigo-400 rounded text-xs text-slate-500 focus:outline-none"
+                      placeholder="—"
+                    />
+                  </td>
+                  <td className="py-1 px-2">
+                    <input
+                      value={p.level || ""}
+                      onChange={e => updatePosition(i, "level", e.target.value)}
+                      className="w-full px-1.5 py-1 border border-transparent hover:border-gray-300 focus:border-indigo-400 rounded text-xs text-slate-500 focus:outline-none"
+                      placeholder="—"
+                    />
+                  </td>
+                  <td className="py-1 px-1 text-center">
+                    <button
+                      onClick={() => removePosition(i)}
+                      className="text-red-300 hover:text-red-500 text-xs transition-colors"
+                      title="Elimină"
+                    >
+                      ✕
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div style={{ height: "16px" }} />
+        <div style={{ height: "8px" }} />
+        <p className="text-[9px] text-gray-400">Click pe un câmp pentru a edita. ✕ pentru a elimina o poziție.</p>
+        <div style={{ height: "12px" }} />
         {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
         <div className="flex gap-3">
-          <button onClick={handleSaveAll} disabled={saving}
+          <button onClick={handleSaveAll} disabled={saving || result.positions.length === 0}
             className="flex-1 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40"
           >
-            {saving ? "Se salveaza..." : `Salveaza ${result.positions.length} posturi`}
+            {saving ? "Se salvează..." : `Salvează ${result.positions.length} ${result.positions.length === 1 ? "post" : "posturi"}`}
           </button>
           <button onClick={() => { setResult(null); setFile(null) }}
             className="px-4 py-3 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            Alt fisier
+            Alt fișier
           </button>
         </div>
       </>
