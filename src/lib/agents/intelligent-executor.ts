@@ -112,12 +112,21 @@ export async function runIntelligentBatch(
     let learningCreated = false
 
     // ═══ PAS 3: KB-FIRST (P3) ═══
-    const kbResult = await resolveFromKB(
-      task.assignedTo,
-      task.title,
-      task.description,
-      0.85 // threshold aprobat Owner D3
-    )
+    // Task-urile care cer ACȚIUNI CONCRETE (testare, audit, observare) nu se rezolvă din KB.
+    // KB răspunde la "ce știi?" — dar testarea cere "du-te și verifică".
+    const actionTags = ["e2e", "smoke-test", "audit", "test", "verificare", "observare"]
+    const actionTypes: string[] = ["REVIEW", "INVESTIGATION"]
+    const requiresAction = actionTypes.includes(task.taskType) &&
+      (task.tags ?? []).some((t: string) => actionTags.includes(t.toLowerCase()))
+
+    const kbResult = requiresAction
+      ? { hit: false, level: "MISS" as const, confidence: 0 }
+      : await resolveFromKB(
+          task.assignedTo,
+          task.title,
+          task.description,
+          0.85 // threshold aprobat Owner D3
+        )
 
     if (kbResult.hit) {
       // Rezolvat din KB — marcăm COMPLETED fără apel AI
