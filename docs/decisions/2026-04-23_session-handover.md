@@ -35,7 +35,15 @@
 - Panoul Rapoarte — panou lateral creat (createPortal), ReportPanel component adăugat
 - Formularul configurare comisie — selectare membri din /api/v1/users, toggle, cost suplimentar
 
-## De continuat mâine
+### Specificații complete evaluare comisie — toate 4 blocuri
+- Bloc 1: configurare (definire membri, alocare fișe per calup dept, bifă inițiere, particularizare mesaj)
+- Bloc 2: scorare individuală (ghidaj AI highlight text + matching descriptor, Kanban per criteriu, cartuș informativ)
+- Bloc 3: discuție grup (tabel membri×criterii cu litere, progress bar→CONSENS, mediere AI vie progresivă, pricing 3 runde incluse + credite suplimentare, editare deschisă cu argumentare)
+- Bloc 4: validare post-consens (accept simplu per secțiune, jurnal proces structurat, termen HR Admin, read-only, semnătură doar DG/Owner la Etapa 5)
+- Principii directoare: docs/evaluation-principles.md (unificat RO, trimis la CMA validare)
+- AI mediator viu: învață cum gândește fiecare membru la pre-scorare → găsește compromis cognitiv la discuție
+
+## De continuat
 1. **Bloc 3** — Discuția de grup (cel mai complex): forum/comentarii, AI mediere, mecanism consens
 2. **Bloc 4** — Validare individuală post-consens
 3. **Panoul Rapoarte** — conținut ReportPanel (preview + export PDF + validare)
