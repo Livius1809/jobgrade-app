@@ -43,7 +43,7 @@ export const B2B_SERVICES: ServiceInfo[] = [
       "Trail complet de audit (conform Directiva EU 2023/970)",
       "Rapoarte exportabile PDF",
     ],
-    pricing: "Între 90 și 200 RON per poziție distinctă (nu per angajat), fără TVA. Trei planuri: Starter (1-50 poziții), Professional (51-150), Enterprise (150+). Primii 20 de clienți: -25% preț de lansare.",
+    pricing: "Costul se calculează pe baza numărului de poziții distincte și a numărului de salariați. Calculator personalizat disponibil în portal. Discount volum automat. Prețuri fără TVA.",
     activationConditions: "Crearea contului de companie + alegerea planului. Se poate începe imediat după plata pentru numărul de poziții ales.",
     faq: [
       { q: "Cât durează procesul complet?", a: "Depinde de numărul de posturi. Pentru 50-80 de posturi, între 2 și 4 săptămâni, cu efort estimat de 2-3 ore pe săptămână din partea comitetului." },
@@ -192,13 +192,14 @@ export const GENERAL_COMMERCIAL = {
   website: "jobgrade.ro",
 
   b2bPricing: {
-    summary: "Între 90 și 200 RON per poziție distinctă din statul de funcții, fără TVA.",
+    summary: "Costul se calculează pe baza numărului de poziții distincte din statul de funcții și a numărului de salariați. Calculator personalizat disponibil în portal.",
     plans: [
-      { name: "Starter", positions: "1-50", price: "200 RON/poz", launch: "150 RON/poz", earlyAdopter: "112 RON/poz" },
-      { name: "Professional", positions: "51-150", price: "150 RON/poz", launch: "120 RON/poz", earlyAdopter: "90 RON/poz" },
-      { name: "Enterprise", positions: "150+", price: "120 RON/poz", launch: "90 RON/poz", earlyAdopter: "67 RON/poz" },
+      { name: "Starter", positions: "1-50", price: "calculator personalizat", launch: "calculator personalizat", earlyAdopter: "discount volum automat" },
+      { name: "Professional", positions: "51-150", price: "calculator personalizat", launch: "calculator personalizat", earlyAdopter: "discount 12%" },
+      { name: "Enterprise", positions: "150+", price: "calculator personalizat", launch: "calculator personalizat", earlyAdopter: "discount 25%" },
     ],
-    earlyAdopter: "Primii 20 de clienți beneficiază de un preț de lansare cu 25% reducere, blocat pe toată durata contractului.",
+    pricingModel: "Credite: 1 credit = 8 RON. Costul per serviciu = credite calculate din formulă (poziții × factor + salariați × factor). Discount volum automat pe baza dimensiunii organizației.",
+    earlyAdopter: "Primii 20 de clienți beneficiază de un preț de lansare cu reducere, blocat pe toată durata contractului.",
     billing: "Facturare upfront, reînnoire anuală la 50% din prețul inițial.",
     vatNote: "Prețurile B2B sunt fără TVA.",
   },

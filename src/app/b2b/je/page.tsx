@@ -123,7 +123,7 @@ export default function B2BLanding() {
             <DiffCard icon="⚡" title="Zile, nu luni" text="Implementare în 2–4 săptămâni, nu 4–8 luni. Durata efectivă e sub controlul dvs. — comitetul lucrează în ritmul propriu." />
             <DiffCard icon="⚖️" title="4 criterii primare + 6 criterii secundare" text="Criterii obiective de evaluare neutre din perspectiva genului, conforme cu cerințele legislației europene privind transparența salarială." />
             <DiffCard icon="🔒" title="Trasabilitate completă" text="Fiecare evaluare, vot și ajustare — înregistrate cu dată, oră și justificare. Registru de audit accesibil oricând." />
-            <DiffCard icon="🏢" title="Per poziție, nu per angajat" text="Plătiți pentru numărul de poziții distincte, nu pentru numărul de angajați." />
+            <DiffCard icon="🏢" title="Tarifare pe poziții și salariați" text="Costul se calculează pe baza numărului de poziții distincte din statul de funcții și a numărului de salariați. Calculator transparent în portal." />
             <DiffCard icon="🧠" title="AI + personal acreditat" text="Personal acreditat de Colegiul Psihologilor din România în domeniul psihologiei muncii, transporturilor și serviciilor, cu formare psihanalitică și experiență în resurse umane și proiecte pentru organizații din România. AI-ul procesează date, nu ia decizii." />
           </div>
         </div>
@@ -136,63 +136,81 @@ export default function B2BLanding() {
             Prețuri transparente — ca și serviciul nostru
           </h2>
           <p className="text-center text-indigo-600 font-semibold mt-4 mb-16">
-            Ofertă de lansare: -25% pentru primele 20 de companii
+            Cost calculat pe baza organizației dvs. — poziții + salariați
           </p>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
             <PricingCard
-              tier="Starter"
-              subtitle="1–50 poziții distincte"
-              price="150"
-              originalPrice="200"
+              tier="Ordine internă"
+              subtitle="Baza"
+              price="—"
               features={[
-                "Evaluare pe 4 criterii neutre",
-                "Comitet — până la 4 membri",
-                "Raport evaluare final",
-                "Export PDF pentru audit",
-                "Asistență AI de specialitate (HR, legislația muncii)",
-                "Panou de control cu instrumente de bază",
-                "Suport e-mail",
+                "Evaluare pe 4 criterii neutre + 6 subcriterii",
+                "Ierarhizare completă a posturilor",
+                "Fișe de post AI",
+                "Structură salarială",
+                "Raport RDA + export PDF",
+                "Comitet evaluare + mediere AI",
+                "Jurnal proces complet",
               ]}
             />
             <PricingCard
-              tier="Professional"
-              subtitle="51–150 poziții distincte"
-              price="112"
-              originalPrice="150"
+              tier="Conformitate"
+              subtitle="Nivelul 1"
+              price="—"
+              features={[
+                "Tot din Ordine internă, plus:",
+                "Analiză decalaj salarial (Art. 9 Dir. EU 2023/970)",
+                "Benchmark salarial pe piață",
+                "Raport CIA (Conformitate Internă)",
+              ]}
+            />
+            <PricingCard
+              tier="Competitivitate"
+              subtitle="Nivelul 2"
+              price="—"
               recommended
               features={[
-                "Tot din Starter, plus:",
-                "Comitet — până la 8 membri",
-                "Analiză decalaj salarial pe gen (conform Directivei EU 2023/970)",
-                "Integrare cu misiunea, viziunea și valorile organizației",
-                "Panou de control cu instrumente avansate",
-                "Suport prioritar și sesiuni video",
-                "Sesiune de integrare inițială (60 min)",
+                "Tot din Conformitate, plus:",
+                "Pachete salariale competitive",
+                "Evaluare performanță",
+                "Impact bugetar simulat",
               ]}
             />
             <PricingCard
-              tier="Enterprise"
-              subtitle="150+ poziții distincte"
-              price="90"
-              originalPrice="120"
+              tier="Dezvoltare"
+              subtitle="Nivelul 3"
+              price="—"
               features={[
-                "Tot din Professional, plus:",
-                "Comitet — fără limită membri",
-                "Panou de control complet cu rapoarte detaliate",
-                "Conectare cu sistemele interne de resurse umane",
-                "Responsabil de cont dedicat",
-                "Răspuns garantat în 24 de ore",
+                "Tot din Competitivitate, plus:",
+                "Dezvoltare HR integrată",
+                "Recrutare asistată AI",
+                "Manual angajat personalizat",
               ]}
             />
           </div>
 
-          <div className="mt-10 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed">
-            <p>Prețuri RON/poziție, fără TVA. Facturare unică per proiect de evaluare.</p>
+          <div className="mt-10 max-w-lg mx-auto text-center">
+            <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-5">
+              <p className="text-sm text-indigo-800 font-medium mb-2">Costul se calculează pe baza organizației dvs.</p>
+              <p className="text-xs text-indigo-600 leading-relaxed">
+                Prețul depinde de numărul de <strong>poziții distincte</strong> din statul de funcții
+                și de numărul de <strong>salariați</strong>. Creați un cont gratuit pentru a vedea
+                calculatorul de preț personalizat.
+              </p>
+              <div className="mt-4">
+                <a href="/register" className="inline-block px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                  Calculator preț gratuit →
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 max-w-lg mx-auto text-xs text-slate-400 space-y-2 leading-relaxed text-center">
+            <p>Prețuri RON, fără TVA. Facturare unică per proiect de evaluare.</p>
             <p className="text-slate-500">
-              <strong>Tarifare progresivă:</strong> plătiți fiecare poziție la prețul intervalului în care se încadrează.
-              De exemplu, pentru 120 de poziții: primele 50 la preț Starter, următoarele 70 la preț Professional.
-              Pentru 200 de poziții: 50 Starter + 100 Professional + 50 Enterprise.
+              <strong>Discount volum automat:</strong> cu cât organizația are mai multe poziții și salariați,
+              cu atât costul pe unitate scade (până la 25% reducere Enterprise).
             </p>
           </div>
         </div>
@@ -354,9 +372,9 @@ function DiffCard({ icon, title, text }: { icon: string; title: string; text: st
 }
 
 function PricingCard({
-  tier, subtitle, price, originalPrice, features, recommended,
+  tier, subtitle, price, features, recommended,
 }: {
-  tier: string; subtitle: string; price: string; originalPrice: string
+  tier: string; subtitle: string; price: string
   features: string[]; recommended?: boolean
 }) {
   return (
@@ -370,12 +388,10 @@ function PricingCard({
       )}
       <div className="pt-2">
         <h3 className="text-lg font-bold text-slate-900">{tier}</h3>
-        <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
+        <p className="text-xs text-indigo-500 font-medium mt-1">{subtitle}</p>
       </div>
       <div className="mt-5 mb-8">
-        <span className="text-slate-400 text-sm line-through mr-2">{originalPrice} RON</span>
-        <span className="text-3xl font-extrabold text-slate-900">{price}</span>
-        <span className="text-sm text-slate-500"> RON/poziție</span>
+        <span className="text-sm text-slate-500">{price}</span>
       </div>
       <ul className="space-y-3 mb-8">
         {features.map((f, i) => (
