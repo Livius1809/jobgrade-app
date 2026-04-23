@@ -412,8 +412,12 @@ function computeRhythm(inputs: CockpitInputs): LayerStatus {
   else if (vitalSignsLatest?.verdict === "WEAKENED") alarms.push({ message: "Vital signs: WEAKENED", severity: "MEDIUM" })
 
   let status: LayerHealth = "HEALTHY"
-  if (offTargetPct > 50 || overdueRituals > 2 || vitalSignsLatest?.verdict === "CRITICAL") status = "CRITICAL"
-  else if (overdueRituals > 0 || offTarget > 0 || measurementGaps > 0 || vitalSignsLatest?.verdict === "WEAKENED") status = "WARNING"
+  // CRITICAL doar dacă vital signs sunt CRITICAL sau ritualuri grav întârziate.
+  // offTarget > 50% e WARNING, nu CRITICAL — obiectivele noi sunt natural sub target.
+  // Un organism sănătos care tocmai și-a setat ținte ambițioase NU e în criză.
+  if (overdueRituals > 5 || vitalSignsLatest?.verdict === "CRITICAL") status = "CRITICAL"
+  else if (offTargetPct > 50 || overdueRituals > 2 || vitalSignsLatest?.verdict === "WEAKENED") status = "WARNING"
+  else if (overdueRituals > 0 || offTarget > 0 || measurementGaps > 0) status = "WARNING"
 
   const vitalLabel = vitalSignsLatest
     ? `${vitalSignsLatest.verdict} (${vitalSignsLatest.pass}P/${vitalSignsLatest.warn}W/${vitalSignsLatest.fail}F)`
