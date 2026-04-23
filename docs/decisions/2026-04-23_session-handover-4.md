@@ -106,9 +106,16 @@ Obiectivul principal: **Lansare platformă 2 pachete B2B + 1 pachet B2C, Q2 2026
 - 4 obiective → 39 obiective (cascadate)
 - Rollup automat va actualiza currentValue la fiecare ciclu cron
 
-## De continuat
-1. **Adobe design** — iconuri Illustrator + template RDA Dreamweaver (Owner)
-2. **Verificare 19/19 PASS** — rulare test după deploy
-3. **Monitorizare organism** — primele cicluri cu cascade + rollup + review gate
-4. **Salary Grade Manager UI** — lipsă din Pachet 2
-5. **B2C MVP** — obiectiv COG, currentValue 0% → de implementat
+## Scripturi Adobe livrate (continuare sesiune)
+- `indesign-master-report.jsx` — 10 pagini A4, stiluri brand, placeholder-uri
+- `generate-icon-set-2.jsx` — 8 iconuri Pachet 2 (pay-gap, semnătură, clase, benchmark, credite, download, comisie, consens)
+- `rda/index.html` + `styles.css` — Dreamweaver ready, identic ecran+print, @page A4
+- Total: 20 iconuri (12+8) + 1 template master report
+
+## De continuat (sesiune viitoare)
+1. **Owner rulează scripturi Adobe** — InDesign, Illustrator, Dreamweaver
+2. **Fluxul client Pachet 2 servicii B2B** — neînceput
+3. **Salary Grade Manager UI** — lipsă din Pachet 2
+4. **Monitorizare organism** — cascade+rollup+review gate active, 39 obiective
+5. **B2C MVP** — obiectiv COG, currentValue 0%
+6. **Playwright rerun** — verificare 19/19 PASS după fix master report
