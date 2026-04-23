@@ -215,6 +215,8 @@ export default async function AgentsReportPage() {
         SELECT "assignedTo" as role,
           count(*) as total,
           count(*) FILTER (WHERE status = 'COMPLETED') as completed,
+          count(*) FILTER (WHERE status = 'COMPLETED' AND result LIKE '[KB-RESOLVED%') as kb_resolved,
+          count(*) FILTER (WHERE status = 'COMPLETED' AND (result IS NULL OR result NOT LIKE '[KB-RESOLVED%')) as real_executed,
           count(*) FILTER (WHERE status = 'BLOCKED') as postponed
         FROM agent_tasks WHERE "createdAt" > ${oneWeekAgo}
         GROUP BY "assignedTo"
@@ -235,7 +237,7 @@ export default async function AgentsReportPage() {
       ` as Promise<any[]>,
     ])
 
-    const taskMap = new Map(agentTasks.map((r: any) => [r.role, { total: Number(r.total), completed: Number(r.completed), postponed: Number(r.postponed) }]))
+    const taskMap = new Map(agentTasks.map((r: any) => [r.role, { total: Number(r.total), completed: Number(r.completed), kbResolved: Number(r.kb_resolved), realExecuted: Number(r.real_executed), postponed: Number(r.postponed) }]))
     const kbMapWeek = new Map(agentKB.map((r: any) => [r.role, Number(r.learned)]))
     const kbMapTotal = new Map(agentKBTotal.map((r: any) => [r.role, Number(r.total)]))
 
@@ -285,8 +287,11 @@ export default async function AgentsReportPage() {
       return {
         role: d.agentRole, name: d.displayName || d.agentRole,
         level: d.level, isManager: d.isManager,
-        tasks: t.total, completed: t.completed, postponed: t.postponed,
+        tasks: t.total, completed: t.completed,
+        kbResolved: t.kbResolved || 0, realExecuted: t.realExecuted || 0,
+        postponed: t.postponed,
         completionRate: t.total > 0 ? Math.round(t.completed / t.total * 100) : null,
+        realRate: t.total > 0 ? Math.round((t.realExecuted || 0) / t.total * 100) : null,
         learnedWeek: kbMapWeek.get(d.agentRole) || 0,
         kbTotal: kbMapTotal.get(d.agentRole) || 0,
         maturityScore,
@@ -477,8 +482,10 @@ export default async function AgentsReportPage() {
                   <th className="text-right px-3 py-2">Maturitate</th>
                   <th className="text-right px-3 py-2">Învățat 7z</th>
                   <th className="text-right px-3 py-2">Tasks</th>
-                  <th className="text-right px-3 py-2">Done</th>
-                  <th className="text-right px-3 py-2">Rata</th>
+                  <th className="text-right px-3 py-2">Făcut</th>
+                  <th className="text-right px-3 py-2">Știut</th>
+                  <th className="text-right px-3 py-2">Amânate</th>
+                  <th className="text-right px-3 py-2">Rata reală</th>
                 </tr>
               </thead>
               <tbody>
@@ -503,12 +510,13 @@ export default async function AgentsReportPage() {
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-indigo-600">{a.learnedWeek || "—"}</td>
                     <td className="px-3 py-2 text-right font-mono">{a.tasks || "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono text-emerald-600">{a.completed || "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono text-amber-500">{a.postponed || "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono text-emerald-600" title="Executat real cu AI">{a.realExecuted || "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono text-amber-500" title="KB-RESOLVED — recitat din memorie">{a.kbResolved || "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono text-slate-400">{a.postponed || "—"}</td>
                     <td className="px-3 py-2 text-right">
-                      {a.completionRate !== null ? (
-                        <span className={`font-bold ${a.completionRate >= 70 ? "text-emerald-600" : a.completionRate >= 40 ? "text-amber-600" : "text-red-600"}`}>
-                          {a.completionRate}%
+                      {a.realRate !== null ? (
+                        <span className={`font-bold ${a.realRate >= 60 ? "text-emerald-600" : a.realRate >= 30 ? "text-amber-600" : "text-red-600"}`}>
+                          {a.realRate}%
                         </span>
                       ) : "—"}
                     </td>
