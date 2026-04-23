@@ -109,7 +109,8 @@ export default async function InsightsPage() {
       kbUpdates: Number(kbUpdatesWeekOld || 0) + Number(kbUpdatesWeekNew || 0),
       feedbackRate: totalTasks > 0 ? Math.round(withFeedback / totalTasks * 100) : 0,
       avgHours: tf.avg_hours ? Math.round(Number(tf.avg_hours)) : null,
-      loopClosed: Math.min(withFeedback, Number(kbUpdatesWeekOld || 0) + Number(kbUpdatesWeekNew || 0)), // task cu feedback ȘI KB update
+      // Loop closed = task-uri REVIEW_PENDING care au fost reviewuite (feedback real de la manager)
+      loopClosed: withFeedback, // Nr. tasks cu resultQuality setat = manager a verificat efectiv
     }
 
     // ── 6. HARTA TERMICĂ ──
@@ -177,17 +178,41 @@ export default async function InsightsPage() {
     const autonomyPct = totalDecisions > 0 ? Math.round(autoDecisions / totalDecisions * 100) : 0
     const escalationPct = totalDecisions > 0 ? Math.round(escalatedCount / totalDecisions * 100) : 0
 
+    // Autonomie per domeniu — calculată din date reale per tag/taskType
+    let domainAutonomy: Array<{ name: string; autonomy: number; target: number }> = []
+    try {
+      const domainStats = await p.$queryRaw`
+        SELECT
+          CASE
+            WHEN "taskType" IN ('REVIEW', 'INVESTIGATION') THEN 'Evaluare și audit'
+            WHEN "taskType" = 'CONTENT_CREATION' THEN 'Creare conținut'
+            WHEN "taskType" IN ('DATA_ANALYSIS', 'KB_RESEARCH') THEN 'Analiză și cercetare'
+            WHEN "taskType" IN ('PROCESS_EXECUTION', 'OUTREACH') THEN 'Execuție și comunicare'
+            ELSE 'Altele'
+          END as domain,
+          count(*) as total,
+          count(*) FILTER (WHERE status = 'COMPLETED' AND "reviewedAt" IS NOT NULL AND "resultQuality" >= 60) as auto_ok,
+          count(*) FILTER (WHERE "blockerAgentRole" = 'OWNER') as owner_blocked
+        FROM agent_tasks
+        WHERE "createdAt" > ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+        GROUP BY domain
+      ` as any[]
+
+      domainAutonomy = domainStats.map((d: any) => ({
+        name: d.domain,
+        autonomy: Number(d.total) > 0 ? Math.round((Number(d.total) - Number(d.owner_blocked)) / Number(d.total) * 100) : 0,
+        target: 80,
+      }))
+    } catch {
+      domainAutonomy = [{ name: "Date insuficiente", autonomy: autonomyPct, target: 80 }]
+    }
+
     autonomy = {
       overall: autonomyPct,
       escalationRate: escalationPct,
       totalDecisions,
       autoResolved: autoDecisions,
-      domains: [
-        { name: "Evaluare posturi", autonomy: autonomyPct, target: 80 },
-        { name: "Procesare semnale", autonomy: Math.min(100, autonomyPct + 10), target: 90 },
-        { name: "Învățare KB", autonomy: Math.min(100, autonomyPct + 20), target: 85 },
-        { name: "Comunicare client", autonomy: Math.max(0, autonomyPct - 20), target: 70 },
-      ],
+      domains: domainAutonomy,
     }
 
     // ── COG P2: ESCALĂRI ACTIVE CU CONTEXT ──

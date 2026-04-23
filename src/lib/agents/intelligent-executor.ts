@@ -311,8 +311,16 @@ export async function runIntelligentBatch(
 
     await updateAgentBudget(task.assignedTo, tokensUsed.input + tokensUsed.output)
 
-    // ═══ PAS 8: LEARNING (P1 + P6 inductiv) ═══
-    if (execResult.outcome === "COMPLETED" && execResult.result) {
+    // ═══ PAS 8: LEARNING — AMÂNAT PÂNĂ LA REVIEW ═══
+    // NU salvăm learning la execuție. Learning se extrage DOAR când
+    // managerul APROBĂ rezultatul (în proactive-loop reviewCompletedTasks).
+    // Motivul: dacă managerul respinge (Q30 "nu ai făcut ce trebuia"),
+    // nu vrem să învățăm din greșeală. Învățăm doar din succes validat.
+    //
+    // Task-uri KB_RESEARCH/KB_VALIDATION (fără review) salvează learning
+    // imediat — sunt cunoaștere pură, nu acțiuni verificabile.
+    const KNOWLEDGE_TYPES_LEARN = new Set(["KB_RESEARCH", "KB_VALIDATION"])
+    if (KNOWLEDGE_TYPES_LEARN.has(task.taskType) && execResult.outcome === "COMPLETED" && execResult.result) {
       const artifactId = await extractPostExecutionLearning({
         taskId: task.id,
         agentRole: task.assignedTo,
@@ -323,27 +331,12 @@ export async function runIntelligentBatch(
       })
       learningCreated = !!artifactId
 
-      // Salvăm în KB pentru viitoare KB-first hits
       await saveToKBAfterExecution(
         task.assignedTo,
         task.title,
         execResult.result,
         0.5
       )
-    }
-
-    // ═══ PAS 9: PÂLNIA DE ÎNVĂȚARE ═══
-    try {
-      await learningFunnel({
-        agentRole: task.assignedTo,
-        type: "TASK",
-        input: `${task.title}: ${task.description.slice(0, 300)}`,
-        output: execResult.result?.slice(0, 1000) || execResult.outcome,
-        success: execResult.outcome === "COMPLETED",
-      })
-    } catch (e) {
-      // Pâlnia nu trebuie să blocheze execuția
-      console.log("[FUNNEL] Error (non-blocking):", (e as Error).message?.slice(0, 80))
     }
 
     results.push({

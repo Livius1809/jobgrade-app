@@ -179,8 +179,8 @@ export default async function AgentsReportPage() {
       fromInternal,
       fromClients,
       fromClaude,
-      fromSeed: 0,
-      fromExternal: Math.max(0, totalThisWeek - fromInternal - fromClients - fromClaude),
+      fromSeed,
+      fromExternal: Math.max(0, totalThisWeek - fromInternal - fromClients - fromClaude - fromSeed),
     }
 
     // ═══ OBIECTIVE ═══

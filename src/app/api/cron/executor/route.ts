@@ -92,6 +92,15 @@ export async function GET(request: NextRequest) {
       propagated = await propagateDepartmentLearning()
     } catch {}
 
+    // NIVEL 5: Curățare artefacte învățare expirate (săptămânal — doar luni)
+    let expiredCleaned = 0
+    if (new Date().getDay() === 1) {
+      try {
+        const { expireUnusedArtifacts } = await import("@/lib/agents/learning-pipeline")
+        expiredCleaned = await expireUnusedArtifacts()
+      } catch {}
+    }
+
     return NextResponse.json({
       ok: true,
       batches: batchCount,
@@ -100,6 +109,7 @@ export async function GET(request: NextRequest) {
       totalExecuted,
       totalBlocked,
       propagatedLearning: propagated,
+      expiredCleaned,
       results: allResults.slice(0, 20),
       timestamp: new Date().toISOString(),
     })

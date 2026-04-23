@@ -203,10 +203,20 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
     // NEW: Cron state
     const executorCronEnabled = process.env.EXECUTOR_CRON_ENABLED === "true"
 
-    // NEW: Cost estimate 24h — approximation bazat pe număr taskuri executate
-    // (fără tokens reale stocate, folosim heuristică ~$0.15/task research, $0.05/task content)
-    const totalExecTasks = tasksExecuted24h.completed + tasksExecuted24h.blocked
-    const estimatedCost24hUsd = Math.round(totalExecTasks * 0.10 * 100) / 100
+    // Cost 24h — din telemetry reală (dacă există), altfel estimare conservatoare
+    let estimatedCost24hUsd = 0
+    try {
+      const costData = await prisma.$queryRaw`
+        SELECT COALESCE(SUM("estimatedCostUSD"), 0) as total_cost
+        FROM execution_telemetry
+        WHERE "createdAt" > ${new Date(Date.now() - 24 * 60 * 60 * 1000)}
+      ` as any[]
+      estimatedCost24hUsd = Math.round(Number(costData[0]?.total_cost || 0) * 100) / 100
+    } catch {
+      // Fallback: Haiku ~$0.003/task, Sonnet ~$0.02/task, medie ~$0.005
+      const totalExecTasks = tasksExecuted24h.completed + tasksExecuted24h.blocked
+      estimatedCost24hUsd = Math.round(totalExecTasks * 0.005 * 100) / 100
+    }
 
     // Vital signs — citire din DB (salvat de GitHub Actions via /api/v1/vital-signs)
     let vitalSignsLatest: any = undefined

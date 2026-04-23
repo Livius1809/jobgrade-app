@@ -540,6 +540,27 @@ Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback cons
         })
 
         console.log(`   ✅ ${task.assignedTo}/${task.title}: APPROVED — ${review.feedback}`)
+
+        // ═══ LEARNING: extrage cunoaștere DOAR din task-uri APROBATE ═══
+        // Managerul a validat calitatea → acum e sigur că rezultatul e bun
+        if (task.result) {
+          try {
+            const { extractPostExecutionLearning } = await import("./learning-pipeline")
+            const { saveToKBAfterExecution } = await import("./kb-first-resolver")
+            await extractPostExecutionLearning({
+              taskId: task.id,
+              agentRole: task.assignedTo,
+              taskTitle: task.title,
+              taskType: task.taskType,
+              result: task.result,
+              wasSuccessful: true,
+            })
+            await saveToKBAfterExecution(task.assignedTo, task.title, task.result, 0.7)
+            console.log(`   📚 Learning extras din task aprobat ${task.id}`)
+          } catch (le) {
+            console.log(`   ⚠️ Learning extraction failed (non-blocking): ${(le as Error).message?.slice(0, 60)}`)
+          }
+        }
       } else {
         // Respins — reasignare cu feedback
         await prisma.agentTask.update({
