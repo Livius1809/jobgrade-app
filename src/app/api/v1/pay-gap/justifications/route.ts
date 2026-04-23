@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const parsed = JustificationSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ message: parsed.error.errors[0].message }, { status: 422 })
+      return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
     }
 
     const report = await prisma.payGapReport.findFirst({
