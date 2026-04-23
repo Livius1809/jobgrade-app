@@ -92,7 +92,14 @@ export async function GET(request: NextRequest) {
       propagated = await propagateDepartmentLearning()
     } catch {}
 
-    // NIVEL 5: Curățare artefacte învățare expirate (săptămânal — doar luni)
+    // NIVEL 5: Rollup obiective (de jos în sus, la fiecare ciclu)
+    let rollupResult = { updated: 0, details: [] as any[] }
+    try {
+      const { rollupAllObjectives } = await import("@/lib/agents/objective-rollup")
+      rollupResult = await rollupAllObjectives()
+    } catch {}
+
+    // NIVEL 6: Curățare artefacte învățare expirate (săptămânal — doar luni)
     let expiredCleaned = 0
     if (new Date().getDay() === 1) {
       try {
@@ -109,6 +116,7 @@ export async function GET(request: NextRequest) {
       totalExecuted,
       totalBlocked,
       propagatedLearning: propagated,
+      objectiveRollup: rollupResult.updated,
       expiredCleaned,
       results: allResults.slice(0, 20),
       timestamp: new Date().toISOString(),

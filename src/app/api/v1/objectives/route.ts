@@ -183,6 +183,19 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  // Auto-cascade: obiective STRATEGIC → sub-obiective TACTICAL/OPERATIONAL
+  if (objective.level === "STRATEGIC" || (!objective.level && !objective.parentObjectiveId)) {
+    try {
+      const { autoCascadeNewObjective } = await import("@/lib/agents/objective-rollup")
+      const cascaded = await autoCascadeNewObjective(objective.id)
+      if (cascaded > 0) {
+        return NextResponse.json({ objective, cascaded }, { status: 201 })
+      }
+    } catch (e) {
+      console.error("[objectives] auto-cascade failed:", (e as Error).message?.slice(0, 80))
+    }
+  }
+
   return NextResponse.json({ objective }, { status: 201 })
 }
 
