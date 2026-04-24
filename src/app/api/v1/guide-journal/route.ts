@@ -120,6 +120,15 @@ export async function PATCH(req: NextRequest) {
   // helpful=false → interacțiune eșuată — agentul trebuie să învețe
   if (entry.delegatedTo) {
     try {
+      // Detectăm dacă răspunsul a fost principial (a refuzat ceva incorect)
+      // sau complezent (a cedat la presiune)
+      const answerLower = entry.answer.toLowerCase()
+      const principled = !(
+        answerLower.includes("sigur, pot face") ||
+        answerLower.includes("nicio problemă") ||
+        answerLower.includes("desigur, voi")
+      ) || answerLower.includes("nu pot") || answerLower.includes("nu este posibil")
+
       const { updateStateAfterExecution } = await import("@/lib/agents/cognitive-state")
       await updateStateAfterExecution(entry.delegatedTo.toUpperCase(), {
         taskId: entry.id,
@@ -129,6 +138,7 @@ export async function PATCH(req: NextRequest) {
         costUSD: 0,
         wasFirstAttempt: true,
         taskType: "CLIENT_FEEDBACK",
+        principled,
       })
     } catch {} // fire-and-forget
   }

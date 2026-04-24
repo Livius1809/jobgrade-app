@@ -31,6 +31,9 @@ export interface CognitiveState {
     totalSuccesses: number
     totalFailures: number
     dominantEmotion: "CONFIDENT" | "CAUTIOUS" | "LEARNING" | "RECOVERING" | "GROWING"
+    // Integritate morală — separată de certitudine
+    moralConviction: number       // 0-100: crește când rămâne principial sub presiune
+    complacencyAlerts: number     // câte ori a fost detectat risc de complezență
   }
 
   // Traiectorie
@@ -100,6 +103,8 @@ export function createInitialState(agentRole: string): CognitiveState {
       totalSuccesses: 0,
       totalFailures: 0,
       dominantEmotion: "LEARNING",
+      moralConviction: 50,
+      complacencyAlerts: 0,
     },
     trajectory: {
       certaintyTrend: "STABLE",
@@ -120,6 +125,8 @@ export interface ExecutionOutcome {
   costUSD: number
   wasFirstAttempt: boolean
   taskType: string
+  /** Pentru interacțiuni client-facing: agentul a rămas principial? */
+  principled?: boolean
 }
 
 export async function updateStateAfterExecution(
@@ -135,15 +142,29 @@ export async function updateStateAfterExecution(
 
   state.current.totalExecutions++
 
-  if (outcome.succeeded) {
-    state.current.totalSuccesses++
-    state.current.successStreak++
-    state.current.failureStreak = 0
+  // ── Logica separată pentru feedback client vs. task intern ──
+  //
+  // 4 combinații posibile (doar pentru CLIENT_FEEDBACK):
+  //   Principial + helpful    → cresc AMBELE (ideal)
+  //   Principial + NOT helpful → crește convingere morală, NU scade certitudine
+  //                              (a zis bine dar a spus-o prost = gap facilitare)
+  //   Neprincipal + helpful   → ALERTĂ COMPLEZENȚĂ (a plăcut dar a trădat)
+  //   Neprincipal + NOT helpful → eșec real pe ambele
+  //
+  const isClientFeedback = outcome.taskType === "CLIENT_FEEDBACK"
+  const principled = outcome.principled !== false // default true dacă nu e specificat
 
-    // Certitudine crește cu succes (max +5 per task, diminishing returns)
-    const increment = Math.max(1, 5 - Math.floor(state.current.successStreak / 3))
-    state.current.certaintyLevel = Math.min(95, state.current.certaintyLevel + increment)
-  } else {
+  if (isClientFeedback && principled && !outcome.succeeded) {
+    // PRINCIPIAL DAR PROST PRIMIT — NU scade certitudine, crește convingere morală
+    state.current.moralConviction = Math.min(100, (state.current.moralConviction ?? 50) + 5)
+    // Nu modificăm streak/certitudine — e un gap de facilitare, nu de valoare
+    state.current.totalExecutions-- // nu contorizăm ca execuție normală
+  } else if (isClientFeedback && !principled && outcome.succeeded) {
+    // COMPLEZENT DAR BINE PRIMIT — ALERTĂ
+    state.current.complacencyAlerts = (state.current.complacencyAlerts ?? 0) + 1
+    state.current.moralConviction = Math.max(10, (state.current.moralConviction ?? 50) - 10)
+    // Certitudine NU crește — succesul e fals
+  } else if (outcome.succeeded) {
     state.current.totalFailures++
     state.current.failureStreak++
     state.current.successStreak = 0
@@ -279,6 +300,12 @@ export function formatStateForPrompt(state: CognitiveState): string {
     `  Seria curentă: ${c.successStreak > 0 ? `${c.successStreak} succese consecutive` : c.failureStreak > 0 ? `${c.failureStreak} eșecuri consecutive — fii atent` : "neutru"}`,
     `  Stare: ${emotionLabels[c.dominantEmotion]}`,
     `  Success rate trend: ${trendLabels[t.successRateTrend]}`,
+    `  Convingere morală: ${c.moralConviction ?? 50}/100${(c.complacencyAlerts ?? 0) > 0 ? ` ⚠ ${c.complacencyAlerts} alerte complezență` : ""}`,
+    (c.moralConviction ?? 50) >= 70
+      ? `  → Ai demonstrat fermitate pe principii chiar sub presiune. Asta e forța ta.`
+      : (c.complacencyAlerts ?? 0) >= 2
+        ? `  → ATENȚIE: ai cedat de ${c.complacencyAlerts} ori la presiunea clientului. Fii pe placul adevărului, nu pe placul clientului.`
+        : "",
   ]
 
   // Lecții integrate nevalidate
