@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
+import Icon from "@/components/icons/Icon"
 import PackageExplorer from "./PackageExplorer"
 import ClientDataTabs from "./ClientDataTabs"
 
@@ -130,7 +131,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
         >
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🏢</span>
+              <Icon name="icon-companie" size={24} />
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Profil companie</h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">Identificare ANAF + MVV</span>
@@ -279,7 +280,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">⚖️</span>
+                  <Icon name="icon-echitate" size={24} />
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Evaluare și ierarhizare</h3>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">
@@ -342,7 +343,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">📊</span>
+                  <Icon name="icon-raport" size={24} />
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Raport de Diagnostic Analitic</h3>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">RDA</span>
@@ -608,7 +609,7 @@ const VARIANTS: Array<{
 }> = [
   {
     id: "auto",
-    icon: "🤖",
+    icon: "icon-ai-tool",
     title: "Evaluare automata AI",
     description: "AI analizeaza fisele de post si evalueaza pe 6 criterii obiective. Dumneavoastra validati si semnati raportul.",
     who: "AI evalueaza, personal acreditat supervizeaza",
@@ -617,7 +618,7 @@ const VARIANTS: Array<{
   },
   {
     id: "comisie-ai",
-    icon: "👥",
+    icon: "icon-comisie",
     title: "Comisie interna, mediata AI",
     description: "Membrii comisiei dumneavoastra evalueaza individual. AI identifica divergentele si mediaza consensul.",
     who: "Comisia dumneavoastra evalueaza, AI mediaza",
@@ -626,7 +627,7 @@ const VARIANTS: Array<{
   },
   {
     id: "comisie-consultant",
-    icon: "🎓",
+    icon: "icon-ghidare",
     title: "Comisie interna, mediata de consultant",
     description: "Membrii comisiei dumneavoastra evalueaza. Un consultant acreditat din echipa noastra faciliteaza consensul.",
     who: "Comisia dumneavoastra evalueaza, consultantul nostru mediaza",
@@ -635,7 +636,7 @@ const VARIANTS: Array<{
   },
   {
     id: "hibrid",
-    icon: "🔄",
+    icon: "icon-consens",
     title: "Hibrid: AI apoi comisie",
     description: "Se ruleaza mai intai evaluarea AI. Raportul generat devine baza de discutie pentru comisie. Comisia ajusteaza de unde are nevoie.",
     who: "AI genereaza prima versiune, comisia valideaza si ajusteaza",
@@ -976,7 +977,7 @@ function EvaluationPanel({ onComplete, creditBalance = 0, purchasedLayer = 0 }: 
               style={{ padding: "16px" }}
             >
               <div className="flex items-start gap-3">
-                <span className="text-xl mt-0.5">{v.icon}</span>
+                <Icon name={v.icon} size={22} className="mt-0.5 opacity-70" />
                 <div className="flex-1 min-w-0">
                   <h4 className={`text-sm font-bold ${variant === v.id ? "text-indigo-700" : "text-slate-800"}`}>
                     {v.title}
@@ -1454,7 +1455,7 @@ function CommitteeProgressView({ sessionId, variant, onResultsReady }: {
   return (
     <div className="space-y-4 text-left">
       <div className="flex items-center gap-3">
-        <span className="text-2xl">👥</span>
+        <Icon name="icon-comisie" size={24} />
         <div>
           <p className="text-sm font-medium text-slate-700">Comisia evaluează</p>
           <p className="text-[10px] text-slate-400">

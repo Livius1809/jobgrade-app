@@ -3,6 +3,15 @@
 import { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
+import Icon from "@/components/icons/Icon"
+
+// Mapare icon SVG per pachet (înlocuiește emoji-uri)
+const PACKAGE_ICONS: Record<number, string> = {
+  1: "icon-evaluare",
+  2: "icon-echitate",
+  3: "icon-benchmark",
+  4: "icon-ghidare",
+}
 
 interface PackageInfo {
   number: number
@@ -378,7 +387,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                     return null
                   })()}
                   {!isPurchased && !maturity && purchasedLayer > 0 && <span className={`text-[9px] font-bold ${c.text} px-1.5 py-0.5 rounded ${c.bg}`}>UPGRADE</span>}
-                  <span className="text-lg">{pkg.icon}</span>
+                  <Icon name={PACKAGE_ICONS[pkg.number] || "icon-evaluare"} size={20} />
                 </div>
               </div>
               {pkg.includesNote && (
@@ -417,7 +426,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{selectedPkg.icon}</span>
+              <Icon name={PACKAGE_ICONS[selectedPkg.number] || "icon-evaluare"} size={28} />
               <div>
                 <h3 className="text-lg font-bold text-slate-900">{selectedPkg.title}</h3>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded inline-block ${colors.badge}`}>{selectedPkg.layerLabel}</span>

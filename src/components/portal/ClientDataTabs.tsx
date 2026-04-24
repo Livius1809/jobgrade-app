@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
+import Icon from "@/components/icons/Icon"
 
 // Departamente standard + mapare titlu → departament sugerat
 const STANDARD_DEPARTMENTS = [
@@ -197,7 +198,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
     {
       id: "posturi",
       label: "Posturi",
-      icon: "📋",
+      icon: "icon-raport",
       description: "Lista pozițiilor distincte din companie. Minim 3 pentru evaluare.",
       status: jobCount >= 3 ? "done" : jobCount > 0 ? "partial" : "empty",
       count: jobCount,
@@ -209,7 +210,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
     {
       id: "fise",
       label: "Fișe de post",
-      icon: "📄",
+      icon: "icon-profil",
       description: "Descrierile detaliate ale fiecărei poziții. Se pot genera automat cu AI din titlu.",
       status: "empty",
       actions: [
@@ -220,7 +221,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
     {
       id: "stat-salarii",
       label: "Stat salarii",
-      icon: "💰",
+      icon: "icon-compensatie",
       description: "Statul de salarii — angajați, posturi, salarii brute. Necesar pentru analiza pay gap și conformitate.",
       status: employeeCount > 0 ? "done" : "empty",
       count: employeeCount,
@@ -232,7 +233,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
     {
       id: "salarii",
       label: "Date salariale",
-      icon: "📊",
+      icon: "icon-clase-salariale",
       description: "Grila salarială actuală, beneficii, compensații. Necesar pentru benchmark și pachete.",
       status: hasSalaryData ? "done" : "empty",
       actions: [
@@ -242,7 +243,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
     {
       id: "departamente",
       label: "Departamente",
-      icon: "🏢",
+      icon: "icon-departament",
       description: "Structura organizatorică — departamente, echipe, linii de raportare.",
       status: hasDepartments ? "done" : "empty",
       actions: [
@@ -299,7 +300,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
                 {tab.count !== undefined && tab.count > 0 && (
                   <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full font-bold">{tab.count}</span>
                 )}
-                {isLocked && <span className="text-[10px]">🔒</span>}
+                {isLocked && <Icon name="icon-securitate" size={12} />}
               </button>
             )
           })}
@@ -423,13 +424,13 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
           {/* Header comun */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">
-                {panelOpen === "posturi" && "📋"}
-                {panelOpen === "import-stat-functii" && "📥"}
-                {panelOpen === "fise" && "📄"}
-                {panelOpen === "upload-fise" && "📤"}
-                {panelOpen === "import-stat-salarii" && "💰"}
-                {panelOpen === "add-angajat" && "👤"}
+              <span>
+                {panelOpen === "posturi" && <Icon name="icon-raport" size={24} />}
+                {panelOpen === "import-stat-functii" && <Icon name="icon-download" size={24} />}
+                {panelOpen === "fise" && <Icon name="icon-profil" size={24} />}
+                {panelOpen === "upload-fise" && <Icon name="icon-download" size={24} />}
+                {panelOpen === "import-stat-salarii" && <Icon name="icon-compensatie" size={24} />}
+                {panelOpen === "add-angajat" && <Icon name="icon-utilizator" size={24} />}
               </span>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
@@ -1316,7 +1317,7 @@ function UploadJobDescriptionPanel({ onComplete }: { onComplete: () => void }) {
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
       >
-        <span className="text-3xl">{file ? "📄" : "📤"}</span>
+        <Icon name={file ? "icon-profil" : "icon-download"} size={32} />
         <div style={{ height: "12px" }} />
 
         {file ? (
@@ -1454,7 +1455,7 @@ function ImportExcelPanel({ onComplete }: { onComplete: () => void }) {
         onDragLeave={() => setDragOver(false)}
         onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); setError(null) } }}
       >
-        <span className="text-3xl">{file ? "📄" : "📥"}</span>
+        <Icon name={file ? "icon-profil" : "icon-download"} size={32} />
         <div style={{ height: "12px" }} />
 
         {file ? (
@@ -1853,7 +1854,7 @@ function FileDropZone({ file, dragOver, setDragOver, setFile, fileInputRef, acce
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) setFile(f) }}
     >
-      <span className="text-3xl">{file ? "📄" : "📥"}</span>
+      <Icon name={file ? "icon-profil" : "icon-download"} size={32} />
       <div style={{ height: "12px" }} />
       {file ? (
         <>
