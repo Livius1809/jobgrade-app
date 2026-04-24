@@ -23,6 +23,7 @@ export interface CognitiveContext {
   certaintyBrief: string     // cât de sigur sunt pe acest task
   moralMemory: string        // precedent relevant (dacă există)
   peerAwareness: string      // cum mă raportez la ceilalți agenți
+  persistentMemory: string   // stare continuă acumulată (nu recalculată)
 }
 
 /**
@@ -234,6 +235,17 @@ export async function buildCognitiveContext(
     ? peerParts.join(" ")
     : "Lucrezi independent pe acest task — nu ai colegi pe același obiectiv."
 
+  // ── 7. Stare persistentă: memoria mea continuă ─────────
+
+  let persistentMemory = ""
+  try {
+    const { loadCognitiveState, formatStateForPrompt } = await import("./cognitive-state")
+    const state = await loadCognitiveState(agentRole)
+    if (state) {
+      persistentMemory = formatStateForPrompt(state)
+    }
+  } catch {}
+
   return {
     selfAwareness,
     temporalSense,
@@ -241,6 +253,7 @@ export async function buildCognitiveContext(
     certaintyBrief,
     moralMemory,
     peerAwareness,
+    persistentMemory,
   }
 }
 
@@ -269,7 +282,7 @@ ${ctx.moralMemory}
 
 CONȘTIINȚĂ DE GRUP:
 ${ctx.peerAwareness}
-
+${ctx.persistentMemory ? `\n${ctx.persistentMemory}` : ""}
 DREPTUL TĂU DE DECIZIE:
 Ai dreptul să:
   • EXECUTI cu încredere dacă certitudinea e ridicată și ai precedent

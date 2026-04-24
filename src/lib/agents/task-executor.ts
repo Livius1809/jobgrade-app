@@ -1105,6 +1105,19 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
     const { payload, tokensUsed, webSearchCount } = await invokeLLM(system, userMessage, task)
     const { outcome, subTaskIds } = await applyEffects(task, payload)
 
+    // ── Post-execuție: actualizare stare cognitivă persistentă ──
+    try {
+      const { updateStateAfterExecution } = await import("./cognitive-state")
+      await updateStateAfterExecution(task.assignedTo, {
+        taskId,
+        taskTitle: task.title,
+        succeeded: outcome !== "FAILED" && outcome !== "BLOCKED",
+        costUSD: 0, // se calculează în telemetry
+        wasFirstAttempt: !(task.tags || []).some((t: string) => t.startsWith("retry:")),
+        taskType: task.taskType,
+      })
+    } catch {} // fire-and-forget
+
     return {
       taskId,
       outcome,
@@ -1117,6 +1130,20 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
       webSearchCount,
     }
   } catch (e: any) {
+    // ── Post-eșec: actualizare stare cognitivă persistentă ──
+    try {
+      const { updateStateAfterExecution } = await import("./cognitive-state")
+      await updateStateAfterExecution(task.assignedTo, {
+        taskId,
+        taskTitle: task.title,
+        succeeded: false,
+        failureReason: e.message,
+        costUSD: 0,
+        wasFirstAttempt: !(task.tags || []).some((t: string) => t.startsWith("retry:")),
+        taskType: task.taskType,
+      })
+    } catch {}
+
     await (prisma as any).agentTask.update({
       where: { id: taskId },
       data: {
