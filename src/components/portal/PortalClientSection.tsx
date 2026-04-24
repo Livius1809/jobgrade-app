@@ -296,6 +296,63 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             document.body
           )}
 
+          {/* ═══ CONFORMITATE (Layer 1) — Pachet 2 ═══ */}
+          {purchasedLayer >= 2 && isValidated && (
+            <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white" style={{ padding: "28px" }}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-violet-500 text-white font-bold shrink-0">
+                  <Icon name="icon-echitate" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Conformitate</h3>
+                  <p className="text-xs text-violet-600 font-medium">Pachet 2 · Directiva EU 2023/970</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Pay Gap */}
+                <a href="/pay-gap"
+                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-pay-gap" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Analiză decalaj salarial</span>
+                  </div>
+                  <p className="text-xs text-slate-500">7 indicatori Art. 9, evaluare comună Art. 10</p>
+                </a>
+
+                {/* Clase salariale */}
+                <a href="/reports/master"
+                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-clase-salariale" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Clase salariale</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Trepte, aliniere, grafic corelație</p>
+                </a>
+
+                {/* Justificări */}
+                <a href="/pay-gap"
+                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-semnatura" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Justificări diferențe</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Documentare criterii obiective (Art. 9)</p>
+                </a>
+
+                {/* Evaluare comună */}
+                <a href="/pay-gap/assessments"
+                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-consens" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Evaluare comună</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Plan corecție dacă decalaj depășește 5% (Art. 10)</p>
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* ═══ Rapoarte ═══ */}
           {purchasedLayer > 0 && (
             <div
@@ -1686,15 +1743,16 @@ function ReportPanel() {
               </a>
             )}
 
-            {/* Journal link */}
-            <a
-              href={`/sessions/${s.id}/journal`}
-              target="_blank"
-              rel="noopener"
-              className="block text-center text-[10px] text-gray-400 hover:text-gray-600"
-            >
-              Jurnal proces →
-            </a>
+            {/* Pay Gap + Journal links */}
+            <div className="flex gap-3 justify-center">
+              <a href="/pay-gap" className="text-[10px] text-violet-500 hover:text-violet-700">
+                Analiză Pay Gap →
+              </a>
+              <a href={`/sessions/${s.id}/journal`} target="_blank" rel="noopener"
+                className="text-[10px] text-gray-400 hover:text-gray-600">
+                Jurnal proces →
+              </a>
+            </div>
           </div>
         )
       })}
