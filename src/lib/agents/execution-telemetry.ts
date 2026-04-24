@@ -206,24 +206,6 @@ export async function getOrganismTelemetryOverview(hoursBack: number = 24) {
     byAgent.set(r.agentRole, agent)
   }
 
-  // Taskuri rezolvate intern (auto-hygiene + objective-invalidation + KB-resolved)
-  const [autoHygieneCount, kbResolvedCount] = await Promise.all([
-    prisma.agentTask.count({
-      where: {
-        status: "COMPLETED",
-        result: { contains: "[AUTO" },
-        completedAt: { gte: since },
-      },
-    }).catch(() => 0),
-    prisma.agentTask.count({
-      where: {
-        status: "COMPLETED",
-        kbHit: true,
-        completedAt: { gte: since },
-      },
-    }).catch(() => 0),
-  ])
-
   return {
     period: `${hoursBack}h`,
     totalTasks,
@@ -233,9 +215,6 @@ export async function getOrganismTelemetryOverview(hoursBack: number = 24) {
       ? Math.round(((totalTasks - thresholdSkips) / totalTasks) * 100)
       : 100,
     learningArtifactsCreated: learningTotal,
-    tasksResolvedInternally: autoHygieneCount + kbResolvedCount,
-    autoHygieneCount,
-    kbResolvedCount,
     byAgent: Object.fromEntries(byAgent),
   }
 }
