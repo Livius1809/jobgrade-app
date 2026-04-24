@@ -7,7 +7,7 @@
  *   Pag 2: Cuprins
  *   Pag 3: Metodologie (4 criterii)
  *   Pag 4: Ierarhia posturilor (tabel JE)
- *   Pag 5: Clase salariale + grafic Pitariu (LAYER 1)
+ *   Pag 5: Clase salariale + grafic corelație (LAYER 1)
  *   Pag 6: Pay Gap (LAYER 1)
  *   Pag 7: Benchmark salarial (LAYER 2)
  *   Pag 8: Dezvoltare (LAYER 3)
@@ -60,10 +60,16 @@ for (var i = 0; i < 9; i++) {
 
 // ── Culori ────────────────────────────────────────────────────
 function makeColor(name, rgb) {
-    try { return doc.colors.itemByName(name); } catch(e) {}
-    var c = doc.colors.add();
-    c.name = name;
-    c.colorValue = rgb;
+    try {
+        var existing = doc.colors.itemByName(name);
+        if (existing.isValid) return existing;
+    } catch(e) {}
+    var c = doc.colors.add({
+        name: name,
+        model: ColorModel.PROCESS,
+        space: ColorSpace.RGB,
+        colorValue: rgb
+    });
     return c;
 }
 
@@ -78,42 +84,36 @@ var cWarning = makeColor("JG Warning", BRAND.warning);
 var cWarningBg = makeColor("JG Warning Bg", BRAND.warningBg);
 var cWhite = makeColor("JG White", BRAND.white);
 
-// ── Stiluri paragraf ──────────────────────────────────────────
-function makeStyle(name, font, size, color, opts) {
-    try { return doc.paragraphStyles.itemByName(name); } catch(e) {}
-    var s = doc.paragraphStyles.add();
-    s.name = name;
-    s.appliedFont = font;
-    s.pointSize = size;
-    s.fillColor = color;
-    if (opts) {
-        if (opts.align) s.justification = opts.align;
-        if (opts.leading) s.leading = opts.leading;
-        if (opts.spaceAfter) s.spaceAfter = opts.spaceAfter;
-        if (opts.spaceBefore) s.spaceBefore = opts.spaceBefore;
-    }
-    return s;
-}
+// ── Stiluri aplicate direct (fără paragraphStyles — compatibil toate versiunile) ──
 
-var sH1 = makeStyle("JG H1", "Helvetica\tBold", 22, cText, { spaceAfter: "6mm" });
-var sH2 = makeStyle("JG H2", "Helvetica\tBold", 14, cPrimary, { spaceAfter: "4mm", spaceBefore: "6mm" });
-var sH3 = makeStyle("JG H3", "Helvetica\tBold", 11, cText, { spaceAfter: "2mm", spaceBefore: "4mm" });
-var sBody = makeStyle("JG Body", "Helvetica\tRegular", 10, cText, { leading: "14pt", spaceAfter: "3mm" });
-var sSmall = makeStyle("JG Small", "Helvetica\tRegular", 8, cTextSec, { leading: "11pt" });
-var sFooter = makeStyle("JG Footer", "Helvetica\tRegular", 7, cTextSec);
-var sCoverTitle = makeStyle("JG Cover Title", "Helvetica\tBold", 28, cText, { align: Justification.CENTER_ALIGN });
-var sCoverSub = makeStyle("JG Cover Sub", "Helvetica\tRegular", 16, cPrimary, { align: Justification.CENTER_ALIGN });
-
-// ── Helper: text frame ────────────────────────────────────────
+// ── Helper: text frame cu stil inline ─────────────────────────
+// style: { size, color, bold, align, leading }
 function addText(page, bounds, content, style) {
     var tf = page.textFrames.add();
-    tf.geometricBounds = bounds; // [top, left, bottom, right] in mm
+    tf.geometricBounds = bounds;
     tf.contents = content;
-    if (style) tf.paragraphs.everyItem().appliedParagraphStyle = style;
+    try {
+        var txt = tf.texts[0];
+        if (style) {
+            if (style.size) txt.pointSize = style.size;
+            if (style.color) txt.fillColor = style.color;
+            if (style.bold) txt.fontStyle = "Bold";
+            if (style.align) txt.justification = style.align;
+            if (style.leading) txt.leading = style.leading;
+        }
+    } catch(e) {}
     return tf;
 }
 
-function mm(v) { return v + "mm"; }
+// Scurtături stil
+var sH1 = { size: 22, color: cText, bold: true };
+var sH2 = { size: 14, color: cPrimary, bold: true };
+var sH3 = { size: 11, color: cText, bold: true };
+var sBody = { size: 10, color: cText, leading: 14 };
+var sSmall = { size: 8, color: cTextSec };
+var sFooter = { size: 7, color: cTextSec };
+var sCoverTitle = { size: 28, color: cText, bold: true, align: Justification.CENTER_ALIGN };
+var sCoverSub = { size: 16, color: cPrimary, align: Justification.CENTER_ALIGN };
 
 // ── PAGINA 1: Copertă ────────────────────────────────────────
 (function() {
@@ -218,8 +218,8 @@ function mm(v) { return v + "mm"; }
     addText(p, ["20mm", "140mm", "28mm", "195mm"], "LAYER 1 — Conformitate", sSmall);
 
     addText(p, ["32mm", "15mm", "52mm", "195mm"],
-        "Clasele salariale sunt construite prin metoda Pitariu cu progresie geometrică " +
-        "pe verticală (1.15). Fiecare clasă conține trepte salariale de aliniere.\n\n" +
+        "Clasele salariale sunt construite prin metoda analitică cu progresie calibrată " +
+        "pe structura organizației. Fiecare clasă conține trepte salariale de aliniere.\n\n" +
         "{{salary_grades_table}}\n\n" +
         "{{pitariu_chart_placeholder}}", sBody);
 })();
