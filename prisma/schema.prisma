@@ -46,6 +46,7 @@ model Tenant {
   payrollImportBatches  PayrollImportBatch[]
   revenueEntries        RevenueEntry[]
   servicePurchase       ServicePurchase?
+  userOrgRoles          UserOrgRole[]
 
   @@map("tenants")
 }
@@ -84,8 +85,43 @@ model User {
   discussionComments     DiscussionComment[]
   memberValidations      MemberValidation[]
 
+  orgRoles          UserOrgRole[]
+
   @@unique([tenantId, email])
   @@map("users")
+}
+
+// ── Roluri organizaționale per user (many-to-many) ──────────────────────────
+
+model UserOrgRole {
+  id         String   @id @default(cuid())
+  userId     String
+  tenantId   String
+  orgRole    OrgRole
+  assignedBy String?  // userId care a alocat rolul
+  assignedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgRole])
+  @@index([tenantId, orgRole])
+  @@map("user_org_roles")
+}
+
+// ── Matrice permisiuni (seed-uită, nu editabilă de client) ──────────────────
+
+model PermissionRule {
+  id        String       @id @default(cuid())
+  orgRole   OrgRole
+  resource  PermResource
+  action    PermAction
+  minLayer  Int          @default(0) // 0 = fără layer, 1-4 = layer minim necesar
+  condition String?      // condiție suplimentară (ex: "own" = doar propriile resurse)
+
+  @@unique([orgRole, resource, action])
+  @@index([orgRole])
+  @@map("permission_rules")
 }
 
 model Account {
@@ -1009,6 +1045,50 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   INVITED
+}
+
+// ── Roluri organizaționale (mapate la drepturi platformă) ────────────────────
+
+enum OrgRole {
+  DG         // Director General / Owner
+  IDG        // Împuternicit DG (pe probleme HR)
+  DHR        // Director HR
+  RSAL       // Responsabil Salarizare (Comp & Ben)
+  RREC       // Responsabil Recrutare
+  RAP        // Responsabil Administrare Personal (include relații de muncă)
+  RLD        // Responsabil Learning & Development
+  FJE        // Facilitator Evaluare Posturi
+  FA10       // Facilitator Evaluare Comună Art. 10
+  REPS       // Reprezentant Salariați
+  REPM       // Reprezentant Management
+  CEXT       // Consultant Extern
+  SAL        // Salariat (angajat fără funcție HR)
+}
+
+enum PermAction {
+  READ
+  WRITE
+  MODIFY  // delete, archive, approve
+}
+
+enum PermResource {
+  JOBS                    // Posturi
+  JOB_POSTINGS            // Anunțuri posturi publice (Art. 5)
+  SESSIONS                // Sesiuni evaluare posturi
+  SALARY_GRADES           // Clase salariale + trepte
+  SALARY_DATA             // Date salariale angajați (import/gestionare)
+  PAY_GAP_REPORT          // Raport pay gap (Art. 9)
+  PAY_GAP_JUSTIFICATIONS  // Justificări diferențe
+  JOINT_ASSESSMENT        // Evaluare comună (Art. 10)
+  EMPLOYEE_REQUESTS       // Cereri angajați (Art. 7)
+  COMPLIANCE_REPORT       // Raport conformitate PDF
+  BENCHMARK               // Benchmark piață
+  PERSONNEL_EVAL          // Evaluare personal
+  ORG_DEVELOPMENT         // Dezvoltare organizațională
+  SETTINGS                // Setări cont
+  BILLING                 // Facturare, abonament
+  USERS                   // Gestiune utilizatori
+  AUDIT_TRAIL             // Jurnal audit
 }
 
 enum JobStatus {
