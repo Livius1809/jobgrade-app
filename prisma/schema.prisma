@@ -600,12 +600,16 @@ model EmployeeSalaryRecord {
   id            String   @id @default(cuid())
   tenantId      String
   salaryGradeId String?
-  employeeCode  String
+  employeeCode  String       // cod intern platforma (generat sau din client)
+  companyEmployeeId String?  // ID alocat de client (poate fi null inițial)
+  internalFingerprint String? // hash din (jobTitle+dept+gender+salary) pt matching fără ID
   gender        Gender
   baseSalary    Float
   variableComp  Float    @default(0)
   department    String?
   jobCategory   String?
+  workSchedule  String?  @default("8h") // normă lucru: 2h, 4h, 6h, 8h
+  evaluationScore Int?   // scor total din Modul 1 (muncă egală = scor egal)
   periodYear    Int
   periodMonth   Int?
   createdAt     DateTime @default(now())
@@ -615,6 +619,8 @@ model EmployeeSalaryRecord {
   salaryGrade SalaryGrade? @relation(fields: [salaryGradeId], references: [id])
 
   @@unique([tenantId, employeeCode, periodYear])
+  @@index([tenantId, companyEmployeeId])
+  @@index([tenantId, internalFingerprint])
   @@map("employee_salary_records")
 }
 

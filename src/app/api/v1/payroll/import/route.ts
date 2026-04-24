@@ -329,17 +329,40 @@ export async function POST(req: NextRequest) {
       }
 
       // ═══ BRIDGE: PayrollEntry → EmployeeSalaryRecord (pentru Pay Gap) ═══
-      // Pay gap citește din EmployeeSalaryRecord. La import stat salarii,
-      // creăm automat intrări duplicate (sincronizare sursă unică).
       if (validEntries.length > 0) {
         const year = new Date().getFullYear()
         const batchPayroll = await tx.payrollEntry.findMany({
           where: { batchId: batchRecord.id },
-          select: { jobCode: true, jobTitle: true, department: true, gender: true, baseSalary: true, annualBonuses: true, annualCommissions: true },
+          select: {
+            jobCode: true, jobTitle: true, department: true, gender: true,
+            baseSalary: true, annualBonuses: true, annualCommissions: true,
+            workSchedule: true,
+          },
         })
 
+        // Scoruri evaluare din ultima sesiune (pentru "muncă egală")
+        const latestSession = await tx.evaluationSession.findFirst({
+          where: { tenantId, status: { in: ["COMPLETED", "VALIDATED"] } },
+          include: { jobResults: { include: { job: { select: { title: true } } } } },
+          orderBy: { completedAt: "desc" },
+        }).catch(() => null)
+
+        const scoreMap = new Map<string, number>()
+        for (const jr of latestSession?.jobResults ?? []) {
+          if (jr.job?.title) scoreMap.set(jr.job.title.toLowerCase().trim(), jr.totalScore)
+        }
+
+        let missingIdCount = 0
         for (const pe of batchPayroll) {
           const variableComp = ((pe.annualBonuses ?? 0) + (pe.annualCommissions ?? 0)) / 12
+          // Fingerprint: hash stabil din date angajat (pt matching fără ID)
+          const fingerprint = `${pe.jobTitle}|${pe.department}|${pe.gender}|${pe.baseSalary}`.toLowerCase()
+          const hasCompanyId = pe.jobCode && !pe.jobCode.startsWith("EMP") && !pe.jobCode.startsWith("auto-")
+          if (!hasCompanyId) missingIdCount++
+
+          // Scor evaluare din Modul 1 (muncă egală)
+          const evalScore = scoreMap.get(pe.jobTitle.toLowerCase().trim()) ?? null
+
           await tx.employeeSalaryRecord.upsert({
             where: {
               tenantId_employeeCode_periodYear: { tenantId, employeeCode: pe.jobCode, periodYear: year },
@@ -347,21 +370,42 @@ export async function POST(req: NextRequest) {
             create: {
               tenantId,
               employeeCode: pe.jobCode,
+              companyEmployeeId: hasCompanyId ? pe.jobCode : null,
+              internalFingerprint: fingerprint,
               gender: pe.gender,
               baseSalary: pe.baseSalary,
               variableComp,
               department: pe.department,
               jobCategory: pe.jobTitle,
+              workSchedule: pe.workSchedule ?? "FULL_TIME",
+              evaluationScore: evalScore,
               periodYear: year,
             },
             update: {
+              companyEmployeeId: hasCompanyId ? pe.jobCode : undefined,
+              internalFingerprint: fingerprint,
               gender: pe.gender,
               baseSalary: pe.baseSalary,
               variableComp,
               department: pe.department,
               jobCategory: pe.jobTitle,
+              workSchedule: pe.workSchedule ?? "FULL_TIME",
+              evaluationScore: evalScore,
             },
-          }).catch(() => {}) // non-blocking — dacă eșuează, pay gap merge fără
+          }).catch(() => {})
+        }
+
+        // Flag: angajați fără ID de firmă
+        if (missingIdCount > 0) {
+          await tx.notification.create({
+            data: {
+              userId: session.user.id,
+              type: "INFORMATION",
+              title: `${missingIdCount} angajați fără cod intern de firmă`,
+              body: `Importul conține ${missingIdCount} angajați fără cod de identificare propriu. Platforma a generat coduri interne, dar vă recomandăm să completați codurile de firmă pentru o identificare corectă la importuri ulterioare.`,
+              read: false,
+            },
+          }).catch(() => {})
         }
       }
 
