@@ -52,6 +52,17 @@ export async function rollupAllObjectives(): Promise<{ updated: number; details:
   // Parcurgem de la frunze în sus (OPERATIONAL → TACTICAL → STRATEGIC)
   const levels = ["OPERATIONAL", "TACTICAL", "STRATEGIC"]
 
+  // Preîncărcăm contorul de taskuri per obiectiv (pentru a exclude obiective dormante)
+  const taskCounts = await prisma.agentTask.groupBy({
+    by: ["objectiveId"],
+    where: { objectiveId: { not: null } },
+    _count: { _all: true },
+  })
+  const taskCountMap = new Map<string, number>()
+  for (const t of taskCounts) {
+    if (t.objectiveId) taskCountMap.set(t.objectiveId, t._count._all)
+  }
+
   for (const level of levels) {
     const parents = allObjectives.filter(o => {
       const children = byParent.get(o.id)
@@ -62,8 +73,11 @@ export async function rollupAllObjectives(): Promise<{ updated: number; details:
       const children = byParent.get(parent.id) || []
       if (children.length === 0) continue
 
-      // Media currentValue a copiilor (null = 0)
-      const childValues = children.map(c => c.currentValue ?? 0)
+      // Excludem copiii dormanti (0 taskuri) — nu trag media în jos
+      const activeChildren = children.filter(c => (taskCountMap.get(c.id) ?? 0) > 0)
+      const source = activeChildren.length > 0 ? activeChildren : children
+
+      const childValues = source.map(c => c.currentValue ?? 0)
       const avg = Math.round(childValues.reduce((a, b) => a + b, 0) / childValues.length)
 
       if (avg !== parent.currentValue) {
