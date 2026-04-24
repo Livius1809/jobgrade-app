@@ -6,12 +6,19 @@ import RolesConfigClient from "./RolesConfigClient"
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Configurare roluri organizationale" }
 
-export default async function RolesConfigPage() {
+export default async function RolesConfigPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onboarding?: string }>
+}) {
   const session = await auth()
   if (!session) notFound()
 
   const { tenantId, role } = session.user
   if (!["OWNER", "COMPANY_ADMIN", "SUPER_ADMIN"].includes(role)) notFound()
+
+  const params = await searchParams
+  const isOnboarding = params.onboarding === "true"
 
   const [users, assignments, purchase] = await Promise.all([
     prisma.user.findMany({
@@ -64,6 +71,7 @@ export default async function RolesConfigPage() {
         assignedRoles={assignedRoles}
         currentLayer={purchase?.layer ?? 0}
         currentUserId={session.user.id}
+        isOnboarding={isOnboarding}
       />
     </div>
   )

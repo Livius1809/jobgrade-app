@@ -150,6 +150,24 @@ exports.Prisma.UserScalarFieldEnum = {
   departmentId: 'departmentId'
 };
 
+exports.Prisma.UserOrgRoleScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tenantId: 'tenantId',
+  orgRole: 'orgRole',
+  assignedBy: 'assignedBy',
+  assignedAt: 'assignedAt'
+};
+
+exports.Prisma.PermissionRuleScalarFieldEnum = {
+  id: 'id',
+  orgRole: 'orgRole',
+  resource: 'resource',
+  action: 'action',
+  minLayer: 'minLayer',
+  condition: 'condition'
+};
+
 exports.Prisma.AccountScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -1784,6 +1802,48 @@ exports.UserStatus = exports.$Enums.UserStatus = {
   INVITED: 'INVITED'
 };
 
+exports.OrgRole = exports.$Enums.OrgRole = {
+  DG: 'DG',
+  IDG: 'IDG',
+  DHR: 'DHR',
+  RSAL: 'RSAL',
+  RREC: 'RREC',
+  RAP: 'RAP',
+  RLD: 'RLD',
+  FJE: 'FJE',
+  FA10: 'FA10',
+  REPS: 'REPS',
+  REPM: 'REPM',
+  CEXT: 'CEXT',
+  SAL: 'SAL'
+};
+
+exports.PermResource = exports.$Enums.PermResource = {
+  JOBS: 'JOBS',
+  JOB_POSTINGS: 'JOB_POSTINGS',
+  SESSIONS: 'SESSIONS',
+  SALARY_GRADES: 'SALARY_GRADES',
+  SALARY_DATA: 'SALARY_DATA',
+  PAY_GAP_REPORT: 'PAY_GAP_REPORT',
+  PAY_GAP_JUSTIFICATIONS: 'PAY_GAP_JUSTIFICATIONS',
+  JOINT_ASSESSMENT: 'JOINT_ASSESSMENT',
+  EMPLOYEE_REQUESTS: 'EMPLOYEE_REQUESTS',
+  COMPLIANCE_REPORT: 'COMPLIANCE_REPORT',
+  BENCHMARK: 'BENCHMARK',
+  PERSONNEL_EVAL: 'PERSONNEL_EVAL',
+  ORG_DEVELOPMENT: 'ORG_DEVELOPMENT',
+  SETTINGS: 'SETTINGS',
+  BILLING: 'BILLING',
+  USERS: 'USERS',
+  AUDIT_TRAIL: 'AUDIT_TRAIL'
+};
+
+exports.PermAction = exports.$Enums.PermAction = {
+  READ: 'READ',
+  WRITE: 'WRITE',
+  MODIFY: 'MODIFY'
+};
+
 exports.JobStatus = exports.$Enums.JobStatus = {
   DRAFT: 'DRAFT',
   ACTIVE: 'ACTIVE',
@@ -2505,6 +2565,8 @@ exports.B2CJournalStatus = exports.$Enums.B2CJournalStatus = {
 exports.Prisma.ModelName = {
   Tenant: 'Tenant',
   User: 'User',
+  UserOrgRole: 'UserOrgRole',
+  PermissionRule: 'PermissionRule',
   Account: 'Account',
   AuthSession: 'AuthSession',
   VerificationToken: 'VerificationToken',

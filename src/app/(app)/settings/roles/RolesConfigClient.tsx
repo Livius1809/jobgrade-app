@@ -21,6 +21,7 @@ interface Props {
   assignedRoles: OrgRole[]
   currentLayer: number
   currentUserId: string
+  isOnboarding?: boolean
 }
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
@@ -36,11 +37,53 @@ export default function RolesConfigClient({
   assignedRoles,
   currentLayer,
   currentUserId,
+  isOnboarding = false,
 }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
-  const [step, setStep] = useState<"overview" | "assign">("overview")
+  const [step, setStep] = useState<"overview" | "assign" | "invite">(
+    isOnboarding ? "overview" : "overview"
+  )
+  // Invitare persoane noi
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteFirstName, setInviteFirstName] = useState("")
+  const [inviteLastName, setInviteLastName] = useState("")
+  const [inviteRole, setInviteRole] = useState<OrgRole | "">("")
+  const [inviteError, setInviteError] = useState("")
+
+  const handleInvite = useCallback(async () => {
+    if (!inviteEmail.trim() || !inviteRole) {
+      setInviteError("Email si rol sunt obligatorii.")
+      return
+    }
+    setInviteError("")
+    setSaving(true)
+    try {
+      const res = await fetch("/api/v1/org-roles/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          firstName: inviteFirstName.trim(),
+          lastName: inviteLastName.trim(),
+          orgRole: inviteRole,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setInviteError(data.message ?? "Eroare la invitare.")
+      } else {
+        setInviteEmail("")
+        setInviteFirstName("")
+        setInviteLastName("")
+        setInviteRole("")
+        router.refresh()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }, [inviteEmail, inviteFirstName, inviteLastName, inviteRole, router])
 
   const missingRequired = ORG_ROLE_DEFINITIONS
     .filter((d) => d.required && !assignedRoles.includes(d.role))
@@ -84,6 +127,31 @@ export default function RolesConfigClient({
 
   return (
     <div className="space-y-6">
+      {/* Banner onboarding */}
+      {isOnboarding && (
+        <div className="bg-violet-50 border border-violet-200 rounded-xl p-5">
+          <h3 className="text-base font-semibold text-violet-900 mb-2">
+            Configurati echipa inainte de a incepe
+          </h3>
+          <p className="text-sm text-violet-700 mb-3">
+            Alocati rolurile organizationale persoanelor din echipa HR. Platforma va
+            activa automat functiunile corespunzatoare fiecarui rol. Puteti reveni
+            oricand la aceasta pagina din Setari.
+          </p>
+          <div className="flex gap-2">
+            <a
+              href="/portal"
+              className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+            >
+              Am terminat, mergi la portal →
+            </a>
+            <span className="text-xs text-violet-500 self-center">
+              (puteti continua si dupa ce alocati cel putin DG si DHR)
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Roluri lipsă obligatorii */}
       {missingRequired.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
@@ -108,26 +176,23 @@ export default function RolesConfigClient({
 
       {/* Tabs */}
       <div className="flex gap-2">
-        <button
-          onClick={() => setStep("overview")}
-          className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-            step === "overview"
-              ? "bg-violet-600 text-white border-violet-600"
-              : "border-gray-300 text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          Vedere per rol
-        </button>
-        <button
-          onClick={() => setStep("assign")}
-          className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-            step === "assign"
-              ? "bg-violet-600 text-white border-violet-600"
-              : "border-gray-300 text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          Alocare per persoana
-        </button>
+        {(["overview", "assign", "invite"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setStep(tab)}
+            className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
+              step === tab
+                ? "bg-violet-600 text-white border-violet-600"
+                : "border-gray-300 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {tab === "overview"
+              ? "Vedere per rol"
+              : tab === "assign"
+              ? "Alocare per persoana"
+              : "Invita persoana noua"}
+          </button>
+        ))}
       </div>
 
       {/* STEP 1: Overview per rol */}
@@ -349,6 +414,87 @@ export default function RolesConfigClient({
               </div>
             )
           })()}
+        </div>
+      )}
+
+      {/* STEP 3: Invitare persoana noua */}
+      {step === "invite" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">
+            Invitati o persoana noua in platforma
+          </h3>
+          <p className="text-xs text-gray-500">
+            Persoana va primi un email cu link de autentificare. Rolul organizational
+            va fi alocat automat la crearea contului.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-600 font-medium">Prenume</label>
+              <input
+                type="text"
+                value={inviteFirstName}
+                onChange={(e) => setInviteFirstName(e.target.value)}
+                placeholder="ex: Maria"
+                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 font-medium">Nume</label>
+              <input
+                type="text"
+                value={inviteLastName}
+                onChange={(e) => setInviteLastName(e.target.value)}
+                placeholder="ex: Ionescu"
+                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 font-medium">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="email@companie.ro"
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 font-medium">
+              Rol organizational <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as OrgRole)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500"
+            >
+              <option value="">— Selectati rolul —</option>
+              {ORG_ROLE_DEFINITIONS.map((def) => (
+                <option key={def.role} value={def.role}>
+                  {def.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {inviteError && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+              {inviteError}
+            </div>
+          )}
+
+          <button
+            onClick={handleInvite}
+            disabled={saving || !inviteEmail.trim() || !inviteRole}
+            className="px-5 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+          >
+            {saving ? "Se trimite..." : "Trimite invitatie"}
+          </button>
         </div>
       )}
 

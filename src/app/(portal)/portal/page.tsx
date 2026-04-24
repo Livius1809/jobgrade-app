@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import PortalClientSection from "@/components/portal/PortalClientSection"
+import { needsRoleOnboarding } from "@/lib/onboarding-check"
+import { getUserPermissions } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Portal — JobGrade" }
@@ -65,6 +67,12 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const session = await auth()
   if (!session?.user?.tenantId) redirect("/login")
 
+  // Onboarding forțat: redirect la configurare roluri dacă lipsesc
+  if (["OWNER", "COMPANY_ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+    const needsOnboarding = await needsRoleOnboarding(session.user.tenantId)
+    if (needsOnboarding) redirect("/settings/roles?onboarding=true")
+  }
+
   const params = await searchParams
   const showSuccess = params?.success === "service"
   const showCreditsSuccess = params?.success === "credits"
@@ -80,6 +88,10 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const purchasedLayer = purchase?.layer ?? 0
   const purchasedPositions = purchase?.positions ?? 0
   const purchasedEmployees = purchase?.employees ?? 0
+
+  // Permisiuni efective user (pe baza orgRoles + layer)
+  const userPermissions = await getUserPermissions(session.user.id)
+  const allowedResources = [...new Set(userPermissions.map((p) => p.resource))]
 
   const steps = [
     { id: "profile", label: "Compania ta", icon: "🏢", done: client.stage !== "NEW" },
@@ -188,6 +200,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
         vision={client.vision}
         sessionCount={client.sessionCount}
         isValidated={client.isValidated}
+        allowedResources={allowedResources}
       />
 
       {/* Evaluare + Rapoarte sunt acum inline în PortalClientSection */}

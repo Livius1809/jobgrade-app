@@ -22,9 +22,15 @@ interface Props {
   vision: string | null
   sessionCount: number
   isValidated: boolean
+  allowedResources?: string[]
 }
 
-export default function PortalClientSection({ jobCount, purchasedLayer, purchasedPositions, purchasedEmployees, creditBalance, clientStage, companyName, cui, industry, caenName, address, mission, vision, sessionCount, isValidated }: Props) {
+export default function PortalClientSection({ jobCount, purchasedLayer, purchasedPositions, purchasedEmployees, creditBalance, clientStage, companyName, cui, industry, caenName, address, mission, vision, sessionCount, isValidated, allowedResources }: Props) {
+  // Helper: verifică dacă user-ul are acces la o resursă
+  const canAccess = (resource: string) => {
+    if (!allowedResources || allowedResources.length === 0) return true // fallback: arată tot (compatibilitate înapoi)
+    return allowedResources.includes(resource)
+  }
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
   const [mounted, setMounted] = useState(false)
   const [calculatorForceOpen, setCalculatorForceOpen] = useState(false)
@@ -198,7 +204,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           />
 
           {/* ═══ Date intrare client — apare doar după plată ═══ */}
-          {purchasedLayer > 0 && (
+          {purchasedLayer > 0 && canAccess("JOBS") && (
             <div className="bg-amber-50 rounded-2xl border border-amber-200" style={{ padding: "28px" }}>
               <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wide">Date intrare client</p>
               <div style={{ height: "4px" }} />
@@ -219,7 +225,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           )}
 
           {/* ═══ Evaluare și ierarhizare ═══ */}
-          {purchasedLayer > 0 && (
+          {purchasedLayer > 0 && canAccess("SESSIONS") && (
             <div
               ref={evalSectionRef}
               className={`rounded-2xl border transition-all ${
@@ -296,8 +302,8 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             document.body
           )}
 
-          {/* ═══ CONFORMITATE (Layer 1) — Pachet 2 ═══ */}
-          {purchasedLayer >= 2 && isValidated && (
+          {/* ═══ CONFORMITATE (Layer 2) — Pachet 2 ═══ */}
+          {purchasedLayer >= 2 && isValidated && canAccess("PAY_GAP_REPORT") && (
             <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white" style={{ padding: "28px" }}>
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center bg-violet-500 text-white font-bold shrink-0">
@@ -354,7 +360,7 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
           )}
 
           {/* ═══ Rapoarte ═══ */}
-          {purchasedLayer > 0 && (
+          {purchasedLayer > 0 && canAccess("AUDIT_TRAIL") && (
             <div
               className={`rounded-2xl border transition-all ${
                 isValidated ? "bg-white border-indigo-200 shadow-md ring-2 ring-indigo-100" :
