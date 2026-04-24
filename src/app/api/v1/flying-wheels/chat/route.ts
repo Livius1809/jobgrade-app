@@ -222,6 +222,24 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => {})
 
+    // ── Creștere cognitivă din interacțiune client-facing ──
+    // Fiecare conversație maturizează agentul delegat.
+    // Nu din CE a zis clientul, ci din FAPTUL că a interacționat.
+    // Succesul se validează ulterior prin feedback (helpful/not helpful din Guide Journal).
+    if (routing.target !== "fw_self") {
+      try {
+        const { updateStateAfterExecution } = await import("@/lib/agents/cognitive-state")
+        await updateStateAfterExecution(routing.target.toUpperCase(), {
+          taskId: thread.id,
+          taskTitle: `Interacțiune client-facing: ${message.trim().slice(0, 40)}`,
+          succeeded: true, // interacțiunea s-a completat = succes
+          costUSD: 0.015,
+          wasFirstAttempt: true,
+          taskType: "CLIENT_INTERACTION",
+        })
+      } catch {} // fire-and-forget
+    }
+
     return NextResponse.json({
       response: responseText,
       threadId: thread.id,

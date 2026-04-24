@@ -110,10 +110,28 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json()
   const { id, helpful } = z.object({ id: z.string(), helpful: z.boolean() }).parse(body)
 
-  await prisma.guideJournalEntry.update({
+  const entry = await prisma.guideJournalEntry.update({
     where: { id },
     data: { helpful },
   })
+
+  // ── Feedback client → creștere cognitivă agent delegat ──
+  // helpful=true → interacțiune validată ca succes real
+  // helpful=false → interacțiune eșuată — agentul trebuie să învețe
+  if (entry.delegatedTo) {
+    try {
+      const { updateStateAfterExecution } = await import("@/lib/agents/cognitive-state")
+      await updateStateAfterExecution(entry.delegatedTo.toUpperCase(), {
+        taskId: entry.id,
+        taskTitle: `Feedback client: "${entry.question.slice(0, 40)}"`,
+        succeeded: helpful,
+        failureReason: helpful ? undefined : "Client feedback: răspunsul nu a fost util",
+        costUSD: 0,
+        wasFirstAttempt: true,
+        taskType: "CLIENT_FEEDBACK",
+      })
+    } catch {} // fire-and-forget
+  }
 
   return NextResponse.json({ success: true })
 }
