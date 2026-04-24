@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import GhidulJobGrade from "@/components/chat/GhidulJobGrade"
 
 export default function AuthLayout({
   children,
@@ -18,7 +19,7 @@ export default function AuthLayout({
             href="/"
             className="text-sm text-slate-500 hover:text-slate-700 transition-colors duration-200"
           >
-            ← Pagina principală
+            ← Pagina principala
           </Link>
         </div>
       </header>
@@ -27,6 +28,9 @@ export default function AuthLayout({
       <main className="flex items-center justify-center px-6 py-12" style={{ minHeight: "calc(100vh - 4rem)" }}>
         {children}
       </main>
+
+      {/* ── Ghidul JobGrade ──────────────────────────────────── */}
+      <GhidulJobGrade />
     </div>
   )
 }

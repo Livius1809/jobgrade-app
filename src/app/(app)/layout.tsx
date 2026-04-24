@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import FlyingWheels from "@/components/chat/FlyingWheels"
+import GhidulJobGrade from "@/components/chat/GhidulJobGrade"
 import InteractionTracker from "@/components/tracking/InteractionTracker"
 
 export default async function AppLayout({
@@ -78,8 +78,8 @@ export default async function AppLayout({
       {/* ── Interaction Tracking (invisible) ─────────────────── */}
       <InteractionTracker />
 
-      {/* ── Flying Wheels — ghidaj dinamic contextual ────────── */}
-      <FlyingWheels />
+      {/* ── Ghidul JobGrade — asistent contextual ────────────── */}
+      <GhidulJobGrade />
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="border-t border-border/50 py-4 px-6 mt-8">

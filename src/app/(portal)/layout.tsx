@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import SignOutButton from "@/components/auth/SignOutButton"
-import NarrativeGuide from "@/components/guide/NarrativeGuide"
+import GhidulJobGrade from "@/components/chat/GhidulJobGrade"
 import AccountMenu from "@/components/portal/AccountMenu"
 import BuyButton from "@/components/portal/BuyButton"
 
@@ -66,8 +66,8 @@ export default async function PortalLayout({
         </div>
       </footer>
 
-      {/* ── Consultant HR (bubble jos-dreapta) ──────────────── */}
-      <NarrativeGuide />
+      {/* ── Ghidul JobGrade (bubble jos-dreapta) ──────────────── */}
+      <GhidulJobGrade />
     </div>
   )
 }
