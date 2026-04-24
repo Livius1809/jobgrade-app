@@ -555,7 +555,9 @@ export default async function OwnerDashboard() {
               tests={data.vitalSigns.tests}
             />
 
-            <CognitiveHealthSection />
+            {/* Cognitive Health Section — temporar dezactivat pentru diagnostic
+            <SafeCognitiveHealth />
+            */}
 
             <PipelineTelemetrySection />
 
@@ -715,6 +717,17 @@ async function PilotSection() {
       </div>
     </div>
   )
+}
+
+// ── Safe wrapper — nu crasha pagina dacă cognitive health eșuează ────────────
+
+async function SafeCognitiveHealth() {
+  try {
+    return await CognitiveHealthSection()
+  } catch (e) {
+    console.error("[SafeCognitiveHealth]", (e as Error).message?.slice(0, 100))
+    return null
+  }
 }
 
 // ── Cognitive Health Section ─────────────────────────────────────────────────
