@@ -351,10 +351,20 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                   className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group">
                   <div className="flex items-center gap-2 mb-2">
                     <Icon name="icon-consens" size={18} className="opacity-60" />
-                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Evaluare comună</span>
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Evaluare comuna</span>
                   </div>
-                  <p className="text-xs text-slate-500">Plan corecție dacă decalaj depășește 5% (Art. 10)</p>
+                  <p className="text-xs text-slate-500">Plan corectie daca decalaj depaseste 5% (Art. 10)</p>
                 </a>
+
+                {/* Notificare anuala Art. 6 */}
+                <button onClick={() => openPanel("annual-notification")}
+                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-notificare" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Notificare anuala Art. 6</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Informati angajatii despre dreptul la transparenta salariala</p>
+                </button>
               </div>
             </div>
           )}
@@ -416,6 +426,24 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               </div>
               <div style={{ height: "20px" }} />
               <ReportPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* Panou notificare anuala Art. 6 */}
+          {activePanel === "annual-notification" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-violet-400 bg-violet-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Notificare anuala — Art. 6</h3>
+                  <p className="text-xs text-violet-600 mt-1">Informati angajatii despre dreptul la transparenta salariala</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-violet-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <AnnualNotificationPanel companyName={companyName} />
             </div>,
             document.body
           )}
@@ -1767,6 +1795,115 @@ function ReportPanel() {
         Rapoartele includ: ierarhia posturilor, clase salariale, proces verbal și pagina de validare cu semnătură.
         Exportul consumă credite din sold.
       </p>
+    </div>
+  )
+}
+
+// ─── Panou Notificare Anuala Art. 6 ──────────────────────────────────
+
+function AnnualNotificationPanel({ companyName }: { companyName: string }) {
+  const [adminEmail, setAdminEmail] = useState("")
+  const [customMessage, setCustomMessage] = useState("")
+  const [gdprConfirmed, setGdprConfirmed] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  const handleSend = async () => {
+    if (!adminEmail.trim() || !gdprConfirmed) return
+    setSending(true)
+    try {
+      const res = await fetch("/api/v1/pay-gap/annual-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName,
+          adminEmail: adminEmail.trim(),
+          customMessage: customMessage.trim() || undefined,
+          gdprConfirmed,
+        }),
+      })
+      if (res.ok) setSent(true)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-4xl mb-3">&#10003;</div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Template trimis</h3>
+        <p className="text-sm text-gray-600">
+          Verificati email-ul ({adminEmail}). Copiati continutul si trimiteti-l
+          tuturor angajatilor din organizatie.
+        </p>
+        <p className="text-xs text-gray-400 mt-4">
+          Actiunea a fost inregistrata in jurnalul de conformitate.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white rounded-xl border border-violet-200 p-4">
+        <h4 className="text-sm font-semibold text-violet-800 mb-2">Ce face aceasta functiune?</h4>
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Conform Art. 6 Directiva EU 2023/970, angajatorul trebuie sa informeze anual
+          toti angajatii despre dreptul lor de a solicita informatii salariale (Art. 7).
+          Platforma genereaza un template de email pe care il trimiteti la adresa dvs.,
+          iar dvs. il distribuiti angajatilor prin email-ul organizatiei (forward/mail merge).
+        </p>
+      </div>
+
+      <div>
+        <label className="text-xs font-medium text-gray-700">
+          Email-ul dvs. (primiti template-ul aici)
+        </label>
+        <input
+          type="email"
+          value={adminEmail}
+          onChange={(e) => setAdminEmail(e.target.value)}
+          placeholder="hr@companie.ro"
+          className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div>
+        <label className="text-xs font-medium text-gray-700">
+          Mesaj suplimentar (optional — apare in email)
+        </label>
+        <textarea
+          value={customMessage}
+          onChange={(e) => setCustomMessage(e.target.value)}
+          placeholder="ex: Pentru intrebari suplimentare, contactati departamentul HR..."
+          rows={3}
+          className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 resize-y"
+        />
+      </div>
+
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={gdprConfirmed}
+          onChange={(e) => setGdprConfirmed(e.target.checked)}
+          className="mt-0.5 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+        />
+        <span className="text-xs text-gray-600">
+          Confirm ca am baza legala (obligatie legala Art. 6 EU 2023/970) pentru
+          a transmite aceasta notificare angajatilor si ca adresele de email
+          sunt gestionate de organizatia noastra, nu de platforma JobGrade.
+        </span>
+      </label>
+
+      <button
+        onClick={handleSend}
+        disabled={sending || !adminEmail.trim() || !gdprConfirmed}
+        className="w-full py-2.5 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition-colors"
+        style={{ background: "linear-gradient(135deg, #7C3AED, #5B21B6)" }}
+      >
+        {sending ? "Se trimite..." : "Genereaza si trimite template"}
+      </button>
     </div>
   )
 }

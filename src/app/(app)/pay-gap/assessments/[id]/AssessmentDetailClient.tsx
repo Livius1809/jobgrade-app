@@ -15,6 +15,7 @@ import VersionComparison, {
   type ReportVersion,
 } from "@/components/joint-assessment/VersionComparison"
 import LegalDeadlineMonitor from "@/components/joint-assessment/LegalDeadlineMonitor"
+import AssessmentDiscussion from "@/components/joint-assessment/AssessmentDiscussion"
 import SignatureCanvas from "@/components/sessions/SignatureCanvas"
 
 // ── Tipuri ──────────────────────────────────────────────────
@@ -325,20 +326,11 @@ export default function AssessmentDetailClient({
 
         {/* ── TAB: Discutie grup ── */}
         {activeTab === "discutie" && (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-3">💬</div>
-            <h3 className="text-lg font-semibold text-gray-800">
-              Discutie grup + Video
-            </h3>
-            <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto">
-              Aceleasi componente ca la comisia JE: forum threaded cu AI mediator
-              contextualizat pe pay gap, videoconferinta Jitsi.
-            </p>
-            <p className="text-xs text-gray-400 mt-4">
-              Componentele DiscussionPanel si VideoConference din /components/sessions/
-              vor fi integrate cu context adaptat pe capitolele raportului Art. 10.
-            </p>
-          </div>
+          <AssessmentDiscussion
+            assessmentId={assessmentId}
+            currentMemberId={currentUserId}
+            currentMemberName={currentUserName}
+          />
         )}
 
         {/* ── TAB: Semnaturi ── */}
