@@ -328,6 +328,43 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // ═══ BRIDGE: PayrollEntry → EmployeeSalaryRecord (pentru Pay Gap) ═══
+      // Pay gap citește din EmployeeSalaryRecord. La import stat salarii,
+      // creăm automat intrări duplicate (sincronizare sursă unică).
+      if (validEntries.length > 0) {
+        const year = new Date().getFullYear()
+        const batchPayroll = await tx.payrollEntry.findMany({
+          where: { batchId: batchRecord.id },
+          select: { jobCode: true, jobTitle: true, department: true, gender: true, baseSalary: true, annualBonuses: true, annualCommissions: true },
+        })
+
+        for (const pe of batchPayroll) {
+          const variableComp = ((pe.annualBonuses ?? 0) + (pe.annualCommissions ?? 0)) / 12
+          await tx.employeeSalaryRecord.upsert({
+            where: {
+              tenantId_employeeCode_periodYear: { tenantId, employeeCode: pe.jobCode, periodYear: year },
+            },
+            create: {
+              tenantId,
+              employeeCode: pe.jobCode,
+              gender: pe.gender,
+              baseSalary: pe.baseSalary,
+              variableComp,
+              department: pe.department,
+              jobCategory: pe.jobTitle,
+              periodYear: year,
+            },
+            update: {
+              gender: pe.gender,
+              baseSalary: pe.baseSalary,
+              variableComp,
+              department: pe.department,
+              jobCategory: pe.jobTitle,
+            },
+          }).catch(() => {}) // non-blocking — dacă eșuează, pay gap merge fără
+        }
+      }
+
       return batchRecord
     })
 
