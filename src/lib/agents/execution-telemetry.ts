@@ -211,7 +211,7 @@ export async function getOrganismTelemetryOverview(hoursBack: number = 24) {
     prisma.agentTask.count({
       where: {
         status: "COMPLETED",
-        result: { startsWith: "[AUTO" },
+        result: { contains: "[AUTO" },
         completedAt: { gte: since },
       },
     }).catch(() => 0),

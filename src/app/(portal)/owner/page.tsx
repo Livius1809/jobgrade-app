@@ -555,11 +555,10 @@ export default async function OwnerDashboard() {
               tests={data.vitalSigns.tests}
             />
 
-            {/* Cognitive Health Section — temporar dezactivat pentru diagnostic
+            {/* Cognitive Health — reactivat cu safe wrapper */}
             <SafeCognitiveHealth />
-            */}
 
-            <PipelineTelemetrySection />
+            <SafePipelineTelemetry />
 
             <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Straturi organism</p>
@@ -719,7 +718,16 @@ async function PilotSection() {
   )
 }
 
-// ── Safe wrapper — nu crasha pagina dacă cognitive health eșuează ────────────
+// ── Safe wrappers — nu crasha pagina dacă o secțiune eșuează ─────────────────
+
+async function SafePipelineTelemetry() {
+  try {
+    return await PipelineTelemetrySection()
+  } catch (e) {
+    console.error("[SafePipelineTelemetry]", (e as Error).message?.slice(0, 100))
+    return null
+  }
+}
 
 async function SafeCognitiveHealth() {
   try {
