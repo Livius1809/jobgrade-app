@@ -17,6 +17,8 @@ export const CREDIT_COSTS = {
   PAY_GAP_REPORT: 3,
   RECALIBRATION_ROUND: 2,
   AI_MEDIATION_ROUND: 2,
+  VIDEO_CONFERENCE_SESSION: 0,  // Faza 1: gratuit (Jitsi). Faza 2: 2 cr/sesiune (LiveKit infra)
+  VOICE_AI_MINUTE: 3,           // Faza 2: voce ElevenLabs (STT+TTS+Claude), planificat
 } as const
 
 export async function getBalance(tenantId: string): Promise<number> {

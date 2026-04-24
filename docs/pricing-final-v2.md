@@ -60,7 +60,9 @@
 | Legal | Compliance lunar | $40.00 | $50.00 | Legal |
 | Support | Baseline suport | $30.00 | $40.00 | Suport |
 | Domeniu | DNS + SSL | $2.00 | $3.00 | Infra |
-| **TOTAL CAPEX** | | **$251.00** | **$333.00** | |
+| Jitsi Meet | Video conferință comisie (Faza 1) | $0.00 | $0.00 | Video |
+| LiveKit + ElevenLabs | Voce AI mediator (Faza 2, planificat) | $30.00 | $50.00 | Video+Voce |
+| **TOTAL CAPEX** | | **$281.00** | **$383.00** | |
 | **CAPEX RON** | | **~1.310 RON** | **~1.738 RON** | la 5.2185 RON/USD |
 
 **Abonament:** 399 RON/lună
@@ -147,6 +149,9 @@
 | — | Simulare remunerare | **3 cr** | 24 RON | ~0.80 RON | **96.7%** |
 | — | Raport pay gap | **3 cr** | 24 RON | ~1.60 RON | **93.3%** |
 | — | Recalibrare consens | **2 cr** | 16 RON | 1.49 RON | **90.7%** |
+| — | Videoconferință comisie (Faza 1) | **0 cr** | GRATUIT | $0 | **inclus** |
+| — | Videoconferință comisie (Faza 2) | **2 cr** | 16 RON | ~1 RON | **93.8%** |
+| — | Voce AI mediator/minut (Faza 2) | **3 cr** | 24 RON | ~2 RON | **91.7%** |
 
 ## B. Exporturi
 
