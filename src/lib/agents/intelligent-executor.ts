@@ -30,17 +30,22 @@ export interface IntelligentRunResult {
   thresholdResult: ThresholdResult
   tasksProcessed: number
   tasksSkippedKB: number
+  tasksSkippedMeta: number
   tasksBlockedAlignment: number
   tasksBlockedBudget: number
   tasksExecuted: number
   results: Array<{
     taskId: string
-    outcome: string
+    assignedTo?: string
+    title?: string
+    outcome?: string
+    status?: string
     kbHit: boolean
+    reason?: string
     alignmentLevel?: number
     model?: string
     costUSD?: number
-    learningCreated: boolean
+    learningCreated?: boolean
   }>
   totalDurationMs: number
 }
@@ -71,6 +76,7 @@ export async function runIntelligentBatch(
       thresholdResult: threshold,
       tasksProcessed: 0,
       tasksSkippedKB: 0,
+      tasksSkippedMeta: 0,
       tasksBlockedAlignment: 0,
       tasksBlockedBudget: 0,
       tasksExecuted: 0,
@@ -102,9 +108,46 @@ export async function runIntelligentBatch(
   let tasksBlockedAlignment = 0
   let tasksBlockedBudget = 0
   let tasksExecuted = 0
+  let tasksSkippedMeta = 0
   const results: IntelligentRunResult["results"] = []
 
+  // Import meta-evaluator (Strat Cognitiv 1)
+  let metaEvaluateTask: ((id: string) => Promise<{ verdict: string; reason: string }>) | null = null
+  try {
+    const cogLayers = await import("@/lib/agents/cognitive-layers")
+    metaEvaluateTask = cogLayers.metaEvaluateTask
+  } catch {}
+
   for (const task of tasks) {
+    // ═══ STRAT COGNITIV 1: META-EVALUATOR — "Mai are sens acest task?" ═══
+    if (metaEvaluateTask) {
+      try {
+        const meta = await metaEvaluateTask(task.id)
+        if (meta.verdict !== "PROCEED") {
+          // Task-ul nu mai are sens — skip fără apel Claude
+          await prisma.agentTask.update({
+            where: { id: task.id },
+            data: {
+              status: "COMPLETED",
+              completedAt: new Date(),
+              result: `[META-SKIP:${meta.verdict}] ${meta.reason}`,
+              kbHit: true, // nu a consumat Claude
+            },
+          })
+          tasksSkippedMeta++
+          results.push({
+            taskId: task.id,
+            assignedTo: task.assignedTo,
+            title: task.title,
+            status: "COMPLETED" as const,
+            kbHit: true,
+            reason: `Meta-evaluator: ${meta.verdict} — ${meta.reason}`,
+          })
+          continue
+        }
+      } catch {}
+    }
+
     let kbHit = false
     let alignmentLevel: number | undefined
     let model: string | undefined
@@ -355,6 +398,7 @@ export async function runIntelligentBatch(
     thresholdResult: threshold,
     tasksProcessed: tasks.length,
     tasksSkippedKB,
+    tasksSkippedMeta,
     tasksBlockedAlignment,
     tasksBlockedBudget,
     tasksExecuted,

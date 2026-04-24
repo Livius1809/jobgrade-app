@@ -110,16 +110,36 @@ export async function GET(request: NextRequest) {
       },
     }).catch(() => ({ count: 0 }))
 
-    // Procesează toată coada — batch-uri de 10 până nu mai sunt task-uri
+    // ═══ STRATURI COGNITIVE: heartbeat adaptiv ═══
+    let cognitiveResult: any = null
+    let heartbeatBatchSize = 10
+    try {
+      const { runCognitiveLayers, calculateHeartbeat } = await import("@/lib/agents/cognitive-layers")
+      const heartbeat = await calculateHeartbeat()
+      heartbeatBatchSize = heartbeat.batchSize
+      console.log(`[cron/executor] Heartbeat: ${heartbeat.urgencyLevel} (batch=${heartbeat.batchSize}) — ${heartbeat.reason}`)
+
+      // Cognitive layers (anomalii, blind spots, weighted learning)
+      cognitiveResult = await runCognitiveLayers()
+      if (cognitiveResult.anomalies.length > 0) {
+        console.log(`[cron/executor] ${cognitiveResult.anomalies.length} anomalii detectate:`,
+          cognitiveResult.anomalies.map((a: any) => a.signal).join("; "))
+      }
+    } catch (e) {
+      console.log("[cron/executor] Cognitive layers skip:", (e as Error).message?.slice(0, 60))
+    }
+
+    // Procesează coada — batch size din heartbeat adaptiv
     let totalProcessed = 0
     let totalExecuted = 0
     let totalBlocked = 0
+    let totalSkippedByMeta = 0
     let allResults: any[] = []
     let batchCount = 0
-    const maxBatches = 10 // safety: max 100 task-uri per ciclu
+    const maxBatches = 10
 
     while (batchCount < maxBatches) {
-      const result = await runIntelligentBatch(10)
+      const result = await runIntelligentBatch(heartbeatBatchSize)
 
       if (result.tasksProcessed === 0) break // nu mai sunt task-uri
 
@@ -183,6 +203,14 @@ export async function GET(request: NextRequest) {
       invalidatedByCode,
       staleTasksCleaned,
       expiredCleaned,
+      cognitive: cognitiveResult ? {
+        heartbeat: cognitiveResult.heartbeat.urgencyLevel,
+        batchSize: cognitiveResult.heartbeat.batchSize,
+        anomalies: cognitiveResult.anomalies.length,
+        blindSpots: cognitiveResult.blindSpots.length,
+        weightedLearning: cognitiveResult.weightedLearningUpdated,
+        skippedByMeta: totalSkippedByMeta,
+      } : null,
       results: allResults.slice(0, 20),
       timestamp: new Date().toISOString(),
     })
