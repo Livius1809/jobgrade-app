@@ -11,6 +11,7 @@ import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai
 import { getCulturalCalibrationSection } from "@/lib/agents/cultural-calibration-ro"
 import { calibrateCommunication } from "@/lib/comms/calibrate"
 import { analyzeLinguisticProfile } from "@/lib/kb/linguistic-profile"
+import { detectProfanity, getDeescalationInstructions } from "@/lib/comms/profanity-filter"
 
 export const maxDuration = 60
 
@@ -73,6 +74,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // ── 0e. Detectare limbaj licențios ──
+    const profanityCheck = detectProfanity(message.trim())
+
+    // SEVERE → răspuns calm imediat, nu delegăm
+    if (profanityCheck.severity === "SEVERE" && profanityCheck.suggestedResponse) {
+      return NextResponse.json({
+        response: profanityCheck.suggestedResponse,
+        delegatedTo: "fw_self",
+        profanityDetected: true,
+      })
+    }
+
     // ── 1. Route question ──
     const routing = routeQuestion(message.trim(), currentPage ?? "/", isB2C)
 
@@ -124,6 +137,9 @@ export async function POST(req: NextRequest) {
     pastMessages.push(message.trim())
     const linguisticProfile = analyzeLinguisticProfile(pastMessages)
 
+    // Instrucțiuni de de-escalare dacă limbaj moderat
+    const deescalation = getDeescalationInstructions(profanityCheck.severity)
+
     if (routing.target === "fw_self" || !routing.agentEndpoint) {
       responseText = await selfRespond(
         message.trim(),
@@ -131,7 +147,8 @@ export async function POST(req: NextRequest) {
         thread.messages,
         userId,
         tenantId,
-        linguisticProfile
+        linguisticProfile,
+        deescalation
       )
     } else {
       responseText = await delegateToAgent(
@@ -141,7 +158,8 @@ export async function POST(req: NextRequest) {
         thread.messages,
         userId,
         tenantId,
-        linguisticProfile
+        linguisticProfile,
+        deescalation
       )
     }
 
@@ -223,7 +241,8 @@ async function selfRespond(
   history: any[],
   userId: string,
   tenantId: string,
-  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>
+  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>,
+  deescalation: string
 ): Promise<string> {
   const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
   const contextPrompt = formatContextForPrompt(clientContext)
@@ -236,11 +255,14 @@ async function selfRespond(
   }))
   conversationHistory.push({ role: "user" as const, content: message })
 
+  const systemPrompt = buildFWSystemPrompt(contextPrompt, guide.detailedGuide, currentPage, culturalSection, linguisticProfile)
+    + (deescalation ? `\n\n${deescalation}` : "")
+
   const client = new Anthropic()
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 800,
-    system: buildFWSystemPrompt(contextPrompt, guide.detailedGuide, currentPage, culturalSection, linguisticProfile),
+    system: systemPrompt,
     messages: conversationHistory,
   })
 
@@ -256,7 +278,8 @@ async function delegateToAgent(
   history: any[],
   userId: string,
   tenantId: string,
-  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>
+  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>,
+  deescalation: string
 ): Promise<string> {
   const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
   const contextPrompt = formatContextForPrompt(clientContext)
@@ -304,7 +327,7 @@ GHID PAGINA: ${guide.detailedGuide}
 CONTEXT CLIENT:
 ${contextPrompt}
 
-Raspunde in romana, concis (2-4 paragrafe maxim), natural.`,
+Raspunde in romana, concis (2-4 paragrafe maxim), natural.${deescalation ? `\n\n${deescalation}` : ""}`,
     messages: conversationHistory,
   })
 
