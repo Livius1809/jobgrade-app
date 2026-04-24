@@ -355,8 +355,8 @@ async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
     const dayCost = Number(costData[0]?.cost_day || 0)
     const dailyCalls = Number(callCount[0]?.cnt || 0)
 
-    // Estimare: Max plan ~$100/lună, API credits depinde de plan
-    const monthlyBudget = 100 // estimare conservatoare
+    // Anthropic API — plafon setat de Owner pe console.anthropic.com
+    const monthlyBudget = 500 // setat 24.04.2026
     const usagePct = Math.round(monthCost / monthlyBudget * 100)
 
     limits.push({
@@ -376,7 +376,7 @@ async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
     // Neon DB — dimensiune
     const dbSize = await prisma.$queryRaw`SELECT pg_database_size(current_database()) as size` as any[]
     const dbMB = Math.round(Number(dbSize[0]?.size || 0) / 1024 / 1024)
-    const dbLimitMB = 512 // Neon Launch free tier
+    const dbLimitMB = 10 * 1024 // Neon Launch: 10 GB
     const dbUsage = Math.round(dbMB / dbLimitMB * 100)
 
     limits.push({
@@ -393,15 +393,20 @@ async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
           : `${dbUsage}% din capacitate`,
     })
 
-    // Vercel — estimate din environment
+    // Vercel Pro — 1M invocations/lună, 1TB bandwidth
+    const monthlyInvocations = dailyCalls * 30
+    const vercelLimit = 1000000
+    const vercelUsage = Math.round(monthlyInvocations / vercelLimit * 100)
     limits.push({
-      name: "Vercel Functions",
-      metric: "Execuții / lună",
-      current: "~" + dailyCalls * 30,
-      limit: "1.000.000",
-      usage: Math.round(dailyCalls * 30 / 1000000 * 100),
-      status: dailyCalls * 30 > 800000 ? "warn" : "ok",
-      detail: `~${dailyCalls} execuții/zi (cron + portal)`,
+      name: "Vercel Pro",
+      metric: "Execuții funcții / lună",
+      current: monthlyInvocations.toLocaleString("ro-RO"),
+      limit: vercelLimit.toLocaleString("ro-RO"),
+      usage: vercelUsage,
+      status: vercelUsage > 80 ? "warn" : "ok",
+      detail: vercelUsage > 80
+        ? `~${dailyCalls}/zi. Aproape de limită — optimizează cron-ul sau upgrade plan`
+        : `~${dailyCalls} execuții/zi`,
     })
 
     // Redis/Upstash — verificăm dacă e configurat
