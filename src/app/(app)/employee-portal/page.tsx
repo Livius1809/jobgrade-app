@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import EmployeePortalClient from "./EmployeePortalClient"
 
-export const metadata = { title: "Portal Angajați — Cereri Art. 7" }
+export const dynamic = "force-dynamic"
+export const metadata = { title: "Portal Angajati — Cereri Art. 5-7" }
 
 export default async function EmployeePortalPage({
   searchParams,
@@ -60,11 +61,16 @@ export default async function EmployeePortalPage({
             Cereri de transparență salarială conform Art. 7 Directiva EU 2023/970
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-500">Link cerere angajați:</p>
-          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-            /portal/{company?.slug}
-          </code>
+        <div className="text-right space-y-1">
+          <p className="text-xs text-gray-500">Link-uri publice angajati:</p>
+          <div className="flex flex-col items-end gap-1">
+            <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+              /portal/{company?.slug} (Art. 7 — cerere info)
+            </code>
+            <code className="text-xs bg-violet-100 px-2 py-1 rounded text-violet-700">
+              /portal/{company?.slug}/posturi (Art. 5 — posturi cu salary bands)
+            </code>
+          </div>
         </div>
       </div>
 
