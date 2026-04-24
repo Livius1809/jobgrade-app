@@ -71,6 +71,7 @@ export interface CascadeProposal {
   metricName: string
   metricUnit: string | null
   targetValue: number
+  currentValue: number
   direction: ParentObjective["direction"]
   level: "TACTICAL" | "OPERATIONAL"
   ownerRoles: string[]

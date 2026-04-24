@@ -285,7 +285,8 @@ export function analyzeEqualWork(
       const maleAvg = males.length > 0 ? males.reduce((s, r) => s + r.baseSalary, 0) / males.length : 0
       const femaleAvg = females.length > 0 ? females.reduce((s, r) => s + r.baseSalary, 0) / females.length : 0
 
-      const gap = suppressed ? null : parseFloat(payGap(femaleAvg, maleAvg).toFixed(1))
+      const rawGap = suppressed ? null : payGap(femaleAvg, maleAvg)
+      const gap = rawGap !== null ? parseFloat(rawGap.toFixed(1)) : null
 
       let flag: "OK" | "ATENTIE" | "SEMNIFICATIV" = "OK"
       if (gap !== null) {

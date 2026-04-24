@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { prisma } from "@/lib/prisma"
 import CogChat from "@/components/chat/CogChat"
 import { getOrganismTelemetryOverview } from "@/lib/agents/execution-telemetry"
 import { getLearningStats } from "@/lib/agents/learning-pipeline"

@@ -67,7 +67,7 @@ export default function SalaryGradeManager({ employees, evaluationResults, onSav
   }, [employees, evaluationResults])
 
   // Auto-detect clase
-  const classDetection = useMemo(() => autoDetectClassCount(scorePoints), [scorePoints])
+  const classDetection = useMemo(() => autoDetectClassCount(scorePoints.map(p => p.score)), [scorePoints])
   const [classCount, setClassCount] = useState(classDetection.suggested)
 
   useEffect(() => {

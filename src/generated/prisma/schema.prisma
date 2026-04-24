@@ -597,24 +597,30 @@ model SalaryStep {
 // ─────────────────────────────────────────
 
 model EmployeeSalaryRecord {
-  id            String   @id @default(cuid())
-  tenantId      String
-  salaryGradeId String?
-  employeeCode  String
-  gender        Gender
-  baseSalary    Float
-  variableComp  Float    @default(0)
-  department    String?
-  jobCategory   String?
-  periodYear    Int
-  periodMonth   Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  tenantId            String
+  salaryGradeId       String?
+  employeeCode        String // cod intern platforma (generat sau din client)
+  companyEmployeeId   String? // ID alocat de client (poate fi null inițial)
+  internalFingerprint String? // hash din (jobTitle+dept+gender+salary) pt matching fără ID
+  gender              Gender
+  baseSalary          Float
+  variableComp        Float    @default(0)
+  department          String?
+  jobCategory         String?
+  workSchedule        String?  @default("8h") // normă lucru: 2h, 4h, 6h, 8h
+  evaluationScore     Int? // scor total din Modul 1 (muncă egală = scor egal)
+  periodYear          Int
+  periodMonth         Int?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   salaryGrade SalaryGrade? @relation(fields: [salaryGradeId], references: [id])
 
   @@unique([tenantId, employeeCode, periodYear])
+  @@index([tenantId, companyEmployeeId])
+  @@index([tenantId, internalFingerprint])
   @@map("employee_salary_records")
 }
 
@@ -2391,6 +2397,7 @@ model AgentTask {
   result        String? @db.Text // ce a produs executorul
   resultQuality Int? // 0-100, evaluat de manager la review
   failureReason String? @db.Text
+  kbHit         Boolean @default(false) // true = rezolvat din KB (știut), false = executat real (făcut)
 
   // Feedback loop
   reviewedBy String? // managerul care a evaluat rezultatul
@@ -3617,6 +3624,7 @@ model LearningArtifact {
   sourceType         String    @default("ESCALATION") // ESCALATION | POST_EXECUTION | EXTRAPOLATION
   appliedCount       Int       @default(0) // de cate ori a fost aplicat cu succes
   effectivenessScore Float     @default(0) // 0-1, creste cu fiecare aplicare reusita
+  validated          Boolean   @default(false) // true = folosit cu succes în task aprobat de manager
   expiresAt          DateTime? // expirare daca nu e folosit >90 zile
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
