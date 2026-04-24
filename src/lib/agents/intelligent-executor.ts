@@ -85,24 +85,59 @@ export async function runIntelligentBatch(
     }
   }
 
-  // ═══ PAS 2: LOAD TASKS ═══
-  const tasks = await prisma.agentTask.findMany({
-    where: {
-      status: "ASSIGNED",
-      blockerType: null,
-    },
-    orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
-    take: maxTasks,
-    select: {
-      id: true,
-      assignedTo: true,
-      title: true,
-      description: true,
-      taskType: true,
-      priority: true,
-      tags: true,
-    },
-  })
+  // ═══ PAS 2: DELIBERARE COMPROMIS + LOAD TASKS ═══
+  // Arbitrul decide câte sloturi extern vs intern
+  let compromise: { externalSlots: number; internalSlots: number; externalTags: string[]; internalTags: string[] } | null = null
+  try {
+    const { deliberate, getTaskSelectionCriteria } = await import("@/lib/agents/resource-arbitrator")
+    const { calculateCognitiveHealth } = await import("@/lib/agents/cognitive-health")
+    const health = await calculateCognitiveHealth()
+    const comp = await deliberate(maxTasks, health.overallScore)
+    compromise = getTaskSelectionCriteria(comp)
+  } catch {}
+
+  // Selectăm taskuri cu prioritizare extern/intern
+  let tasks: any[]
+  if (compromise) {
+    const [externalTasks, internalTasks] = await Promise.all([
+      prisma.agentTask.findMany({
+        where: { status: "ASSIGNED", blockerType: null, tags: { hasSome: compromise.externalTags } },
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+        take: compromise.externalSlots,
+        select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
+      }),
+      prisma.agentTask.findMany({
+        where: { status: "ASSIGNED", blockerType: null, tags: { hasSome: compromise.internalTags } },
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+        take: compromise.internalSlots,
+        select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
+      }),
+    ])
+    // Combinăm, deduplicăm
+    const seen = new Set<string>()
+    tasks = []
+    for (const t of [...externalTasks, ...internalTasks]) {
+      if (!seen.has(t.id)) { tasks.push(t); seen.add(t.id) }
+    }
+    // Completăm cu taskuri generice dacă nu avem destule
+    if (tasks.length < maxTasks) {
+      const filler = await prisma.agentTask.findMany({
+        where: { status: "ASSIGNED", blockerType: null, id: { notIn: [...seen] } },
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+        take: maxTasks - tasks.length,
+        select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
+      })
+      tasks.push(...filler)
+    }
+  } else {
+    // Fallback: selecție clasică fără arbitru
+    tasks = await prisma.agentTask.findMany({
+      where: { status: "ASSIGNED", blockerType: null },
+      orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+      take: maxTasks,
+      select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
+    })
+  }
 
   let tasksSkippedKB = 0
   let tasksBlockedAlignment = 0
