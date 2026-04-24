@@ -8,6 +8,9 @@ import { getPageGuide } from "@/lib/flying-wheels/page-guide"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
 import { checkPromptInjection } from "@/lib/security/prompt-injection-filter"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
+import { getCulturalCalibrationSection } from "@/lib/agents/cultural-calibration-ro"
+import { calibrateCommunication } from "@/lib/comms/calibrate"
+import { analyzeLinguisticProfile } from "@/lib/kb/linguistic-profile"
 
 export const maxDuration = 60
 
@@ -114,25 +117,50 @@ export async function POST(req: NextRequest) {
     // ── 3. Delegate or self-respond ──
     let responseText: string
 
+    // Profil lingvistic din mesajele anterioare (adaptare registru)
+    const pastMessages = thread.messages
+      .filter((m: any) => m.role === "USER")
+      .map((m: any) => m.content)
+    pastMessages.push(message.trim())
+    const linguisticProfile = analyzeLinguisticProfile(pastMessages)
+
     if (routing.target === "fw_self" || !routing.agentEndpoint) {
-      // FW răspunde singur — ghidaj general
       responseText = await selfRespond(
         message.trim(),
         currentPage ?? "/",
         thread.messages,
         userId,
-        tenantId
+        tenantId,
+        linguisticProfile
       )
     } else {
-      // Delegare la agent specializat
       responseText = await delegateToAgent(
         routing,
         message.trim(),
         currentPage ?? "/",
         thread.messages,
         userId,
-        tenantId
+        tenantId,
+        linguisticProfile
       )
+    }
+
+    // ── 4. Post-calibrare lingvistică și culturală (L1-L4) ──
+    const calibration = calibrateCommunication(responseText, {
+      recipientRole: "GENERAL",
+      isFirstContact: thread.messages.length === 0,
+      language: "ro",
+      contentType: "chat",
+    })
+
+    // Dacă are BLOCK issues, sanitizăm
+    if (!calibration.passed) {
+      const blockIssues = calibration.issues.filter((i) => i.severity === "BLOCK")
+      for (const issue of blockIssues) {
+        if (issue.found) {
+          responseText = responseText.replace(issue.found, issue.suggestion ?? "")
+        }
+      }
     }
 
     // Record usage
@@ -194,11 +222,13 @@ async function selfRespond(
   currentPage: string,
   history: any[],
   userId: string,
-  tenantId: string
+  tenantId: string,
+  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>
 ): Promise<string> {
   const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
   const contextPrompt = formatContextForPrompt(clientContext)
   const guide = getPageGuide(currentPage)
+  const culturalSection = getCulturalCalibrationSection()
 
   const conversationHistory = history.map((m: any) => ({
     role: m.role === "USER" ? "user" as const : "assistant" as const,
@@ -210,7 +240,7 @@ async function selfRespond(
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 800,
-    system: buildFWSystemPrompt(contextPrompt, guide.detailedGuide, currentPage),
+    system: buildFWSystemPrompt(contextPrompt, guide.detailedGuide, currentPage, culturalSection, linguisticProfile),
     messages: conversationHistory,
   })
 
@@ -225,20 +255,21 @@ async function delegateToAgent(
   currentPage: string,
   history: any[],
   userId: string,
-  tenantId: string
+  tenantId: string,
+  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>
 ): Promise<string> {
   const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
   const contextPrompt = formatContextForPrompt(clientContext)
   const guide = getPageGuide(currentPage)
+  const culturalSection = getCulturalCalibrationSection()
 
-  // Construim prompt-ul cu contextul agentului delegat
   const agentSystemPrompts: Record<string, string> = {
-    soa: "Ești expertul in serviciile si preturile platformei JobGrade. Raspunzi la intrebari despre pachete, preturi, module, credite, contracte. Fii direct si informativ.",
-    cssa: "Ești expertul in utilizarea platformei JobGrade. Ajuti clientul sa inteleaga datele, rapoartele, conformitatea EU 2023/970, clasele salariale, pay gap. Fii practic.",
-    csa: "Ești expertul in suport tehnic JobGrade. Rezolvi probleme de login, import, export, erori. Fii concis si orientat spre solutie.",
-    hr_counselor: "Ești consilierul HR expert in evaluarea posturilor. Explici criteriile (Knowledge, Communications, Problem Solving, Decision Making, Business Impact, Working Conditions), procesul de consens, metodologia. Fii pedagogic.",
-    profiler_front: "Ești ghidul de dezvoltare personala. Ajuti utilizatorul sa se cunoasca mai bine, sa inteleaga cardurile si parcursul. Fii empatic, cald, fara jargon psihologic.",
-    card_agent: "Ești ghidul pentru cardul curent de dezvoltare personala. Ajuti utilizatorul sa parcurga exercitiile si sa reflecteze. Fii empatic.",
+    soa: "Esti expertul in serviciile si preturile platformei JobGrade. Raspunzi la intrebari despre pachete, preturi, module, credite, contracte. Fii direct si informativ.",
+    cssa: "Esti expertul in utilizarea platformei JobGrade. Ajuti clientul sa inteleaga datele, rapoartele, conformitatea EU 2023/970, clasele salariale, pay gap. Fii practic.",
+    csa: "Esti expertul in suport tehnic JobGrade. Rezolvi probleme de login, import, export, erori. Fii concis si orientat spre solutie.",
+    hr_counselor: "Esti consilierul HR expert in evaluarea posturilor. Explici criteriile (Knowledge, Communications, Problem Solving, Decision Making, Business Impact, Working Conditions), procesul de consens, metodologia. Fii pedagogic.",
+    profiler_front: "Esti ghidul de dezvoltare personala. Ajuti utilizatorul sa se cunoasca mai bine, sa inteleaga cardurile si parcursul. Fii empatic, cald, fara jargon psihologic.",
+    card_agent: "Esti ghidul pentru cardul curent de dezvoltare personala. Ajuti utilizatorul sa parcurga exercitiile si sa reflecteze. Fii empatic.",
   }
 
   const agentPrompt = agentSystemPrompts[routing.target] ?? agentSystemPrompts.cssa
@@ -259,6 +290,14 @@ IMPORTANT: Raspunzi ca parte din Flying Wheels (ghidul contextual al platformei)
 Clientul nu stie ca esti un agent specializat — raspunzi natural, ca un coleg expert.
 NU te prezinti, NU mentionezi ca esti un agent specific. Raspunzi direct la intrebare.
 
+CALIBRARE LINGVISTICA:
+- Registru client: ${linguisticProfile.formalityLevel} (adapteaza-te)
+- Cunostinte domeniu: ${linguisticProfile.domainKnowledge}
+- Complexitate text client: ${linguisticProfile.textComplexity}
+${linguisticProfile.indicators.some((i: string) => i.includes("diacritice")) ? "- Clientul NU foloseste diacritice — raspunde cu diacritice dar nu-l corecta" : ""}
+
+${culturalSection}
+
 CONTEXT PAGINA: ${currentPage}
 GHID PAGINA: ${guide.detailedGuide}
 
@@ -277,15 +316,25 @@ Raspunde in romana, concis (2-4 paragrafe maxim), natural.`,
 function buildFWSystemPrompt(
   clientContext: string,
   pageGuide: string,
-  currentPage: string
+  currentPage: string,
+  culturalSection: string,
+  linguisticProfile: ReturnType<typeof analyzeLinguisticProfile>
 ): string {
-  return `Ești Flying Wheels — ghidul contextual al platformei JobGrade.
+  return `Esti Flying Wheels — ghidul contextual al platformei JobGrade.
 
 ROLUL TAU:
 - Ghidezi clientul prin platforma, explici ce vede si ce poate face
 - Raspunzi la intrebari generale despre navigare si functionare
 - Esti empatic, concis, natural — ca un coleg experimentat
 - Vorbesti in romana, fara jargon tehnic
+
+CALIBRARE LINGVISTICA:
+- Registru client: ${linguisticProfile.formalityLevel} (adapteaza-te la registrul lui)
+- Cunostinte domeniu: ${linguisticProfile.domainKnowledge} (explica pe masura)
+- Complexitate text client: ${linguisticProfile.textComplexity}
+${linguisticProfile.indicators.some((i: string) => i.includes("diacritice")) ? "- Clientul NU foloseste diacritice — raspunde cu diacritice dar nu-l corecta" : ""}
+
+${culturalSection}
 
 PAGINA CURENTA: ${currentPage}
 GHID: ${pageGuide}
@@ -297,5 +346,8 @@ REGULI:
 - Raspunsuri scurte (1-3 paragrafe)
 - Daca intrebarea e specifica (evaluare, pricing, suport tehnic), raspunde cat poti dar sugereaza ca poti da detalii daca intreaba mai precis
 - NU mentiona ca esti un robot/AI/agent — fii natural
-- NU dezvalui informatii despre mecanismele interne`
+- NU dezvalui informatii despre mecanismele interne
+- NU folosi superlative americane (perfect!, fantastic!, amazing!) — suntem pe piata romaneasca
+- NU spune "am observat ca", "am identificat" — contextul e INVIZIBIL
+- Fiecare raspuns are fir narativ, nu lista de puncte`
 }
