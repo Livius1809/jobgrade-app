@@ -277,12 +277,28 @@ async function loadTaskContext(taskId: string) {
 
 // ─── Prompt building ──────────────────────────────────────────────────────────
 
-async function buildSystemForExecutor(role: string, description: string): Promise<string> {
+async function buildSystemForExecutor(
+  role: string,
+  description: string,
+  taskId?: string,
+  taskTitle?: string,
+  taskDescription?: string,
+): Promise<string> {
   const liveStatus = STRATEGIC_ROLES.has(role) ? await getSystemStatusForPrompt() : ""
+
+  // ── CONȘTIINȚĂ DE SINE — context cognitiv injectat per agent ──
+  let cognitiveSection = ""
+  try {
+    const { buildCognitiveContext, formatCognitivePromptSection } = await import("./cognitive-injection")
+    const ctx = await buildCognitiveContext(role, taskId || "", taskTitle || "", taskDescription || "")
+    cognitiveSection = formatCognitivePromptSection(ctx)
+  } catch {
+    // Fallback graceful — agentul funcționează și fără conștiință
+  }
 
   return buildAgentPrompt(role, description, {
     includeSystemPrompt: true,
-    additionalContext: `${liveStatus}
+    additionalContext: `${liveStatus}${cognitiveSection}
 ═══ MOD EXECUȚIE TASK ═══
 
 Ești invocat pentru a EXECUTA un task concret. Foloseşte tool-ul "submit_task_result" pentru a returna rezultatul.
@@ -1083,7 +1099,7 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
   })
 
   try {
-    const system = await buildSystemForExecutor(task.assignedTo, description)
+    const system = await buildSystemForExecutor(task.assignedTo, description, taskId, task.title, task.description)
     const userMessage = buildUserMessage(ctx)
 
     const { payload, tokensUsed, webSearchCount } = await invokeLLM(system, userMessage, task)
