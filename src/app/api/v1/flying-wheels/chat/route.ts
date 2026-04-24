@@ -1,0 +1,301 @@
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import Anthropic from "@anthropic-ai/sdk"
+import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { routeQuestion, type FWAgentTarget } from "@/lib/flying-wheels/fw-router"
+import { getPageGuide } from "@/lib/flying-wheels/page-guide"
+import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
+import { checkPromptInjection } from "@/lib/security/prompt-injection-filter"
+import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
+
+export const maxDuration = 60
+
+/**
+ * POST /api/v1/flying-wheels/chat
+ *
+ * Flying Wheels Router — primește întrebarea, decide agentul,
+ * delegă invizibil, returnează răspuns unificat.
+ *
+ * Body: {
+ *   message: string,
+ *   threadId?: string,
+ *   currentPage?: string,
+ *   flyingWheelsContext?: string
+ * }
+ *
+ * Response: {
+ *   response: string,
+ *   threadId: string,
+ *   delegatedTo: string (intern, pt jurnal)
+ * }
+ */
+export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Nu ești autentificat" }, { status: 401 })
+  }
+
+  const p = prisma as any
+
+  try {
+    const body = await req.json()
+    const { message, threadId, currentPage } = body
+
+    if (!message?.trim()) {
+      return NextResponse.json({ error: "Mesajul nu poate fi gol" }, { status: 400 })
+    }
+
+    // Security
+    const injectionCheck = checkPromptInjection(message.trim())
+    if (injectionCheck.blocked) {
+      return NextResponse.json({
+        response: "Nu pot procesa acest mesaj.",
+        delegatedTo: "fw_self",
+        blocked: true,
+      })
+    }
+
+    const userId = session.user.id
+    const tenantId = (session.user as any).tenantId
+    const isB2C = currentPage?.startsWith("/personal") ?? false
+
+    // Budget check
+    const budgetCheck = checkBudget(tenantId || userId, isB2C ? "B2C" : "B2B", 0.015)
+    if (!budgetCheck.allowed) {
+      return NextResponse.json({
+        response: getBudgetExceededResponse("ro"),
+        delegatedTo: "fw_self",
+        blocked: true,
+      })
+    }
+
+    // ── 1. Route question ──
+    const routing = routeQuestion(message.trim(), currentPage ?? "/", isB2C)
+
+    // ── 2. Get/create thread ──
+    let thread: any
+    if (threadId) {
+      thread = await p.conversationThread.findFirst({
+        where: { id: threadId, userId },
+        include: { messages: { orderBy: { createdAt: "asc" }, take: 20 } },
+      })
+    }
+
+    if (!thread) {
+      thread = await p.conversationThread.create({
+        data: {
+          tenantId,
+          userId,
+          agentRole: "FLYING_WHEELS",
+          threadType: "FLYING_WHEELS",
+          pageContext: currentPage || null,
+        },
+        include: { messages: [] as any },
+      })
+      thread.messages = thread.messages || []
+    }
+
+    // Save user message
+    await p.conversationMessage.create({
+      data: {
+        threadId: thread.id,
+        role: "USER",
+        content: message.trim(),
+        metadata: JSON.stringify({
+          page: currentPage,
+          routedTo: routing.target,
+          routingReason: routing.reason,
+          routingConfidence: routing.confidence,
+        }),
+      },
+    })
+
+    // ── 3. Delegate or self-respond ──
+    let responseText: string
+
+    if (routing.target === "fw_self" || !routing.agentEndpoint) {
+      // FW răspunde singur — ghidaj general
+      responseText = await selfRespond(
+        message.trim(),
+        currentPage ?? "/",
+        thread.messages,
+        userId,
+        tenantId
+      )
+    } else {
+      // Delegare la agent specializat
+      responseText = await delegateToAgent(
+        routing,
+        message.trim(),
+        currentPage ?? "/",
+        thread.messages,
+        userId,
+        tenantId
+      )
+    }
+
+    // Record usage
+    recordAPIUsage(tenantId || userId, isB2C ? "B2C" : "B2B", 0.015)
+
+    // Save assistant response
+    await p.conversationMessage.create({
+      data: {
+        threadId: thread.id,
+        role: "ASSISTANT",
+        content: responseText,
+        metadata: JSON.stringify({
+          delegatedTo: routing.target,
+          routingReason: routing.reason,
+        }),
+      },
+    })
+
+    // Update thread
+    await p.conversationThread.update({
+      where: { id: thread.id },
+      data: {
+        updatedAt: new Date(),
+        ...(thread.messages.length === 0 ? { title: message.trim().substring(0, 80) } : {}),
+      },
+    })
+
+    // Log interaction
+    await p.interactionLog.create({
+      data: {
+        tenantId,
+        userId,
+        eventType: "FW_CHAT",
+        pageRoute: currentPage || null,
+        entityType: "flying_wheels",
+        entityId: thread.id,
+        detail: `routed:${routing.target}`,
+      },
+    }).catch(() => {})
+
+    return NextResponse.json({
+      response: responseText,
+      threadId: thread.id,
+      delegatedTo: routing.target,
+    })
+  } catch (e: any) {
+    console.error("[FW CHAT]", e.message)
+    return NextResponse.json(
+      { error: "Eroare la procesare.", details: e.message },
+      { status: 500 }
+    )
+  }
+}
+
+// ── Self-respond (ghidaj general) ───────────────────────────────────────
+
+async function selfRespond(
+  message: string,
+  currentPage: string,
+  history: any[],
+  userId: string,
+  tenantId: string
+): Promise<string> {
+  const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
+  const contextPrompt = formatContextForPrompt(clientContext)
+  const guide = getPageGuide(currentPage)
+
+  const conversationHistory = history.map((m: any) => ({
+    role: m.role === "USER" ? "user" as const : "assistant" as const,
+    content: m.content,
+  }))
+  conversationHistory.push({ role: "user" as const, content: message })
+
+  const client = new Anthropic()
+  const response = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 800,
+    system: buildFWSystemPrompt(contextPrompt, guide.detailedGuide, currentPage),
+    messages: conversationHistory,
+  })
+
+  return response.content[0].type === "text" ? response.content[0].text : ""
+}
+
+// ── Delegate to agent ───────────────────────────────────────────────────
+
+async function delegateToAgent(
+  routing: { target: FWAgentTarget; agentEndpoint: string | null; reason: string },
+  message: string,
+  currentPage: string,
+  history: any[],
+  userId: string,
+  tenantId: string
+): Promise<string> {
+  const clientContext = await buildClientContext(userId, tenantId, prisma, currentPage)
+  const contextPrompt = formatContextForPrompt(clientContext)
+  const guide = getPageGuide(currentPage)
+
+  // Construim prompt-ul cu contextul agentului delegat
+  const agentSystemPrompts: Record<string, string> = {
+    soa: "Ești expertul in serviciile si preturile platformei JobGrade. Raspunzi la intrebari despre pachete, preturi, module, credite, contracte. Fii direct si informativ.",
+    cssa: "Ești expertul in utilizarea platformei JobGrade. Ajuti clientul sa inteleaga datele, rapoartele, conformitatea EU 2023/970, clasele salariale, pay gap. Fii practic.",
+    csa: "Ești expertul in suport tehnic JobGrade. Rezolvi probleme de login, import, export, erori. Fii concis si orientat spre solutie.",
+    hr_counselor: "Ești consilierul HR expert in evaluarea posturilor. Explici criteriile (Knowledge, Communications, Problem Solving, Decision Making, Business Impact, Working Conditions), procesul de consens, metodologia. Fii pedagogic.",
+    profiler_front: "Ești ghidul de dezvoltare personala. Ajuti utilizatorul sa se cunoasca mai bine, sa inteleaga cardurile si parcursul. Fii empatic, cald, fara jargon psihologic.",
+    card_agent: "Ești ghidul pentru cardul curent de dezvoltare personala. Ajuti utilizatorul sa parcurga exercitiile si sa reflecteze. Fii empatic.",
+  }
+
+  const agentPrompt = agentSystemPrompts[routing.target] ?? agentSystemPrompts.cssa
+
+  const conversationHistory = history.map((m: any) => ({
+    role: m.role === "USER" ? "user" as const : "assistant" as const,
+    content: m.content,
+  }))
+  conversationHistory.push({ role: "user" as const, content: message })
+
+  const client = new Anthropic()
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1200,
+    system: `${agentPrompt}
+
+IMPORTANT: Raspunzi ca parte din Flying Wheels (ghidul contextual al platformei).
+Clientul nu stie ca esti un agent specializat — raspunzi natural, ca un coleg expert.
+NU te prezinti, NU mentionezi ca esti un agent specific. Raspunzi direct la intrebare.
+
+CONTEXT PAGINA: ${currentPage}
+GHID PAGINA: ${guide.detailedGuide}
+
+CONTEXT CLIENT:
+${contextPrompt}
+
+Raspunde in romana, concis (2-4 paragrafe maxim), natural.`,
+    messages: conversationHistory,
+  })
+
+  return response.content[0].type === "text" ? response.content[0].text : ""
+}
+
+// ── System prompt FW ────────────────────────────────────────────────────
+
+function buildFWSystemPrompt(
+  clientContext: string,
+  pageGuide: string,
+  currentPage: string
+): string {
+  return `Ești Flying Wheels — ghidul contextual al platformei JobGrade.
+
+ROLUL TAU:
+- Ghidezi clientul prin platforma, explici ce vede si ce poate face
+- Raspunzi la intrebari generale despre navigare si functionare
+- Esti empatic, concis, natural — ca un coleg experimentat
+- Vorbesti in romana, fara jargon tehnic
+
+PAGINA CURENTA: ${currentPage}
+GHID: ${pageGuide}
+
+CONTEXT CLIENT:
+${clientContext}
+
+REGULI:
+- Raspunsuri scurte (1-3 paragrafe)
+- Daca intrebarea e specifica (evaluare, pricing, suport tehnic), raspunde cat poti dar sugereaza ca poti da detalii daca intreaba mai precis
+- NU mentiona ca esti un robot/AI/agent — fii natural
+- NU dezvalui informatii despre mecanismele interne`
+}

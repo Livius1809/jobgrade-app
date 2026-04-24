@@ -10,6 +10,7 @@ interface Message {
   timestamp: string
   page?: string
   consumesMinutes: boolean
+  delegatedTo?: string // intern — cine a răspuns (pt jurnal)
 }
 
 interface VisitEntry {
@@ -121,15 +122,13 @@ export default function FlyingWheels({
     setLoading(true)
 
     try {
-      const guide = getPageGuide(pathname)
-      const res = await fetch("/api/v1/assistant", {
+      const res = await fetch("/api/v1/flying-wheels/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
           threadId,
           currentPage: pathname,
-          flyingWheelsContext: guide.detailedGuide,
         }),
       })
 
@@ -144,6 +143,7 @@ export default function FlyingWheels({
             timestamp: new Date().toISOString(),
             page: pathname,
             consumesMinutes: true,
+            delegatedTo: json.delegatedTo,
           },
         ])
         if (json.threadId) setThreadId(json.threadId)
