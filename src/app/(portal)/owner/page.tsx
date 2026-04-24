@@ -319,6 +319,112 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
   }
 }
 
+// ── Limite furnizori ─────────────────────────────────────────────────────────
+
+interface SupplierLimit {
+  name: string
+  metric: string
+  current: number | string
+  limit: number | string
+  usage: number // 0-100%
+  status: "ok" | "warn" | "critical"
+  detail?: string
+}
+
+async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
+  const limits: SupplierLimit[] = []
+
+  try {
+    // Anthropic — cost și erori API limit
+    const [costData, failedApiLimit, callCount] = await Promise.all([
+      prisma.$queryRaw`
+        SELECT COALESCE(SUM("estimatedCostUSD"), 0) as cost_month,
+          COALESCE(SUM("estimatedCostUSD") FILTER (WHERE "createdAt" > NOW() - interval '24 hours'), 0) as cost_day
+        FROM execution_telemetry
+        WHERE "createdAt" > date_trunc('month', NOW())
+      ` as Promise<any[]>,
+      prisma.agentTask.count({
+        where: { failureReason: { contains: "API usage limits" } },
+      }).catch(() => 0),
+      prisma.$queryRaw`
+        SELECT count(*) as cnt FROM execution_telemetry WHERE "createdAt" > NOW() - interval '24 hours'
+      ` as Promise<any[]>,
+    ])
+
+    const monthCost = Number(costData[0]?.cost_month || 0)
+    const dayCost = Number(costData[0]?.cost_day || 0)
+    const dailyCalls = Number(callCount[0]?.cnt || 0)
+
+    // Estimare: Max plan ~$100/lună, API credits depinde de plan
+    const monthlyBudget = 100 // estimare conservatoare
+    const usagePct = Math.round(monthCost / monthlyBudget * 100)
+
+    limits.push({
+      name: "Anthropic Claude",
+      metric: "Cost lunar",
+      current: `$${monthCost.toFixed(2)}`,
+      limit: `~$${monthlyBudget}`,
+      usage: Math.min(usagePct, 100),
+      status: failedApiLimit > 0 ? "critical" : usagePct > 80 ? "warn" : "ok",
+      detail: failedApiLimit > 0
+        ? `${failedApiLimit} task-uri eșuate. Mărește plafonul API pe console.anthropic.com → Settings → Limits`
+        : usagePct > 80
+          ? `$${dayCost.toFixed(2)}/zi · ${dailyCalls} apeluri. Aproape de limită — redu frecvența cron sau mărește bugetul`
+          : `$${dayCost.toFixed(2)}/zi · ${dailyCalls} apeluri/zi`,
+    })
+
+    // Neon DB — dimensiune
+    const dbSize = await prisma.$queryRaw`SELECT pg_database_size(current_database()) as size` as any[]
+    const dbMB = Math.round(Number(dbSize[0]?.size || 0) / 1024 / 1024)
+    const dbLimitMB = 512 // Neon Launch free tier
+    const dbUsage = Math.round(dbMB / dbLimitMB * 100)
+
+    limits.push({
+      name: "Neon Postgres",
+      metric: "Stocare",
+      current: `${dbMB} MB`,
+      limit: `${dbLimitMB} MB`,
+      usage: dbUsage,
+      status: dbUsage > 90 ? "critical" : dbUsage > 70 ? "warn" : "ok",
+      detail: dbUsage > 90
+        ? `Stocare aproape plină. Curăță: execution_telemetry vechi, external_signals procesate, sau upgrade plan Neon`
+        : dbUsage > 70
+          ? `Se apropie de limită. Activează cleanup automat sau monitorizează creșterea`
+          : `${dbUsage}% din capacitate`,
+    })
+
+    // Vercel — estimate din environment
+    limits.push({
+      name: "Vercel Functions",
+      metric: "Execuții / lună",
+      current: "~" + dailyCalls * 30,
+      limit: "1.000.000",
+      usage: Math.round(dailyCalls * 30 / 1000000 * 100),
+      status: dailyCalls * 30 > 800000 ? "warn" : "ok",
+      detail: `~${dailyCalls} execuții/zi (cron + portal)`,
+    })
+
+    // Redis/Upstash — verificăm dacă e configurat
+    const hasRedis = !!process.env.UPSTASH_REDIS_REST_URL
+    limits.push({
+      name: "Upstash Redis",
+      metric: "Status",
+      current: hasRedis ? "Configurat" : "Neconfigurat",
+      limit: "10.000 cmd/zi (free)",
+      usage: hasRedis ? 20 : 0,
+      status: hasRedis ? "ok" : "warn",
+      detail: hasRedis
+        ? "Rate limiting activ"
+        : "Adaugă UPSTASH_REDIS_REST_URL și UPSTASH_REDIS_REST_TOKEN în Vercel → Settings → Environment Variables",
+    })
+
+  } catch (e) {
+    console.error("[supplier-limits]", (e as Error).message?.slice(0, 80))
+  }
+
+  return limits
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function OwnerDashboard() {
@@ -330,7 +436,10 @@ export default async function OwnerDashboard() {
     redirect("/portal")
   }
 
-  const data = await fetchCockpit()
+  const [data, supplierLimits] = await Promise.all([
+    fetchCockpit(),
+    fetchSupplierLimits(),
+  ])
   const firstName = session.user.name?.split(" ")[0] ?? "Owner"
 
   // Filtrare decizii Owner (doar strategice)
@@ -369,6 +478,55 @@ export default async function OwnerDashboard() {
             <a href="#interactiune" className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-medium hover:bg-emerald-100 transition-colors">IV. Interacțiune</a>
           </nav>
         </div>
+
+        {/* ═══ LIMITE FURNIZORI ═══ */}
+        {supplierLimits.length > 0 && supplierLimits.some(l => l.status !== "ok") && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm" style={{ padding: "20px" }}>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Limite furnizori — atenție necesară</h2>
+            <div className="space-y-2">
+              {supplierLimits.filter(l => l.status !== "ok").map(l => (
+                <div key={l.name} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                  l.status === "critical" ? "bg-red-50 border border-red-200" : "bg-amber-50 border border-amber-200"
+                }`}>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${l.status === "critical" ? "bg-red-500" : "bg-amber-400"}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-bold ${l.status === "critical" ? "text-red-700" : "text-amber-700"}`}>{l.name}</span>
+                      <span className="text-[10px] text-slate-500">{l.current} / {l.limit}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div className={`h-full rounded-full ${l.status === "critical" ? "bg-red-500" : "bg-amber-400"}`} style={{ width: `${Math.min(l.usage, 100)}%` }} />
+                      </div>
+                      <span className="text-[9px] text-slate-400 shrink-0">{l.usage}%</span>
+                    </div>
+                    {l.detail && <p className={`text-[10px] mt-0.5 ${l.status === "critical" ? "text-red-600" : "text-amber-600"}`}>{l.detail}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {supplierLimits.every(l => l.status === "ok") ? null : (
+              <div className="mt-3 flex gap-3">
+                {supplierLimits.filter(l => l.status === "ok").map(l => (
+                  <span key={l.name} className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                    {l.name}: OK
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Toate OK — sumă compactă */}
+        {supplierLimits.length > 0 && supplierLimits.every(l => l.status === "ok") && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-200">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-xs text-emerald-700 font-medium">Toți furnizorii OK</span>
+            <span className="text-[10px] text-emerald-500 ml-auto">
+              {supplierLimits.map(l => `${l.name}: ${l.current}`).join(" · ")}
+            </span>
+          </div>
+        )}
 
         {!data ? (
           <div className="rounded-xl border border-red-200 bg-red-50" style={{ padding: "28px" }}>
