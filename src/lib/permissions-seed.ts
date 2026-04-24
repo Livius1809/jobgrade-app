@@ -7,6 +7,7 @@
  */
 
 import { PrismaClient } from "@/generated/prisma"
+import { PrismaPg } from "@prisma/adapter-pg"
 import { PERMISSION_MATRIX } from "./permissions"
 
 export async function seedPermissions(prisma: PrismaClient): Promise<{
@@ -33,7 +34,8 @@ export async function seedPermissions(prisma: PrismaClient): Promise<{
 
 // Direct execution
 if (require.main === module) {
-  const prisma = new PrismaClient()
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+  const prisma = new PrismaClient({ adapter })
   seedPermissions(prisma)
     .then((result) => {
       console.log(`Permissions seeded: ${result.deleted} deleted, ${result.inserted} inserted`)

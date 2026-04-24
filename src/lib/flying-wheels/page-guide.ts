@@ -176,6 +176,45 @@ export const PAGE_GUIDES: PageGuide[] = [
       "conformitate salariala (Directiva EU 2023/970) si dezvoltare " +
       "organizationala. Intrebati orice si va ghidez.",
   },
+
+  // ── Rapoarte angajati ──
+  {
+    pattern: /^\/employee-reports$/,
+    title: "Rapoarte angajati",
+    shortGuide:
+      "Aici gestionati rapoartele continue ale angajatilor. " +
+      "Fiecare raport creste automat cu modulele achizitionate. " +
+      "Puteti activa vizibilitatea pentru angajat (GDPR Art. 15).",
+    detailedGuide:
+      "Raportul continuu este un document viu care se imbogateste " +
+      "pe masura ce utilizati modulele platformei. Creati un raport " +
+      "per angajat, iar sectiunile se adauga automat din evaluari, " +
+      "transparenta salariala, benchmark si dezvoltare organizationala.",
+  },
+  {
+    pattern: /^\/employee-reports\/[^/]+$/,
+    title: "Detalii raport angajat",
+    shortGuide:
+      "Vizualizati raportul complet al angajatului. Sectiunile sunt " +
+      "grupate pe module si pot fi expandate individual.",
+    detailedGuide:
+      "Raportul arata toate informatiile agregate transversal. " +
+      "Ca angajator, puteti modifica statusul si vizibilitatea. " +
+      "Ca angajat (daca e activata vizibilitatea), vedeti doar datele.",
+  },
+
+  // ── Jurnal Ghid ──
+  {
+    pattern: /^\/guide-journal$/,
+    title: "Jurnal Ghid JobGrade",
+    shortGuide:
+      "Aici vedeti toate interactiunile cu Ghidul. " +
+      "Feedback-ul dumneavoastra antreneaza precizia raspunsurilor.",
+    detailedGuide:
+      "Jurnalul Ghidului arata istoricul intrebarilor si raspunsurilor, " +
+      "statistici per pagina si categorie, rata de satisfactie si " +
+      "recomandari automate bazate pe frecventa intrebarilor.",
+  },
 ]
 
 /**

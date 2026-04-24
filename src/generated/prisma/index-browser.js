@@ -516,6 +516,44 @@ exports.Prisma.EmployeeRequestScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.EmployeeContinuousReportScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  employeeName: 'employeeName',
+  employeeEmail: 'employeeEmail',
+  jobTitle: 'jobTitle',
+  department: 'department',
+  visibleToEmployee: 'visibleToEmployee',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EmployeeReportSectionScalarFieldEnum = {
+  id: 'id',
+  reportId: 'reportId',
+  module: 'module',
+  title: 'title',
+  content: 'content',
+  order: 'order',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GuideJournalEntryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  page: 'page',
+  question: 'question',
+  answer: 'answer',
+  helpful: 'helpful',
+  category: 'category',
+  delegatedTo: 'delegatedTo',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.ScoreOverrideScalarFieldEnum = {
   id: 'id',
   sessionId: 'sessionId',
@@ -1905,6 +1943,23 @@ exports.RequestStatus = exports.$Enums.RequestStatus = {
   OVERDUE: 'OVERDUE'
 };
 
+exports.ContinuousReportStatus = exports.$Enums.ContinuousReportStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  CLOSED: 'CLOSED'
+};
+
+exports.ReportModule = exports.$Enums.ReportModule = {
+  JOB_EVALUATION: 'JOB_EVALUATION',
+  SALARY_TRANSPARENCY: 'SALARY_TRANSPARENCY',
+  PAY_GAP: 'PAY_GAP',
+  JOINT_ASSESSMENT: 'JOINT_ASSESSMENT',
+  BENCHMARK: 'BENCHMARK',
+  PERSONNEL_EVAL: 'PERSONNEL_EVAL',
+  ORG_DEVELOPMENT: 'ORG_DEVELOPMENT',
+  CUSTOM: 'CUSTOM'
+};
+
 exports.KpiFrequency = exports.$Enums.KpiFrequency = {
   MONTHLY: 'MONTHLY',
   QUARTERLY: 'QUARTERLY',
@@ -2595,6 +2650,9 @@ exports.Prisma.ModelName = {
   PayGapReport: 'PayGapReport',
   JointPayAssessment: 'JointPayAssessment',
   EmployeeRequest: 'EmployeeRequest',
+  EmployeeContinuousReport: 'EmployeeContinuousReport',
+  EmployeeReportSection: 'EmployeeReportSection',
+  GuideJournalEntry: 'GuideJournalEntry',
   ScoreOverride: 'ScoreOverride',
   CompensationPackage: 'CompensationPackage',
   KpiDefinition: 'KpiDefinition',

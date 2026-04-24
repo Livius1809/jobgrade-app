@@ -140,6 +140,19 @@ export default function GhidulJobGrade({
         ])
         if (json.threadId) setThreadId(json.threadId)
         setMinutesUsed((prev) => prev + 1)
+
+        // Salvare în jurnal Ghid (feedback loop antrenare)
+        fetch("/api/v1/guide-journal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            page: pathname,
+            question: userMessage,
+            answer: json.response,
+            category: json.category || null,
+            delegatedTo: json.delegatedTo || null,
+          }),
+        }).catch(() => {}) // fire-and-forget
       } else {
         setMessages((prev) => [
           ...prev,

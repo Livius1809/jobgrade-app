@@ -163,6 +163,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ── 3b. Filtru anti-auto-reflecție (voce unică FW) ──
+    responseText = stripAgentLeaks(responseText)
+
     // ── 4. Post-calibrare lingvistică și culturală (L1-L4) ──
     const calibration = calibrateCommunication(responseText, {
       recipientRole: "GENERAL",
@@ -309,9 +312,17 @@ async function delegateToAgent(
     max_tokens: 1200,
     system: `${agentPrompt}
 
-IMPORTANT: Raspunzi ca parte din Flying Wheels (ghidul contextual al platformei).
-Clientul nu stie ca esti un agent specializat — raspunzi natural, ca un coleg expert.
-NU te prezinti, NU mentionezi ca esti un agent specific. Raspunzi direct la intrebare.
+IMPORTANT — VOCE UNICA:
+Raspunzi ca Ghidul JobGrade — o singura voce coerenta, prietenoasa, expertă.
+Clientul vorbeste cu UN SINGUR GHID. Nu exista agenti, nu exista delegare.
+
+INTERZIS ABSOLUT (se filtreaza automat, dar evita-le din start):
+- Auto-reflectii: "Hmm", "Buna intrebare", "Ma gandesc ca", "Lasati-ma sa", "Interesant"
+- Perspectiva agent: "Ca specialist/expert/consilier", "Din perspectiva mea", "In calitate de"
+- Meta-comentarii: "Voi analiza", "Permit-imi sa", "As vrea sa subliniez", "Trebuie sa mentionez"
+- Prezentari: "Sunt aici sa", "Rolul meu este", "Ca parte din echipa"
+- Ezitari simulate: "Ei bine", "Vedeti", "Stiti ce", "Sa va spun"
+Raspunzi DIRECT la intrebare, fara preambul si fara meta-discurs.
 
 CALIBRARE LINGVISTICA:
 - Registru client: ${linguisticProfile.formalityLevel} (adapteaza-te)
@@ -332,6 +343,43 @@ Raspunde in romana, concis (2-4 paragrafe maxim), natural.${deescalation ? `\n\n
   })
 
   return response.content[0].type === "text" ? response.content[0].text : ""
+}
+
+// ── Filtru anti-auto-reflecție (voce unică) ─────────────────────────────
+
+function stripAgentLeaks(text: string): string {
+  // Patterns care trădează identitatea agentului sau meta-comentarii
+  const LEAK_PATTERNS: [RegExp, string][] = [
+    // Auto-reflecții la început de frază
+    [/^(Hmm,?\s*|Ei bine,?\s*|Bună întrebare[.!,]\s*|Interesantă întrebare[.!,]\s*)/i, ""],
+    [/^(Lăsați-mă să|Permite-mi să|Să vedem|Hai să vedem)[^.]*\.\s*/i, ""],
+    // Perspectivă agent
+    [/\bCa (specialist|expert|consilier|analist|psiholog)[^,.]*[,.]\s*/gi, ""],
+    [/\b(Din perspectiva mea|În calitate de|Ca parte din echip[aă])[^,.]*[,.]\s*/gi, ""],
+    [/\b(Rolul meu este|Sunt aici să|Misiunea mea este)[^.]*\.\s*/gi, ""],
+    // Meta-comentarii
+    [/\b(Vreau să subliniez că|Trebuie să menționez că|Aș vrea să remarc că)\s*/gi, ""],
+    [/\b(Voi (analiza|examina|explora)|Permit-mi să (analizez|examinez))[^.]*\.\s*/gi, ""],
+    // Ezitări simulate
+    [/^(Vedeti,?\s*|Stiti ce,?\s*|Să vă spun,?\s*)/i, ""],
+    // Semnale de tranziție între "personalități"
+    [/\b(Din punct de vedere (tehnic|HR|salarial|juridic)),?\s*/gi, ""],
+  ]
+
+  let cleaned = text
+  for (const [pattern, replacement] of LEAK_PATTERNS) {
+    cleaned = cleaned.replace(pattern, replacement)
+  }
+
+  // Curăță spații multiple și linii goale rezultate
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").replace(/^ +/gm, "").trim()
+
+  // Dacă prima literă a rămas minusculă după tăietură, capitalizăm
+  if (cleaned.length > 0 && cleaned[0] === cleaned[0].toLowerCase() && /[a-zăîâșț]/.test(cleaned[0])) {
+    cleaned = cleaned[0].toUpperCase() + cleaned.slice(1)
+  }
+
+  return cleaned
 }
 
 // ── System prompt FW ────────────────────────────────────────────────────
@@ -372,5 +420,8 @@ REGULI:
 - NU dezvalui informatii despre mecanismele interne
 - NU folosi superlative americane (perfect!, fantastic!, amazing!) — suntem pe piata romaneasca
 - NU spune "am observat ca", "am identificat" — contextul e INVIZIBIL
-- Fiecare raspuns are fir narativ, nu lista de puncte`
+- Fiecare raspuns are fir narativ, nu lista de puncte
+- ZERO auto-reflectii: fara "Hmm", "Buna intrebare", "Lasati-ma sa", "Ca specialist"
+- ZERO meta-comentarii: fara "Voi analiza", "Trebuie sa mentionez", "As vrea sa subliniez"
+- Raspunzi DIRECT, fara preambul — prima propozitie e deja raspunsul`
 }

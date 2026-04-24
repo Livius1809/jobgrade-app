@@ -47,6 +47,8 @@ model Tenant {
   revenueEntries        RevenueEntry[]
   servicePurchase       ServicePurchase?
   userOrgRoles          UserOrgRole[]
+  continuousReports     EmployeeContinuousReport[]
+  guideJournalEntries   GuideJournalEntry[]
 
   @@map("tenants")
 }
@@ -723,6 +725,70 @@ model EmployeeRequest {
   @@map("employee_requests")
 }
 
+// ─────────────────────────────────────────
+// RAPORT ANGAJAT CONTINUU (document viu transversal)
+// ─────────────────────────────────────────
+
+model EmployeeContinuousReport {
+  id                String                 @id @default(cuid())
+  tenantId          String
+  employeeName      String // Nume angajat (nu neapărat user)
+  employeeEmail     String?
+  jobTitle          String? // Postul curent
+  department        String?
+  visibleToEmployee Boolean                @default(false) // bifă angajator → GDPR Art. 15
+  status            ContinuousReportStatus @default(ACTIVE)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  tenant   Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections EmployeeReportSection[]
+
+  @@unique([tenantId, employeeEmail])
+  @@index([tenantId])
+  @@map("employee_continuous_reports")
+}
+
+model EmployeeReportSection {
+  id        String       @id @default(cuid())
+  reportId  String
+  module    ReportModule // care modul a generat secțiunea
+  title     String
+  content   Json // conținut structurat (diferă per modul)
+  order     Int          @default(0)
+  version   Int          @default(1) // document viu — versiuni
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  report EmployeeContinuousReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, module])
+  @@map("employee_report_sections")
+}
+
+// ─────────────────────────────────────────
+// JURNAL GHID JOBGRADE (feedback loop antrenare)
+// ─────────────────────────────────────────
+
+model GuideJournalEntry {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  page        String // pagina/context
+  question    String   @db.Text
+  answer      String   @db.Text
+  helpful     Boolean? // feedback: a fost util?
+  category    String? // clasificare automată
+  delegatedTo String? // agentul delegat (SOA, CSSA, etc.)
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, page])
+  @@index([tenantId, category])
+  @@map("guide_journal_entries")
+}
+
 model ScoreOverride {
   id          String   @id @default(cuid())
   sessionId   String
@@ -1215,6 +1281,23 @@ enum ReportStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+enum ContinuousReportStatus {
+  ACTIVE
+  SUSPENDED // angajat plecat temporar
+  CLOSED // angajat plecat definitiv
+}
+
+enum ReportModule {
+  JOB_EVALUATION // Modul 1 — evaluare posturi
+  SALARY_TRANSPARENCY // Modul 2 — transparență salarială
+  PAY_GAP // Modul 2 — raport pay gap
+  JOINT_ASSESSMENT // Modul 2 — evaluare comună
+  BENCHMARK // Modul 3 — benchmark piață
+  PERSONNEL_EVAL // Modul 4 — evaluare personal
+  ORG_DEVELOPMENT // Modul 4 — dezvoltare organizațională
+  CUSTOM // Secțiune manuală
 }
 
 enum AssessmentStatus {
