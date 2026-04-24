@@ -111,11 +111,18 @@ export async function runIntelligentBatch(
   let tasksSkippedMeta = 0
   const results: IntelligentRunResult["results"] = []
 
-  // Import meta-evaluator (Strat Cognitiv 1)
+  // Import straturi cognitive (1, 12, 13)
   let metaEvaluateTask: ((id: string) => Promise<{ verdict: string; reason: string }>) | null = null
+  let assessTaskImpact: ((id: string) => Promise<{ netAssessment: string; negativeEffects: any[] }>) | null = null
+  let assessCertainty: ((id: string) => Promise<{ score: number; recommendation: string }>) | null = null
   try {
     const cogLayers = await import("@/lib/agents/cognitive-layers")
     metaEvaluateTask = cogLayers.metaEvaluateTask
+  } catch {}
+  try {
+    const advLayers = await import("@/lib/agents/cognitive-layers-advanced")
+    assessTaskImpact = advLayers.assessTaskImpact
+    assessCertainty = advLayers.assessCertainty
   } catch {}
 
   for (const task of tasks) {
@@ -144,6 +151,35 @@ export async function runIntelligentBatch(
             reason: `Meta-evaluator: ${meta.verdict} — ${meta.reason}`,
           })
           continue
+        }
+      } catch {}
+    }
+
+    // ═══ STRAT 12+13: Impact + Certitudine (doar CRITICAL/HIGH) ═══
+    if (task.priority === "CRITICAL" || task.priority === "HIGH") {
+      try {
+        if (assessTaskImpact) {
+          const impact = await assessTaskImpact(task.id)
+          if (impact.netAssessment === "ESCALATE") {
+            // Prea multe efecte negative — skip, Owner decide
+            await prisma.agentTask.update({
+              where: { id: task.id },
+              data: { status: "BLOCKED", blockerType: "DEPENDENCY", blockerDescription: `[IMPACT-ESCALATE] ${impact.negativeEffects.map((e: any) => e.risk).join("; ")}`, blockedAt: new Date() },
+            })
+            results.push({ taskId: task.id, assignedTo: task.assignedTo, title: task.title, status: "BLOCKED", kbHit: false, reason: "Impact simulator: ESCALATE" })
+            continue
+          }
+        }
+        if (assessCertainty) {
+          const certainty = await assessCertainty(task.id)
+          if (certainty.recommendation === "ESCALATE_TO_OWNER") {
+            await prisma.agentTask.update({
+              where: { id: task.id },
+              data: { status: "BLOCKED", blockerType: "WAITING_OWNER", blockerDescription: `[UNCERTAINTY] Score ${certainty.score}/100 — insuficientă certitudine`, blockedAt: new Date() },
+            })
+            results.push({ taskId: task.id, assignedTo: task.assignedTo, title: task.title, status: "BLOCKED", kbHit: false, reason: `Uncertainty: ${certainty.score}/100 → ESCALATE` })
+            continue
+          }
         }
       } catch {}
     }

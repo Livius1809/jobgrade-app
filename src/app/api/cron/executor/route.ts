@@ -129,6 +129,19 @@ export async function GET(request: NextRequest) {
       console.log("[cron/executor] Cognitive layers skip:", (e as Error).message?.slice(0, 60))
     }
 
+    // ═══ STRATURI COGNITIVE AVANSATE (8-13): context existențial ═══
+    let advancedCogResult: any = null
+    try {
+      const { runAdvancedCognitiveLayers } = await import("@/lib/agents/cognitive-layers-advanced")
+      advancedCogResult = await runAdvancedCognitiveLayers()
+      console.log(`[cron/executor] Phase: ${advancedCogResult.phase.currentPhase}, Failure impact: ${advancedCogResult.failureImpact.globalRiskAdjustment}%, Narrative age: ${advancedCogResult.narrativeAge}d`)
+      if (advancedCogResult.agentAnomalies.length > 0) {
+        console.log(`[cron/executor] Agent anomalies: ${advancedCogResult.agentAnomalies.join("; ")}`)
+      }
+    } catch (e) {
+      console.log("[cron/executor] Advanced cognitive skip:", (e as Error).message?.slice(0, 60))
+    }
+
     // Procesează coada — batch size din heartbeat adaptiv
     let totalProcessed = 0
     let totalExecuted = 0
@@ -210,6 +223,15 @@ export async function GET(request: NextRequest) {
         blindSpots: cognitiveResult.blindSpots.length,
         weightedLearning: cognitiveResult.weightedLearningUpdated,
         skippedByMeta: totalSkippedByMeta,
+      } : null,
+      advanced: advancedCogResult ? {
+        phase: advancedCogResult.phase.currentPhase,
+        phaseConfidence: advancedCogResult.phase.confidence,
+        failureImpact: advancedCogResult.failureImpact.globalRiskAdjustment,
+        activeTraumas: advancedCogResult.failureImpact.activeTraumas.length,
+        agentProfiles: advancedCogResult.agentProfiles,
+        agentAnomalies: advancedCogResult.agentAnomalies,
+        narrativeAge: advancedCogResult.narrativeAge,
       } : null,
       results: allResults.slice(0, 20),
       timestamp: new Date().toISOString(),
