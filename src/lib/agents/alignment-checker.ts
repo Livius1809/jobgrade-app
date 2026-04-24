@@ -65,8 +65,12 @@ export async function checkAlignment(
   const actionSummary = `${taskTitle}: ${taskDescription.slice(0, 200)}`
 
   // ═══ NIVEL 1: REGULI STATICE (cost = 0) ═══
+  // Whitelist: agenții de securitate/QA au voie să discute exploit-uri, vulnerabilități etc.
+  const SECURITY_ROLES = new Set(["SQA", "QAA", "QLA", "IRA", "MOA"])
+  const isSecurityRole = SECURITY_ROLES.has(agentRole)
+
   for (const pattern of BLOCKED_PATTERNS) {
-    if (pattern.test(taskTitle) || pattern.test(taskDescription)) {
+    if (!isSecurityRole && (pattern.test(taskTitle) || pattern.test(taskDescription))) {
       const result: AlignmentResult = {
         allowed: false,
         level: 1,
