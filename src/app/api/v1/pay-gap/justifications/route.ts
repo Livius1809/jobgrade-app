@@ -6,16 +6,18 @@ import { z } from "zod"
 export const dynamic = "force-dynamic"
 
 /**
- * Justificări pay gap — documentare diferențe salariale per categorie.
+ * Justificări pay gap — documentare diferențe salariale per categorie / grup muncă egală.
  * Cerință Art. 9 Directiva EU 2023/970: angajatorul trebuie să justifice
  * diferențele salariale pe baza criteriilor obiective.
  *
- * Stocăm justificările în PayGapReport.indicators (câmp JSON extins)
- * sub cheia "justifications".
+ * Două moduri:
+ * 1. Pe raport: reportId + category → stocate în PayGapReport.indicators.justifications
+ * 2. Pe grup muncă egală: groupLabel → stocate în SystemConfig "PAY_GAP_JUSTIFICATIONS_{tenantId}"
  */
 
 const JustificationSchema = z.object({
-  reportId: z.string(),
+  reportId: z.string().optional(),
+  groupLabel: z.string().optional(),
   category: z.string(),
   justification: z.string().min(10, "Justificarea trebuie să aibă minim 10 caractere."),
   criteria: z.array(z.enum([
@@ -23,16 +25,32 @@ const JustificationSchema = z.object({
     "PIATA_MUNCII", "NEGOCIERE_INDIVIDUALA", "ALTELE"
   ])).min(1, "Selectați minim un criteriu obiectiv."),
   authorName: z.string().optional(),
+  employees: z.array(z.object({
+    code: z.string(),
+    gender: z.string(),
+    salary: z.number(),
+    position: z.string().optional(),
+  })).optional(),
 })
 
-// GET — listează justificările existente pentru un raport
+// GET — listează justificările (pe reportId SAU pe tenant pentru muncă egală)
 export async function GET(req: NextRequest) {
   try {
     const session = await auth()
     if (!session) return NextResponse.json({ message: "Neautorizat." }, { status: 401 })
 
     const reportId = req.nextUrl.searchParams.get("reportId")
-    if (!reportId) return NextResponse.json({ message: "reportId obligatoriu." }, { status: 400 })
+    const mode = req.nextUrl.searchParams.get("mode") // "equal-work" sau default
+
+    if (mode === "equal-work") {
+      // Justificări pe grupuri muncă egală — din SystemConfig
+      const key = `PAY_GAP_JUSTIFICATIONS_${session.user.tenantId}`
+      const config = await prisma.systemConfig.findUnique({ where: { key } }).catch(() => null)
+      const justifications = config ? JSON.parse(config.value) : []
+      return NextResponse.json({ justifications, mode: "equal-work" })
+    }
+
+    if (!reportId) return NextResponse.json({ message: "reportId sau mode=equal-work obligatoriu." }, { status: 400 })
 
     const report = await prisma.payGapReport.findFirst({
       where: { id: reportId, tenantId: session.user.tenantId },
@@ -42,7 +60,7 @@ export async function GET(req: NextRequest) {
     const indicators = report.indicators as Record<string, unknown>
     const justifications = (indicators?.justifications ?? []) as Array<Record<string, unknown>>
 
-    return NextResponse.json({ justifications })
+    return NextResponse.json({ justifications, mode: "report" })
   } catch (error) {
     console.error("[JUSTIFICATIONS GET]", error)
     return NextResponse.json({ message: "Eroare server." }, { status: 500 })
@@ -66,6 +84,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 422 })
     }
 
+    const justificationEntry = {
+      category: parsed.data.category,
+      groupLabel: parsed.data.groupLabel,
+      justification: parsed.data.justification,
+      criteria: parsed.data.criteria,
+      employees: parsed.data.employees,
+      authorName: parsed.data.authorName ?? `${session.user.name}`,
+      updatedAt: new Date().toISOString(),
+    }
+
+    if (parsed.data.groupLabel && !parsed.data.reportId) {
+      // Mod muncă egală — salvare în SystemConfig
+      const key = `PAY_GAP_JUSTIFICATIONS_${tenantId}`
+      const existing = await prisma.systemConfig.findUnique({ where: { key } }).catch(() => null)
+      const justifications = existing ? JSON.parse(existing.value) : []
+      const filtered = justifications.filter((j: any) => j.category !== parsed.data.category || j.groupLabel !== parsed.data.groupLabel)
+      filtered.push(justificationEntry)
+
+      await prisma.systemConfig.upsert({
+        where: { key },
+        create: { key, value: JSON.stringify(filtered), label: "Justificări pay gap muncă egală" },
+        update: { value: JSON.stringify(filtered) },
+      })
+
+      return NextResponse.json({ ok: true, justifications: filtered, mode: "equal-work" })
+    }
+
+    // Mod raport clasic
+    if (!parsed.data.reportId) return NextResponse.json({ message: "reportId sau groupLabel obligatoriu." }, { status: 400 })
+
     const report = await prisma.payGapReport.findFirst({
       where: { id: parsed.data.reportId, tenantId },
     })
@@ -73,15 +121,9 @@ export async function POST(req: NextRequest) {
 
     const indicators = (report.indicators as Record<string, unknown>) ?? {}
     const justifications = ((indicators.justifications ?? []) as Array<Record<string, unknown>>)
-      .filter(j => j.category !== parsed.data.category) // remove old entry for this category
+      .filter(j => j.category !== parsed.data.category)
 
-    justifications.push({
-      category: parsed.data.category,
-      justification: parsed.data.justification,
-      criteria: parsed.data.criteria,
-      authorName: parsed.data.authorName ?? `${session.user.name}`,
-      updatedAt: new Date().toISOString(),
-    })
+    justifications.push(justificationEntry)
 
     await prisma.payGapReport.update({
       where: { id: parsed.data.reportId },
@@ -90,7 +132,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ ok: true, justifications })
+    return NextResponse.json({ ok: true, justifications, mode: "report" })
   } catch (error) {
     console.error("[JUSTIFICATIONS POST]", error)
     return NextResponse.json({ message: "Eroare server." }, { status: 500 })
