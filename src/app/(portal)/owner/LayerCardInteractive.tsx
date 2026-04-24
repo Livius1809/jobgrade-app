@@ -93,7 +93,7 @@ export default function LayerCardInteractive({ layer, icon }: { layer: LayerData
                 sf.status === "CRITICAL" ? "text-red-600" :
                 sf.status === "WARNING" ? "text-amber-600" :
                 "text-slate-700"
-              }`}>{typeof sf.value === "number" ? Math.round(sf.value) : sf.value}</span>
+              }`}>{sf.value}</span>
             </div>
           ))}
         </div>
@@ -156,7 +156,7 @@ export default function LayerCardInteractive({ layer, icon }: { layer: LayerData
                     sf.status === "CRITICAL" ? "text-red-600" :
                     sf.status === "WARNING" ? "text-amber-600" :
                     "text-emerald-600"
-                  }`}>{typeof sf.value === "number" ? Math.round(sf.value) : sf.value}</span>
+                  }`}>{sf.value}</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
