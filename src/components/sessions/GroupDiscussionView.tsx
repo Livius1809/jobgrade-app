@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import DiscussionPanel from "./DiscussionPanel"
+import VideoConference from "./VideoConference"
 
 // ─── Types ────────────────────────────────────────────
 
@@ -468,9 +469,9 @@ export default function GroupDiscussionView({ sessionId, sessionJobId, currentUs
                 )}
             </div>
 
-            {/* Discussion panel */}
+            {/* Discussion: Chat + Video tabs */}
             {!activeCriterion.isConsensus && (
-              <DiscussionPanel
+              <DiscussionWithVideo
                 sessionId={sessionId}
                 sessionJobId={sessionJobId}
                 criterionId={activeCriterion.id}
@@ -481,6 +482,88 @@ export default function GroupDiscussionView({ sessionId, sessionJobId, currentUs
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Discussion cu tab-uri Chat / Video ─────────────────
+
+function DiscussionWithVideo({ sessionId, sessionJobId, criterionId, criterionName, currentUserId }: {
+  sessionId: string
+  sessionJobId: string
+  criterionId: string
+  criterionName: string
+  currentUserId: string
+}) {
+  const [mode, setMode] = useState<"chat" | "video">("chat")
+  const [videoActive, setVideoActive] = useState(false)
+
+  // Room unic per sesiune+post (toți membrii intră în aceeași cameră)
+  const roomId = `jg-${sessionId.slice(-6)}-${sessionJobId.slice(-6)}`
+
+  return (
+    <div>
+      {/* Tab-uri */}
+      <div className="flex items-center gap-1 mb-3">
+        <button
+          onClick={() => setMode("chat")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            mode === "chat"
+              ? "bg-indigo-100 text-indigo-700"
+              : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
+          }`}
+        >
+          Discuție text
+        </button>
+        <button
+          onClick={() => { setMode("video"); setVideoActive(true) }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            mode === "video"
+              ? "bg-indigo-100 text-indigo-700"
+              : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
+          }`}
+        >
+          {videoActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+          Videoconferință
+        </button>
+        <button
+          onClick={() => setMode("chat")}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 ml-auto"
+        >
+          Mediator AI
+        </button>
+      </div>
+
+      {/* Chat (mereu activ — se pot posta comentarii și în timpul videoconferinței) */}
+      {mode === "chat" && (
+        <DiscussionPanel
+          sessionId={sessionId}
+          sessionJobId={sessionJobId}
+          criterionId={criterionId}
+          criterionName={criterionName}
+          currentUserId={currentUserId}
+        />
+      )}
+
+      {/* Video */}
+      {mode === "video" && videoActive && (
+        <VideoConference
+          roomId={roomId}
+          displayName="Membru comisie"
+          onClose={() => { setVideoActive(false); setMode("chat") }}
+        />
+      )}
+
+      {/* Video minimizat — vizibil și în modul chat */}
+      {mode === "chat" && videoActive && (
+        <div className="mt-3">
+          <VideoConference
+            roomId={roomId}
+            displayName="Membru comisie"
+            onClose={() => setVideoActive(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }
