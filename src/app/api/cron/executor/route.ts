@@ -47,8 +47,56 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Retry: deblocăm task-uri BLOCKED > 24h (punct 4)
     const { prisma } = await import("@/lib/prisma")
+
+    // ═══ NIVEL 0: HEALTH PROBE — verifică dacă furnizorii răspund ═══
+    // Dacă API-ul era down și a revenit, resetăm imediat task-urile eșuate
+    let supplierRecovery = 0
+    try {
+      const Anthropic = (await import("@anthropic-ai/sdk")).default
+      const client = new Anthropic()
+      // Ping minimal — 1 token, cost ~$0.000003
+      await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1,
+        messages: [{ role: "user", content: "ping" }],
+      })
+
+      // API răspunde — resetăm task-urile eșuate din cauza limitei
+      const recovered = await prisma.agentTask.updateMany({
+        where: {
+          status: "FAILED",
+          failureReason: { contains: "API usage limits" },
+        },
+        data: {
+          status: "ASSIGNED",
+          failureReason: null,
+          failedAt: null,
+          startedAt: null,
+          acceptedAt: null,
+        },
+      }).catch(() => ({ count: 0 }))
+      supplierRecovery = recovered.count
+
+      if (supplierRecovery > 0) {
+        console.log(`[cron/executor] Supplier recovered: ${supplierRecovery} tasks reset from FAILED→ASSIGNED`)
+      }
+    } catch (probeErr: any) {
+      const msg = probeErr?.message || ""
+      if (msg.includes("API usage limits") || msg.includes("rate_limit")) {
+        // API încă down — nu procesăm, economisim
+        return NextResponse.json({
+          ok: true,
+          supplierDown: true,
+          reason: "Anthropic API limit activ — skip execuție, așteptăm revenire",
+          timestamp: new Date().toISOString(),
+        })
+      }
+      // Altă eroare (network etc.) — continuăm cu cât putem
+      console.log(`[cron/executor] Health probe warning: ${msg.slice(0, 80)}`)
+    }
+
+    // Retry: deblocăm task-uri BLOCKED > 24h (punct 4)
     const retried = await prisma.agentTask.updateMany({
       where: {
         status: "BLOCKED",
@@ -111,6 +159,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       batches: batchCount,
+      supplierRecovery,
       retriedFromBlocked: retried.count,
       totalProcessed,
       totalExecuted,
