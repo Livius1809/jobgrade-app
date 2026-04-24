@@ -555,6 +555,8 @@ export default async function OwnerDashboard() {
               tests={data.vitalSigns.tests}
             />
 
+            <CognitiveHealthSection />
+
             <PipelineTelemetrySection />
 
             <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
@@ -713,6 +715,88 @@ async function PilotSection() {
       </div>
     </div>
   )
+}
+
+// ── Cognitive Health Section ─────────────────────────────────────────────────
+
+async function CognitiveHealthSection() {
+  try {
+    const { calculateCognitiveHealth } = await import("@/lib/agents/cognitive-health")
+    const health = await calculateCognitiveHealth()
+
+    const STATUS_COLOR: Record<string, string> = {
+      HEALTHY: "text-emerald-600",
+      WARNING: "text-amber-600",
+      CRITICAL: "text-red-600",
+    }
+
+    const STATUS_BG_IND: Record<string, string> = {
+      HEALTHY: "bg-emerald-50 border-emerald-200",
+      WARNING: "bg-amber-50 border-amber-200",
+      CRITICAL: "bg-red-50 border-red-200",
+    }
+
+    const STATUS_BAR: Record<string, string> = {
+      HEALTHY: "bg-emerald-500",
+      WARNING: "bg-amber-400",
+      CRITICAL: "bg-red-500",
+    }
+
+    const indicators = [
+      { key: "efficiency", label: "Eficiență", icon: "⚡", weight: "30%", ...health.indicators.efficiency },
+      { key: "lucidity", label: "Luciditate", icon: "🔍", weight: "25%", ...health.indicators.lucidity },
+      { key: "adaptability", label: "Adaptabilitate", icon: "🌊", weight: "25%", ...health.indicators.adaptability },
+      { key: "integrity", label: "Integritate", icon: "⚖️", weight: "20%", ...health.indicators.integrity },
+    ]
+
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-[10px] text-indigo-700 font-bold uppercase tracking-wide">Sănătate cognitivă</p>
+            <p className="text-[9px] text-slate-400">13 straturi cognitive → 9 subfactori → 4 indicatori</p>
+          </div>
+          <div className="text-center">
+            <p className={`text-3xl font-bold ${STATUS_COLOR[health.overallStatus]}`}>{health.overallScore}</p>
+            <p className="text-[9px] text-slate-400">scor global</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {indicators.map(ind => (
+            <div key={ind.key} className={`rounded-xl border p-3 ${STATUS_BG_IND[ind.status]}`}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-sm">{ind.icon}</span>
+                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">{ind.label}</span>
+                <span className="text-[8px] text-slate-400 ml-auto">{ind.weight}</span>
+              </div>
+              <p className={`text-2xl font-bold ${STATUS_COLOR[ind.status]}`}>{ind.value}</p>
+              <div className="mt-2 space-y-1.5">
+                {ind.subFactors.map(sf => (
+                  <div key={sf.code}>
+                    <div className="flex items-center justify-between text-[9px]">
+                      <span className="text-slate-600">{sf.code}. {sf.name}</span>
+                      <span className="font-mono font-medium text-slate-700">{sf.value}</span>
+                    </div>
+                    <div className="h-1 bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                      <div
+                        className={`h-full rounded-full ${sf.value >= 70 ? STATUS_BAR.HEALTHY : sf.value >= 40 ? STATUS_BAR.WARNING : STATUS_BAR.CRITICAL}`}
+                        style={{ width: `${sf.value}%` }}
+                      />
+                    </div>
+                    <p className="text-[8px] text-slate-400 mt-0.5 truncate" title={sf.detail}>{sf.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  } catch (e) {
+    console.error("[cognitive-health]", (e as Error).message?.slice(0, 80))
+    return null
+  }
 }
 
 // ── Pipeline Telemetry Section ───────────────────────────────────────────────
