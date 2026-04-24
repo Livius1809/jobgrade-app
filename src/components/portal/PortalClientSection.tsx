@@ -320,15 +320,15 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                   <p className="text-xs text-slate-500">7 indicatori Art. 9, evaluare comună Art. 10</p>
                 </a>
 
-                {/* Clase salariale */}
-                <a href="/reports/master"
-                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group">
+                {/* Clase salariale — Salary Grade Manager */}
+                <button onClick={() => openPanel("salary-grades")}
+                  className="bg-white rounded-xl border border-violet-200 hover:border-violet-400 transition-colors p-4 group text-left">
                   <div className="flex items-center gap-2 mb-2">
                     <Icon name="icon-clase-salariale" size={18} className="opacity-60" />
                     <span className="text-sm font-bold text-slate-800 group-hover:text-violet-700">Clase salariale</span>
                   </div>
-                  <p className="text-xs text-slate-500">Trepte, aliniere, grafic corelație</p>
-                </a>
+                  <p className="text-xs text-slate-500">Alocarea curentă, potriviri, trepte, ajustări</p>
+                </button>
 
                 {/* Justificări */}
                 <a href="/pay-gap"
