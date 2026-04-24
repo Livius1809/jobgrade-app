@@ -146,7 +146,16 @@ export default function AssessmentsClient({ assessments, canEdit }: Props) {
                   </p>
                 </div>
               </div>
-              <span className="text-gray-400">{isExpanded ? "▲" : "▼"}</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/pay-gap/assessments/${a.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-3 py-1 text-xs bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                >
+                  Deschide
+                </a>
+                <span className="text-gray-400">{isExpanded ? "▲" : "▼"}</span>
+              </div>
             </div>
 
             {/* Expanded details */}

@@ -143,6 +143,24 @@ export default function PayGapDashboardClient({
               {reportStatus === "PUBLISHED" ? "Publicat" : "Draft"}
             </span>
           )}
+          {reportId && (
+            <button
+              onClick={async () => {
+                const res = await fetch(`/api/v1/pay-gap/compliance-report?year=${year}`)
+                if (!res.ok) { alert("Eroare la generare PDF."); return }
+                const blob = await res.blob()
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = url
+                a.download = `raport-conformitate-${year}.pdf`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+              className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Export PDF Conformitate
+            </button>
+          )}
         </div>
       </div>
 
