@@ -300,6 +300,16 @@ async function delegateToAgent(
 
   const agentPrompt = agentSystemPrompts[routing.target] ?? agentSystemPrompts.cssa
 
+  // ── Maturitate de facilitare (experiența internă → competență) ──
+  let facilitationSection = ""
+  try {
+    const { loadCognitiveState } = await import("@/lib/agents/cognitive-state")
+    const { buildFacilitationProfile } = await import("@/lib/agents/facilitation-maturity")
+    const agentState = await loadCognitiveState(routing.target.toUpperCase())
+    const profile = buildFacilitationProfile(agentState)
+    facilitationSection = profile.promptInjection
+  } catch {}
+
   const conversationHistory = history.map((m: any) => ({
     role: m.role === "USER" ? "user" as const : "assistant" as const,
     content: m.content,
@@ -337,7 +347,7 @@ GHID PAGINA: ${guide.detailedGuide}
 
 CONTEXT CLIENT:
 ${contextPrompt}
-
+${facilitationSection}
 Raspunde in romana, concis (2-4 paragrafe maxim), natural.${deescalation ? `\n\n${deescalation}` : ""}`,
     messages: conversationHistory,
   })
