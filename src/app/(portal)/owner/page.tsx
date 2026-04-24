@@ -356,8 +356,9 @@ async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
     const dayCost = Number(costData[0]?.cost_day || 0)
     const dailyCalls = Number(callCount[0]?.cnt || 0)
 
-    // Anthropic API — plafon setat de Owner pe console.anthropic.com
-    const monthlyBudget = 500 // setat 24.04.2026
+    // Anthropic API — plafon citit din DB (setat de Owner pe console.anthropic.com)
+    const budgetConfig = await prisma.systemConfig.findUnique({ where: { key: "ANTHROPIC_MONTHLY_BUDGET" } }).catch(() => null)
+    const monthlyBudget = Number(budgetConfig?.value) || 500
     const usagePct = Math.round(monthCost / monthlyBudget * 100)
 
     limits.push({
@@ -411,7 +412,7 @@ async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
     })
 
     // Redis/Upstash — verificăm dacă e configurat
-    const hasRedis = !!process.env.UPSTASH_REDIS_REST_URL
+    const hasRedis = !!(process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_URL)
     limits.push({
       name: "Upstash Redis",
       metric: "Status",
@@ -747,9 +748,11 @@ async function PipelineTelemetrySection() {
             <p className="text-2xl font-bold text-amber-600 mt-1">${fmt(telemetry.totalCostUSD)}</p>
           </div>
           <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium">Artefacte create</p>
-            <p className="text-2xl font-bold text-violet-600 mt-1">{learning.createdLast7Days}</p>
-            <p className="text-[9px] text-slate-400">din {learning.totalArtifacts} total</p>
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-medium">Rezolvate intern</p>
+            <p className="text-2xl font-bold text-teal-600 mt-1">{telemetry.tasksResolvedInternally || 0}</p>
+            <p className="text-[9px] text-slate-400">
+              {telemetry.autoHygieneCount || 0} auto + {telemetry.kbResolvedCount || 0} KB
+            </p>
           </div>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
@@ -863,7 +866,7 @@ function LayerCard({ layer, icon }: { layer: LayerStatus; icon: string }) {
               sf.status === "CRITICAL" ? "text-red-600" :
               sf.status === "WARNING" ? "text-amber-600" :
               "text-slate-700"
-            }`}>{sf.value}</span>
+            }`}>{typeof sf.value === "number" ? Math.round(sf.value) : sf.value}</span>
           </div>
         ))}
       </div>

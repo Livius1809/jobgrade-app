@@ -147,6 +147,20 @@ export async function GET(request: NextRequest) {
       rollupResult = await rollupAllObjectives()
     } catch {}
 
+    // NIVEL 5b: Invalidare obiective deja livrate prin cod (deploy awareness)
+    let invalidatedByCode = 0
+    try {
+      const { invalidateDeliveredObjectives } = await import("@/lib/agents/objective-invalidation")
+      invalidatedByCode = await invalidateDeliveredObjectives()
+    } catch {}
+
+    // NIVEL 5c: Curățare taskuri redundante (acțiuni care au devenit inutile)
+    let staleTasksCleaned = 0
+    try {
+      const { cleanStaleTasks } = await import("@/lib/agents/task-hygiene")
+      staleTasksCleaned = await cleanStaleTasks()
+    } catch {}
+
     // NIVEL 6: Curățare artefacte învățare expirate (săptămânal — doar luni)
     let expiredCleaned = 0
     if (new Date().getDay() === 1) {
@@ -166,6 +180,8 @@ export async function GET(request: NextRequest) {
       totalBlocked,
       propagatedLearning: propagated,
       objectiveRollup: rollupResult.updated,
+      invalidatedByCode,
+      staleTasksCleaned,
       expiredCleaned,
       results: allResults.slice(0, 20),
       timestamp: new Date().toISOString(),
