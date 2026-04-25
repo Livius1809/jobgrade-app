@@ -435,8 +435,8 @@ export default function TeamChat({ agents }: { agents: AgentInfo[] }) {
                   onKeyDown={handleKeyDown}
                   placeholder={
                     chatMode === "single"
-                      ? `Scrie către ${selectedAgent?.displayName}...`
-                      : `Scrie către ${toAgents.map(a => a.agentRole).join(", ")}${ccAgents.length > 0 ? ` (CC: ${ccAgents.map(a => a.agentRole).join(", ")})` : ""}...`
+                      ? `Scrie catre ${selectedAgent?.displayName}...`
+                      : `Scrie catre ${toAgents.map(a => a.agentRole).join(", ")}${ccAgents.length > 0 ? ` (CC: ${ccAgents.map(a => a.agentRole).join(", ")})` : ""}...`
                   }
                   disabled={loading}
                   className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm placeholder:text-text-secondary/50 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo/20"
@@ -450,6 +450,10 @@ export default function TeamChat({ agents }: { agents: AgentInfo[] }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                   </svg>
                 </button>
+                <ReportRequestButton
+                  targetRole={chatMode === "single" ? selectedAgent?.agentRole : toAgents[0]?.agentRole}
+                  targetName={chatMode === "single" ? selectedAgent?.displayName : toAgents[0]?.displayName}
+                />
               </div>
             </div>
           </>
@@ -537,6 +541,71 @@ function AgentItem({
           CC
         </button>
       )}
+    </div>
+  )
+}
+
+// ── Buton "Cere raport" inline ──────────────────────────────────────────────
+
+function ReportRequestButton({ targetRole, targetName }: { targetRole?: string; targetName?: string }) {
+  const [open, setOpen] = useState(false)
+  const [subject, setSubject] = useState("")
+  const [sending, setSending] = useState(false)
+  const [msg, setMsg] = useState("")
+
+  if (!targetRole) return null
+
+  async function send() {
+    if (!subject.trim()) return
+    setSending(true)
+    try {
+      const res = await fetch("/api/v1/owner/request-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetRole, subject: subject.trim() }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setMsg("Cerere trimisa")
+        setSubject("")
+        setOpen(false)
+        setTimeout(() => setMsg(""), 3000)
+      } else {
+        setMsg(data.error || "Eroare")
+      }
+    } catch { setMsg("Eroare conexiune") }
+    setSending(false)
+  }
+
+  if (msg && !open) {
+    return <span className="text-[9px] text-teal-600 shrink-0">{msg}</span>
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="shrink-0 text-[9px] font-medium text-teal-600 bg-teal-50 border border-teal-200 px-2.5 py-2 rounded-xl hover:bg-teal-100 transition-colors"
+        title={`Cere raport scris de la ${targetName || targetRole}`}>
+        Cere raport
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+        placeholder="Subiectul raportului..."
+        onKeyDown={e => { if (e.key === "Enter") send(); if (e.key === "Escape") setOpen(false) }}
+        autoFocus
+        className="w-48 px-2.5 py-2 rounded-xl border border-teal-200 bg-teal-50 text-xs focus:outline-none focus:ring-2 focus:ring-teal-300" />
+      <button onClick={send} disabled={sending || !subject.trim()}
+        className="shrink-0 text-[9px] font-medium bg-teal-600 text-white px-2.5 py-2 rounded-xl hover:bg-teal-700 disabled:opacity-40 transition-colors">
+        {sending ? "..." : "Trimite"}
+      </button>
+      <button onClick={() => setOpen(false)}
+        className="shrink-0 text-[9px] text-slate-400 hover:text-slate-600 px-1">
+        x
+      </button>
     </div>
   )
 }
