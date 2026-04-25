@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
+import LearningBookTabs from "./LearningBookTabs"
 
 export const metadata = { title: "Experiențe de învățare — Owner Dashboard" }
 export const dynamic = "force-dynamic"
@@ -706,54 +707,9 @@ export default async function InsightsPage() {
       </section>
 
       {/* ═══ 5. CARTEA DE ÎNVĂȚARE PER AGENT ═══ */}
-      {agentCards.length > 0 && (() => {
-        const levelOrder = ["STRATEGIC", "TACTICAL", "OPERATIONAL"]
-        const levelLabels: Record<string, string> = { STRATEGIC: "Strategic", TACTICAL: "Tactic", OPERATIONAL: "Operațional" }
-        const grouped = levelOrder.map(level => ({
-          level,
-          label: levelLabels[level] || level,
-          agents: agentCards.filter((a: any) => a.level === level).sort((a: any, b: any) => b.total - a.total),
-        })).filter(g => g.agents.length > 0)
-
-        return (
-          <section className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">5. Cartea de invațare per agent</h2>
-            <p className="text-[10px] text-slate-400 mb-4">{agentCards.length} agenti cu KB · organizati pe nivel ierarhic</p>
-            <div className="flex gap-3 mb-4 text-[9px]">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400" /> Intern/Expert</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Distilat din clienti</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-300" /> Cold start (Claude)</span>
-            </div>
-            {grouped.map(g => (
-              <div key={g.level} className="mb-6 last:mb-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-xs font-bold text-slate-600">{g.label}</h3>
-                  <span className="text-[9px] text-slate-400">{g.agents.length} agenti</span>
-                  <div className="flex-1 h-px bg-slate-100" />
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                  {g.agents.map((a: any) => (
-                    <div key={a.role} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-slate-700 truncate">{a.name}</span>
-                        <span className="text-[9px] text-slate-400 shrink-0 ml-1">{a.total}</span>
-                      </div>
-                      {a.learnedWeek > 0 && (
-                        <p className="text-[9px] text-emerald-600 mb-1">+{a.learnedWeek} sapt.</p>
-                      )}
-                      <div className="flex rounded-full h-1.5 overflow-hidden">
-                        {a.pctInternal > 0 && <div className="bg-indigo-400 h-full" style={{ width: `${a.pctInternal}%` }} />}
-                        {a.pctClients > 0 && <div className="bg-violet-400 h-full" style={{ width: `${a.pctClients}%` }} />}
-                        {a.pctClaude > 0 && <div className="bg-amber-300 h-full" style={{ width: `${a.pctClaude}%` }} />}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </section>
-        )
-      })()}
+      {agentCards.length > 0 && (
+        <LearningBookTabs agentCards={agentCards} />
+      )}
 
       {/* ═══ 6. HARTA CĂLDURII OBIECTIVE VS EFORT ═══ */}
       {objectivesHeat.length > 0 && (
