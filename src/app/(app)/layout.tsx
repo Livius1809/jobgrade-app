@@ -33,7 +33,7 @@ export default async function AppLayout({
 
           <nav className="hidden md:flex items-center gap-5 text-sm">
             {isOwner && (
-              <Link href="/cockpit" className="font-medium text-indigo hover:text-indigo-dark transition-colors">
+              <Link href="/centru" className="font-medium text-indigo hover:text-indigo-dark transition-colors">
                 Owner
               </Link>
             )}
