@@ -205,7 +205,17 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
-    // NIVEL 5e: Continuitate procese (orizontal + vertical)
+    // NIVEL 5e: Workflow engine — avansare procese active
+    let workflowResult = { advanced: 0, completed: 0, escalated: 0, failed: 0 }
+    try {
+      const { advanceProcesses } = await import("@/lib/agents/workflow-engine")
+      workflowResult = await advanceProcesses()
+      if (workflowResult.advanced + workflowResult.completed + workflowResult.escalated > 0) {
+        console.log(`[cron/executor] Workflow: ${workflowResult.advanced} advanced, ${workflowResult.completed} completed, ${workflowResult.escalated} SLA breaches`)
+      }
+    } catch {}
+
+    // NIVEL 5f: Continuitate procese (orizontal + vertical)
     let continuityReport: any = null
     try {
       const { runProcessContinuityChecks } = await import("@/lib/agents/process-continuity")

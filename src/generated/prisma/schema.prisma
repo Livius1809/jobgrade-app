@@ -2104,6 +2104,73 @@ model FluxStepRole {
 }
 
 // ─────────────────────────────────────────
+// WORKFLOW ENGINE — instanțe de proces la runtime
+// ─────────────────────────────────────────
+
+model ProcessInstance {
+  id          String        @id @default(cuid())
+  businessId  String
+  fluxId      String // referință la FluxStepRole.fluxId
+  name        String // "Evaluare posturi Q2 2026"
+  status      ProcessStatus @default(RUNNING)
+  triggeredBy String // agentRole sau "OWNER"
+  currentStep String? // stepId curent activ
+  context     Json? // date partajate între pași
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
+  failedAt    DateTime?
+  failReason  String?       @db.Text
+
+  steps ProcessStepInstance[]
+
+  @@index([businessId, fluxId])
+  @@index([status])
+  @@map("process_instances")
+}
+
+model ProcessStepInstance {
+  id            String     @id @default(cuid())
+  processId     String
+  stepId        String // din FluxStepRole.stepId
+  assignedTo    String // agentRole OWNER din RACI
+  status        StepStatus @default(PENDING)
+  input         Json? // output-ul pasului anterior
+  output        Json? // ce produce acest pas
+  taskId        String? // AgentTask creat pentru execuție
+  slaDeadline   DateTime? // calculat din slaMinutes
+  startedAt     DateTime?
+  completedAt   DateTime?
+  failedAt      DateTime?
+  failReason    String?    @db.Text
+  reviewedBy    String?
+  reviewQuality Int? // 0-100
+
+  process ProcessInstance @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@index([processId, stepId])
+  @@index([status])
+  @@map("process_step_instances")
+}
+
+enum ProcessStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  PAUSED
+  CANCELLED
+}
+
+enum StepStatus {
+  PENDING // așteaptă pasul anterior
+  READY // poate fi executat
+  IN_PROGRESS // se execută
+  COMPLETED // terminat cu succes
+  FAILED // eșuat
+  SKIPPED // sărit (opțional)
+  BLOCKED // blocat de dependență
+}
+
+// ─────────────────────────────────────────
 // REORGANIZATION EVENTS (Sprint 3 Faza 3c, schema stub 05.04.2026)
 // Înregistrează reorganizările temporare auto-aplicate de sistem când un rol e D2.
 // Sunt TOATE reversibile automat la pragul configurat (default 24h).

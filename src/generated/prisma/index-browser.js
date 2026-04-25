@@ -1044,6 +1044,39 @@ exports.Prisma.FluxStepRoleScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ProcessInstanceScalarFieldEnum = {
+  id: 'id',
+  businessId: 'businessId',
+  fluxId: 'fluxId',
+  name: 'name',
+  status: 'status',
+  triggeredBy: 'triggeredBy',
+  currentStep: 'currentStep',
+  context: 'context',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  failedAt: 'failedAt',
+  failReason: 'failReason'
+};
+
+exports.Prisma.ProcessStepInstanceScalarFieldEnum = {
+  id: 'id',
+  processId: 'processId',
+  stepId: 'stepId',
+  assignedTo: 'assignedTo',
+  status: 'status',
+  input: 'input',
+  output: 'output',
+  taskId: 'taskId',
+  slaDeadline: 'slaDeadline',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  failedAt: 'failedAt',
+  failReason: 'failReason',
+  reviewedBy: 'reviewedBy',
+  reviewQuality: 'reviewQuality'
+};
+
 exports.Prisma.ReorganizationEventScalarFieldEnum = {
   id: 'id',
   triggeredByRole: 'triggeredByRole',
@@ -2289,6 +2322,24 @@ exports.RemediationLevel = exports.$Enums.RemediationLevel = {
   OWNER: 'OWNER'
 };
 
+exports.ProcessStatus = exports.$Enums.ProcessStatus = {
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  PAUSED: 'PAUSED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.StepStatus = exports.$Enums.StepStatus = {
+  PENDING: 'PENDING',
+  READY: 'READY',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED',
+  BLOCKED: 'BLOCKED'
+};
+
 exports.ReorganizationType = exports.$Enums.ReorganizationType = {
   SUBORDINATE_REASSIGN: 'SUBORDINATE_REASSIGN',
   TASK_REASSIGN: 'TASK_REASSIGN',
@@ -2686,6 +2737,8 @@ exports.Prisma.ModelName = {
   InteractionLog: 'InteractionLog',
   DisfunctionEvent: 'DisfunctionEvent',
   FluxStepRole: 'FluxStepRole',
+  ProcessInstance: 'ProcessInstance',
+  ProcessStepInstance: 'ProcessStepInstance',
   ReorganizationEvent: 'ReorganizationEvent',
   Business: 'Business',
   OrganizationalObjective: 'OrganizationalObjective',
