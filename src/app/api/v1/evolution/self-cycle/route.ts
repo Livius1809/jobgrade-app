@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { selfCompleteBatch, type KBGap, type SelfCompleteResult } from "@/lib/kb/self-complete"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -203,6 +204,39 @@ export async function POST(req: NextRequest) {
     actions.push("niciun-obiectiv-alocat")
   }
 
+  // ── Auto-completare KB pentru obiective cu gap ──────────
+  // Doar dacă are obiective și KB-ul nu acoperă subiectele necesare
+
+  let selfCompleteResults: SelfCompleteResult[] = []
+
+  if (hasObjectives && (kbCount < KB_WEAK_THRESHOLD || objectiveAlignmentScore < 50)) {
+    // Extrage temele din obiective ca gaps de cunoaștere
+    const gaps: KBGap[] = objectives
+      .filter((o: any) => {
+        const prog = objectiveProgress.find(p => p.code === o.code)
+        return prog && prog.progress < 50 // obiective sub 50% progres
+      })
+      .map((o: any) => ({
+        agentRole,
+        topic: `${o.title} — cunoastere necesara pentru avansare`,
+        objectiveCode: o.code,
+        context: `Obiectiv: ${o.title}. Progres: ${objectiveProgress.find(p => p.code === o.code)?.progress || 0}%. Agent: ${agentRole}.`,
+      }))
+
+    if (gaps.length > 0) {
+      selfCompleteResults = await selfCompleteBatch(gaps)
+      const resolved = selfCompleteResults.filter(r => r.resolved)
+      const escalated = selfCompleteResults.filter(r => r.source === "escalated-owner")
+
+      if (resolved.length > 0) {
+        actions.push(`auto-completare:${resolved.length}-gaps-rezolvate`)
+      }
+      if (escalated.length > 0) {
+        actions.push(`escalat-owner:${escalated.length}-gaps-fara-sursa`)
+      }
+    }
+  }
+
   // ── Salvare self-cycle ca KB entry ──────────────────────
 
   await p.kBEntry.create({
@@ -215,6 +249,9 @@ export async function POST(req: NextRequest) {
         diagnostic,
         actions,
         compositeScore,
+        selfComplete: selfCompleteResults.length > 0
+          ? selfCompleteResults.map(r => ({ topic: r.gap.topic, resolved: r.resolved, source: r.source }))
+          : undefined,
       }),
       tags: ["self-cycle", "introspectie", `score:${compositeScore}`],
       confidence: 0.9,
@@ -232,5 +269,13 @@ export async function POST(req: NextRequest) {
     diagnostic,
     actions,
     compositeScore,
+    selfComplete: selfCompleteResults.length > 0
+      ? {
+          totalGaps: selfCompleteResults.length,
+          resolved: selfCompleteResults.filter(r => r.resolved).length,
+          escalated: selfCompleteResults.filter(r => r.source === "escalated-owner").length,
+          details: selfCompleteResults.map(r => ({ topic: r.gap.topic, source: r.source, resolved: r.resolved, message: r.message })),
+        }
+      : undefined,
   })
 }
