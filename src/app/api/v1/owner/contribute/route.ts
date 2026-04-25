@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
             effects.push(`${data.agentRole} convingere morală +8 (răspuns corect)`)
           } else {
             state.current.moralConviction = Math.max(10, (state.current.moralConviction ?? 50) - 3)
-            state.current.integratedLessons.push({
+            state.integratedLessons.push({
               date: new Date().toISOString().slice(0, 10),
               trigger: `Dialog moral Owner: "${data.dilemma.slice(0, 50)}"`,
               lesson: data.ownerFeedback.slice(0, 100),
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
               effects.push(`${task.assignedTo} certitudine +3 (calitate ${data.quality}/100)`)
             } else {
               state.current.certaintyLevel = Math.max(10, state.current.certaintyLevel - 5)
-              state.current.integratedLessons.push({
+              state.integratedLessons.push({
                 date: new Date().toISOString().slice(0, 10),
                 trigger: `Review Owner calitate ${data.quality}/100: "${task.title.slice(0, 50)}"`,
                 lesson: data.feedback || "Calitate sub așteptări",
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
             let state = await loadCognitiveState(task.assignedTo)
             if (!state) state = createInitialState(task.assignedTo)
 
-            state.current.integratedLessons.push({
+            state.integratedLessons.push({
               date: new Date().toISOString().slice(0, 10),
               trigger: `Escalare → Owner: "${task.title.slice(0, 50)}"`,
               lesson: `Owner a ${data.decision === "APPROVE" ? "aprobat" : data.decision === "REJECT" ? "respins" : "redirecționat"}. ${data.reason || ""}`.trim(),
