@@ -142,7 +142,7 @@ export default async function proxy(request: NextRequest) {
   }
 
   // 5. Hidden routes — return 404 for unauthenticated users (don't reveal existence)
-  const HIDDEN_ROUTES = ["/owner"]
+  const HIDDEN_ROUTES = ["/cockpit"]
   if (HIDDEN_ROUTES.some((r) => pathname.startsWith(r))) {
     const sessionToken =
       request.cookies.get("authjs.session-token")?.value ||

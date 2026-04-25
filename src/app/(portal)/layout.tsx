@@ -32,7 +32,7 @@ export default async function PortalLayout({
               Detalii companie
             </Link>
             {isOwner && (
-              <Link href="/owner" className="text-xs font-medium text-indigo hover:text-indigo-dark transition-colors">
+              <Link href="/cockpit" className="text-xs font-medium text-indigo hover:text-indigo-dark transition-colors">
                 Owner
               </Link>
             )}
