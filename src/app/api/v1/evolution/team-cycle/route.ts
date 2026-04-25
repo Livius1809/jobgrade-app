@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { runEvolutionCycle, getLastCycle, saveCycle, INTERNAL_CONFIG } from "@/lib/evolution-engine"
+import { runBatchPropagation } from "@/lib/kb/propagate"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 120
@@ -87,6 +88,52 @@ export async function POST(req: NextRequest) {
   const cycle = await runEvolutionCycle(config, subjectId, lastCycle, prisma)
   await saveCycle(cycle, prisma)
 
+  // ── Post-ciclu: propagare cunoaștere la subordonați cu KB slab ──
+  let propagationResult: { propagated: number; roles: string[] } = { propagated: 0, roles: [] }
+  try {
+    // Detectează subordonații cu KB slab (sub 30 entries permanente)
+    const weakAgents: string[] = []
+    for (const childRole of teamRoles) {
+      const kbCount = await p.kBEntry.count({
+        where: { agentRole: childRole, status: "PERMANENT" },
+      })
+      if (kbCount < 30) weakAgents.push(childRole)
+    }
+
+    if (weakAgents.length > 0) {
+      console.log(`[team-cycle] ${managerRole}: ${weakAgents.length} subordonati cu KB slab — propagare`)
+
+      // Propagă cunoaștere de la manager + L2 consultanți spre subordonații slabi
+      const propResult = await runBatchPropagation(prisma, {
+        sinceHours: 168, // ultimele 7 zile
+        sourceRole: managerRole,
+      })
+      propagationResult.propagated = propResult.propagationResults.reduce((s, r) => s + r.targets.filter(t => t.persisted).length, 0)
+      propagationResult.roles = weakAgents
+
+      // Propagă și de la L2 consultanții relevanți
+      // (L2_KNOWLEDGE_MAP asigură rutarea — dar facem explicit pentru urgență)
+      for (const weakRole of weakAgents) {
+        // Creează task de auto-studiu pentru agentul slab
+        await p.agentTask.create({
+          data: {
+            businessId: "biz_jobgrade",
+            assignedBy: managerRole,
+            assignedTo: weakRole,
+            title: `Auto-studiu KB — recomandat de ${managerRole} dupa ciclul de evolutie`,
+            description: `Ciclul de evolutie al echipei a identificat ca ai KB sub pragul minim (30 entries). Actioneaza: (1) consulta KB-ul consultantilor L2 relevanti domeniului tau, (2) solicita cold start daca nu ai primit, (3) verifica daca ai acces la Biblioteca echipei.`,
+            taskType: "KB_RESEARCH",
+            priority: "IMPORTANT",
+            status: "ASSIGNED",
+            tags: ["evolution-triggered", "kb-gap", `manager:${managerRole}`],
+          },
+        }).catch(() => {}) // silently skip if businessId missing etc
+      }
+    }
+  } catch (e: any) {
+    console.error(`[team-cycle] ${managerRole} propagation error:`, e.message)
+  }
+
   // Depune raport în Owner Inbox
   const owner = await p.user.findFirst({
     where: { role: { in: ["OWNER", "SUPER_ADMIN"] } },
@@ -104,8 +151,14 @@ export async function POST(req: NextRequest) {
           `Maturitate: ${cycle.newAwareness?.maturityLevel || cycle.awareness?.maturityLevel}`,
           `Echipa: ${teamRoles.join(", ")}`,
           `Gaps: ${cycle.diagnosis?.length || 0}`,
+          propagationResult.propagated > 0
+            ? `Propagare KB: ${propagationResult.propagated} entries distribuite la ${propagationResult.roles.join(", ")}`
+            : "",
+          propagationResult.roles.length > 0
+            ? `Taskuri auto-studiu create pentru: ${propagationResult.roles.join(", ")}`
+            : "",
           cycle.narrativeSummary || "",
-        ].join("\n"),
+        ].filter(Boolean).join("\n"),
         read: false,
         sourceRole: managerRole,
         requestKind: "INFORMATION",
@@ -128,6 +181,11 @@ export async function POST(req: NextRequest) {
     maturityLevel: cycle.newAwareness?.maturityLevel || cycle.awareness?.maturityLevel,
     gapsFound: cycle.diagnosis?.length || 0,
     narrativeSummary: cycle.narrativeSummary,
+    kbPropagation: {
+      triggered: propagationResult.roles.length > 0,
+      entriesPropagated: propagationResult.propagated,
+      weakAgents: propagationResult.roles,
+    },
   })
 }
 
