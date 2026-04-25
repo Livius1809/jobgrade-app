@@ -205,6 +205,16 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
+    // NIVEL 5e: Continuitate procese (orizontal + vertical)
+    let continuityReport: any = null
+    try {
+      const { runProcessContinuityChecks } = await import("@/lib/agents/process-continuity")
+      continuityReport = await runProcessContinuityChecks()
+      if (continuityReport.totalFixes > 0) {
+        console.log(`[cron/executor] Process continuity: ${continuityReport.totalFixes} fixes (quality:${continuityReport.qualityEscalations}, kb:${continuityReport.kbEffectivenessUpdated}, unblock:${continuityReport.blockersAutoRetried})`)
+      }
+    } catch {}
+
     // NIVEL 6: Curățare artefacte învățare expirate (săptămânal — doar luni)
     let expiredCleaned = 0
     if (new Date().getDay() === 1) {
