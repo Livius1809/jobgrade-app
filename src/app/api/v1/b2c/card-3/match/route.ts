@@ -1,0 +1,88 @@
+/**
+ * POST /api/v1/b2c/card-3/match — Matching profil candidat ↔ post B2B
+ * Body: { userId, jobId }
+ * Returnează: raport compatibilitate bilateral pe 6 criterii
+ */
+
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
+import { matchProfiles, type CriteriaProfile } from "@/lib/b2c/matching-engine"
+
+export const dynamic = "force-dynamic"
+
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  const { userId, jobId } = body
+
+  if (!userId || !jobId) {
+    return NextResponse.json({ error: "userId + jobId necesare" }, { status: 400 })
+  }
+
+  const b2cAuth = extractB2CAuth(req)
+  if (!b2cAuth || !verifyB2COwnership(b2cAuth, userId)) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
+  }
+
+  // Profil candidat din CV extras
+  const card = await prisma.b2CCardProgress.findFirst({
+    where: { userId, card: "CARD_3" },
+    select: { cvExtractedData: true },
+  })
+
+  if (!card?.cvExtractedData) {
+    return NextResponse.json({ error: "Încarcă CV-ul mai întâi" }, { status: 400 })
+  }
+
+  const extractedData = card.cvExtractedData as Record<string, unknown>
+  const candidateProfile: CriteriaProfile = (extractedData.criteriaEstimate as CriteriaProfile) || {}
+
+  // Profil post B2B — din ultima evaluare sau din cerințe
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    select: {
+      id: true, title: true, code: true, purpose: true,
+      description: true, responsibilities: true, requirements: true,
+      department: { select: { name: true } },
+      tenant: { select: { name: true } },
+    },
+  })
+
+  if (!job) return NextResponse.json({ error: "Post negăsit" }, { status: 404 })
+
+  // Criteriile postului din ultima evaluare JE
+  const evaluations = await prisma.evaluation.findMany({
+    where: {
+      assignment: { sessionJob: { jobId } },
+    },
+    include: { criterion: true, subfactor: true },
+    orderBy: { updatedAt: "desc" },
+  })
+
+  const jobProfile: CriteriaProfile = {}
+  for (const ev of evaluations) {
+    const key = ev.criterion.name as keyof CriteriaProfile
+    if (!jobProfile[key]) {
+      jobProfile[key] = ev.subfactor.code
+    }
+  }
+
+  // Dacă nu are evaluare JE, estimăm din cerințe (nedeterminat)
+  if (Object.keys(jobProfile).length === 0) {
+    // Fără JE — toate nedeterminate
+  }
+
+  // Matching
+  const result = matchProfiles(candidateProfile, jobProfile)
+
+  return NextResponse.json({
+    match: result,
+    job: {
+      title: job.title, code: job.code, purpose: job.purpose,
+      department: job.department?.name, company: job.tenant?.name,
+    },
+    candidateProfile,
+    jobProfile,
+    hasJE: Object.keys(jobProfile).length > 0,
+  })
+}
