@@ -97,7 +97,11 @@ export default function OrganismPulse({
   tests,
 }: OrganismPulseProps) {
   const [expandedTest, setExpandedTest] = useState<number | null>(null)
-  const config = VERDICT_CONFIG[verdict] || VERDICT_CONFIG[verdict === "HEALTHY" ? "ALIVE" : verdict === "WARNING" ? "WEAKENED" : "UNKNOWN"]
+  const VERDICT_ALIAS: Record<string, keyof typeof VERDICT_CONFIG> = {
+    HEALTHY: "ALIVE", WARNING: "WEAKENED", CRITICAL: "CRITICAL",
+  }
+  const key = (VERDICT_ALIAS[verdict as string] ?? verdict) as keyof typeof VERDICT_CONFIG
+  const config = VERDICT_CONFIG[key] || VERDICT_CONFIG.UNKNOWN
 
   return (
     <section
