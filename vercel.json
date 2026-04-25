@@ -17,9 +17,6 @@
     }
   ],
   "headers": [],
-  "rewrites": [
-    { "source": "/owner", "destination": "/owner" },
-    { "source": "/owner/:path*", "destination": "/owner/:path*" }
-  ],
+  "rewrites": [],
   "redirects": []
 }
