@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { message, targetAgent, history } = body
+    const { message, targetAgent, history, context } = body
 
     if (!message?.trim() || !targetAgent) {
       return NextResponse.json({ error: "Necesar: message + targetAgent" }, { status: 400 })
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
           `Vorbești DIRECT cu Owner-ul (${session.user.name || "Owner"}).`,
           agent.objectives?.length ? `Obiectivele tale: ${agent.objectives.join("; ")}` : "",
           `Răspunde din perspectiva rolului tău. Fii concis, profesional, la obiect.`,
+          context ? `CONTEXT CONVERSAȚIE: ${context}` : "",
           `Dacă întrebarea depășește competența ta, spune explicit și recomandă agentul potrivit.`,
           ownerCalibration.summary || "",
         ].filter(Boolean).join("\n"),
