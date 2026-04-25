@@ -61,9 +61,21 @@ const REQUEST_LABELS: Record<string, { icon: string; label: string; color: strin
   DECISION:    { icon: "⚖️", label: "Necesita decizie", color: "text-red-700", bgColor: "bg-red-50", borderColor: "border-red-200" },
   ACTION:      { icon: "🎯", label: "Necesita actiune", color: "text-amber-700", bgColor: "bg-amber-50", borderColor: "border-amber-200" },
   VALIDATION:  { icon: "✅", label: "Solicita validare", color: "text-emerald-700", bgColor: "bg-emerald-50", borderColor: "border-emerald-200" },
+  REPORT:      { icon: "📊", label: "Raport", color: "text-teal-700", bgColor: "bg-teal-50", borderColor: "border-teal-200" },
 }
 
 const FALLBACK_STYLE = { icon: "💬", label: "Mesaj", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" }
+
+function detectReportStyle(n: Notification): string | null {
+  if (n.requestKind === "INFORMATION" && n.requestData) {
+    try {
+      const data = JSON.parse(n.requestData)
+      if (data.isReport) return "REPORT"
+    } catch {}
+  }
+  if (/raport|sintez[aă]|situati[ea]|analiz[aă]|evolutie|bilant/i.test(n.title)) return "REPORT"
+  return null
+}
 
 // ── Eliminare jargon tehnic ────────────────────────────────────────────────
 
@@ -85,6 +97,13 @@ export default function OwnerInbox() {
   const [replyText, setReplyText] = useState("")
   const [sending, setSending] = useState<string | null>(null)
 
+  // Cerere raport
+  const [showRequestForm, setShowRequestForm] = useState(false)
+  const [requestTo, setRequestTo] = useState("")
+  const [requestSubject, setRequestSubject] = useState("")
+  const [requestSending, setRequestSending] = useState(false)
+  const [requestMessage, setRequestMessage] = useState("")
+
   useEffect(() => {
     fetch("/api/v1/owner/notifications")
       .then(r => r.json())
@@ -94,6 +113,32 @@ export default function OwnerInbox() {
       })
       .catch(() => setLoading(false))
   }, [])
+
+  async function requestReport() {
+    if (!requestTo || !requestSubject.trim()) return
+    setRequestSending(true)
+    try {
+      const res = await fetch("/api/v1/owner/request-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetRole: requestTo, subject: requestSubject.trim() }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setRequestMessage(`Cerere trimisa catre ${requestTo}`)
+        setRequestTo("")
+        setRequestSubject("")
+        setShowRequestForm(false)
+        // Reîncarcă inbox
+        const r = await fetch("/api/v1/owner/notifications")
+        const d = await r.json()
+        setNotifications(d.notifications || [])
+      } else {
+        setRequestMessage(`Eroare: ${data.error}`)
+      }
+    } catch (e: any) { setRequestMessage(`Eroare: ${e.message}`) }
+    setRequestSending(false)
+  }
 
   async function respond(id: string, responseKind: string, responseText?: string) {
     setSending(id)
@@ -134,6 +179,12 @@ export default function OwnerInbox() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowRequestForm(!showRequestForm)}
+            className="text-[10px] font-medium bg-teal-50 text-teal-700 px-3 py-1 rounded-lg hover:bg-teal-100 transition-colors border border-teal-200"
+          >
+            {showRequestForm ? "Anuleaza" : "Cere raport"}
+          </button>
           {resolved.length > 0 && (
             <button
               onClick={() => setShowResolved(!showResolved)}
@@ -148,6 +199,53 @@ export default function OwnerInbox() {
         </div>
       </div>
 
+      {/* Formular cerere raport */}
+      {showRequestForm && (
+        <div className="mt-4 p-4 bg-teal-50 rounded-xl border border-teal-200">
+          <p className="text-xs font-medium text-teal-800 mb-3">Cere un raport de la un agent</p>
+          <div className="flex gap-3 mb-3">
+            <select value={requestTo} onChange={e => setRequestTo(e.target.value)}
+              className="flex-shrink-0 w-48 px-3 py-2 rounded-lg border border-teal-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-300">
+              <option value="">De la cine?</option>
+              <optgroup label="Strategic">
+                <option value="COG">COG — Directorul General</option>
+              </optgroup>
+              <optgroup label="Tactic">
+                <option value="COA">COA — Director Operational</option>
+                <option value="COCSA">COCSA — Strategul Comercial</option>
+                <option value="CFO">CFO — Director Financiar</option>
+                <option value="CCO">CCO — Director Comercial</option>
+                <option value="DMA">DMA — Director Marketing</option>
+                <option value="PMA">PMA — Manager Produs</option>
+                <option value="DVB2B">DVB2B — Director Vanzari B2B</option>
+                <option value="CSM">CSM — Customer Success</option>
+                <option value="COSO">COSO — Observator Strategic</option>
+              </optgroup>
+              <optgroup label="Legal/Conformitate">
+                <option value="CJA">CJA — Juristul</option>
+                <option value="DPO">DPO — Protectia Datelor</option>
+              </optgroup>
+              <optgroup label="Suport L2">
+                <option value="PPA">PPA — Psihologie Pozitiva</option>
+                <option value="PPMO">PPMO — Psihologia Muncii</option>
+                <option value="ACEA">ACEA — Context Extern</option>
+                <option value="MGA">MGA — Management</option>
+              </optgroup>
+            </select>
+            <input type="text" value={requestSubject} onChange={e => setRequestSubject(e.target.value)}
+              placeholder="Ce vrei sa afli? (ex: situatia pipeline-ului de vanzari)"
+              className="flex-1 px-3 py-2 rounded-lg border border-teal-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-300" />
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={requestReport} disabled={requestSending || !requestTo || !requestSubject.trim()}
+              className="text-[10px] font-medium bg-teal-600 text-white px-4 py-1.5 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-40">
+              {requestSending ? "Se trimite..." : "Trimite cererea"}
+            </button>
+            {requestMessage && <p className="text-[10px] text-teal-600">{requestMessage}</p>}
+          </div>
+        </div>
+      )}
+
       {active.length === 0 && !showResolved && (
         <>
           <div style={{ height: "16px" }} />
@@ -158,8 +256,9 @@ export default function OwnerInbox() {
       <div style={{ height: "16px" }} />
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {[...active, ...(showResolved ? resolved : [])].slice(0, 20).map(n => {
-          const rk = n.requestKind
-          const style = rk ? REQUEST_LABELS[rk] : FALLBACK_STYLE
+          const reportOverride = detectReportStyle(n)
+          const rk = reportOverride || n.requestKind
+          const style = rk ? REQUEST_LABELS[rk] || FALLBACK_STYLE : FALLBACK_STYLE
           const reqData: RequestData = n.requestData ? JSON.parse(n.requestData) : {}
           const isExpanded = expanded === n.id
           const alreadyResponded = !!n.respondedAt
