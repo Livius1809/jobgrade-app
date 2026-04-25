@@ -194,6 +194,17 @@ export async function GET(request: NextRequest) {
       staleTasksCleaned = await cleanStaleTasks()
     } catch {}
 
+    // NIVEL 5d: Calibrare parametri adaptivi (feedback loops)
+    let adaptiveAdjustments: string[] = []
+    try {
+      const { calibrateAll } = await import("@/lib/agents/adaptive-parameters")
+      const calibResult = await calibrateAll()
+      adaptiveAdjustments = calibResult.adjustments
+      if (adaptiveAdjustments.length > 0) {
+        console.log(`[cron/executor] Adaptive calibration: ${adaptiveAdjustments.join("; ")}`)
+      }
+    } catch {}
+
     // NIVEL 6: Curățare artefacte învățare expirate (săptămânal — doar luni)
     let expiredCleaned = 0
     if (new Date().getDay() === 1) {
@@ -216,6 +227,7 @@ export async function GET(request: NextRequest) {
       invalidatedByCode,
       staleTasksCleaned,
       expiredCleaned,
+      adaptiveAdjustments,
       cognitive: cognitiveResult ? {
         heartbeat: cognitiveResult.heartbeat.urgencyLevel,
         batchSize: cognitiveResult.heartbeat.batchSize,
