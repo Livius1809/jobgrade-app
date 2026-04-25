@@ -135,25 +135,76 @@ export async function resolveFromKB(
     }
   }
 
-  // ═══ Nivel 4: KB LEGACY (tabelul vechi KBEntry) ═══
+  // ═══ Nivel 4: KB LEGACY (tabelul vechi KBEntry) — căutare multi-keyword ═══
   try {
-    const kbMatch = await (prisma as any).kBEntry?.findFirst({
-      where: {
-        agentRole,
-        content: { contains: keywords[0] || taskTitle.slice(0, 20), mode: "insensitive" },
-        confidence: { gte: 0.7 },
-      },
-      orderBy: { confidence: "desc" },
-    })
+    // Căutăm pe MULTIPLE keywords (nu doar primul) — crește șansa de match
+    for (const keyword of keywords.slice(0, 5)) {
+      if (keyword.length < 4) continue
+      const kbMatches = await (prisma as any).kBEntry?.findMany({
+        where: {
+          agentRole,
+          status: "PERMANENT",
+          content: { contains: keyword, mode: "insensitive" },
+          confidence: { gte: threshold },
+        },
+        orderBy: { confidence: "desc" },
+        take: 3,
+      }).catch(() => [])
 
-    if (kbMatch) {
-      return {
-        hit: true,
-        level: "KB_LEGACY",
-        content: kbMatch.content,
-        confidence: kbMatch.confidence ?? 0.7,
-        sourceEntryId: kbMatch.id,
-        sourceAgentRole: agentRole,
+      if (kbMatches && kbMatches.length > 0) {
+        // Verificăm câte keywords apar în cel mai bun match
+        const bestMatch = kbMatches[0]
+        const matchContent = (bestMatch.content || "").toLowerCase()
+        const keywordHits = keywords.filter((kw: string) => matchContent.includes(kw)).length
+
+        // Prag adaptiv: cu cât mai multe keywords match, cu atât mai sigur
+        if (keywordHits >= 3 || (keywordHits >= 2 && bestMatch.confidence >= 0.8)) {
+          // Incrementăm usageCount — organism care își folosește cunoașterea
+          await (prisma as any).kBEntry?.update({
+            where: { id: bestMatch.id },
+            data: { usageCount: { increment: 1 } },
+          }).catch(() => {})
+
+          return {
+            hit: true,
+            level: "KB_LEGACY",
+            content: bestMatch.content,
+            confidence: bestMatch.confidence ?? 0.7,
+            sourceEntryId: bestMatch.id,
+            sourceAgentRole: agentRole,
+          }
+        }
+      }
+    }
+
+    // Fallback: căutare cross-agent pe KB entries (agenți înrudiți știu răspunsul)
+    if (relatedRoles.length > 0) {
+      for (const keyword of keywords.slice(0, 3)) {
+        if (keyword.length < 5) continue
+        const crossKB = await (prisma as any).kBEntry?.findFirst({
+          where: {
+            agentRole: { in: relatedRoles },
+            status: "PERMANENT",
+            content: { contains: keyword, mode: "insensitive" },
+            confidence: { gte: 0.8 },
+          },
+          orderBy: { confidence: "desc" },
+        }).catch(() => null)
+
+        if (crossKB) {
+          const crossContent = (crossKB.content || "").toLowerCase()
+          const crossHits = keywords.filter((kw: string) => crossContent.includes(kw)).length
+          if (crossHits >= 2) {
+            return {
+              hit: true,
+              level: "KB_LEGACY",
+              content: `[Din experiența ${crossKB.agentRole}] ${crossKB.content}`,
+              confidence: (crossKB.confidence ?? 0.7) * 0.8,
+              sourceEntryId: crossKB.id,
+              sourceAgentRole: crossKB.agentRole,
+            }
+          }
+        }
       }
     }
   } catch {}

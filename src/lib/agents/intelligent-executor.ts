@@ -246,12 +246,28 @@ export async function runIntelligentBatch(
     const isKnowledgeTask = KNOWLEDGE_TASK_TYPES.includes(task.taskType) ||
       (task.taskType === "DATA_ANALYSIS" && (task.tags ?? []).some((t: string) => t === "lookup"))
 
-    // Căutăm în KB indiferent — dar folosim rezultatul diferit
+    // Căutăm în KB — pragul scade organic cu experiența agentului
+    // Mai multe taskuri similare rezolvate cu succes = mai multă încredere în KB
+    let kbThreshold = 0.85 // baseline strict
+    try {
+      const { loadCognitiveState } = await import("@/lib/agents/cognitive-state")
+      const agentState = await loadCognitiveState(task.assignedTo)
+      if (agentState) {
+        const c = agentState.current
+        // Cu cât agentul are mai multă experiență, cu atât se încrede mai mult în KB
+        // 0 execuții → 0.85, 20 execuții → 0.75, 50+ execuții → 0.65
+        const experienceDiscount = Math.min(0.20, c.totalExecutions * 0.004)
+        // Success rate ridicat = încredere că KB-ul e bun
+        const successBonus = c.totalExecutions > 5 && c.totalSuccesses / c.totalExecutions > 0.7 ? 0.05 : 0
+        kbThreshold = Math.max(0.60, 0.85 - experienceDiscount - successBonus)
+      }
+    } catch {}
+
     const kbResult = await resolveFromKB(
       task.assignedTo,
       task.title,
       task.description,
-      0.85
+      kbThreshold
     )
 
     // KB ca context pentru task-uri de acțiune (injectat în prompt la PAS 6)
