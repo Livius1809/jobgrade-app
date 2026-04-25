@@ -63,6 +63,13 @@ export interface IngestDocumentInput {
   focusTopics?: string[]
   /** Câte entries să genereze per referință bibliografică (default 30) */
   targetEntries?: number
+  /**
+   * Mod bibliografie: documentul conține o listă de referințe bibliografice.
+   * Fiecare referință e procesată individual ca referință bibliografică separată.
+   */
+  bibliographyMode?: boolean
+  /** Câte entries per referință din bibliografie (default 10) */
+  entriesPerReference?: number
 }
 
 export interface IngestResult {
@@ -74,6 +81,13 @@ export interface IngestResult {
   byRole: Record<string, number>
   entries: IngestedEntry[]
   durationMs: number
+  /** Mod bibliografie: detalii per referință procesată */
+  bibliography?: {
+    totalReferences: number
+    knownSources: number
+    unknownSources: number
+    references: Array<{ author: string; title: string; known: boolean; entries: number }>
+  }
 }
 
 export interface IngestedEntry {
@@ -347,6 +361,114 @@ async function extractFromBibliography(input: IngestDocumentInput): Promise<{ en
   return { entries: allEntries, knownSource, sourceDescription }
 }
 
+// ── Mod Bibliografie — procesare lista de referințe ─────────
+
+interface ParsedReference {
+  author: string
+  title: string
+  publisher?: string
+  year?: number
+  raw: string
+}
+
+interface BibliographyProcessResult {
+  entries: IngestedEntry[]
+  metadata: {
+    totalReferences: number
+    knownSources: number
+    unknownSources: number
+    references: Array<{ author: string; title: string; known: boolean; entries: number }>
+  }
+}
+
+async function processBibliography(input: IngestDocumentInput): Promise<BibliographyProcessResult> {
+  // 1. Extrage text din document
+  const fullText = await extractText(input)
+
+  // 2. Claude parsează lista de referințe bibliografice
+  const client = new Anthropic()
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4000,
+    system: `Primesti textul unei bibliografii (lista de referinte dintr-o carte sau document academic).
+Parseaza FIECARE referinta si returneaza un JSON array.
+
+Raspunde STRICT cu JSON valid:
+{
+  "references": [
+    { "author": "Goleman, D.", "title": "Emotional Intelligence", "publisher": "Bantam Books", "year": 1995 },
+    { "author": "Amabile, T.M.", "title": "Creativity in Context", "publisher": "Westview Press", "year": 1996 }
+  ]
+}
+
+REGULI:
+- Extrage TOATE referintele, nu doar primele
+- Daca nu poti parsa autorul sau titlul, pune ce poti
+- Ignora note de subsol, referinte interne (ex: "vezi cap. 3")
+- Daca textul nu contine o bibliografie recognoscibila, returneaza {"references": []}`,
+    messages: [{ role: "user", content: `TEXTUL BIBLIOGRAFIEI:\n\n${fullText.slice(0, 15000)}` }],
+  })
+
+  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  let references: ParsedReference[] = []
+
+  try {
+    const parsed = JSON.parse(text)
+    references = (parsed.references || []).map((r: any) => ({
+      author: r.author || "Unknown",
+      title: r.title || "Unknown",
+      publisher: r.publisher,
+      year: r.year,
+      raw: `${r.author} — ${r.title}`,
+    }))
+  } catch {
+    return { entries: [], metadata: { totalReferences: 0, knownSources: 0, unknownSources: 0, references: [] } }
+  }
+
+  // 3. Procesează fiecare referință ca referință bibliografică separată
+  const allEntries: IngestedEntry[] = []
+  const refResults: Array<{ author: string; title: string; known: boolean; entries: number }> = []
+  const entriesPerRef = input.entriesPerReference || 10
+
+  for (const ref of references) {
+    const refInput: IngestDocumentInput = {
+      sourceTitle: ref.title,
+      sourceAuthor: ref.author,
+      sourceType: "carte",
+      publisher: ref.publisher,
+      year: ref.year,
+      bibliographicReference: true,
+      targetEntries: entriesPerRef,
+      domain: input.domain,
+    }
+
+    const result = await extractFromBibliography(refInput)
+
+    refResults.push({
+      author: ref.author,
+      title: ref.title,
+      known: result.knownSource,
+      entries: result.entries.length,
+    })
+
+    if (result.knownSource) {
+      allEntries.push(...result.entries)
+    }
+  }
+
+  const knownCount = refResults.filter(r => r.known).length
+
+  return {
+    entries: allEntries,
+    metadata: {
+      totalReferences: references.length,
+      knownSources: knownCount,
+      unknownSources: references.length - knownCount,
+      references: refResults,
+    },
+  }
+}
+
 // ── Pipeline principal ──────────────────────────────────────
 
 export async function ingestDocument(input: IngestDocumentInput): Promise<IngestResult> {
@@ -374,8 +496,14 @@ export async function ingestDocument(input: IngestDocumentInput): Promise<Ingest
     }
 
     allEntries = bibResult.entries
+  } else if (input.bibliographyMode) {
+    // ── Mod B: Bibliografie — lista de referințe din document ──
+    const bibResult = await processBibliography(input)
+    allEntries = bibResult.entries
+    // Atașăm metadata bibliografie la rezultat (se adaugă la return mai jos)
+    ;(input as any)._bibliographyResult = bibResult.metadata
   } else {
-    // ── Mod B: Document (PDF/DOCX/text) ──────────────────────
+    // ── Mod C: Document (PDF/DOCX/text) ──────────────────────
     const fullText = await extractText(input)
 
     if (fullText.trim().length < 100) {
@@ -453,6 +581,7 @@ export async function ingestDocument(input: IngestDocumentInput): Promise<Ingest
     byRole,
     entries: unique,
     durationMs: Date.now() - start,
+    bibliography: (input as any)._bibliographyResult || undefined,
   }
 }
 

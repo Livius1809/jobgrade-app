@@ -13,7 +13,7 @@ interface DocEntry {
   sourceType?: string
 }
 
-type InputMode = "text" | "upload" | "reference"
+type InputMode = "text" | "upload" | "reference" | "bibliography"
 
 export default function DocsPage() {
   const [documents, setDocuments] = useState<DocEntry[]>([])
@@ -154,6 +154,62 @@ export default function DocsPage() {
     setSubmitting(false)
   }
 
+  // ── Submit: Bibliografie (PDF cu lista de referințe) ─────
+  async function submitBibliography() {
+    if (!bibFile && !content.trim()) {
+      setMessage("Incarca un PDF cu bibliografie sau lipeste textul"); return
+    }
+    if (!title.trim()) {
+      setMessage("Titlul sursei principale e obligatoriu"); return
+    }
+    setSubmitting(true); setMessage("Se extrag referintele si se proceseaza fiecare sursa... (poate dura cateva minute)")
+    try {
+      if (bibFile) {
+        const fd = new FormData()
+        fd.append("file", bibFile)
+        fd.append("sourceTitle", title.trim())
+        fd.append("sourceAuthor", author.trim() || "Bibliografie")
+        fd.append("sourceType", sourceType)
+        fd.append("bibliographyMode", "true")
+
+        const res = await fetch("/api/v1/kb/ingest", { method: "POST", body: fd })
+        const data = await res.json()
+        handleBibResult(data)
+      } else {
+        const res = await fetch("/api/v1/kb/ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rawText: content.trim(),
+            sourceTitle: title.trim(),
+            sourceAuthor: author.trim() || "Bibliografie",
+            sourceType,
+            bibliographyMode: true,
+          }),
+        })
+        const data = await res.json()
+        handleBibResult(data)
+      }
+    } catch (e: any) { setMessage(`Eroare: ${e.message}`) }
+    setSubmitting(false)
+  }
+
+  function handleBibResult(data: any) {
+    if (data.bibliography) {
+      const bib = data.bibliography
+      setMessage(`Bibliografie procesata: ${bib.totalReferences} referinte gasite, ${bib.knownSources} cunoscute, ${bib.unknownSources} necunoscute. ${data.entriesCreated} KB entries create.`)
+      setBibResult(bib)
+      setIngestResult(data)
+      loadDocs()
+    } else if (data.entriesCreated > 0) {
+      setMessage(`${data.entriesCreated} entries create`)
+      setIngestResult(data)
+      loadDocs()
+    } else {
+      setMessage("Nu s-au gasit referinte bibliografice in document.")
+    }
+  }
+
   async function deleteDoc(docTitle: string) {
     if (!confirm(`Stergi "${docTitle}" din biblioteca echipei?`)) return
     try {
@@ -164,10 +220,15 @@ export default function DocsPage() {
     } catch (e: any) { setMessage(`Eroare: ${e.message}`) }
   }
 
+  // Bibliografie
+  const [bibFile, setBibFile] = useState<File | null>(null)
+  const [bibResult, setBibResult] = useState<any>(null)
+
   const modeLabels: Record<InputMode, { label: string; icon: string }> = {
     text: { label: "Text", icon: "T" },
     upload: { label: "PDF / Word", icon: "↑" },
     reference: { label: "Referinta", icon: "R" },
+    bibliography: { label: "Bibliografie", icon: "B" },
   }
 
   return (
@@ -319,19 +380,75 @@ export default function DocsPage() {
             </div>
           )}
 
+          {/* ── Mod BIBLIOGRAFIE (PDF cu lista referințe) ── */}
+          {inputMode === "bibliography" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">PDF cu bibliografie sau lipeste textul</label>
+                <label className={`flex items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
+                  bibFile ? "border-orange-400 bg-orange-50" : "border-border hover:border-orange-300"
+                }`}>
+                  <input type="file" accept=".pdf,.docx,.doc,.txt" className="hidden"
+                    onChange={e => setBibFile(e.target.files?.[0] || null)} />
+                  {bibFile ? (
+                    <span className="text-sm text-orange-600 font-medium">{bibFile.name}</span>
+                  ) : (
+                    <span className="text-sm text-text-secondary">Click pentru PDF cu bibliografie</span>
+                  )}
+                </label>
+              </div>
+              {!bibFile && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Sau lipeste lista de referinte</label>
+                  <textarea value={content} onChange={e => setContent(e.target.value)}
+                    placeholder={"Goleman, D. (1995). Emotional Intelligence. Bantam Books.\nAmabile, T.M. (1996). Creativity in Context. Westview Press.\n..."}
+                    rows={6}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 resize-y" />
+                </div>
+              )}
+              <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+                <p className="text-xs text-orange-700">
+                  Fiecare referinta din bibliografie e procesata individual. Claude extrage cunoastere din sursele pe care le cunoaste si le ruteaza pe consultantii L2 relevanti.
+                </p>
+              </div>
+
+              {/* Rezultat bibliografie */}
+              {bibResult && (
+                <div className="p-4 rounded-lg bg-white border border-orange-200">
+                  <p className="text-sm font-medium text-orange-800 mb-2">
+                    {bibResult.knownSources}/{bibResult.totalReferences} surse cunoscute
+                  </p>
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    {bibResult.references?.map((ref: any, i: number) => (
+                      <div key={i} className={`flex items-center gap-2 text-xs ${ref.known ? "text-emerald-700" : "text-slate-400"}`}>
+                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${ref.known ? "bg-emerald-100" : "bg-slate-100"}`}>
+                          {ref.known ? ref.entries : "?"}
+                        </span>
+                        <span className="font-medium">{ref.author}</span>
+                        <span className="text-slate-400">—</span>
+                        <span className="truncate">{ref.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Submit */}
           <button
             onClick={() => {
               if (inputMode === "text") submitText()
               else if (inputMode === "upload") submitUpload()
+              else if (inputMode === "bibliography") submitBibliography()
               else submitReference()
             }}
-            disabled={submitting || !title.trim() || (inputMode === "text" && !content.trim()) || (inputMode === "upload" && !file) || ((inputMode === "upload" || inputMode === "reference") && !author.trim())}
+            disabled={submitting || !title.trim() || (inputMode === "text" && !content.trim()) || (inputMode === "upload" && !file) || (inputMode === "bibliography" && !bibFile && !content.trim()) || ((inputMode === "upload" || inputMode === "reference") && !author.trim())}
             className="bg-indigo text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-dark disabled:opacity-50 transition-colors"
           >
             {submitting
-              ? (inputMode === "text" ? "Se proceseaza..." : "Se extrage cunoastere...")
-              : (inputMode === "text" ? "Adauga in biblioteca" : inputMode === "upload" ? "Extrage si infuzeaza" : "Extrage din referinta")}
+              ? (inputMode === "bibliography" ? "Se proceseaza bibliografie..." : inputMode === "text" ? "Se proceseaza..." : "Se extrage cunoastere...")
+              : (inputMode === "text" ? "Adauga in biblioteca" : inputMode === "upload" ? "Extrage si infuzeaza" : inputMode === "bibliography" ? "Proceseaza bibliografie" : "Extrage din referinta")}
           </button>
 
           {/* Rezultat ingestie (dacă e disponibil) */}

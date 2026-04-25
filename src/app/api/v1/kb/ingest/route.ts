@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Fișier prea mare (max 50 MB)" }, { status: 400 })
     }
 
+    const bibliographyMode = formData.get("bibliographyMode") === "true"
+
     const result = await ingestDocument({
       fileBuffer: buffer,
       fileExtension: ext,
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
       sourceAuthor,
       sourceType: sourceType as any,
       dryRun,
+      bibliographyMode,
     })
 
     return NextResponse.json(result)
@@ -88,8 +91,8 @@ export async function POST(req: NextRequest) {
     if (!body.sourceAuthor) return NextResponse.json({ error: "sourceAuthor obligatoriu" }, { status: 400 })
 
     // Dacă e referință bibliografică, nu cere rawText
-    if (!body.bibliographicReference && !body.rawText) {
-      return NextResponse.json({ error: "rawText obligatoriu (sau setează bibliographicReference: true)" }, { status: 400 })
+    if (!body.bibliographicReference && !body.bibliographyMode && !body.rawText) {
+      return NextResponse.json({ error: "rawText obligatoriu (sau setează bibliographicReference: true sau bibliographyMode: true)" }, { status: 400 })
     }
 
     const result = await ingestDocument({
@@ -100,6 +103,8 @@ export async function POST(req: NextRequest) {
       dryRun: body.dryRun === true,
       chunkSize: body.chunkSize,
       bibliographicReference: body.bibliographicReference === true,
+      bibliographyMode: body.bibliographyMode === true,
+      entriesPerReference: body.entriesPerReference,
       publisher: body.publisher,
       year: body.year,
       edition: body.edition,
