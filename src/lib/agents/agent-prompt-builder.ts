@@ -433,28 +433,28 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Client-facing — beneficiază de comunicare, echitate, bias, evaluare
   HR_COUNSELOR: {
     consultants: ["PSYCHOLINGUIST", "PPMO", "SCA", "PPA", "SOC", "STA", "PSE", "SVHA", "MGA"],
-    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "tcm", "ayurveda", "holistic", "management", "leadership", "echipe"],
+    tags: ["armstrong-taylor", "pitariu", "slama-cazacu", "daniel-david", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "tcm", "ayurveda", "holistic", "management", "leadership", "echipe", "rocco", "inteligenta-emotionala", "creativitate"],
   },
   SOA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "PPA", "SVHA"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "apa", "rudica", "yoga", "tao", "holistic"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "apa", "rudica", "yoga", "tao", "holistic", "rocco", "inteligenta-emotionala", "comunicare"],
   },
   CSSA: {
     consultants: ["PSYCHOLINGUIST", "PPA", "SOC", "SVHA"],
-    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "holistic"],
+    tags: ["armstrong-taylor", "daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "holistic", "rocco", "inteligenta-emotionala"],
   },
   CSA: {
     consultants: ["PSYCHOLINGUIST", "PPA", "SVHA"],
-    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "holistic"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "apa", "rudica", "yoga", "tao", "holistic", "rocco", "inteligenta-emotionala", "empatie"],
   },
   // B2C — Călăuza primește SVHA ca resursă primară
   CALAUZA: {
     consultants: ["SVHA", "PPA", "PSYCHOLINGUIST", "PSE", "SCA", "PPMO", "SOC", "ACEA"],
-    tags: ["yoga", "tao", "tcm", "ayurveda", "holistic", "spirala", "daniel-david", "stil", "lingvistica", "apa", "rudica", "storytelling", "niemec", "via-strengths", "context-extern"],
+    tags: ["yoga", "tao", "tcm", "ayurveda", "holistic", "spirala", "daniel-david", "stil", "lingvistica", "apa", "rudica", "storytelling", "niemec", "via-strengths", "context-extern", "rocco", "inteligenta-emotionala", "creativitate", "flow"],
   },
   PROFILER: {
     consultants: ["SVHA", "PPA", "PPMO", "SCA", "STA", "PSYCHOLINGUIST"],
-    tags: ["yoga", "tao", "tcm", "ayurveda", "holistic", "herrmann", "hawkins", "daniel-david", "stil", "niemec", "via-strengths"],
+    tags: ["yoga", "tao", "tcm", "ayurveda", "holistic", "herrmann", "hawkins", "daniel-david", "stil", "niemec", "via-strengths", "rocco", "inteligenta-emotionala", "granularitate"],
   },
   BCA: {
     consultants: ["STA", "SCA", "PPMO", "PSYCHOLINGUIST"],
@@ -464,11 +464,11 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Marketing — beneficiază de comunicare, psihologie, cultural, eleganță
   CMA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
-    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "rocco", "creativitate", "comunicare"],
   },
   CWA: {
     consultants: ["PSYCHOLINGUIST", "SOC"],
-    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "rocco", "creativitate", "registru"],
   },
   MKA: {
     consultants: ["PSYCHOLINGUIST", "SOC", "SCA"],
@@ -482,7 +482,7 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Strategic — beneficiază de tot (selectiv)
   COG: {
     consultants: ["PPMO", "SCA", "STA", "PSYCHOLINGUIST", "ACEA", "MGA"],
-    tags: ["armstrong-taylor", "pitariu", "daniel-david", "stil", "lingvistica", "context-extern", "piata", "legislativ", "management", "leadership"],
+    tags: ["armstrong-taylor", "pitariu", "daniel-david", "stil", "lingvistica", "context-extern", "piata", "legislativ", "management", "leadership", "rocco", "inteligenta-emotionala", "contagiune-emotionala"],
   },
   COA: {
     consultants: ["STA", "SCA", "PSYCHOLINGUIST"],
@@ -496,7 +496,7 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Product — beneficiază de evaluare, metodologie, competențe
   PMA: {
     consultants: ["STA", "PPMO", "PSE", "SCA", "PSYCHOLINGUIST"],
-    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica", "rocco", "creativitate", "climat-organizational"],
   },
   DOA: {
     consultants: ["STA", "PPMO", "PSYCHOLINGUIST"],
@@ -510,7 +510,7 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   // Engineering — beneficiază selectiv
   EMA: {
     consultants: ["PPMO", "PSE", "PSYCHOLINGUIST"],
-    tags: ["armstrong-taylor", "stil", "lingvistica"],
+    tags: ["armstrong-taylor", "stil", "lingvistica", "rocco", "dezvoltare", "andragogie"],
   },
 
   // Legal/Compliance
@@ -521,6 +521,118 @@ const L2_KNOWLEDGE_MAP: Record<string, { consultants: string[]; tags: string[] }
   DPA: {
     consultants: ["SCA", "PSYCHOLINGUIST"],
     tags: ["armstrong-taylor", "stil", "lingvistica"],
+  },
+  DPO: {
+    consultants: ["SCA", "STA", "PSYCHOLINGUIST"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "lingvistica"],
+  },
+
+  // Tactical — directori de departament
+  CCO: {
+    consultants: ["PSYCHOLINGUIST", "PPMO", "MGA", "SCA", "PPA", "SOC", "ACEA"],
+    tags: ["armstrong-taylor", "daniel-david", "stil", "management", "leadership", "rocco", "inteligenta-emotionala", "contagiune-emotionala", "comunicare", "piata"],
+  },
+  CFO: {
+    consultants: ["STA", "SCA", "ACEA", "PPMO"],
+    tags: ["armstrong-taylor", "pitariu", "context-extern", "piata", "legislativ"],
+  },
+  CSM: {
+    consultants: ["PSYCHOLINGUIST", "PPA", "PPMO", "SCA"],
+    tags: ["daniel-david", "stil", "lingvistica", "rocco", "inteligenta-emotionala", "empatie", "comunicare"],
+  },
+  DMA: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA", "SCA", "ACEA"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "rocco", "creativitate", "comunicare", "piata"],
+  },
+  DVB2B: {
+    consultants: ["PSYCHOLINGUIST", "PPMO", "MGA", "SOC", "ACEA"],
+    tags: ["armstrong-taylor", "daniel-david", "stil", "management", "rocco", "inteligenta-emotionala", "comunicare", "piata"],
+  },
+  DVB2C: {
+    consultants: ["PSYCHOLINGUIST", "PPA", "SOC", "PSE"],
+    tags: ["daniel-david", "stil", "lingvistica", "rocco", "inteligenta-emotionala", "comunicare", "flow"],
+  },
+  COSO: {
+    consultants: ["PPMO", "SCA", "STA", "PSYCHOLINGUIST", "ACEA", "MGA"],
+    tags: ["armstrong-taylor", "pitariu", "daniel-david", "stil", "context-extern", "piata", "management", "leadership", "rocco", "inteligenta-emotionala"],
+  },
+
+  // Marketing operațional
+  CSEO: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "rocco", "creativitate", "registru"],
+  },
+  DMM: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "STA"],
+    tags: ["daniel-david", "stil", "lingvistica", "piata"],
+  },
+  EMAS: {
+    consultants: ["PSYCHOLINGUIST", "PPA", "SOC"],
+    tags: ["daniel-david", "stil", "lingvistica", "comunicare"],
+  },
+  SMMA: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
+    tags: ["daniel-david", "slama-cazacu", "stil", "lingvistica", "rocco", "creativitate", "comunicare"],
+  },
+  SEBC: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPA"],
+    tags: ["daniel-david", "stil", "lingvistica", "rocco", "creativitate", "comunicare"],
+  },
+  GDA: {
+    consultants: ["PPA", "PSE", "PSYCHOLINGUIST"],
+    tags: ["rocco", "creativitate", "flow", "stil"],
+  },
+
+  // Vânzări operațional
+  DDA: {
+    consultants: ["STA", "SCA", "PPMO"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+  PCA: {
+    consultants: ["PSYCHOLINGUIST", "SOC", "PPMO", "ACEA"],
+    tags: ["daniel-david", "stil", "comunicare", "piata"],
+  },
+  REVOPS: {
+    consultants: ["STA", "PPMO", "SCA"],
+    tags: ["armstrong-taylor", "pitariu"],
+  },
+
+  // Financiar operațional
+  FPA: {
+    consultants: ["STA", "ACEA"],
+    tags: ["armstrong-taylor", "context-extern", "piata"],
+  },
+  RPA_FIN: {
+    consultants: ["STA", "SCA", "ACEA"],
+    tags: ["armstrong-taylor", "pitariu", "context-extern"],
+  },
+
+  // Product
+  PMP_B2B: {
+    consultants: ["PPMO", "STA", "PSE", "PSYCHOLINGUIST", "ACEA"],
+    tags: ["armstrong-taylor", "pitariu", "stil", "piata", "rocco", "creativitate"],
+  },
+  PMP_B2C: {
+    consultants: ["PPA", "PSE", "PSYCHOLINGUIST", "SOC", "SVHA"],
+    tags: ["daniel-david", "stil", "rocco", "inteligenta-emotionala", "creativitate", "flow", "holistic"],
+  },
+  PMRA: {
+    consultants: ["STA", "SOC", "ACEA", "SCA"],
+    tags: ["armstrong-taylor", "context-extern", "piata"],
+  },
+
+  // Resurse cunoaștere (specialiști)
+  NSA: {
+    consultants: ["PPA", "PSE", "SCA", "SVHA"],
+    tags: ["rocco", "inteligenta-emotionala", "flow", "holistic", "dezvoltare"],
+  },
+  PCM: {
+    consultants: ["SCA", "PPA", "PSE", "PSYCHOLINGUIST"],
+    tags: ["rocco", "inteligenta-emotionala", "creativitate", "bias", "metacognitie"],
+  },
+  PTA: {
+    consultants: ["PPA", "SCA", "SVHA", "PSYCHOLINGUIST"],
+    tags: ["rocco", "inteligenta-emotionala", "holistic", "empatie", "shadow"],
   },
 }
 

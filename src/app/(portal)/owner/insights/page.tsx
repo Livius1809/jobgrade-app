@@ -76,8 +76,8 @@ export default async function InsightsPage() {
         warn: vitalSigns.summary?.warn || 0,
         fail: vitalSigns.summary?.fail || 0,
       } : null,
-      currentMaturity: evolutionCycles[0]?.maturityLevel || "UNKNOWN",
-      currentScore: evolutionCycles[0]?.compositeScore || 0,
+      currentMaturity: evolutionCycles[0]?.maturityLevel || (vitalSigns?.overallStatus === "HEALTHY" ? "GROWING" : vitalSigns?.overallStatus === "WARNING" ? "SEED" : "SEED"),
+      currentScore: evolutionCycles[0]?.compositeScore || (vitalSigns ? Math.round((vitalSigns.summary?.pass || 0) / Math.max(1, (vitalSigns.summary?.pass || 0) + (vitalSigns.summary?.warn || 0) + (vitalSigns.summary?.fail || 0)) * 100) : 0),
     }
 
     // ── 3. FEEDBACK LOOPS ──
@@ -326,13 +326,19 @@ export default async function InsightsPage() {
       JOIN agent_definitions ad ON ad."agentRole" = combined.role AND ad."isActive" = true
       GROUP BY combined.role, ad."displayName"
       ORDER BY total_learned DESC
-      LIMIT 15
     `.catch(() => []) as any[]
+
+    // Îmbogățim cu nivel din agent_definitions
+    const agentLevels = await p.$queryRaw`
+      SELECT "agentRole", level FROM agent_definitions WHERE "isActive" = true
+    `.catch(() => []) as any[]
+    const levelMap = new Map(agentLevels.map((a: any) => [a.agentRole, a.level]))
 
     agentCards = agentLearning.map((a: any) => {
       const total = Number(a.total_learned || 1)
       return {
         role: a.role, name: a.name || a.role,
+        level: levelMap.get(a.role) || "OPERATIONAL",
         total,
         learnedWeek: Number(a.learned_week || 0),
         pctInternal: Math.round(Number(a.from_internal || 0) / total * 100),
@@ -700,34 +706,54 @@ export default async function InsightsPage() {
       </section>
 
       {/* ═══ 5. CARTEA DE ÎNVĂȚARE PER AGENT ═══ */}
-      {agentCards.length > 0 && (
-        <section className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">5. Cartea de învățare per agent</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {agentCards.map((a: any) => (
-              <div key={a.role} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700">{a.name}</span>
-                  <span className="text-[10px] text-slate-400">{a.total} KB</span>
+      {agentCards.length > 0 && (() => {
+        const levelOrder = ["STRATEGIC", "TACTICAL", "OPERATIONAL"]
+        const levelLabels: Record<string, string> = { STRATEGIC: "Strategic", TACTICAL: "Tactic", OPERATIONAL: "Operațional" }
+        const grouped = levelOrder.map(level => ({
+          level,
+          label: levelLabels[level] || level,
+          agents: agentCards.filter((a: any) => a.level === level).sort((a: any, b: any) => b.total - a.total),
+        })).filter(g => g.agents.length > 0)
+
+        return (
+          <section className="bg-white rounded-xl border border-slate-200 p-6">
+            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">5. Cartea de invațare per agent</h2>
+            <p className="text-[10px] text-slate-400 mb-4">{agentCards.length} agenti cu KB · organizati pe nivel ierarhic</p>
+            <div className="flex gap-3 mb-4 text-[9px]">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400" /> Intern/Expert</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Distilat din clienti</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-300" /> Cold start (Claude)</span>
+            </div>
+            {grouped.map(g => (
+              <div key={g.level} className="mb-6 last:mb-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-xs font-bold text-slate-600">{g.label}</h3>
+                  <span className="text-[9px] text-slate-400">{g.agents.length} agenti</span>
+                  <div className="flex-1 h-px bg-slate-100" />
                 </div>
-                {a.learnedWeek > 0 && (
-                  <p className="text-[10px] text-emerald-600 mb-2">+{a.learnedWeek} această săptămână</p>
-                )}
-                <div className="flex rounded-full h-2 overflow-hidden">
-                  {a.pctInternal > 0 && <div className="bg-indigo-400 h-full" style={{ width: `${a.pctInternal}%` }} title="Intern" />}
-                  {a.pctClients > 0 && <div className="bg-violet-400 h-full" style={{ width: `${a.pctClients}%` }} title="Clienți" />}
-                  {a.pctClaude > 0 && <div className="bg-amber-300 h-full" style={{ width: `${a.pctClaude}%` }} title="Claude" />}
-                </div>
-                <div className="flex gap-2 mt-1 text-[8px] text-slate-400">
-                  <span>{a.pctInternal}% intern</span>
-                  <span>{a.pctClients}% clienți</span>
-                  <span>{a.pctClaude}% Claude</span>
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                  {g.agents.map((a: any) => (
+                    <div key={a.role} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-bold text-slate-700 truncate">{a.name}</span>
+                        <span className="text-[9px] text-slate-400 shrink-0 ml-1">{a.total}</span>
+                      </div>
+                      {a.learnedWeek > 0 && (
+                        <p className="text-[9px] text-emerald-600 mb-1">+{a.learnedWeek} sapt.</p>
+                      )}
+                      <div className="flex rounded-full h-1.5 overflow-hidden">
+                        {a.pctInternal > 0 && <div className="bg-indigo-400 h-full" style={{ width: `${a.pctInternal}%` }} />}
+                        {a.pctClients > 0 && <div className="bg-violet-400 h-full" style={{ width: `${a.pctClients}%` }} />}
+                        {a.pctClaude > 0 && <div className="bg-amber-300 h-full" style={{ width: `${a.pctClaude}%` }} />}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
-        </section>
-      )}
+          </section>
+        )
+      })()}
 
       {/* ═══ 6. HARTA CĂLDURII OBIECTIVE VS EFORT ═══ */}
       {objectivesHeat.length > 0 && (
@@ -817,26 +843,28 @@ export default async function InsightsPage() {
         </section>
       )}
 
-      {/* ═══ 9. SIMULATOR SCENARII ═══ */}
+      {/* ═══ 9. PULSUL ORGANISMULUI ═══ */}
       <section className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">9. Simulator scenarii strategice</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">9. Pulsul organismului — snapshot</h2>
+        <div className="grid grid-cols-4 gap-3">
           {[
-            { scenario: "Dublăm echipa", impact: "Autonomie +20%, Cost +80%", risk: "medium" },
-            { scenario: "Primul client B2B", impact: "Venituri +100%, Învățare +40%", risk: "low" },
-            { scenario: "Competitor nou", impact: "Urgență marketing, Preț sub presiune", risk: "high" },
-          ].map((s, i) => (
-            <div key={i} className={`rounded-lg p-4 border ${
-              s.risk === "low" ? "bg-emerald-50 border-emerald-200" :
-              s.risk === "high" ? "bg-red-50 border-red-200" :
-              "bg-amber-50 border-amber-200"
+            { label: "Agenti activi", value: heatMap.processes?.length || 0, color: "indigo" },
+            { label: "KB total", value: agentCards.reduce((s: number, a: any) => s + a.total, 0), color: "violet" },
+            { label: "Invatat sapt.", value: agentCards.reduce((s: number, a: any) => s + (a.learnedWeek || 0), 0), color: "emerald" },
+            { label: "Escalari deschise", value: activeEscalations.length, color: activeEscalations.length > 3 ? "red" : activeEscalations.length > 0 ? "amber" : "emerald" },
+          ].map((m, i) => (
+            <div key={i} className={`rounded-lg p-4 text-center border ${
+              m.color === "red" ? "bg-red-50 border-red-200" :
+              m.color === "amber" ? "bg-amber-50 border-amber-200" :
+              m.color === "emerald" ? "bg-emerald-50 border-emerald-200" :
+              m.color === "violet" ? "bg-violet-50 border-violet-200" :
+              "bg-indigo-50 border-indigo-200"
             }`}>
-              <p className="text-xs font-bold text-slate-700">{s.scenario}</p>
-              <p className="text-[10px] text-slate-500 mt-1">{s.impact}</p>
+              <p className="text-2xl font-bold text-slate-700">{m.value.toLocaleString("ro-RO")}</p>
+              <p className="text-[10px] text-slate-500 mt-1">{m.label}</p>
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-3">Simulare interactivă — în dezvoltare</p>
       </section>
 
       {/* ═══ 10. FEED ÎNVĂȚARE ═══ */}
@@ -882,41 +910,79 @@ export default async function InsightsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
             <p className="text-xs font-bold text-indigo-700">Experiment activ</p>
-            <p className="text-sm text-slate-600 mt-1">Organism viu — GitHub Actions cron autonom</p>
-            <p className="text-[10px] text-indigo-400 mt-2">Ipoteză: ciclurile automate cresc scorul conștiință</p>
-            <p className="text-[10px] text-slate-400">Start: 20.04.2026 · Durată: 30 zile</p>
+            <p className="text-sm text-slate-600 mt-1">Cold start 100% organism — 75 agenti</p>
+            <p className="text-[10px] text-indigo-400 mt-2">Ipoteza: acoperire KB completa creste autonomia si calitatea raspunsurilor</p>
+            <p className="text-[10px] text-slate-400">Start: 26.04.2026 · Masurare: la primul client B2B</p>
           </div>
           <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
-            <p className="text-xs font-bold text-emerald-700">Rezultate anterioare</p>
-            <p className="text-sm text-slate-600 mt-1">Ciclu evoluție #6 — scor 24/SEED</p>
-            <p className="text-[10px] text-emerald-400 mt-2">Confirmat: engine-ul funcționează, produce narativă</p>
-            <p className="text-[10px] text-slate-400">7 gaps, 4 revelate, 25 acțiuni planificate</p>
+            <p className="text-xs font-bold text-emerald-700">Ultima actiune majora</p>
+            <p className="text-sm text-slate-600 mt-1">
+              {evolutionData.cycles.length > 0
+                ? `Ciclu evolutie #${evolutionData.cycles[0].number} — scor ${evolutionData.cycles[0].score}/${evolutionData.cycles[0].maturity}`
+                : `KB populat: ${agentCards.reduce((s: number, a: any) => s + a.total, 0).toLocaleString("ro-RO")} entries pe ${agentCards.length} agenti`
+              }
+            </p>
+            <p className="text-[10px] text-emerald-400 mt-2">
+              {evolutionData.cycles.length > 0
+                ? "Engine evolutie activ"
+                : "3 surse: cold start, expert human, propagare"
+              }
+            </p>
+            <p className="text-[10px] text-slate-400">
+              {agentCards.filter((a: any) => a.learnedWeek > 0).length} agenti au invatat saptamana aceasta
+            </p>
           </div>
         </div>
       </section>
 
       {/* ═══ 12. SALA DE REFLECȚIE STRATEGICĂ ═══ */}
       <section className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-xl border border-indigo-100 p-6">
-        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">12. Sala de reflecție strategică</h2>
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">12. Sala de reflectie strategica</h2>
         <div className="space-y-4">
           <div className="bg-white rounded-lg p-4 border border-indigo-100 shadow-inner">
-            <p className="text-xs text-indigo-500 font-medium mb-2">Întrebarea săptămânii</p>
+            <p className="text-xs text-indigo-500 font-medium mb-2">Intrebarea saptamanii</p>
             <p className="text-sm text-slate-700 italic leading-relaxed">
-              „Ce ar face diferit organizația ta dacă ar fi complet autonomă mâine? Ce decizii iei tu acum care ar putea fi delegate?"
+              Ce ar face diferit organizatia ta daca ar fi complet autonoma maine? Ce decizii iei tu acum care ar putea fi delegate?
             </p>
           </div>
           <div className="bg-white rounded-lg p-4 border border-indigo-100 shadow-inner">
-            <p className="text-xs text-indigo-500 font-medium mb-2">Reflecție din datele organismului</p>
+            <p className="text-xs text-indigo-500 font-medium mb-2">Reflectie din datele organismului</p>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Autonomia actuală este de <strong>{autonomy.overall}%</strong>.
+              Autonomia actuala este de <strong>{autonomy.overall}%</strong>.
               {autonomy.overall < 50
-                ? " Structura depinde încă mult de intervenție directă. Ce procese pot fi automatizate în următoarele 2 săptămâni?"
+                ? " Structura depinde inca mult de interventie directa. Ce procese pot fi automatizate in urmatoarele 2 saptamani?"
                 : autonomy.overall < 80
-                  ? " Structura devine din ce în ce mai autonomă. Unde simți că încă ești indispensabil — și este asta o problemă sau o alegere?"
-                  : " Structura funcționează aproape autonom. Rolul tău se schimbă din executor în vizionar. Ce direcție nouă deschizi?"
+                  ? " Structura devine din ce in ce mai autonoma. Unde simti ca inca esti indispensabil — si este asta o problema sau o alegere?"
+                  : " Structura functioneaza aproape autonom. Rolul tau se schimba din executor in vizionar. Ce directie noua deschizi?"
               }
             </p>
           </div>
+          {(() => {
+            const redAgents = heatMap.processes?.filter((a: any) => a.health === "red") || []
+            const totalKB = agentCards.reduce((s: number, a: any) => s + a.total, 0)
+            const agentsWithKB = agentCards.length
+            const agentsTotal = heatMap.processes?.length || 0
+            const kbCoverage = agentsTotal > 0 ? Math.round(agentsWithKB / agentsTotal * 100) : 0
+            return (
+              <div className="bg-white rounded-lg p-4 border border-indigo-100 shadow-inner">
+                <p className="text-xs text-indigo-500 font-medium mb-2">Starea reala a organismului</p>
+                <div className="space-y-1.5 text-sm text-slate-600">
+                  <p><strong>{agentsTotal}</strong> agenti activi, <strong>{agentsWithKB}</strong> cu KB ({kbCoverage}% acoperire), <strong>{totalKB.toLocaleString("ro-RO")}</strong> entries totale.</p>
+                  {redAgents.length > 0 && (
+                    <p className="text-red-600">
+                      {redAgents.length} agenti inactivi (fara taskuri si fara invatare saptamana asta): {redAgents.slice(0, 5).map((a: any) => a.role).join(", ")}{redAgents.length > 5 ? ` + inca ${redAgents.length - 5}` : ""}.
+                    </p>
+                  )}
+                  {activeEscalations.length > 0 && (
+                    <p className="text-amber-600">{activeEscalations.length} escalari deschise — cel mai vechi de {Math.round((Date.now() - new Date(activeEscalations[0]?.createdAt).getTime()) / 3600000)}h.</p>
+                  )}
+                  {feedbackLoops.feedbackRate < 30 && feedbackLoops.total > 0 && (
+                    <p className="text-amber-600">Rata de feedback {feedbackLoops.feedbackRate}% — sub 30% inseamna ca organismul nu invata din ce face.</p>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </section>
     </div>

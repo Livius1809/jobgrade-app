@@ -645,10 +645,28 @@ export async function generateColdStartEntries(
   options?: {
     maxBatches?: number
     apiKey?: string
+    prisma?: any  // opțional: pentru fallback la DB
   }
 ): Promise<ColdStartResult> {
   const startTime = Date.now()
-  const config = SELF_INTERVIEW_PROMPTS[agentRole]
+  let config = SELF_INTERVIEW_PROMPTS[agentRole]
+
+  // Fallback: citește prompturi din agent_definitions (DB) dacă nu sunt în registrul static
+  if (!config && options?.prisma) {
+    try {
+      const dbAgent = await options.prisma.agentDefinition.findFirst({
+        where: { agentRole, isActive: true },
+        select: { coldStartDescription: true, coldStartPrompts: true },
+      })
+      if (dbAgent?.coldStartPrompts?.length > 0) {
+        config = {
+          description: dbAgent.coldStartDescription || agentRole,
+          prompts: dbAgent.coldStartPrompts,
+        }
+        console.log(`   📂 [${agentRole}] Prompturi încărcate din DB (${config.prompts.length} prompts)`)
+      }
+    } catch { /* DB unavailable — continue to error */ }
+  }
 
   if (!config) {
     throw new Error(
@@ -738,8 +756,8 @@ export async function runColdStart(
     }
   }
 
-  // Generează entries
-  const result = await generateColdStartEntries(agentRole, options)
+  // Generează entries (cu fallback la DB pentru prompturi)
+  const result = await generateColdStartEntries(agentRole, { ...options, prisma })
 
   // Persistă în DB
   let persisted = 0
