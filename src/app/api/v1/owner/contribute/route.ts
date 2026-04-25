@@ -29,6 +29,9 @@ const ContributionSchema = z.discriminatedUnion("type", [
     agentResponse: z.string().optional(),
     ownerFeedback: z.string().min(5),
     wasCorrect: z.boolean(),
+    // "mirror" = Owner pune întrebări, agentul descoperă singur → autonomie crește
+    // "direct" = Owner validează/corectează → convingere crește dar autonomie nu
+    dialogueMode: z.enum(["mirror", "direct"]).default("direct"),
   }),
   // C. Evaluare calitate rezultat task
   z.object({
@@ -123,19 +126,43 @@ export async function POST(req: NextRequest) {
           let state = await loadCognitiveState(data.agentRole)
           if (!state) state = createInitialState(data.agentRole)
 
+          const isMirror = data.dialogueMode === "mirror"
+
           if (data.wasCorrect) {
-            state.current.moralConviction = Math.min(100, (state.current.moralConviction ?? 50) + 8)
-            effects.push(`${data.agentRole} convingere morală +8 (răspuns corect)`)
+            // Agentul a răspuns corect
+            state.current.moralConviction = Math.min(100, (state.current.moralConviction ?? 50) + (isMirror ? 5 : 8))
+            if (isMirror) {
+              // Oglindă: agentul a descoperit SINGUR → autonomie crește
+              state.current.certaintyLevel = Math.min(95, state.current.certaintyLevel + 3)
+              effects.push(`${data.agentRole} convingere +5, certitudine +3 (a descoperit singur prin oglindă)`)
+            } else {
+              effects.push(`${data.agentRole} convingere morală +8 (validat direct de Owner)`)
+            }
           } else {
-            state.current.moralConviction = Math.max(10, (state.current.moralConviction ?? 50) - 3)
-            state.integratedLessons.push({
-              date: new Date().toISOString().slice(0, 10),
-              trigger: `Dialog moral Owner: "${data.dilemma.slice(0, 50)}"`,
-              lesson: data.ownerFeedback.slice(0, 100),
-              behaviorChange: "Corecție de la Owner — integrare în curs",
-              validated: false,
-            })
-            effects.push(`${data.agentRole} lecție morală integrată (corecție Owner)`)
+            // Agentul a greșit
+            if (isMirror) {
+              // Oglindă: Owner l-a ghidat cu întrebări să vadă singur greșeala → învață mai profund
+              state.current.moralConviction = Math.min(100, (state.current.moralConviction ?? 50) + 2)
+              state.integratedLessons.push({
+                date: new Date().toISOString().slice(0, 10),
+                trigger: `Dialog oglindă Owner: "${data.dilemma.slice(0, 50)}"`,
+                lesson: `Am descoperit singur prin întrebările Owner: ${data.ownerFeedback.slice(0, 80)}`,
+                behaviorChange: "Insight propriu — integrare profundă",
+                validated: true, // descoperit singur = deja validat
+              })
+              effects.push(`${data.agentRole} lecție prin oglindă (descoperire proprie, +2 convingere)`)
+            } else {
+              // Direct: Owner corectează → învață dar dependență
+              state.current.moralConviction = Math.max(10, (state.current.moralConviction ?? 50) - 3)
+              state.integratedLessons.push({
+                date: new Date().toISOString().slice(0, 10),
+                trigger: `Corecție directă Owner: "${data.dilemma.slice(0, 50)}"`,
+                lesson: data.ownerFeedback.slice(0, 100),
+                behaviorChange: "Corecție de la Owner — integrare în curs",
+                validated: false,
+              })
+              effects.push(`${data.agentRole} lecție directă (-3 convingere, pendinte validare)`)
+            }
           }
 
           state.lastUpdated = new Date().toISOString()
