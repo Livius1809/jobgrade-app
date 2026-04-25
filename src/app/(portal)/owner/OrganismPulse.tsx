@@ -97,7 +97,7 @@ export default function OrganismPulse({
   tests,
 }: OrganismPulseProps) {
   const [expandedTest, setExpandedTest] = useState<number | null>(null)
-  const config = VERDICT_CONFIG[verdict]
+  const config = VERDICT_CONFIG[verdict] || VERDICT_CONFIG[verdict === "HEALTHY" ? "ALIVE" : verdict === "WARNING" ? "WEAKENED" : "UNKNOWN"]
 
   return (
     <section
