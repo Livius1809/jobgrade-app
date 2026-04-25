@@ -52,37 +52,37 @@ const CATEGORY_MAP: Record<
   LEGAL_REG: {
     primaryRole: "CIA",
     taskType: "INVESTIGATION",
-    priority: "HIGH",
+    priority: "IMPORTANT_URGENT",
     titlePrefix: "REACT LEGAL",
   },
   MARKET_HR: {
     primaryRole: "MKA",
     taskType: "DATA_ANALYSIS",
-    priority: "HIGH",
+    priority: "URGENT",
     titlePrefix: "REACT PIAȚĂ HR",
   },
   TECH_AI: {
     primaryRole: "CIA",
     taskType: "INVESTIGATION",
-    priority: "MEDIUM",
+    priority: "IMPORTANT",
     titlePrefix: "REACT TECH/AI",
   },
   COMPETITOR: {
     primaryRole: "CIA",
     taskType: "INVESTIGATION",
-    priority: "HIGH",
+    priority: "URGENT",
     titlePrefix: "REACT COMPETITOR",
   },
   CULTURAL_SOCIAL: {
     primaryRole: "MKA",
     taskType: "DATA_ANALYSIS",
-    priority: "MEDIUM",
+    priority: "IMPORTANT",
     titlePrefix: "REACT SOCIAL",
   },
   MACRO_ECONOMIC: {
     primaryRole: "COG",
     taskType: "DATA_ANALYSIS",
-    priority: "MEDIUM",
+    priority: "IMPORTANT",
     titlePrefix: "REACT MACRO",
   },
 }
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
 
     // Creează task
     const deadline = new Date(
-      Date.now() + (mapping.priority === "HIGH" ? 48 : 72) * 60 * 60 * 1000,
+      Date.now() + (mapping.priority === "IMPORTANT_URGENT" || mapping.priority === "URGENT" ? 48 : 72) * 60 * 60 * 1000,
     )
     const task = await (prisma as any).agentTask.create({
       data: {

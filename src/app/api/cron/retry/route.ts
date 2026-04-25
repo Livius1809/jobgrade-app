@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
           assignedTo: managerRole,
           assignedBy: "SYSTEM",
           status: "ASSIGNED",
-          priority: "HIGH",
+          priority: "URGENT",
           taskType: "INVESTIGATION",
           businessId: task.businessId,
           objectiveId: task.objectiveId,

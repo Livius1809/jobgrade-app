@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       title: `Raport cerut de Owner: ${subject.trim().slice(0, 150)}`,
       description: `Owner-ul a cerut un raport punctual.\n\nSubiect: ${subject.trim()}\n\nInstructiuni:\n- Analizeaza datele disponibile si genereaza un raport structurat\n- Depune raportul in Inbox Owner cand e gata (POST /api/v1/owner/report)\n- Foloseste sectiuni clare: situatie curenta, constatari, recomandari\n- Fii concis dar complet\n- Prioritate: HIGH`,
       taskType: "CONTENT_CREATION",
-      priority: "HIGH",
+      priority: "URGENT",
       status: "PENDING",
       createdBy: "OWNER",
     },

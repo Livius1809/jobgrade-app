@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
           assignedTo: role,
           assignedBy: "COSO",
           status: "ASSIGNED",
-          priority: "HIGH", // Semnale externe = max HIGH (nu CRITICAL — economie Sonnet)
+          priority: "URGENT", // Semnale externe = URGENT (presiune timp)
           taskType: "INVESTIGATION",
           businessId: "biz_jobgrade",
           objectiveId: objective?.id || null,

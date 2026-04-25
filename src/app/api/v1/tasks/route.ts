@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { AgentTaskType, AgentTaskPriority, AgentTaskStatus } from "@/generated/prisma"
+import { normalizePriority } from "@/lib/tasks/priority"
 import {
   convertInterventionsToTasks,
   computeTaskQueueStats,
@@ -112,7 +113,7 @@ const createSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().min(10),
   taskType: z.enum(["KB_RESEARCH", "KB_VALIDATION", "DATA_ANALYSIS", "CONTENT_CREATION", "PROCESS_EXECUTION", "REVIEW", "INVESTIGATION", "OUTREACH"]),
-  priority: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]).optional().default("MEDIUM"),
+  priority: z.enum(["IMPORTANT_URGENT", "URGENT", "IMPORTANT", "NECESAR", "CRITICAL", "HIGH", "MEDIUM", "LOW"]).optional().default("NECESAR"),
   objectiveId: z.string().optional(),
   tags: z.array(z.string()).optional().default([]),
   deadlineAt: z.string().datetime().optional(),
@@ -246,7 +247,7 @@ export async function POST(req: NextRequest) {
             title: `RECOVERY: ${task.title}`,
             description: `Task original expirat (id=${task.id}, asignat la ${task.assignedTo}). Decide: (a) reasignare la alt subordonat, (b) extindere deadline cu notificare client, (c) abandon cu lecție învățată. Context original:\n${task.description ?? "(fără descriere)"}`,
             taskType: "INVESTIGATION",
-            priority: "HIGH",
+            priority: "URGENT",
             status: "ASSIGNED",
             deadlineAt: new Date(now.getTime() + 4 * 3600000), // 4h
             tags: ["recovery", "task_expired", `original:${task.id}`, `original_assignee:${task.assignedTo}`],
@@ -257,11 +258,12 @@ export async function POST(req: NextRequest) {
         recoveryTasksCreated++
 
         // 3. Pentru taskuri CRITICAL/HIGH, creează și disfunction event (D2 functional management)
-        if (task.priority === "CRITICAL" || task.priority === "HIGH") {
+        const np = normalizePriority(task.priority)
+        if (np === "IMPORTANT_URGENT" || np === "URGENT") {
           await prisma.disfunctionEvent.create({
             data: {
               class: "D2_FUNCTIONAL_MGMT",
-              severity: task.priority === "CRITICAL" ? "CRITICAL" : "HIGH",
+              severity: np === "IMPORTANT_URGENT" ? "CRITICAL" : "HIGH",
               status: "OPEN",
               targetType: "ROLE",
               targetId: task.assignedTo,
@@ -302,7 +304,7 @@ export async function POST(req: NextRequest) {
       title: input.title,
       description: input.description,
       taskType: input.taskType as AgentTaskType,
-      priority: (input.priority as AgentTaskPriority) ?? "MEDIUM",
+      priority: normalizePriority(input.priority) as AgentTaskPriority,
       objectiveId: input.objectiveId,
       tags: input.tags,
       deadlineAt: input.deadlineAt ? new Date(input.deadlineAt) : null,

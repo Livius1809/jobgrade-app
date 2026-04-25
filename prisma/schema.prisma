@@ -2598,7 +2598,7 @@ model AgentTask {
   title           String          // rezumat scurt
   description     String          @db.Text  // detalii complete
   taskType        AgentTaskType
-  priority        AgentTaskPriority @default(MEDIUM)
+  priority        AgentTaskPriority @default(NECESAR)
 
   // Context
   objectiveId     String?         // legat de un OrganizationalObjective
@@ -2658,10 +2658,16 @@ enum AgentTaskType {
 }
 
 enum AgentTaskPriority {
-  CRITICAL    // deadline <2h
-  HIGH        // deadline <8h
-  MEDIUM      // deadline <24h
-  LOW         // deadline >24h sau fără deadline
+  IMPORTANT_URGENT  // 1. Important și urgent — trebuie rezolvat ACUM
+  URGENT            // 2. Urgent — presiune de timp, dar nu neapărat strategic
+  IMPORTANT         // 3. Important — impact mare, dar fără presiune imediată
+  NECESAR           // 4. Necesar — trebuie făcut, dar poate aștepta
+
+  // Legacy mapping (backwards compat — nu se mai folosesc la creare)
+  CRITICAL    // → IMPORTANT_URGENT
+  HIGH        // → URGENT
+  MEDIUM      // → IMPORTANT
+  LOW         // → NECESAR
 }
 
 enum AgentTaskStatus {
