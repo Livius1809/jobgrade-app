@@ -8,8 +8,43 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 import { matchProfiles, type CriteriaProfile } from "@/lib/b2c/matching-engine"
+import Anthropic from "@anthropic-ai/sdk"
 
 export const dynamic = "force-dynamic"
+export const maxDuration = 30
+
+/**
+ * Estimează criteriile unui post din descriere când nu are evaluare JE.
+ * Folosește Claude Haiku (rapid + ieftin) pentru estimare.
+ */
+async function estimateJobCriteria(job: any): Promise<CriteriaProfile> {
+  try {
+    const jobText = [
+      job.title && `Titlu: ${job.title}`,
+      job.purpose && `Scop: ${job.purpose}`,
+      job.description && `Descriere: ${job.description}`,
+      job.responsibilities && `Responsabilități: ${job.responsibilities}`,
+      job.requirements && `Cerințe: ${job.requirements}`,
+    ].filter(Boolean).join("\n")
+
+    if (jobText.length < 20) return {}
+
+    const client = new Anthropic()
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 200,
+      system: `Estimează nivelul pe 6 criterii JobGrade pentru un post. Răspunde DOAR cu JSON valid:
+{"Knowledge":"A-G","Communications":"A-E","ProblemSolving":"A-G","DecisionMaking":"A-G","BusinessImpact":"A-D","WorkingConditions":"A-C"}
+A=minim, G=maxim. Fii realist, nu infla.`,
+      messages: [{ role: "user", content: jobText.slice(0, 1500) }],
+    })
+
+    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    return JSON.parse(text) as CriteriaProfile
+  } catch {
+    return {}
+  }
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -67,9 +102,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Dacă nu are evaluare JE, estimăm din cerințe (nedeterminat)
+  // Dacă nu are evaluare JE, estimăm criteriile din descrierea postului via Claude
   if (Object.keys(jobProfile).length === 0) {
-    // Fără JE — toate nedeterminate
+    const estimated = await estimateJobCriteria(job)
+    Object.assign(jobProfile, estimated)
   }
 
   // Matching

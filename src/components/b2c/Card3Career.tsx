@@ -688,6 +688,7 @@ export default function Card3Career({ userId }: { userId: string }) {
             <p className="text-xs text-gray-400">{matchedJob?.company}</p>
           </div>
 
+          {/* GRATUIT: rezumat + scor per criteriu */}
           <p className="text-sm text-gray-700 mb-4 bg-gray-50 rounded-lg p-3">{matchResult.forCandidate}</p>
 
           <div className="space-y-2">
@@ -702,14 +703,49 @@ export default function Card3Career({ userId }: { userId: string }) {
             ))}
           </div>
 
-          <div className="mt-6 flex gap-3">
-            <button onClick={() => setStep("jobs")} className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50">
-              Alte posturi
-            </button>
-            <button className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm hover:bg-indigo-700">
-              Consiliere interviu
-            </button>
+          {/* TRANZIȚIE GRATUIT → PLĂTIT */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
+            <p className="text-xs text-indigo-600 font-medium mb-2">Vrei sa afli mai mult?</p>
+            <p className="text-[11px] text-gray-600 mb-3">
+              Ai vazut scorul si directia generala. Pentru a sti exact ce sa faci, ai nevoie de:
+            </p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-start gap-2">
+                <span className="text-indigo-400 text-xs mt-0.5">1.</span>
+                <div>
+                  <p className="text-xs font-medium text-gray-800">Raport detaliat de compatibilitate</p>
+                  <p className="text-[10px] text-gray-500">Analiza aprofundata pe fiecare criteriu cu plan concret de dezvoltare</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-indigo-400 text-xs mt-0.5">2.</span>
+                <div>
+                  <p className="text-xs font-medium text-gray-800">Consiliere interviu personalizata</p>
+                  <p className="text-[10px] text-gray-500">Intrebari probabile, puncte forte de evidentiat, puncte slabe de gestionat</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-indigo-400 text-xs mt-0.5">3.</span>
+                <div>
+                  <p className="text-xs font-medium text-gray-800">Ghid de selectie posturi</p>
+                  <p className="text-[10px] text-gray-500">Ce criterii sa prioritizezi cand alegi intre mai multe oferte</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button className="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700">
+                Deblocheaza raportul complet
+              </button>
+              <button className="flex-1 bg-purple-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">
+                Consiliere interviu
+              </button>
+            </div>
+            <p className="text-[9px] text-gray-400 text-center mt-2">Se debiteaza din credite. Nu ai credite? Oferi mai multe date = primesti mai mult gratuit.</p>
           </div>
+
+          <button onClick={() => setStep("jobs")} className="mt-4 w-full border border-gray-300 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">
+            Verifica alte posturi (gratuit)
+          </button>
         </div>
       )}
     </div>
