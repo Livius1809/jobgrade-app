@@ -99,10 +99,30 @@ export async function GET() {
     if (oldEscalations > 3 && overallStatus === "alive") overallStatus = "degraded"
   } catch {}
 
+  // Verificare externă servicii dependente
+  // 6b. Anthropic API
+  try {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (apiKey) {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 1, messages: [{ role: "user", content: "ping" }] }),
+        signal: controller.signal,
+      }).catch(() => null)
+      clearTimeout(timeout)
+      checks.anthropicApi = { ok: res !== null && res.status < 500, detail: res ? `status ${res.status}` : "unreachable" }
+      if (!checks.anthropicApi.ok && overallStatus === "alive") overallStatus = "degraded"
+    }
+  } catch { checks.anthropicApi = { ok: false, detail: "check failed" } }
+
   return NextResponse.json({
     status: overallStatus,
     timestamp: new Date().toISOString(),
     checks,
+    // UptimeRobot-friendly: dacă status != alive, HTTP 503 → alertă
   }, {
     status: overallStatus === "critical" ? 503 : 200,
   })

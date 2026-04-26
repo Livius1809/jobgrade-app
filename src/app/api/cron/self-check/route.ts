@@ -297,7 +297,61 @@ export async function GET(req: NextRequest) {
     }
   } catch (e: any) { checks.push({ name: "proactive-cycles", status: "error", detail: e.message }) }
 
-  // ── Rezumat ───────────────────────────────────────────────
+  // ── 10. Circuit breaker + budget cap ──────────────────────
+  try {
+    const { getAllCircuits, checkBudgetCap } = await import("@/lib/agents/circuit-breaker")
+    const circuits = getAllCircuits()
+    const openCircuits = Object.values(circuits).filter(c => c.status === "OPEN")
+    if (openCircuits.length > 0) {
+      checks.push({ name: "circuit-breakers", status: "escalated", detail: `${openCircuits.length} OPEN: ${openCircuits.map(c => c.key).join(", ")}` })
+    } else {
+      checks.push({ name: "circuit-breakers", status: "ok", detail: `${Object.keys(circuits).length} monitored` })
+    }
+    const budget = await checkBudgetCap()
+    checks.push({
+      name: "budget-cap",
+      status: budget.allowed ? "ok" : "escalated",
+      detail: `$${budget.spent}/$${budget.cap} (${budget.remaining} remaining)`,
+    })
+  } catch (e: any) { checks.push({ name: "circuit-breakers", status: "error", detail: e.message }) }
+
+  // ── 11. KB decay (neaccesate 90+ zile) ────────────────────
+  try {
+    const decayThreshold = new Date(now.getTime() - 90 * 24 * 3600000)
+    const decayed = await p.kBEntry.count({ where: { status: "PERMANENT", usageCount: 0, createdAt: { lt: decayThreshold } } }).catch(() => 0)
+    checks.push({ name: "kb-decay", status: decayed > 200 ? "escalated" : "ok", detail: `${decayed} stale entries (90+ zile, 0 usage)` })
+  } catch (e: any) { checks.push({ name: "kb-decay", status: "error", detail: e.message }) }
+
+  // ── 12. Toxic self-loops (agent creează >20 taskuri pentru sine/24h) ──
+  try {
+    const loops = await p.$queryRaw`
+      SELECT "assignedTo" as role, COUNT(*)::int as cnt FROM agent_tasks
+      WHERE "assignedBy" = "assignedTo" AND "createdAt" > ${new Date(now.getTime() - 24 * 3600000)}
+      GROUP BY "assignedTo" HAVING COUNT(*) > 20
+    `.catch(() => []) as any[]
+    checks.push({
+      name: "toxic-loops",
+      status: loops.length > 0 ? "escalated" : "ok",
+      detail: loops.length > 0 ? `Self-loops: ${loops.map((r: any) => `${r.role}(${r.cnt})`).join(", ")}` : "clean",
+    })
+  } catch (e: any) { checks.push({ name: "toxic-loops", status: "error", detail: e.message }) }
+
+  // ── 13. DB integrity — relații orfane ─────────────────────
+  try {
+    const orphans = await p.$queryRaw`
+      SELECT ar."childRole" as role FROM agent_relationships ar
+      WHERE ar."isActive" = true AND NOT EXISTS (
+        SELECT 1 FROM agent_definitions ad WHERE ad."agentRole" = ar."childRole" AND ad."isActive" = true
+      )
+    `.catch(() => []) as any[]
+    checks.push({
+      name: "db-integrity",
+      status: orphans.length > 0 ? "escalated" : "ok",
+      detail: orphans.length > 0 ? `${orphans.length} orphan relationships` : "clean",
+    })
+  } catch (e: any) { checks.push({ name: "db-integrity", status: "error", detail: e.message }) }
+
+  //── Rezumat ───────────────────────────────────────────────
   const repaired = checks.filter(c => c.status === "repaired").length
   const escalated = checks.filter(c => c.status === "escalated").length
   const errors = checks.filter(c => c.status === "error").length
