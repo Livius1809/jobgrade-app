@@ -659,6 +659,13 @@ export default async function OwnerDashboard() {
                 <div style={{ height: "4px" }} />
                 <p className="text-[10px] text-slate-400">Status evolutiv Tier 1/2/3</p>
               </Link>
+              <Link href="/owner/maturity" className="block rounded-2xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">🌱</span>
+                <div style={{ height: "8px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Mother Maturity</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-[10px] text-slate-400">Pricepere mostenita fara limite</p>
+              </Link>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
