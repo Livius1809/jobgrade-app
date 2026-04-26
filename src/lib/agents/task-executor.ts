@@ -1077,6 +1077,59 @@ function runQualityCheck(content: string, agentRole: string): string[] {
   return issues
 }
 
+// ─── KB Pre-resolution: verifică dacă task-ul se rezolvă din cunoaștere existentă ──
+
+async function tryResolveFromKB(
+  task: any,
+  kbEntries: any[]
+): Promise<{ result: string; source: string } | null> {
+  // Doar task-uri simple de tip KB_RESEARCH, REVIEW, INVESTIGATION beneficiază
+  const kbResolvableTypes = ["KB_RESEARCH", "REVIEW", "INVESTIGATION"]
+  if (!kbResolvableTypes.includes(task.taskType)) return null
+
+  // Caută semantic în KB-ul agentului
+  try {
+    const { searchKB } = await import("@/lib/kb/search")
+    const query = `${task.title} ${task.description || ""}`.slice(0, 500)
+    const results = await searchKB(task.assignedTo, query, 5)
+
+    // Filtrăm doar rezultate cu similaritate foarte mare (>0.80)
+    const highMatch = results.filter(r => (r.similarity ?? 0) > 0.80)
+
+    if (highMatch.length >= 2) {
+      // Avem suficientă cunoaștere — construim răspunsul din KB
+      const kbContent = highMatch
+        .map((r, i) => `${i + 1}. [${r.source}, conf: ${r.confidence}] ${r.content}`)
+        .join("\n\n")
+
+      return {
+        result: `[Rezolvat din KB — ${highMatch.length} entries relevante, fără apel API]\n\n${kbContent}`,
+        source: `KB own (${highMatch.length} entries, similarity > 0.80)`,
+      }
+    }
+
+    // Caută și la L2 consultanți
+    const { searchKBCrossAgent } = await import("@/lib/kb/search")
+    const crossResults = await searchKBCrossAgent(query, 5, 0.80)
+    const crossHighMatch = crossResults.filter(r => (r.similarity ?? 0) > 0.85)
+
+    if (crossHighMatch.length >= 2) {
+      const kbContent = crossHighMatch
+        .map((r, i) => `${i + 1}. [${r.agentRole}, ${r.source}, conf: ${r.confidence}] ${r.content}`)
+        .join("\n\n")
+
+      return {
+        result: `[Rezolvat din KB L2 — ${crossHighMatch.length} entries cross-agent, fără apel API]\n\n${kbContent}`,
+        source: `KB L2 cross-agent (${crossHighMatch.length} entries, similarity > 0.85)`,
+      }
+    }
+  } catch {
+    // Semantic search indisponibil — continuă cu Claude
+  }
+
+  return null
+}
+
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 export async function executeTask(taskId: string): Promise<ExecutorResult> {
@@ -1099,6 +1152,29 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
   })
 
   try {
+    // ── Pre-verificare KB: poate fi rezolvat fără apel Claude? ──
+    const kbResolution = await tryResolveFromKB(task, ctx.kbEntries)
+    if (kbResolution) {
+      // Rezolvat din KB — zero cost API
+      await (prisma as any).agentTask.update({
+        where: { id: taskId },
+        data: {
+          status: "COMPLETED",
+          completedAt: new Date(),
+          result: kbResolution.result,
+          kbHit: true,
+          startedAt: new Date(),
+        },
+      })
+      console.log(`[executor] ${task.assignedTo}/${taskId}: RESOLVED FROM KB (${kbResolution.source})`)
+      return {
+        taskId,
+        outcome: "COMPLETED",
+        result: kbResolution.result,
+        durationMs: Date.now() - startTime,
+      }
+    }
+
     const system = await buildSystemForExecutor(task.assignedTo, description, taskId, task.title, task.description)
     const userMessage = buildUserMessage(ctx)
 
