@@ -769,9 +769,27 @@ export async function runProactiveCycle(
     () => [] as Escalation[]
   )
 
-  // 4. EVALUARE (Claude) — pe config efectiv
+  // FIX #7: Colectăm rezultatele self-task-urilor pentru context evaluare
+  let selfTaskContext = ""
+  if (selfTasksExecuted > 0) {
+    const recentSelfResults = await prisma.agentTask.findMany({
+      where: { assignedTo: config.agentRole, status: "COMPLETED", completedAt: { gte: new Date(Date.now() - 48 * 3600000) } },
+      select: { title: true, result: true },
+      take: 3,
+      orderBy: { completedAt: "desc" },
+    }).catch(() => [])
+    if (recentSelfResults.length > 0) {
+      selfTaskContext = `\n\nTASKURILE TALE PROPRII COMPLETATE RECENT (folosește-le ca context):\n${recentSelfResults.map((t: any) => `- ${t.title}: ${(t.result || "").slice(0, 200)}`).join("\n")}`
+    }
+  }
+
+  // 4. EVALUARE (Claude) — pe config efectiv + self-task context
+  const evalConfig = selfTaskContext
+    ? { ...effectiveConfig, objectives: [...effectiveConfig.objectives, selfTaskContext] }
+    : effectiveConfig
+
   const { evaluations, actions, summary } = await evaluateSubordinates(
-    effectiveConfig,
+    evalConfig,
     statuses,
     activeEscalations,
     options?.apiKey,

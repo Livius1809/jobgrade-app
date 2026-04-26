@@ -587,7 +587,10 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
         blockedAt: now,
       },
     })
-    // Notificare Owner dacă blocajul depinde de conducere
+    // FIX #15: Escalare duală (complementară, nu conflictuală):
+    // - AICI (instant): notificare Owner doar dacă blocajul e strategic/buget/conducere
+    // - SELF-CHECK (orar): escalare la manager dacă BLOCKED > 24h (orice tip)
+    // Cele două se completează: urgențe strategice → Owner imediat, restul → manager la 24h
     const blockerDesc = payload.blocker?.description || payload.summary || ""
     if (/owner|conducere|decizie.*strategic|buget|finanț/i.test(blockerDesc)) {
       try {
@@ -1205,7 +1208,10 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
         wasFirstAttempt: !(task.tags || []).some((t: string) => t.startsWith("retry:")),
         taskType: task.taskType,
       })
-    } catch {} // fire-and-forget
+    } catch (cogErr: any) {
+      // FIX #11: Log cognitive state errors instead of silencing
+      console.warn(`[executor] Cognitive state update failed for ${task.assignedTo}: ${cogErr.message?.slice(0, 100)}`)
+    }
 
     return {
       taskId,
