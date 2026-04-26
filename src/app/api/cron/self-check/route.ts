@@ -83,6 +83,56 @@ export async function GET(req: NextRequest) {
     }
   } catch (e: any) { checks.push({ name: "stale-tasks", status: "error", detail: e.message }) }
 
+  // ── 2b. FIX #3: Taskuri BLOCKED > 24h → escalare automată la manager ──
+  try {
+    const blockedThreshold = new Date(now.getTime() - 24 * 3600000)
+    const blockedTasks = await p.agentTask.findMany({
+      where: { status: "BLOCKED", blockedAt: { lt: blockedThreshold } },
+      select: { id: true, assignedTo: true, title: true, blockerDescription: true, blockedAt: true, objectiveId: true },
+      take: 20,
+    })
+
+    if (blockedTasks.length > 0) {
+      // Găsește managerul fiecărui agent blocat
+      const relationships = await p.agentRelationship.findMany({
+        where: { relationType: "REPORTS_TO", isActive: true },
+        select: { childRole: true, parentRole: true },
+      })
+      const managerOf = new Map(relationships.map((r: any) => [r.childRole, r.parentRole]))
+
+      let escalated = 0
+      for (const task of blockedTasks) {
+        const manager = managerOf.get(task.assignedTo) || "COA"
+        const hoursBlocked = Math.round((now.getTime() - new Date(task.blockedAt).getTime()) / 3600000)
+
+        // Creează task de escalare la manager
+        await p.agentTask.create({
+          data: {
+            businessId: "biz_jobgrade",
+            assignedBy: "SYSTEM",
+            assignedTo: manager,
+            title: `Escalare: ${task.assignedTo} blocat de ${hoursBlocked}h pe "${task.title?.slice(0, 60)}"`,
+            description: `Agentul ${task.assignedTo} este BLOCAT de ${hoursBlocked} ore.\nTask: ${task.title}\nMotiv blocaj: ${task.blockerDescription || "nespecificat"}\n\nDecide: (a) deblochează oferind informația lipsă, (b) reasignează la alt agent, (c) escalează mai sus.`,
+            taskType: "INVESTIGATION",
+            priority: "HIGH",
+            status: "ASSIGNED",
+            objectiveId: task.objectiveId,
+            tags: ["auto-escalation", "blocked-task", `original:${task.id}`, `agent:${task.assignedTo}`],
+          },
+        }).catch(() => {})
+        escalated++
+      }
+      checks.push({
+        name: "blocked-escalation",
+        status: "repaired",
+        detail: `${escalated} blocked tasks (>24h) escalated to managers`,
+        repairAction: blockedTasks.slice(0, 5).map((t: any) => `${t.assignedTo}→${managerOf.get(t.assignedTo) || "COA"}`).join(", "),
+      })
+    } else {
+      checks.push({ name: "blocked-escalation", status: "ok", detail: "no long-blocked tasks" })
+    }
+  } catch (e: any) { checks.push({ name: "blocked-escalation", status: "error", detail: e.message }) }
+
   // ── 3. Agenți inactivi (0 tasks + 0 KB în 7 zile) ────────
   try {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 3600000)

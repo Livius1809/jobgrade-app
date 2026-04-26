@@ -745,6 +745,8 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
         result: resultWithActions,
       },
     })
+    // Învățare și din task-uri REVIEW_PENDING — nu așteptăm aprobarea managerului
+    await autoExtractLearning(task, resultWithActions)
     return { outcome: "COMPLETED", subTaskIds }
   }
 
@@ -759,7 +761,30 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
       result: resultWithActions,
     },
   })
+
+  // ── FIX #1: Învățare automată din ORICE task COMPLETED ──
+  // Nu doar când managerul aprobă — organismul învață din tot ce face
+  await autoExtractLearning(task, resultWithActions)
+
   return { outcome: "COMPLETED", subTaskIds }
+}
+
+// ── Învățare automată post-execuție ────────────────────────────────────────────
+
+async function autoExtractLearning(task: any, result: string): Promise<void> {
+  try {
+    const { extractPostExecutionLearning } = await import("./learning-pipeline")
+    await extractPostExecutionLearning({
+      taskId: task.id,
+      agentRole: task.assignedTo,
+      taskTitle: task.title,
+      taskType: task.taskType,
+      result,
+      wasSuccessful: true,
+    })
+  } catch {
+    // Non-blocking — nu întrerupem task-ul dacă learning eșuează
+  }
 }
 
 // ─── Action Executor — COG poate executa acțiuni operaționale ────────────────

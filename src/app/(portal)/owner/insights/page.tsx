@@ -144,16 +144,35 @@ export default async function InsightsPage() {
       ORDER BY ad.level, ad."agentRole"
     `.catch(() => []) as any[]
 
+    // FIX #5: Adăugăm context cauzal — escalări + blocaje per agent
+    const escalationsByRole = await p.$queryRaw`
+      SELECT "aboutRole" as role, COUNT(*)::int as cnt
+      FROM escalations WHERE status = 'OPEN'
+      GROUP BY "aboutRole"
+    `.catch(() => []) as any[]
+    const escMap = new Map(escalationsByRole.map((e: any) => [e.role, e.cnt]))
+
+    const blockedTasksByRole = await p.$queryRaw`
+      SELECT "assignedTo" as role, COUNT(*)::int as cnt,
+             MIN("blockedAt")::text as oldest_blocked
+      FROM agent_tasks WHERE status = 'BLOCKED'
+      GROUP BY "assignedTo"
+    `.catch(() => []) as any[]
+    const blockMap = new Map(blockedTasksByRole.map((b: any) => [b.role, { cnt: b.cnt, oldest: b.oldest_blocked }]))
+
     heatMap = {
       processes: agentHealth.map((a: any) => {
         const tasks = Number(a.tasks || 0)
         const completed = Number(a.completed || 0)
         const blocked = Number(a.blocked || 0)
         const learned = Number(a.learned || 0)
+        const escalations = escMap.get(a.role) || 0
+        const blockedInfo = blockMap.get(a.role)
 
         let health: "green" | "yellow" | "red" = "green"
         if (tasks === 0 && learned === 0) health = "red" // inactiv
-        else if (blocked > 0 || (tasks > 0 && completed / tasks < 0.5)) health = "yellow"
+        else if (blocked > 0 || escalations > 0 || (tasks > 0 && completed / tasks < 0.5)) health = "yellow"
+        if (escalations > 2 || (blockedInfo && blockedInfo.cnt > 3)) health = "red"
 
         return {
           role: a.role,
@@ -165,6 +184,9 @@ export default async function InsightsPage() {
           blocked,
           learned,
           health,
+          escalations,
+          blockedTotal: blockedInfo?.cnt || 0,
+          oldestBlocked: blockedInfo?.oldest || null,
         }
       }),
     }
@@ -516,10 +538,15 @@ export default async function InsightsPage() {
                 p.health === "yellow" ? "bg-amber-100 hover:bg-amber-200" :
                 "bg-red-100 hover:bg-red-200"
               }`}
-              title={`${p.name}: ${p.tasks} tasks, ${p.completed} done, ${p.blocked} amânat, ${p.learned} învățat`}
+              title={`${p.name}: ${p.tasks} tasks, ${p.completed} done, ${p.blocked} amânat, ${p.learned} învățat${p.escalations ? `, ${p.escalations} escalări` : ""}${p.blockedTotal ? `, ${p.blockedTotal} blocate` : ""}`}
             >
               <p className="text-[8px] font-bold text-slate-600 truncate">{p.role}</p>
               <p className="text-[10px] text-slate-500">{p.completed}/{p.tasks}</p>
+              {(p.escalations > 0 || p.blockedTotal > 0) && (
+                <p className="text-[7px] text-red-500 mt-0.5">
+                  {p.escalations > 0 ? `${p.escalations} esc` : ""}{p.escalations > 0 && p.blockedTotal > 0 ? " · " : ""}{p.blockedTotal > 0 ? `${p.blockedTotal} blk` : ""}
+                </p>
+              )}
             </div>
           ))}
         </div>

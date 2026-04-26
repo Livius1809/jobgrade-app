@@ -110,6 +110,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── FIX #2: Patches PROPOSED → taskuri automate de corecție ──
+  let tasksCreated = 0
+  if (!dryRun && createdPatches.length > 0) {
+    for (const action of actions) {
+      const targetRole = (action.patchSpec as any)?.targetRole || "COA"
+      try {
+        await prisma.agentTask.create({
+          data: {
+            businessId,
+            assignedBy: "SYSTEM",
+            assignedTo: targetRole,
+            title: `Auto-corecție: ${action.rationale?.slice(0, 100) || "homeostasis deviation"}`,
+            description: `Self-regulation a detectat o deviație homeostatică.\n\nRațiune: ${action.rationale}\nTip patch: ${action.patchType}\nSpec: ${JSON.stringify(action.patchSpec)}\n\nAcțiune: aplică corecția sau escalează dacă nu poți.`,
+            taskType: "PROCESS_EXECUTION",
+            priority: "HIGH",
+            status: "ASSIGNED",
+            tags: ["self-regulation", "auto-correction", `patch:${action.patchType}`],
+          },
+        })
+        tasksCreated++
+      } catch { /* non-blocking */ }
+    }
+  }
+
   return NextResponse.json({
     generatedAt: new Date().toISOString(),
     businessId,
@@ -119,5 +143,6 @@ export async function POST(req: NextRequest) {
     actions,
     summary,
     createdPatches,
+    tasksCreated,
   })
 }

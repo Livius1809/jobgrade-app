@@ -239,7 +239,23 @@ export async function propagateEntry(
   prisma: any,
   options?: { apiKey?: string; dryRun?: boolean }
 ): Promise<PropagationResult> {
-  const targets = PROPAGATION_RULES[entry.agentRole] || []
+  // FIX #4: Folosește reguli statice + fallback la DB relationships
+  let targets = PROPAGATION_RULES[entry.agentRole] || []
+  if (targets.length === 0) {
+    // Fallback: derivă targets din ierarhia DB (cine raportează la acest agent)
+    try {
+      const children = await prisma.agentRelationship.findMany({
+        where: { parentRole: entry.agentRole, relationType: "REPORTS_TO", isActive: true },
+        select: { childRole: true },
+      })
+      if (children.length > 0) {
+        targets = children.map((c: any) => ({
+          targetRole: c.childRole,
+          abstractionHint: `Cunoaștere de la ${entry.agentRole} relevantă pentru subordonatul ${c.childRole}`,
+        }))
+      }
+    } catch { /* DB unavailable — skip */ }
+  }
   const result: PropagationResult = {
     sourceRole: entry.agentRole,
     sourceEntryId: entry.id,
