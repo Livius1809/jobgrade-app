@@ -1077,54 +1077,42 @@ function runQualityCheck(content: string, agentRole: string): string[] {
   return issues
 }
 
-// ─── KB Pre-resolution: verifică dacă task-ul se rezolvă din cunoaștere existentă ──
+// ─── KB Pre-resolution: aceeași logică ca self-complete (KB → L2 → Claude → Owner) ──
 
 async function tryResolveFromKB(
   task: any,
   kbEntries: any[]
 ): Promise<{ result: string; source: string } | null> {
-  // Doar task-uri simple de tip KB_RESEARCH, REVIEW, INVESTIGATION beneficiază
-  const kbResolvableTypes = ["KB_RESEARCH", "REVIEW", "INVESTIGATION"]
+  // Doar task-uri de cunoaștere beneficiază de pre-rezolvare
+  const kbResolvableTypes = ["KB_RESEARCH", "KB_VALIDATION", "REVIEW", "INVESTIGATION"]
   if (!kbResolvableTypes.includes(task.taskType)) return null
 
-  // Caută semantic în KB-ul agentului
   try {
-    const { searchKB } = await import("@/lib/kb/search")
-    const query = `${task.title} ${task.description || ""}`.slice(0, 500)
-    const results = await searchKB(task.assignedTo, query, 5)
+    const { selfComplete } = await import("@/lib/kb/self-complete")
 
-    // Filtrăm doar rezultate cu similaritate foarte mare (>0.80)
-    const highMatch = results.filter(r => (r.similarity ?? 0) > 0.80)
-
-    if (highMatch.length >= 2) {
-      // Avem suficientă cunoaștere — construim răspunsul din KB
-      const kbContent = highMatch
-        .map((r, i) => `${i + 1}. [${r.source}, conf: ${r.confidence}] ${r.content}`)
-        .join("\n\n")
-
-      return {
-        result: `[Rezolvat din KB — ${highMatch.length} entries relevante, fără apel API]\n\n${kbContent}`,
-        source: `KB own (${highMatch.length} entries, similarity > 0.80)`,
-      }
+    const gap = {
+      agentRole: task.assignedTo,
+      topic: `${task.title} ${(task.description || "").slice(0, 300)}`,
+      objectiveCode: task.objectiveId || undefined,
+      context: task.description?.slice(0, 200),
     }
 
-    // Caută și la L2 consultanți
-    const { searchKBCrossAgent } = await import("@/lib/kb/search")
-    const crossResults = await searchKBCrossAgent(query, 5, 0.80)
-    const crossHighMatch = crossResults.filter(r => (r.similarity ?? 0) > 0.85)
+    const result = await selfComplete(gap)
 
-    if (crossHighMatch.length >= 2) {
-      const kbContent = crossHighMatch
-        .map((r, i) => `${i + 1}. [${r.agentRole}, ${r.source}, conf: ${r.confidence}] ${r.content}`)
-        .join("\n\n")
+    if (result.resolved && result.source !== "escalated-owner") {
+      // Rezolvat din KB propriu, L2 sau Claude targeted — costul e minim
+      // Dacă sursa e "claude-generated", a fost un apel mic targeted, nu full task execution
+      const sourceLabel = result.source === "kb-own" ? "KB propriu"
+        : result.source === "kb-l2" ? "KB L2 consultant"
+        : "Claude targeted (entry nou generat)"
 
       return {
-        result: `[Rezolvat din KB L2 — ${crossHighMatch.length} entries cross-agent, fără apel API]\n\n${kbContent}`,
-        source: `KB L2 cross-agent (${crossHighMatch.length} entries, similarity > 0.85)`,
+        result: `[Rezolvat prin self-complete: ${sourceLabel}]\n\n${result.message}`,
+        source: result.source,
       }
     }
   } catch {
-    // Semantic search indisponibil — continuă cu Claude
+    // Self-complete indisponibil — continuă cu Claude full
   }
 
   return null
