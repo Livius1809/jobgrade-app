@@ -85,7 +85,7 @@ export default function ReportsDashboard({
       requirements: [
         { key: "cv", label: "CV incarcat", met: hasCV },
         { key: "match", label: "Matching rulat pe un post", met: hasMatchResult },
-        { key: "hermann", label: "Profil cognitiv (Hermann)", met: hasHermann },
+        { key: "hermann", label: "Chestionar de preferinta actionala completat", met: hasHermann },
       ],
       creditCost: 8,
       paid: purchasedReports.includes("interview-prep"),
@@ -102,8 +102,8 @@ export default function ReportsDashboard({
       requirements: [
         { key: "cv", label: "CV incarcat", met: hasCV },
         { key: "questionnaire", label: "Formular preferinte completat", met: hasQuestionnaire },
-        { key: "hermann", label: "Profil cognitiv (Hermann)", met: hasHermann },
-        { key: "mbti", label: "Profil personalitate (MBTI)", met: hasMBTI },
+        { key: "hermann", label: "Chestionar de preferinta actionala completat", met: hasHermann },
+        { key: "mbti", label: "Chestionar de personalitate completat", met: hasMBTI },
       ],
       creditCost: 10,
       paid: purchasedReports.includes("job-selection-guide"),
