@@ -165,6 +165,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, operation, rows: result })
       }
 
+      case "migrate-enum": {
+        // data: { enumName: "AgentTaskPriority", values: ["IMPORTANT_URGENT", "URGENT", ...] }
+        const results: string[] = []
+        for (const val of data.values || []) {
+          try {
+            await p.$executeRawUnsafe(`ALTER TYPE "${data.enumName}" ADD VALUE IF NOT EXISTS '${val}'`)
+            results.push(`${val}: added`)
+          } catch (e: any) {
+            results.push(`${val}: ${e.message}`)
+          }
+        }
+        return NextResponse.json({ ok: true, operation, results })
+      }
+
       default:
         return NextResponse.json({ error: `Operațiune necunoscută: ${operation}` }, { status: 400 })
     }
