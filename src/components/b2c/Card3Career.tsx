@@ -93,6 +93,13 @@ export default function Card3Career({ userId }: { userId: string }) {
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
   const [matchedJob, setMatchedJob] = useState<AvailableJob | null>(null)
 
+  // Credite + rapoarte
+  const [credits, setCredits] = useState(0)
+  const [purchasedReports, setPurchasedReports] = useState<string[]>([])
+  const [generatingReport, setGeneratingReport] = useState(false)
+  const [reportContent, setReportContent] = useState<string | null>(null)
+  const [reportType, setReportType] = useState<string | null>(null)
+
   // Formular preferințe carieră
   const [form, setForm] = useState({
     experienceLevel: "",
@@ -111,6 +118,41 @@ export default function Card3Career({ userId }: { userId: string }) {
   const [mbtiAnswers, setMbtiAnswers] = useState<MBTIAnswers>({})
   const [mbtiResult, setMbtiResult] = useState<MBTIResult | null>(null)
   const [mbtiPage, setMbtiPage] = useState(0)
+
+  // Fetch credite la mount
+  useState(() => {
+    fetch(`/api/v1/b2c/credits?userId=${userId}`)
+      .then(r => r.json())
+      .then(data => setCredits(data.balance || 0))
+      .catch(() => {})
+  })
+
+  // Purchase report
+  const purchaseReport = useCallback(async (rptId: string, cost: number) => {
+    setGeneratingReport(true)
+    setReportContent(null)
+    try {
+      const res = await fetch("/api/v1/b2c/card-3/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, reportType: rptId, jobId: matchedJob?.id }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setReportContent(data.content)
+        setReportType(rptId)
+        setCredits(data.newBalance)
+        setPurchasedReports(prev => [...prev, rptId])
+      }
+    } finally { setGeneratingReport(false) }
+  }, [userId, matchedJob])
+
+  // View already purchased report
+  const viewReport = useCallback((rptId: string) => {
+    // Re-generate or fetch cached — for now just set type to show modal
+    setReportType(rptId)
+    purchaseReport(rptId, 0) // already purchased, API won't re-debit
+  }, [purchaseReport])
 
   const hermannProg = useMemo(() => hermannProgress(hermannAnswers), [hermannAnswers])
   const mbtiProg = useMemo(() => mbtiProgress(mbtiAnswers), [mbtiAnswers])
@@ -771,17 +813,55 @@ export default function Card3Career({ userId }: { userId: string }) {
               hasMBTI={!!mbtiResult}
               hasMatchResult={!!matchResult}
               hasQuestionnaire={!!form.experienceLevel}
-              credits={0}
-              purchasedReports={[]}
-              onPurchase={(reportId, cost) => {
-                // TODO: integrare Stripe / debitare credite
-                console.log("Purchase:", reportId, cost)
-              }}
-              onViewReport={(reportId) => {
-                // TODO: generare și afișare raport
-                console.log("View:", reportId)
-              }}
+              credits={credits}
+              purchasedReports={purchasedReports}
+              onPurchase={purchaseReport}
+              onViewReport={viewReport}
             />
+          </div>
+        </div>
+      )}
+      {/* ═══ OVERLAY RAPORT GENERAT ═══ */}
+      {(reportContent || generatingReport) && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            {generatingReport ? (
+              <div className="p-12 text-center">
+                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-sm text-gray-600">Se genereaza raportul tau...</p>
+                <p className="text-xs text-gray-400 mt-1">Poate dura 15-30 secunde</p>
+              </div>
+            ) : reportContent ? (
+              <>
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-gray-900">
+                    {reportType === "compatibility-detail" ? "Raport compatibilitate detaliat" :
+                     reportType === "interview-prep" ? "Consiliere interviu personalizata" :
+                     reportType === "job-selection-guide" ? "Ghid selectie posturi" :
+                     reportType === "career-trends" ? "Proiectia tendintelor de cariera" :
+                     "Raport"}
+                  </h2>
+                  <button onClick={() => { setReportContent(null); setReportType(null) }}
+                    className="text-gray-400 hover:text-gray-600 text-lg">
+                    ✕
+                  </button>
+                </div>
+                <div className="px-6 py-5 prose prose-sm prose-gray max-w-none">
+                  {reportContent.split("\n").map((line, i) => {
+                    if (line.startsWith("# ")) return <h1 key={i} className="text-lg font-bold text-gray-900 mt-4 mb-2">{line.slice(2)}</h1>
+                    if (line.startsWith("## ")) return <h2 key={i} className="text-base font-bold text-gray-800 mt-4 mb-2">{line.slice(3)}</h2>
+                    if (line.startsWith("### ")) return <h3 key={i} className="text-sm font-bold text-gray-700 mt-3 mb-1">{line.slice(4)}</h3>
+                    if (line.startsWith("- ")) return <li key={i} className="text-sm text-gray-700 ml-4">{line.slice(2)}</li>
+                    if (line.startsWith("**") && line.endsWith("**")) return <p key={i} className="text-sm font-bold text-gray-800">{line.slice(2, -2)}</p>
+                    if (line.trim() === "") return <br key={i} />
+                    return <p key={i} className="text-sm text-gray-700 leading-relaxed">{line}</p>
+                  })}
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 text-center">
+                  <p className="text-[10px] text-gray-400">Generat de JobGrade pe baza datelor tale. Nu contine informatii inventate.</p>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       )}
