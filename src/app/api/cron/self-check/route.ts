@@ -57,31 +57,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ status: "critical", checks, timestamp: now.toISOString() }, { status: 503 })
   }
 
-  // ── 2. Taskuri stale (ASSIGNED > 48h) → timeout ──────────
+  // ── 2. Task Hygiene — curățare completă taskuri stagnante ──
   try {
-    const staleThreshold = new Date(now.getTime() - 48 * 3600000)
-    const staleTasks = await p.agentTask.findMany({
-      where: { status: "ASSIGNED", createdAt: { lt: staleThreshold } },
-      select: { id: true, assignedTo: true, title: true, createdAt: true },
-      take: 20,
+    const { cleanStaleTasks } = await import("@/lib/agents/task-hygiene")
+    const cleaned = await cleanStaleTasks()
+    checks.push({
+      name: "task-hygiene",
+      status: cleaned > 0 ? "repaired" : "ok",
+      detail: cleaned > 0 ? `${cleaned} taskuri curatate (stale/blocked/review-pending/duplicate)` : "lista curata",
+      repairAction: cleaned > 0 ? `Cleaned: BLOCKED>7d, REVIEW>5d auto-approve, ACCEPTED>5d revert, duplicate, stale>14d` : undefined,
     })
-
-    if (staleTasks.length > 0) {
-      // Auto-repair: marchează ca EXPIRED
-      await p.agentTask.updateMany({
-        where: { id: { in: staleTasks.map((t: any) => t.id) } },
-        data: { status: "EXPIRED", failedAt: now, failureReason: "Auto-expired by self-check: assigned > 48h without progress" },
-      })
-      checks.push({
-        name: "stale-tasks",
-        status: "repaired",
-        detail: `${staleTasks.length} tasks expired (assigned > 48h)`,
-        repairAction: `Expired: ${staleTasks.slice(0, 5).map((t: any) => t.assignedTo).join(", ")}`,
-      })
-    } else {
-      checks.push({ name: "stale-tasks", status: "ok", detail: "no stale tasks" })
-    }
-  } catch (e: any) { checks.push({ name: "stale-tasks", status: "error", detail: e.message }) }
+  } catch (e: any) { checks.push({ name: "task-hygiene", status: "error", detail: e.message }) }
 
   // ── 2b. FIX #3: Taskuri BLOCKED > 24h → escalare automată la manager ──
   try {

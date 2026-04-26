@@ -87,5 +87,50 @@ export async function cleanStaleTasks(): Promise<number> {
     cleaned += dupResult.count
   }
 
+  // 4. BLOCKED > 7 zile → CANCELLED (blocajul nu s-a rezolvat)
+  const blockedDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const blockedResult = await prisma.agentTask.updateMany({
+    where: {
+      status: "BLOCKED",
+      blockedAt: { lt: blockedDate },
+    },
+    data: {
+      status: "CANCELLED",
+      failedAt: new Date(),
+      failureReason: "[AUTO-HYGIENE] Blocat > 7 zile fără rezolvare — anulat. Dacă e încă necesar, se recreează cu context actualizat.",
+    },
+  }).catch(() => ({ count: 0 }))
+  cleaned += blockedResult.count
+
+  // 5. REVIEW_PENDING > 5 zile → auto-approve (managerul nu a reviewuit)
+  const reviewDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+  const reviewResult = await prisma.agentTask.updateMany({
+    where: {
+      status: "REVIEW_PENDING",
+      completedAt: { lt: reviewDate },
+    },
+    data: {
+      status: "COMPLETED",
+      reviewNote: "[AUTO-HYGIENE] Auto-aprobat după 5 zile fără review de la manager.",
+      resultQuality: 60, // scor modest — nu a fost validat uman
+    },
+  }).catch(() => ({ count: 0 }))
+  cleaned += reviewResult.count
+
+  // 6. ACCEPTED > 5 zile fără startedAt → revert la ASSIGNED (altcineva poate prelua)
+  const acceptedDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+  const acceptedResult = await prisma.agentTask.updateMany({
+    where: {
+      status: "ACCEPTED",
+      acceptedAt: { lt: acceptedDate },
+      startedAt: null,
+    },
+    data: {
+      status: "ASSIGNED",
+      acceptedAt: null,
+    },
+  }).catch(() => ({ count: 0 }))
+  cleaned += acceptedResult.count
+
   return cleaned
 }
