@@ -317,8 +317,9 @@ async function findManagerObjectiveId(
         ],
       },
       orderBy: [
-        // Preferă obiective dedicate rolului (pattern: *--{role})
-        { code: "desc" },
+        // FIX #14: Prioritate + deadline (cel mai urgent, nu primul alfabetic)
+        { priority: "asc" },
+        { deadlineAt: "asc" },
       ],
       select: { id: true },
     })
@@ -586,7 +587,17 @@ Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback cons
           } catch {}
         })
 
-        console.log(`   🔄 ${task.assignedTo}/${task.title}: NEEDS_REVISION — ${review.feedback}`)
+        // FIX #8: Feedback concret la rejection — agentul știe ce a greșit
+        try {
+          await prisma.agentTask.update({
+            where: { id: task.id },
+            data: {
+              description: `${task.description || ""}\n\n--- FEEDBACK MANAGER (${config.agentRole}) ---\nREJECTAT: ${review.feedback}\nRevizuiește conform feedback-ului de mai sus și retrimite.`,
+            },
+          })
+        } catch {}
+
+        console.log(`   ��� ${task.assignedTo}/${task.title}: NEEDS_REVISION — ${review.feedback}`)
       }
     } catch (err: any) {
       console.error(`   ❌ Review failed [${task.id}]: ${err.message}`)
