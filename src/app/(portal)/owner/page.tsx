@@ -652,6 +652,13 @@ export default async function OwnerDashboard() {
                 <div style={{ height: "4px" }} />
                 <p className="text-[10px] text-slate-400">Documente partajate, KB automat</p>
               </Link>
+              <Link href="/owner/pipeline" className="block rounded-2xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">🏗️</span>
+                <div style={{ height: "8px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Pipeline primul client</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-[10px] text-slate-400">Status evolutiv Tier 1/2/3</p>
+              </Link>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
