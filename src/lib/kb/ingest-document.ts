@@ -147,6 +147,51 @@ async function extractText(input: IngestDocumentInput): Promise<string> {
   throw new Error(`Format nesuportat: ${ext}. Acceptăm: .pdf, .docx, .doc, .txt`)
 }
 
+// ── Anonimizare date personale ───────────────────────────────
+
+/**
+ * Anonimizează textul ÎNAINTE de chunking/extracție.
+ * Elimină: nume proprii de persoane, CNP, email, telefon, adrese.
+ * NU elimină: nume de companii (relevante pentru context), titluri de cărți, autori publicați.
+ */
+function anonymizeText(text: string): string {
+  let result = text
+
+  // CNP (13 cifre consecutive prefixate cu 1-8)
+  result = result.replace(/\b[1-8]\d{12}\b/g, "[CNP_REDACTED]")
+
+  // Email
+  result = result.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[EMAIL_REDACTED]")
+
+  // Telefon RO (07xx, +40, 02x, 03x)
+  result = result.replace(/(\+?40|0)\s*[237]\d[\s.-]?\d{3}[\s.-]?\d{3,4}/g, "[TEL_REDACTED]")
+
+  // IBAN
+  result = result.replace(/\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g, (match) => {
+    if (match.length >= 16) return "[IBAN_REDACTED]"
+    return match
+  })
+
+  // Adrese (str., bd., nr., bl., sc., ap.)
+  result = result.replace(/(?:str\.|bd\.|b-dul|calea|sos\.|aleea|splaiul)\s+[^\n,;]{5,60}(?:,\s*(?:nr\.|bl\.|sc\.|et\.|ap\.)\s*\S+)*/gi, "[ADRESA_REDACTED]")
+
+  // Nume de persoane din tabele de scoruri/evaluări
+  // Pattern: "Prenume Nume" urmat de scoruri numerice sau în context de evaluare
+  // Abordare conservatoare: anonimizăm rânduri care arată ca date tabulare cu nume
+  result = result.replace(
+    /^([A-ZĂÂÎȘȚ][a-zăâîșțéèêë]+)\s+([A-ZĂÂÎȘȚ][a-zăâîșțéèêë]+)(?:\s+(?:[A-ZĂÂÎȘȚ][a-zăâîșțéèêë]+))?\s*[,;\t]\s*\d/gm,
+    "[PERSOANA] $3 [DATE_REDACTED]"
+  )
+
+  // Nume în format "NUME, Prenume" sau "Nume Prenume" precedat de ID/nr
+  result = result.replace(
+    /(?:^|\n)\s*\d+[.,)\s]+([A-ZĂÂÎȘȚ]{2,})\s*,?\s*([A-ZĂÂÎȘȚ][a-zăâîșțéèêë]+)/gm,
+    "\n[ID] [PERSOANA_REDACTED]"
+  )
+
+  return result
+}
+
 // ── Chunking ────────────────────────────────────────────────
 
 function chunkText(text: string, maxChars: number = 3000): string[] {
@@ -181,6 +226,7 @@ CONSULTANȚII L2 DISPONIBILI (rutează fiecare entry spre cel mai potrivit):
 ${L2_ROLES_LIST}
 
 REGULI DE EXTRACȚIE:
+0. GDPR OBLIGATORIU: NU extrage NICIODATĂ date personale (nume persoane, CNP, email, telefon, adrese, scoruri individuale identificabile). Extrage DOAR cunoaștere generalizabilă.
 1. Fiecare entry = 2-4 propoziții CONCRETE și ACȚIONABILE
 2. NU copia text — reformulează în limbaj clar, direct, aplicabil
 3. Separă cunoașterea DECLARATIVĂ (ce e adevărat) de cea PROCEDURALĂ (cum se face)
@@ -382,8 +428,9 @@ interface BibliographyProcessResult {
 }
 
 async function processBibliography(input: IngestDocumentInput): Promise<BibliographyProcessResult> {
-  // 1. Extrage text din document
-  const fullText = await extractText(input)
+  // 1. Extrage text din document + anonimizare
+  const rawText = await extractText(input)
+  const fullText = anonymizeText(rawText)
 
   // 2. Claude parsează lista de referințe bibliografice
   const client = new Anthropic()
@@ -504,7 +551,8 @@ export async function ingestDocument(input: IngestDocumentInput): Promise<Ingest
     ;(input as any)._bibliographyResult = bibResult.metadata
   } else {
     // ── Mod C: Document (PDF/DOCX/text) ──────────────────────
-    const fullText = await extractText(input)
+    const rawText = await extractText(input)
+    const fullText = anonymizeText(rawText) // GDPR: anonimizare ÎNAINTE de procesare
 
     if (fullText.trim().length < 100) {
       throw new Error("Documentul conține prea puțin text pentru extracție (<100 caractere)")
