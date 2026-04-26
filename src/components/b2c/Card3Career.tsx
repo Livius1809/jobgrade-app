@@ -22,6 +22,7 @@ import type {
   MBTIAnswers,
   MBTIResult,
 } from "@/lib/b2c/questionnaires/types"
+import ReportsDashboard from "./ReportsDashboard"
 
 /**
  * Card 3 — "Îmi asum un rol profesional"
@@ -635,6 +636,21 @@ export default function Card3Career({ userId }: { userId: string }) {
           <button onClick={() => setStep("jobs")} className="mt-5 w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700">
             Vezi posturi disponibile
           </button>
+
+          {/* Rapoarte vizibile din profil — arată ce e disponibil */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <ReportsDashboard
+              hasCV={!!profile}
+              hasHermann={!!hermannResult}
+              hasMBTI={!!mbtiResult}
+              hasMatchResult={false}
+              hasQuestionnaire={!!form.experienceLevel}
+              credits={0}
+              purchasedReports={[]}
+              onPurchase={() => {}}
+              onViewReport={() => {}}
+            />
+          </div>
         </div>
       )}
 
@@ -746,6 +762,27 @@ export default function Card3Career({ userId }: { userId: string }) {
           <button onClick={() => setStep("jobs")} className="mt-4 w-full border border-gray-300 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">
             Verifica alte posturi (gratuit)
           </button>
+
+          {/* Rapoartele tale — vizibile întotdeauna cu cele 3 stări */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <ReportsDashboard
+              hasCV={!!profile}
+              hasHermann={!!hermannResult}
+              hasMBTI={!!mbtiResult}
+              hasMatchResult={!!matchResult}
+              hasQuestionnaire={!!form.experienceLevel}
+              credits={0}
+              purchasedReports={[]}
+              onPurchase={(reportId, cost) => {
+                // TODO: integrare Stripe / debitare credite
+                console.log("Purchase:", reportId, cost)
+              }}
+              onViewReport={(reportId) => {
+                // TODO: generare și afișare raport
+                console.log("View:", reportId)
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
