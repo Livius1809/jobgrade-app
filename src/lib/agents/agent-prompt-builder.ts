@@ -648,16 +648,32 @@ export async function buildAgentPromptWithKB(
   prisma: any,
   options: AgentPromptOptions = {}
 ): Promise<string> {
-  // 1. Agent's OWN KB entries
+  // 1. Agent's OWN KB entries (top 10, cele mai recente cu confidence mare)
   const kbEntries = await prisma.kBEntry.findMany({
     where: { agentRole: role, status: "PERMANENT" },
-    orderBy: { confidence: "desc" },
-    take: 5,
+    orderBy: [{ confidence: "desc" }, { createdAt: "desc" }],
+    take: 10,
     select: { content: true, tags: true },
   }).catch(() => [])
 
   const kbSection = kbEntries.length > 0
     ? `CUNOAȘTEREA TA (din KB — folosește-o):\n${kbEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
+    : ""
+
+  // 1a. CONTEXT OPERAȚIONAL CURENT — pipeline, taskuri active, handover-uri recente
+  const operationalEntries = await prisma.kBEntry.findMany({
+    where: {
+      agentRole: role,
+      status: "PERMANENT",
+      tags: { hasSome: ["pipeline", "handover", "first-client", "status-live", "coordonare"] },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { content: true, tags: true },
+  }).catch(() => [])
+
+  const operationalSection = operationalEntries.length > 0
+    ? `\nCONTEXT OPERAȚIONAL CURENT (PRIORITAR — citește asta!):\n${operationalEntries.map((e: any, i: number) => `${i + 1}. ${e.content}`).join("\n")}`
     : ""
 
   // 1b. LECȚII ÎNVĂȚATE — prioritate maximă, separate de KB general
@@ -734,7 +750,7 @@ export async function buildAgentPromptWithKB(
     } catch {}
   }
 
-  const combined = [lessonsSection, options.additionalContext, kbSection, culturalKB, l2Knowledge, profilerSection].filter(Boolean).join("\n\n")
+  const combined = [operationalSection, lessonsSection, options.additionalContext, kbSection, culturalKB, l2Knowledge, profilerSection].filter(Boolean).join("\n\n")
 
   return buildAgentPrompt(role, description, {
     ...options,
