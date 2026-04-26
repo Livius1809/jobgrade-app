@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
+import EvolutionSpiral from "@/components/b2c/EvolutionSpiral"
 
 export const metadata = {
   title: "JobGrade — Un drum care începe cu tine",
@@ -197,6 +198,30 @@ export default function PersonalPage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+           SPIRALA EVOLUTIVĂ
+         ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-12 md:py-16">
+        <div style={{ maxWidth: "32rem", margin: "0 auto" }}>
+          <h2 className="text-lg md:text-xl font-semibold text-center text-foreground mb-2">
+            Parcursul tau evolutiv
+          </h2>
+          <p className="text-xs text-text-secondary text-center mb-8">
+            Din crisalida, prin metamorfoza, spre zbor.
+          </p>
+          <EvolutionSpiral
+            currentPhase="CHRYSALIS"
+            currentStage={1}
+            cards={cards.map(c => ({
+              id: c.id,
+              title: c.title,
+              status: c.active ? "ACTIVE" as const : "LOCKED" as const,
+              phase: "CHRYSALIS",
+            }))}
+          />
         </div>
       </section>
 
