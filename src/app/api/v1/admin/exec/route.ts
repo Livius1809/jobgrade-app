@@ -165,6 +165,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, operation, rows: result })
       }
 
+      case "cancel-stale-tasks": {
+        // Anulează toate taskurile stagnante (BLOCKED, REVIEW_PENDING, ACCEPTED, ASSIGNED)
+        const reason = data.reason || "Reset procedural"
+        const result = await p.agentTask.updateMany({
+          where: { status: { in: ["BLOCKED", "REVIEW_PENDING", "ACCEPTED", "ASSIGNED"] } },
+          data: {
+            status: "CANCELLED",
+            failedAt: new Date(),
+            failureReason: reason,
+          },
+        })
+        return NextResponse.json({ ok: true, operation, cancelled: result.count })
+      }
+
       case "migrate-enum": {
         // data: { enumName: "AgentTaskPriority", values: ["IMPORTANT_URGENT", "URGENT", ...] }
         const results: string[] = []
