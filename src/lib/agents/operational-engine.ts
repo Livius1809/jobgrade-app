@@ -304,6 +304,105 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
     })
   }
 
+  // ═══ 5. RESOURCE MARKET — verificare bugete + propuneri redistribuire ═══
+
+  try {
+    const budgets = await p.resourceBudget?.findMany({
+      where: { isActive: true },
+      select: { agentRole: true, maxLlmCostPerDay: true, usedLlmCost: true },
+    }).catch(() => []) ?? []
+
+    if (budgets.length > 0) {
+      const overBudget = budgets.filter((b: any) => b.usedLlmCost > b.maxLlmCostPerDay)
+      const underBudget = budgets.filter((b: any) => b.usedLlmCost < b.maxLlmCostPerDay * 0.2)
+
+      if (overBudget.length > 0) {
+        anomalies.push({
+          type: "EFFICIENCY_DROP",
+          severity: "MEDIUM",
+          title: `${overBudget.length} agenti peste buget zilnic`,
+          detail: `Agenti: ${overBudget.map((b: any) => b.agentRole).join(", ")}. Posibil: task-uri prea complexe sau lipsa KB.`,
+          affectedEntities: overBudget.map((b: any) => b.agentRole),
+          action: "LOG_ONLY",
+        })
+      }
+
+      // Auto-remediere: propune transfer buget de la sub-utilizati la supra-utilizati
+      if (overBudget.length > 0 && underBudget.length > 0) {
+        try {
+          const { proposeNegotiations } = await import("./resource-meter")
+          const proposals = proposeNegotiations(budgets.map((b: any) => ({
+            agentRole: b.agentRole,
+            maxLlmCostPerDay: b.maxLlmCostPerDay,
+            usedLlmCost: b.usedLlmCost,
+          })))
+          if (proposals.length > 0) {
+            console.log(`[operational-engine] Resource proposals: ${proposals.length} transfers sugerate`)
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+
+  // ═══ 6. WILD CARDS — provocari saptamanale (doar luni) ═══
+
+  const dayOfWeek = now.getDay()
+  if (dayOfWeek === 1) { // Luni
+    try {
+      const { generateWeeklyWildCards } = await import("./wild-card-generator")
+      const weekOf = now.toISOString().slice(0, 10)
+      // Verificam daca au fost deja generate saptamana asta
+      const existing = await p.wildCard?.count({
+        where: { weekOf },
+      }).catch(() => 0) ?? 0
+
+      if (existing === 0) {
+        const agents = await p.agentDefinition?.findMany({
+          where: { isActive: true, activityMode: "PROACTIVE_CYCLIC" },
+          select: { agentRole: true },
+        }).catch(() => []) ?? []
+        const roles = agents.map((a: any) => a.agentRole)
+        if (roles.length > 0) {
+          const cards = generateWeeklyWildCards(roles, weekOf)
+          for (const card of cards) {
+            await p.wildCard?.create({ data: card }).catch(() => {})
+          }
+          console.log(`[operational-engine] Wild cards: ${cards.length} generate pentru saptamana ${weekOf}`)
+        }
+      }
+    } catch {}
+  }
+
+  // ═══ 7. PAIR LEARNING — mentoring saptamanal (doar vineri) ═══
+
+  if (dayOfWeek === 5) { // Vineri
+    try {
+      const { runPairLearning } = await import("./pair-learning")
+      // Gasim perechi senior-junior cu KB complementar
+      const agents = await p.agentDefinition?.findMany({
+        where: { isActive: true, isManager: true },
+        select: { agentRole: true, level: true },
+        take: 5,
+      }).catch(() => []) ?? []
+
+      const juniors = await p.agentDefinition?.findMany({
+        where: { isActive: true, isManager: false },
+        select: { agentRole: true, level: true },
+        take: 5,
+      }).catch(() => []) ?? []
+
+      // O singura pereche pe saptamana (cost-aware)
+      if (agents.length > 0 && juniors.length > 0) {
+        const senior = agents[Math.floor(Math.random() * agents.length)]
+        const junior = juniors[Math.floor(Math.random() * juniors.length)]
+        try {
+          await runPairLearning(senior.agentRole, junior.agentRole, "best practices din experienta recenta", prisma)
+          console.log(`[operational-engine] Pair learning: ${senior.agentRole} → ${junior.agentRole}`)
+        } catch {}
+      }
+    } catch {}
+  }
+
   // ═══ SALVARE SNAPSHOT ═══
 
   const report: OperationalHealthReport = {
