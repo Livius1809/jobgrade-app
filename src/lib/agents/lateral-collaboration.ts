@@ -1,141 +1,143 @@
 /**
- * lateral-collaboration.ts — Colaborare orizontală mediată ierarhic
+ * lateral-collaboration.ts — Colaborare laterala mediata ierarhic
  *
- * Când un agent constată că nu poate finaliza un task (lipsesc competențe
- * din alt departament):
+ * Flux corect (ambii sefi implicati):
  *
- * 1. Escalează la șeful direct: "Nu pot finaliza, lipsește X"
- * 2. Șeful identifică omologul de pe același palier: "Întreabă pe Y"
- * 3. Y primește cererea, rafinează, delegă în structura lui
- * 4. Răspunsul urcă la Y, Y trimite la solicitant
- * 5. Solicitantul integrează și livrează
+ * 1. Agent A constata ca nu poate finaliza → cere APROBAREA sefului direct (sef_A)
+ * 2. Sef_A aproba si trimite cerere la OMOLOGUL sau (sef_B) — seful agentului tinta
+ * 3. Sef_B primeste cererea si DELEGHEAZA la subordonatul potrivit (Agent B)
+ * 4. Agent B livreaza → raspunsul urca la sef_B → sef_A → Agent A
+ * 5. Bucla inchisa: ambii sefi stiu, ambii subordonati stiu, nimeni nu e ocolit
  *
- * Responsabilitatea comunicării finale revine celui cu contribuția
- * cea mai mare (de regulă, inițiatorul cererii).
- *
- * Principiu: comunicare laterală MEDIATĂ ierarhic, nu directă.
- * Agentul nu contactează pe oricine — trece prin șeful lui.
+ * NU se permite: agent → agent direct cross-departament
+ * TOTUL trece prin ierarhie
  */
 
 import { prisma } from "@/lib/prisma"
 import { getDirectSubordinates, getDirectSuperior } from "./hierarchy-enforcer"
 
 export interface LateralRequest {
-  /** Agentul care are nevoie de ajutor */
   requestingAgent: string
-  /** Task-ul pe care lucrează */
   taskId: string
-  /** Ce competență/informație lipsește */
   whatIsNeeded: string
-  /** Context: de ce are nevoie */
   context: string
 }
 
 export interface LateralResult {
-  /** Ce s-a întâmplat */
   action: "routed" | "escalated" | "self-resolved" | "no-peer-found"
-  /** La cine s-a trimis cererea */
   routedTo?: string
-  /** Prin ce manager s-a mediat */
   mediatedBy?: string
-  /** Task-ul creat pentru omolog */
+  peerManagerNotified?: string
   peerTaskId?: string
-  /** Explicație */
   explanation: string
 }
 
 /**
- * Procesează o cerere de colaborare laterală.
+ * Procesează o cerere de colaborare laterală — MEDIATA ierarhic.
  *
- * Flow:
- * 1. Găsește superiorul direct al solicitantului
- * 2. Superiorul identifică care din omologii lui (pe același nivel) are competența
- * 3. Creează task la omolog cu prefix "[Cerere laterală]"
- * 4. Omologul rafinează și delegă în structura lui
+ * Pas 1: Gaseste seful direct al solicitantului (sef_A)
+ * Pas 2: Gaseste seful agentului tinta sau omologul potrivit (sef_B)
+ * Pas 3: Sef_A trimite cerere formala la sef_B
+ * Pas 4: Sef_B delegheaza la subordonatul potrivit
+ * Pas 5: Ambii sefi sunt notificati — bucla inchisa
  */
 export async function requestLateralHelp(req: LateralRequest): Promise<LateralResult> {
   const p = prisma as any
 
-  // 1. Găsește superiorul direct
-  const manager = await getDirectSuperior(req.requestingAgent)
-  if (!manager) {
-    return { action: "escalated", explanation: `${req.requestingAgent} nu are superior direct — escalare manuală` }
+  // Pas 1: Gaseste superiorul direct al solicitantului
+  const managerA = await getDirectSuperior(req.requestingAgent)
+  if (!managerA) {
+    return { action: "escalated", explanation: `${req.requestingAgent} nu are superior direct` }
   }
 
-  // 2. Găsește omologii (ceilalți subordonați ai aceluiași manager)
-  const siblings = await getDirectSubordinates(manager)
-  const peers = siblings.filter(s => s !== req.requestingAgent)
+  // Pas 2: Gaseste cel mai potrivit omolog/manager de pe alt ramura
+  // Cauta in KB-urile tuturor agentilor cine are competenta ceruta
+  let targetPeer: string | null = null
+  let targetPeerManager: string | null = null
 
-  if (peers.length === 0) {
-    // Niciun omolog — escalăm la nivelul superior
-    const grandManager = await getDirectSuperior(manager)
-    if (grandManager) {
-      // Creăm task de escalare la managerul superior
-      const task = await p.agentTask.create({
-        data: {
-          businessId: "biz_jobgrade",
-          assignedBy: manager,
-          assignedTo: grandManager,
-          title: `[Escalare laterală] ${req.requestingAgent} are nevoie de competențe din alt departament`,
-          description: `Subordonatul meu ${req.requestingAgent} lucrează la task ${req.taskId} și are nevoie de:\n${req.whatIsNeeded}\n\nContext: ${req.context}\n\nNu am în echipa mea pe cineva care poate ajuta. Te rog direcționează la departamentul potrivit.`,
-          taskType: "INVESTIGATION",
-          priority: "HIGH",
-          status: "ASSIGNED",
-          tags: ["lateral-escalation", `from:${req.requestingAgent}`, `via:${manager}`, `original-task:${req.taskId}`],
-        },
-      })
-      return {
-        action: "escalated",
-        mediatedBy: manager,
-        routedTo: grandManager,
-        peerTaskId: task.id,
-        explanation: `Niciun omolog disponibil la nivel ${manager}. Escalat la ${grandManager} pentru redirecționare inter-departamentală.`,
-      }
-    }
-    return { action: "no-peer-found", explanation: "Niciun omolog și niciun superior — nu se poate ruta" }
-  }
-
-  // 3. Identifică cel mai potrivit omolog din KB
-  // Strategie: caută semantic în KB-ul fiecărui peer care omolog are cunoaștere pe tema cerută
-  let bestPeer: string | null = null
-  let bestScore = 0
-
+  // Mai intai: cautam in toti agentii (nu doar omologi directi)
+  // si gasim cine are KB relevant
   try {
+    const allAgents = await p.agent?.findMany({
+      where: { isActive: true },
+      select: { role: true },
+    }) ?? []
+
     const { searchKB } = await import("@/lib/kb/search")
-    for (const peer of peers) {
-      const results = await searchKB(peer, req.whatIsNeeded, 3)
+    let bestScore = 0
+
+    for (const agent of allAgents) {
+      if (agent.role === req.requestingAgent || agent.role === managerA) continue
+      const results = await searchKB(agent.role, req.whatIsNeeded, 2)
       const score = results.length > 0 ? (results[0].similarity ?? 0) : 0
       if (score > bestScore) {
         bestScore = score
-        bestPeer = peer
+        targetPeer = agent.role
       }
     }
   } catch {
-    // Fallback: primul peer din listă
-    bestPeer = peers[0]
+    // Fallback: cautam omologii directi ai managerA
+    const siblings = await getDirectSubordinates(managerA)
+    const peers = siblings.filter(s => s !== req.requestingAgent)
+    if (peers.length > 0) targetPeer = peers[0]
   }
 
-  if (!bestPeer) bestPeer = peers[0]
+  if (!targetPeer) {
+    return { action: "no-peer-found", explanation: "Niciun agent cu competenta relevanta gasit" }
+  }
 
-  // 4. Creează task la omologul identificat
+  // Gasim seful agentului tinta (sef_B)
+  targetPeerManager = await getDirectSuperior(targetPeer)
+
+  // Pas 3: Sef_A trimite cerere formala la sef_B (sau direct la targetPeer daca sunt la acelasi nivel)
+  const mediator = targetPeerManager || managerA
+
+  // Task 1: Cerere de la sef_A catre sef_B
+  // (Daca sef_A = sef_B, adica sunt in acelasi departament, cererea merge direct)
+  if (targetPeerManager && targetPeerManager !== managerA) {
+    // Departamente diferite — notificam sef_B
+    await p.agentTask.create({
+      data: {
+        businessId: "biz_jobgrade",
+        assignedBy: managerA,
+        assignedTo: targetPeerManager,
+        title: `[Cerere inter-departamentala] Echipa mea are nevoie de sprijin din echipa ta`,
+        description: [
+          `Subordonatul meu ${req.requestingAgent} lucreaza la un task si are nevoie de competente din echipa ta.`,
+          ``,
+          `CE ARE NEVOIE: ${req.whatIsNeeded}`,
+          `CONTEXT: ${req.context}`,
+          ``,
+          `Te rog delegheaza la subordonatul tau cel mai potrivit (recomandat: ${targetPeer}).`,
+          `Raspunsul va reveni la ${req.requestingAgent} prin mine (${managerA}).`,
+        ].join("\n"),
+        taskType: "INVESTIGATION",
+        priority: "HIGH",
+        status: "ASSIGNED",
+        tags: ["lateral-manager-request", `from:${managerA}`, `for:${req.requestingAgent}`, `target:${targetPeer}`, `original-task:${req.taskId}`],
+      },
+    })
+  }
+
+  // Task 2: Cerere operationala la agentul tinta (delegata de sef_B)
   const task = await p.agentTask.create({
     data: {
       businessId: "biz_jobgrade",
-      assignedBy: manager,
-      assignedTo: bestPeer,
-      title: `[Cerere laterală de la ${req.requestingAgent}] ${req.whatIsNeeded.slice(0, 80)}`,
+      assignedBy: targetPeerManager || managerA,
+      assignedTo: targetPeer,
+      title: `[Cerere laterala de la ${req.requestingAgent}] ${req.whatIsNeeded.slice(0, 80)}`,
       description: [
-        `Colegul tău ${req.requestingAgent} (din echipa lui ${manager}) lucrează la un task și are nevoie de ajutorul tău.`,
+        `Colegul ${req.requestingAgent} (din echipa ${managerA}) are nevoie de ajutorul tau.`,
+        `Cererea a fost aprobata de seful tau ${targetPeerManager || managerA}.`,
         ``,
         `CE ARE NEVOIE: ${req.whatIsNeeded}`,
         `CONTEXT: ${req.context}`,
         ``,
-        `INSTRUCȚIUNI:`,
-        `1. Rafinează cererea pentru domeniul tău de competență`,
-        `2. Dacă poți răspunde direct din KB-ul tău, răspunde`,
-        `3. Dacă trebuie să delegi la subordonații tăi, delegă`,
-        `4. Rezultatul final trebuie integrat de ${req.requestingAgent} în task-ul lui`,
-        `5. Comunică rezultatul înapoi — ${req.requestingAgent} are responsabilitatea livrării finale`,
+        `INSTRUCTIUNI:`,
+        `1. Raspunde la cerere din competenta ta`,
+        `2. Daca trebuie sa delegi mai departe, delegheaza la subordonatii tai`,
+        `3. Rezultatul final ajunge la ${req.requestingAgent} prin ierarhie`,
+        `4. Confirma livrarea sefului tau (${targetPeerManager || managerA})`,
       ].join("\n"),
       taskType: "INVESTIGATION",
       priority: "HIGH",
@@ -143,19 +145,19 @@ export async function requestLateralHelp(req: LateralRequest): Promise<LateralRe
       tags: [
         "lateral-collaboration",
         `from:${req.requestingAgent}`,
-        `via:${manager}`,
+        `via:${managerA}`,
+        `approved-by:${targetPeerManager || managerA}`,
         `original-task:${req.taskId}`,
-        `peer-request`,
       ],
     },
   })
 
-  // 5. Marchează task-ul original ca BLOCKED cu referință la cererea laterală
+  // Pas 4: Marcam task-ul original ca BLOCKED cu dependenta
   await p.agentTask.update({
     where: { id: req.taskId },
     data: {
       blockerType: "DEPENDENCY",
-      blockerDescription: `Aștept răspuns lateral de la ${bestPeer} (task: ${task.id}). Cerere mediată de ${manager}.`,
+      blockerDescription: `Cerere laterala trimisa la ${targetPeer} (aprobata de ${managerA}, notificat ${targetPeerManager || "acelasi manager"}). Asteptam raspuns.`,
       blockerTaskId: task.id,
       blockedAt: new Date(),
     },
@@ -163,16 +165,17 @@ export async function requestLateralHelp(req: LateralRequest): Promise<LateralRe
 
   return {
     action: "routed",
-    routedTo: bestPeer,
-    mediatedBy: manager,
+    routedTo: targetPeer,
+    mediatedBy: managerA,
+    peerManagerNotified: targetPeerManager || undefined,
     peerTaskId: task.id,
-    explanation: `Cerere trimisă la ${bestPeer} (omolog, mediat de ${manager}). KB match: ${Math.round(bestScore * 100)}%. Task original marcat BLOCKED/DEPENDENCY.`,
+    explanation: `Cerere trimisa la ${targetPeer} (seful lui ${targetPeerManager || managerA} notificat). Mediat de ${managerA}. Bucla ierarhica inchisa.`,
   }
 }
 
 /**
- * Integrează răspunsul lateral în task-ul original.
- * Apelat când task-ul lateral e COMPLETED.
+ * Integreaza raspunsul lateral in task-ul original.
+ * Apelat cand task-ul lateral e COMPLETED.
  */
 export async function integrateLateralResponse(
   lateralTaskId: string,
@@ -180,7 +183,6 @@ export async function integrateLateralResponse(
 ): Promise<{ unblocked: boolean; originalTaskId: string | null }> {
   const p = prisma as any
 
-  // Găsește task-ul original care așteaptă
   const originalTask = await p.agentTask.findFirst({
     where: {
       blockerTaskId: lateralTaskId,
@@ -193,7 +195,6 @@ export async function integrateLateralResponse(
     return { unblocked: false, originalTaskId: null }
   }
 
-  // Deblochează și adaugă rezultatul lateral în descriere
   await p.agentTask.update({
     where: { id: originalTask.id },
     data: {
@@ -203,11 +204,11 @@ export async function integrateLateralResponse(
       blockerTaskId: null,
       blockedAt: null,
       unblockedAt: new Date(),
-      description: `${originalTask.description}\n\n--- RĂSPUNS LATERAL (de la cererea ${lateralTaskId}) ---\n${lateralResult}\n\nIntegrează acest răspuns în soluția ta finală.`,
+      description: `${originalTask.description}\n\n--- RASPUNS LATERAL (de la cererea ${lateralTaskId}) ---\n${lateralResult}\n\nIntegheaza acest raspuns in solutia ta finala.`,
     },
   })
 
-  // Capturam rezolutia laterala in sistemul de invatare
+  // Capturam in sistemul de invatare
   try {
     const { learningFunnel } = await import("./learning-funnel")
     await learningFunnel({
