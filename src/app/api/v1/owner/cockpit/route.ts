@@ -347,7 +347,7 @@ export async function GET(req: NextRequest) {
       // DECIZII
       (prisma as any).notification?.count({ where: { requestKind: "DECISION", createdAt: { gte: d30 } } }).catch(() => 0),
       (prisma as any).notification?.count({ where: { requestKind: "DECISION", respondedAt: { not: null }, createdAt: { gte: d30 } } }).catch(() => 0),
-      prisma.agentTask.count({ where: { status: "BLOCKED", blockerType: "OWNER_DECISION", createdAt: { gte: d30 } } }).catch(() => 0),
+      prisma.agentTask.count({ where: { status: "BLOCKED", blockerType: "WAITING_OWNER", createdAt: { gte: d30 } } }).catch(() => 0),
       prisma.agentTask.count({ where: { status: "COMPLETED", createdAt: { gte: d30 }, kbHit: true } }).catch(() => 0),
       prisma.agentTask.count({ where: { completedAt: { gte: d30 }, status: "COMPLETED" } }).catch(() => 0),
       // INTERACTIUNI
