@@ -296,17 +296,36 @@ export async function POST(req: NextRequest) {
   }
   const input = parsed.data
 
+  // Validare ierarhică: poți delega DOAR la subordonații tăi direcți
+  const { canDelegate, redirectToCorrectLevel } = await import("@/lib/agents/hierarchy-enforcer")
+  const delegationCheck = await canDelegate(input.assignedBy, input.assignedTo)
+
+  let effectiveAssignedTo = input.assignedTo
+  let hierarchyRedirect = false
+
+  if (!delegationCheck.allowed) {
+    // Redirecționează la nivelul corect din ierarhie
+    const redirect = await redirectToCorrectLevel(input.assignedBy, input.assignedTo)
+    effectiveAssignedTo = redirect.redirectTo
+    hierarchyRedirect = true
+    console.log(`[task-create] Ierarhie: ${input.assignedBy}→${input.assignedTo} redirecționat la ${effectiveAssignedTo} (${redirect.reason})`)
+  }
+
   const task = await prisma.agentTask.create({
     data: {
       businessId: input.businessId,
       assignedBy: input.assignedBy,
-      assignedTo: input.assignedTo,
-      title: input.title,
-      description: input.description,
+      assignedTo: effectiveAssignedTo,
+      title: hierarchyRedirect
+        ? `[Rafinează și delegă] ${input.title}`
+        : input.title,
+      description: hierarchyRedirect
+        ? `${input.description}\n\n--- CONTEXT IERARHIC ---\nAcest obiectiv a fost redirecționat de la ${input.assignedBy} care intenționa să-l aloce direct la ${input.assignedTo}. Tu (${effectiveAssignedTo}) ești nivelul corect de descompunere. Rafinează obiectivul și delegă taskuri specifice subordonaților tăi.`
+        : input.description,
       taskType: input.taskType as AgentTaskType,
       priority: normalizePriority(input.priority) as AgentTaskPriority,
       objectiveId: input.objectiveId,
-      tags: input.tags,
+      tags: [...(input.tags || []), ...(hierarchyRedirect ? ["hierarchy-redirected", `original-target:${input.assignedTo}`] : [])],
       deadlineAt: input.deadlineAt ? new Date(input.deadlineAt) : null,
       estimatedMinutes: input.estimatedMinutes,
       status: "ASSIGNED",

@@ -414,20 +414,39 @@ async function executeActions(
           }).catch(() => null)
 
           if (!existingTask) {
+            // Validare ierarhică: deleghez DOAR la subordonații mei direcți
+            const { canDelegate: checkDelegate, redirectToCorrectLevel: redirect } = await import("./hierarchy-enforcer")
+            const check = await checkDelegate(config.agentRole, delegated.assignedTo)
+
+            let effectiveTo = delegated.assignedTo
+            let effectiveTitle = delegated.title
+            let effectiveDesc = delegated.description
+            let extraTags: string[] = []
+
+            if (!check.allowed) {
+              const redir = await redirect(config.agentRole, delegated.assignedTo)
+              effectiveTo = redir.redirectTo
+              effectiveTitle = `[Rafinează și delegă] ${delegated.title}`
+              effectiveDesc = `${delegated.description}\n\n--- IERARHIE ---\nRafinează acest obiectiv și delegă taskuri specifice subordonaților tăi. Destinatarul original: ${delegated.assignedTo}.`
+              extraTags = ["hierarchy-redirected", `original-target:${delegated.assignedTo}`]
+              console.log(`   🔀 Ierarhie: ${config.agentRole}→${delegated.assignedTo} redirecționat la ${effectiveTo}`)
+            }
+
             const deadlineAt = delegated.deadlineHours
               ? new Date(Date.now() + delegated.deadlineHours * 60 * 60 * 1000)
               : null
-            const taskTags = managerObjectiveId
-              ? delegated.tags
-              : [...delegated.tags, "orphan:no-objective"]
+            const taskTags = [
+              ...(managerObjectiveId ? delegated.tags : [...delegated.tags, "orphan:no-objective"]),
+              ...extraTags,
+            ]
             await prisma.agentTask.create({
               data: {
                 businessId: "biz_jobgrade",
                 assignedBy: config.agentRole,
                 cycleLogId: cycleLog?.id ?? null,
-                assignedTo: delegated.assignedTo,
-                title: delegated.title,
-                description: delegated.description,
+                assignedTo: effectiveTo,
+                title: effectiveTitle,
+                description: effectiveDesc,
                 taskType: delegated.taskType,
                 priority: delegated.priority,
                 objectiveId: managerObjectiveId,
@@ -437,7 +456,7 @@ async function executeActions(
                 status: "ASSIGNED",
               },
             })
-            console.log(`   📋 Task delegat: ${config.agentRole} → ${action.target}: ${delegated.title}`)
+            console.log(`   📋 Task delegat: ${config.agentRole} → ${effectiveTo}: ${effectiveTitle}`)
           }
         } catch (e: any) {
           // agent_tasks table might not exist yet — silent
