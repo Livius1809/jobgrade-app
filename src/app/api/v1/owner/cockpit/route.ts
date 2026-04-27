@@ -337,7 +337,7 @@ export async function GET(req: NextRequest) {
       prisma.agentTask.groupBy({ by: ["status"], _count: true }),
       prisma.agentTask.count({ where: { completedAt: { gte: h24 }, status: "COMPLETED" } }),
       prisma.agentTask.count({ where: { completedAt: { gte: h24 }, status: "COMPLETED", kbHit: true } }),
-      prisma.agentTask.aggregate({ where: { completedAt: { gte: d7 } }, _sum: { costUsd: true } }).catch(() => ({ _sum: { costUsd: null } })),
+      Promise.resolve({ _sum: { costUsd: null } }), // costUsd nu exista pe AgentTask — cost vine din execution_telemetry
       prisma.agentTask.count({ where: { status: "BLOCKED", blockedAt: { lt: d7 } } }),
       prisma.agentTask.count({ where: { status: "ASSIGNED", createdAt: { lt: d7 } } }),
       prisma.agentTask.count({ where: { status: "CANCELLED", updatedAt: { gte: d7 } } }),
