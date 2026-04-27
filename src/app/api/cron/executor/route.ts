@@ -270,15 +270,17 @@ export async function GET(request: NextRequest) {
         take: 10,
         orderBy: { capturedAt: "asc" },
       })
-      const roleMap: Record<string, string> = { LEGAL_REG: "CIA", COMPETITIVE: "MKA" }
       for (const signal of pending) {
         await prisma.externalSignal.update({ where: { id: signal.id }, data: { processedAt: new Date() } })
-        if (signal.category === "LEGAL_REG" || signal.category === "COMPETITIVE") {
+        // Procesam toate categoriile — fiecare are un agent responsabil
+        const catRoleMap: Record<string, string> = { MARKET_HR: "MKA", TECH_AI: "COA", CULTURAL_SOCIAL: "COCSA", COMPETITOR: "CIA", MACRO_ECONOMIC: "CFO" }
+        const assignTo = catRoleMap[signal.category] || "COG"
+        if (assignTo) {
           await prisma.agentTask.create({
             data: {
               title: `REACT ${signal.category}: ${(signal.title || "Signal").slice(0, 100)}`,
               description: `Semnal extern: ${signal.category}. Sursa: ${signal.source || "?"}. Titlu: ${signal.title || "?"}. Analizeaza impactul.`,
-              assignedTo: roleMap[signal.category] || "COG",
+              assignedTo: assignTo,
               assignedBy: "COSO",
               status: "ASSIGNED",
               priority: "URGENT",
