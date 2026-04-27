@@ -128,8 +128,42 @@ export async function selfComplete(gap: KBGap): Promise<SelfCompleteResult> {
     }
   } catch { /* brainstorm indisponibil — continuă */ }
 
-  // ── Pas 4: Identificare GAP specific (declarativ vs procedural) ──
-  // Claude targetat e pasul 5 — dar acum știm EXACT ce lipsește
+  // ── Pas 4: Identificare GAP — cunoastere sau competenta? ──
+  // 4a. Gap cunoastere → agentul are mandatul dar nu stie cum → pas 5
+  // 4b. Gap competenta → niciun agent nu are mandatul → reconfigurare fise post
+  try {
+    const { getDirectSubordinates, getDirectSuperior } = await import("@/lib/agents/hierarchy-enforcer")
+    const superior = await getDirectSuperior(gap.agentRole)
+    if (superior) {
+      const siblings = await getDirectSubordinates(superior)
+      let anyPeerHasCompetency = false
+      for (const peer of siblings) {
+        if (peer === gap.agentRole) continue
+        try {
+          const peerResults = await searchKB(peer, gap.topic, 2)
+          if (peerResults.length > 0 && (peerResults[0].similarity ?? 0) > 0.60) {
+            anyPeerHasCompetency = true
+            break
+          }
+        } catch {}
+      }
+      if (!anyPeerHasCompetency) {
+        await p.agentTask.create({
+          data: {
+            businessId: "biz_jobgrade",
+            assignedBy: gap.agentRole,
+            assignedTo: superior,
+            title: "[Gap competenta] Reconfigurare atributii: " + gap.topic.slice(0, 60),
+            description: `Agentul ${gap.agentRole} a identificat gap de COMPETENTA. Nimeni nu are mandatul pentru: ${gap.topic}. Actiune: 1. Identifica agentul potrivit 2. Reconfigureaza fisa post 3. Cold start KB 4. APOI Claude pe filiera specifica.`,
+            taskType: "PROCESS_EXECUTION",
+            priority: "IMPORTANT",
+            status: "ASSIGNED",
+            tags: ["competency-gap", "reconfigurare"],
+          },
+        }).catch(() => {})
+      }
+    }
+  } catch {}
 
   // ── Pas 5: Claude generează entry targeted (ULTIMUL resort) ��─
   try {
@@ -185,7 +219,7 @@ Genereaza cunoastere actionabila pe acest subiect.`,
     }
   } catch { /* Claude indisponibil sau parse error */ }
 
-  // ── Pas 4: Escalare la Owner ──────────────────────────
+  // ── Pas 5: Claude targeted (ULTIMUL resort, DOAR pe gap cunoastere) ──
   const owner = await p.user.findFirst({
     where: { role: { in: ["OWNER", "SUPER_ADMIN"] } },
     select: { id: true },
