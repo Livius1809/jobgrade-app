@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { subject, description } = body
+  const { subject, description, ticketType, source } = body
 
   if (!subject?.trim() || !description?.trim()) {
     return NextResponse.json({ error: "Subiect si descriere obligatorii" }, { status: 400 })
@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
     createdBy: session.user.id,
     subject: subject.trim(),
     description: description.trim(),
+    ticketType: ticketType || "SUPORT",
+    source: source || "DIRECT",
   })
 
   // 2. Rafinare automată FW
@@ -113,19 +115,86 @@ export async function GET(req: NextRequest) {
   const tickets = await p.supportTicket.findMany({
     where: { tenantId: session.user.tenantId },
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: 30,
     select: {
       id: true,
       subject: true,
       status: true,
       priority: true,
       affectedFlow: true,
+      resolution: true,
       clientResponse: true,
       respondedAt: true,
       clientRating: true,
+      clientFeedback: true,
       createdAt: true,
     },
   })
 
   return NextResponse.json({ tickets })
+}
+
+// PATCH — Client evalueaza satisfactia dupa rezolvare
+export async function PATCH(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
+  }
+
+  const body = await req.json()
+  const { ticketId, ratings } = body
+  // ratings: { rezultat: 1-5, timpRaspuns: 1-5, comunicare: 1-5, comentariu?: string }
+
+  if (!ticketId || !ratings) {
+    return NextResponse.json({ error: "ticketId si ratings obligatorii" }, { status: 400 })
+  }
+
+  const p = prisma as any
+  const ticket = await p.supportTicket.findFirst({
+    where: { id: ticketId, tenantId: session.user.tenantId },
+  })
+
+  if (!ticket) return NextResponse.json({ error: "Ticket negasit" }, { status: 404 })
+  if (!["RESPONDED", "RESOLVED"].includes(ticket.status)) {
+    return NextResponse.json({ error: "Ticketul nu e inca rezolvat" }, { status: 400 })
+  }
+
+  // Scor mediu din cele 3 criterii
+  const avgRating = Math.round(
+    ((ratings.rezultat || 3) + (ratings.timpRaspuns || 3) + (ratings.comunicare || 3)) / 3
+  )
+
+  const feedbackText = [
+    `Rezultat: ${ratings.rezultat}/5`,
+    `Timp raspuns: ${ratings.timpRaspuns}/5`,
+    `Comunicare: ${ratings.comunicare}/5`,
+    ratings.comentariu ? `Comentariu: ${ratings.comentariu}` : "",
+  ].filter(Boolean).join(" | ")
+
+  await p.supportTicket.update({
+    where: { id: ticketId },
+    data: {
+      clientRating: avgRating,
+      clientFeedback: feedbackText,
+      status: "CLOSED",
+    },
+  })
+
+  // Alimentam palnia de invatare cu feedback-ul clientului
+  try {
+    const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+    await learningFunnel({
+      agentRole: ticket.routedToAgent || "COCSA",
+      type: "FEEDBACK",
+      input: `Ticket: ${ticket.subject}`,
+      output: `Rating: ${avgRating}/5. ${feedbackText}`,
+      success: avgRating >= 3,
+      metadata: { source: "client-satisfaction", ticketId, ratings },
+    })
+  } catch {}
+
+  return NextResponse.json({
+    ok: true,
+    message: "Multumim pentru feedback. Apreciem fiecare raspuns.",
+  })
 }

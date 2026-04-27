@@ -26,6 +26,8 @@ const FLOW_CATEGORIES = [
   { key: "tehnic", label: "Eroare tehnică / Nu funcționează", routeTo: "COA" },
   { key: "cont", label: "Cont / Acces / Utilizatori", routeTo: "COA" },
   { key: "metodologie", label: "Întrebare despre metodologie", routeTo: "HR_COUNSELOR" },
+  { key: "feedback", label: "Feedback experienta", routeTo: "CSSA" },
+  { key: "solicitare", label: "Solicitare / Cerere functionala", routeTo: "PMA" },
   { key: "altceva", label: "Altceva", routeTo: "COCSA" },
 ]
 
@@ -36,15 +38,22 @@ export async function createTicket(input: {
   createdBy: string
   subject: string
   description: string
+  source?: "DIRECT" | "CHAT_FW" | "CHAT_CSA" // sursa: client direct, FW din chat, CSA din chat
+  ticketType?: "SUPORT" | "FEEDBACK" | "SOLICITARE" // tip: suport clasic, feedback experienta, cerere functionala
 }): Promise<string> {
   const p = prisma as any
+
+  // Prefix subiect cu tipul pentru tracking
+  const prefix = input.ticketType === "FEEDBACK" ? "[Feedback] "
+    : input.ticketType === "SOLICITARE" ? "[Solicitare] "
+    : ""
 
   const ticket = await p.supportTicket.create({
     data: {
       tenantId: input.tenantId,
       createdBy: input.createdBy,
-      subject: input.subject,
-      description: input.description,
+      subject: `${prefix}${input.subject}`,
+      description: `${input.description}${input.source ? `\n\n[Sursa: ${input.source}]` : ""}`,
       status: "NEW",
     },
   })
@@ -75,7 +84,7 @@ NU diagnostica tehnic. NU sugera soluții. Doar clarifică.
 Raspunde JSON:
 {
   "refinedDescription": "Descriere rafinata clara",
-  "affectedFlow": "onboarding|evaluare|rapoarte|plata|tehnic|cont|metodologie|altceva",
+  "affectedFlow": "onboarding|evaluare|rapoarte|plata|tehnic|cont|metodologie|feedback|solicitare|altceva",
   "needsMoreInfo": true/false,
   "followUpQuestion": "intrebare suplimentara daca needsMoreInfo=true"
 }`,
