@@ -3,14 +3,16 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 
-export const metadata = { title: "Pipeline primul client — Owner Dashboard" }
+export const metadata = { title: "Pipeline activ — Owner Dashboard" }
 export const dynamic = "force-dynamic"
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
+  strategic: { label: "Strategic", color: "text-indigo-700", bgColor: "bg-indigo-50 border-indigo-200" },
   tier1: { label: "TIER 1 — Blocker", color: "text-red-700", bgColor: "bg-red-50 border-red-200" },
   tier2: { label: "TIER 2 — Saptamana 1", color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200" },
   tier3: { label: "TIER 3 — Luna 1", color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200" },
   pipeline: { label: "Coordonare", color: "text-slate-700", bgColor: "bg-slate-50 border-slate-200" },
+  "first-client": { label: "Primul Client", color: "text-emerald-700", bgColor: "bg-emerald-50 border-emerald-200" },
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -37,10 +39,11 @@ export default async function PipelinePage() {
 
   const p = prisma as any
 
-  // Toate taskurile pipeline (au tag-uri tier1/tier2/tier3/pipeline)
+  // Taskurile pipeline ACTIVE (excludem CANCELLED și EXPIRED)
   const tasks = await p.agentTask.findMany({
     where: {
-      tags: { hasSome: ["tier1", "tier2", "tier3", "pipeline"] },
+      tags: { hasSome: ["tier1", "tier2", "tier3", "pipeline", "strategic", "first-client"] },
+      status: { notIn: ["CANCELLED", "EXPIRED"] },
     },
     select: {
       id: true, title: true, assignedTo: true, assignedBy: true,
@@ -52,7 +55,7 @@ export default async function PipelinePage() {
   })
 
   // Grupăm pe tier
-  const tiers = ["tier1", "tier2", "tier3", "pipeline"]
+  const tiers = ["strategic", "tier1", "tier2", "tier3", "pipeline", "first-client"]
   const grouped = tiers.map(tier => ({
     tier,
     config: TIER_CONFIG[tier],
@@ -71,8 +74,8 @@ export default async function PipelinePage() {
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Pipeline primul client B2B</h1>
-          <p className="text-sm text-slate-500">Status evolutiv — actualizat live</p>
+          <h1 className="text-xl font-bold text-slate-900">Pipeline activ</h1>
+          <p className="text-sm text-slate-500">Obiective si taskuri in desfasurare — actualizat live</p>
         </div>
         <Link href="/owner" className="text-xs text-indigo-600 hover:underline">← Dashboard</Link>
       </div>

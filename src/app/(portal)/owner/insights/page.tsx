@@ -893,9 +893,9 @@ export default async function InsightsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
             <p className="text-xs font-bold text-indigo-700">Experiment activ</p>
-            <p className="text-sm text-slate-600 mt-1">Cold start 100% organism — 75 agenti</p>
-            <p className="text-[10px] text-indigo-400 mt-2">Ipoteza: acoperire KB completa creste autonomia si calitatea raspunsurilor</p>
-            <p className="text-[10px] text-slate-400">Start: 26.04.2026 · Masurare: la primul client B2B</p>
+            <p className="text-sm text-slate-600 mt-1">Delegare ierarhica + 5 pasi compunere cunoastere</p>
+            <p className="text-[10px] text-indigo-400 mt-2">Ipoteza: delegare prin niveluri + brainstorm pe teritoriu nou reduce apelurile Claude si creste calitatea</p>
+            <p className="text-[10px] text-slate-400">Start: 27.04.2026 · Masurare: la primul client B2B (marti)</p>
           </div>
           <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
             <p className="text-xs font-bold text-emerald-700">Ultima actiune majora</p>
