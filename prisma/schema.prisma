@@ -3903,3 +3903,79 @@ model AlignmentLog {
   @@index([level, result])
   @@map("alignment_logs")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUPORT CLIENT — Ticketing + Rezolvare + Învățare
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model SupportTicket {
+  id            String              @id @default(cuid())
+  tenantId      String              // clientul B2B
+  createdBy     String              // userId care a creat ticketul
+  
+  // Semnalare client (text brut, neinterpretat)
+  subject       String              // titlu scurt
+  description   String              @db.Text  // descrierea problemei
+  
+  // Rafinare FW (după interogare suplimentară)
+  refinedDescription String?        @db.Text  // versiunea rafinată
+  affectedFlow       String?        // fluxul afectat (vanzare/utilizare/plata/onboarding)
+  
+  // Rutare
+  routedToAgent     String?         // agentul identificat cu atribuțiile potrivite
+  routedToDept      String?         // departamentul
+  routedByCSA       Boolean         @default(false) // CSA a făcut rutarea
+  
+  // Rezolvare
+  status            SupportTicketStatus @default(NEW)
+  priority          AgentTaskPriority   @default(NECESAR)
+  resolutionTaskId  String?         // task-ul intern creat pentru rezolvare
+  resolution        String?         @db.Text  // rezolvarea internă
+  
+  // Răspuns client
+  clientResponse    String?         @db.Text  // răspunsul formulat pentru client (calibrat L2)
+  respondedAt       DateTime?
+  respondedBy       String?         // agentul care a formulat răspunsul
+  
+  // Satisfacție client
+  clientRating      Int?            // 1-5
+  clientFeedback    String?
+  
+  // Învățare
+  distilled         Boolean         @default(false)  // s-a extras învățare?
+  learningArtifactId String?
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  @@index([tenantId, status])
+  @@index([status, priority])
+  @@index([routedToAgent, status])
+  @@map("support_tickets")
+}
+
+enum SupportTicketStatus {
+  NEW               // client tocmai a trimis
+  REFINING          // FW rafinează cu clientul
+  ROUTED            // CSA a rutat la agentul potrivit
+  IN_PROGRESS       // se lucrează la rezolvare
+  RESOLVED          // rezolvat intern, răspuns în curs
+  RESPONDED         // răspuns trimis clientului
+  CLOSED            // client a confirmat sau timeout
+  ESCALATED         // escalat la nivel superior / Owner
+}
+
+// Partiție L2: secrete de serviciu (NU ajung la client-facing/profiler)
+model TradeSecret {
+  id            String   @id @default(cuid())
+  category      String   // pricing-internal, algorithm, scoring-formula, strategy
+  content       String   @db.Text
+  accessLevel   String   @default("INTERNAL_ONLY") // INTERNAL_ONLY | MANAGEMENT | OWNER
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([category])
+  @@index([accessLevel])
+  @@map("trade_secrets")
+}

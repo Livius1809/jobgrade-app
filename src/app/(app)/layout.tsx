@@ -52,6 +52,9 @@ export default async function AppLayout({
             <Link href="/reports" className="text-text-secondary hover:text-foreground transition-colors">
               Rapoarte
             </Link>
+            <Link href="/support" className="text-text-secondary hover:text-foreground transition-colors">
+              Suport
+            </Link>
           </nav>
 
           <div className="flex items-center gap-3">
