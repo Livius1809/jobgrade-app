@@ -262,6 +262,24 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
+    // NIVEL 6: OPERATIONAL ENGINE — heartbeat + self-check + auto-remediere
+    let operationalReport: any = null
+    try {
+      const { runOperationalEngine } = await import("@/lib/agents/operational-engine")
+      operationalReport = await runOperationalEngine()
+      if (operationalReport.anomalies.length > 0) {
+        console.log(`[cron/executor] Operational engine: ${operationalReport.anomalies.length} anomalii (${operationalReport.anomalyCount.critical} critical, ${operationalReport.anomalyCount.high} high)`)
+        for (const a of operationalReport.anomalies.filter((x: any) => x.severity === "CRITICAL")) {
+          console.log(`  CRITICAL: ${a.title}`)
+        }
+      }
+      if (operationalReport.autoRemediationsApplied > 0) {
+        console.log(`[cron/executor] Auto-remedieri: ${operationalReport.autoRemediationsApplied}`)
+      }
+    } catch (e: any) {
+      console.log(`[cron/executor] Operational engine skip: ${(e as Error).message?.slice(0, 60)}`)
+    }
+
     return NextResponse.json({
       ok: true,
       batches: batchCount,
@@ -291,6 +309,12 @@ export async function GET(request: NextRequest) {
         totalActions: proactiveResult.totalActions,
         errors: proactiveResult.errors,
       },
+      operational: operationalReport ? {
+        anomalies: operationalReport.anomalyCount,
+        autoRemediations: operationalReport.autoRemediationsApplied,
+        selfCheck: operationalReport.selfCheck,
+        efficiency: operationalReport.efficiency,
+      } : null,
       objectiveRollup: rollupResult.updated,
       invalidatedByCode,
       staleTasksCleaned,
