@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       jobCategory: true,
       workSchedule: true,
       salaryGradeId: true,
-      salaryGrade: { select: { grade: true, label: true } },
+      salaryGrade: { select: { name: true } },
     },
   })
 
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
   dimensions.push(computeDimension("gender", "Gen", "AUTO", e => e.gender))
   dimensions.push(computeDimension("department", "Departament", "AUTO", e => e.department))
   dimensions.push(computeDimension("jobCategory", "Categorie post", "AUTO", e => e.jobCategory))
-  dimensions.push(computeDimension("grade", "Grad salarial", "AUTO", e => e.salaryGrade?.label || (e.salaryGradeId ? `Grad ${e.salaryGradeId}` : null)))
+  dimensions.push(computeDimension("grade", "Grad salarial", "AUTO", e => e.salaryGrade?.name || (e.salaryGradeId ? `Grad ${e.salaryGradeId}` : null)))
   dimensions.push(computeDimension("workSchedule", "Norma de lucru", "AUTO", e => e.workSchedule))
 
   // Dimensiuni extra de la client
