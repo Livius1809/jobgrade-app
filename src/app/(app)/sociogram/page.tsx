@@ -229,7 +229,7 @@ export default function SociogramPage() {
                   <div className="bg-amber-100/50 rounded-lg p-2 text-[10px] text-amber-700 whitespace-pre-line">
                     {step === 1
                       ? "PAS 1: Marcheaza cu \u2713 colegii cu care DORESTI sa colaborezi si cu \u2717 pe cei cu care NU doresti."
-                      : `PAS 2: Acorda un scor de la 1 la ${preferred.length} pentru cei cu \u2713 (1=preferinta mica, ${preferred.length}=preferinta mare) si de la 1 la ${rejected.length} pentru cei cu \u2717 (1=lipsa mica, ${rejected.length}=lipsa mare).`
+                      : `PAS 2: Acorda fiecarui coleg un scor unic de la ${colleagues.length} (cel mai preferat) la 1 (cel mai respins). Scorurile mari merg la cei cu \u2713, scorurile mici la cei cu \u2717.`
                     }
                   </div>
 
@@ -265,14 +265,18 @@ export default function SociogramPage() {
                     </div>
                   )}
 
-                  {/* PAS 2: Ranking numeric */}
+                  {/* PAS 2: Ranking numeric — o singura scala N la 1 */}
                   {step === 2 && (
                     <div className="space-y-4">
-                      {/* Preferinte (✓) */}
+                      <p className="text-xs text-slate-600">
+                        Acorda fiecarui coleg un scor unic. Scorurile mari ({colleagues.length}, {colleagues.length - 1}...) pentru preferati, scorurile mici (1, 2...) pentru respinsi.
+                      </p>
+
+                      {/* Preferinte (✓) — scoruri mari */}
                       {preferred.length > 0 && (
                         <div>
-                          <p className="text-xs font-bold text-emerald-700 mb-2">
-                            Colegii cu care doresti sa colaborezi — acorda scor de la 1 la {preferred.length}
+                          <p className="text-[10px] font-bold text-emerald-700 mb-1 uppercase tracking-wide">
+                            {"\u2713"} Preferinte ({preferred.length}) — scoruri mari
                           </p>
                           {preferred.map(code => {
                             const m = colleagues.find(c => c.code === code)
@@ -281,9 +285,9 @@ export default function SociogramPage() {
                                 <span className="text-xs">{m?.name} <span className="text-emerald-500">{"\u2713"}</span></span>
                                 <select value={rankings[code] || ""}
                                   onChange={e => setRankings(prev => ({ ...prev, [code]: Number(e.target.value) }))}
-                                  className="w-16 text-xs text-center border border-emerald-200 rounded px-1 py-1 bg-white">
+                                  className="w-16 text-xs text-center border border-emerald-200 rounded px-1 py-1 bg-emerald-50">
                                   <option value="">—</option>
-                                  {Array.from({ length: preferred.length }, (_, i) => i + 1).map(n => (
+                                  {Array.from({ length: colleagues.length }, (_, i) => colleagues.length - i).map(n => (
                                     <option key={n} value={n}>{n}</option>
                                   ))}
                                 </select>
@@ -293,11 +297,11 @@ export default function SociogramPage() {
                         </div>
                       )}
 
-                      {/* Respingeri (✗) */}
+                      {/* Respingeri (✗) — scoruri mici */}
                       {rejected.length > 0 && (
                         <div>
-                          <p className="text-xs font-bold text-red-700 mb-2">
-                            Colegii cu care nu doresti sa colaborezi — acorda scor de la 1 la {rejected.length}
+                          <p className="text-[10px] font-bold text-red-700 mb-1 uppercase tracking-wide">
+                            {"\u2717"} Respingeri ({rejected.length}) — scoruri mici
                           </p>
                           {rejected.map(code => {
                             const m = colleagues.find(c => c.code === code)
@@ -306,10 +310,10 @@ export default function SociogramPage() {
                                 <span className="text-xs">{m?.name} <span className="text-red-500">{"\u2717"}</span></span>
                                 <select value={rankings[code] || ""}
                                   onChange={e => setRankings(prev => ({ ...prev, [code]: Number(e.target.value) }))}
-                                  className="w-16 text-xs text-center border border-red-200 rounded px-1 py-1 bg-white">
+                                  className="w-16 text-xs text-center border border-red-200 rounded px-1 py-1 bg-red-50 text-red-700 font-bold">
                                   <option value="">—</option>
-                                  {Array.from({ length: rejected.length }, (_, i) => i + 1).map(n => (
-                                    <option key={n} value={n}>{n}</option>
+                                  {Array.from({ length: colleagues.length }, (_, i) => i + 1).map(n => (
+                                    <option key={n} value={n}>-{n}</option>
                                   ))}
                                 </select>
                               </div>
@@ -317,6 +321,16 @@ export default function SociogramPage() {
                           })}
                         </div>
                       )}
+
+                      {/* Verificare: fiecare scor folosit o singura data */}
+                      {(() => {
+                        const usedScores = Object.values(rankings).filter(v => v > 0)
+                        const duplicates = usedScores.filter((v, i) => usedScores.indexOf(v) !== i)
+                        if (duplicates.length > 0) {
+                          return <p className="text-[10px] text-red-600">Atentie: scorul {duplicates[0]} este folosit de mai multe ori. Fiecare coleg trebuie sa aiba un scor unic.</p>
+                        }
+                        return null
+                      })()}
 
                       <div className="flex gap-2 pt-2">
                         <button onClick={() => setStep(1)}
