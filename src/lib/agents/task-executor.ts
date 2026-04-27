@@ -606,37 +606,99 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
       } catch {}
     }
 
-    // Escalare la Owner doar dacă blocajul e strategic/buget/conducere
-    if (/owner|conducere|decizie.*strategic|buget|finanț/i.test(blockerDesc)) {
+    // Bucla de feedback: inainte de Owner, structura se rezolva singura
+    const blockerRoleName = ROLE_LABELS[task.assignedTo] || task.assignedTo
+    const cleanBlockerDesc = stripTechJargon(blockerDesc)
+    const cleanTaskTitle = stripTechJargon(task.title)
+
+    // Verificare: daca agentul blocat e SUPERIOR celui de care depinde → delegheaza direct, nu se blocheaza
+    // Un sef nu se blocheaza asteptand un subordonat — ii da direct instructiuni
+    const blockerMention = blockerDesc.match(/de la\s+(\w+)|input.*de la\s+(\w+)|cerere.*(\w+)/i)
+    if (blockerMention) {
+      const dependsOn = (blockerMention[1] || blockerMention[2] || blockerMention[3] || "").toUpperCase()
+      if (dependsOn) {
+        try {
+          const { getDirectSubordinates } = await import("./hierarchy-enforcer")
+          const subordinates = await getDirectSubordinates(task.assignedTo)
+          if (subordinates.includes(dependsOn)) {
+            // Agentul blocat E SEFUL celui de care depinde — delegheaza direct
+            await (prisma as any).agentTask.create({
+              data: {
+                businessId: task.businessId || "biz_jobgrade",
+                assignedBy: task.assignedTo,
+                assignedTo: dependsOn,
+                title: `[Delegat de ${blockerRoleName}] ${cleanTaskTitle}`,
+                description: `${blockerRoleName} are nevoie de: ${cleanBlockerDesc}\n\nLivrabil asteptat: raspuns structurat cu informatiile solicitate.`,
+                taskType: task.taskType || "INVESTIGATION",
+                priority: task.priority || "URGENT",
+                status: "ASSIGNED",
+                tags: ["delegated-by-superior", `parent:${task.id}`],
+              },
+            })
+            // Deblocheaza task-ul original — va fi completat cand subordonatul livreaza
+            await (prisma as any).agentTask.update({
+              where: { id: task.id },
+              data: { blockerDescription: `Delegat la ${dependsOn}. Asteptam livrare.` },
+            })
+            console.log(`[executor] Superior ${task.assignedTo} delegheaza direct la subordonat ${dependsOn} (nu se blocheaza)`)
+            return { outcome: "BLOCKED", subTaskIds }
+          }
+        } catch {}
+      }
+    }
+
+    // Pas 1: Returneaza task-ul la agentul care l-a creat (assignedBy) cu feedback clar
+    // NU escaladam la Owner — structura trebuie sa se rezolve singura
+    if (task.assignedBy && task.assignedBy !== "OWNER" && task.assignedBy !== "SYSTEM") {
       try {
-        // Găsim Owner user
+        await (prisma as any).agentTask.create({
+          data: {
+            businessId: task.businessId || "biz_jobgrade",
+            assignedBy: task.assignedTo,
+            assignedTo: task.assignedBy,
+            title: `[Returnat] ${cleanTaskTitle} — necesita reformulare`,
+            description: `Task-ul returnat de ${blockerRoleName} deoarece: ${cleanBlockerDesc}\n\nActiune necesara: reformuleaza cererea structurat si retrimite. Format recomandat: "Solicitam de la ${blockerRoleName} urmatoarele: 1) ..., 2) ..., 3) ... pentru a finaliza [livrabilul]."`,
+            taskType: task.taskType || "INVESTIGATION",
+            priority: task.priority || "NECESAR",
+            status: "ASSIGNED",
+            tags: ["feedback-loop", "returned-task", `original:${task.id}`],
+          },
+        })
+        console.log(`[executor] Feedback loop: ${task.assignedTo} returneaza task la ${task.assignedBy} (nu la Owner)`)
+      } catch {}
+    }
+
+    // Escalare la Owner DOAR daca:
+    // 1. Task-ul a fost creat de OWNER sau SYSTEM (nu exista bucla de feedback)
+    // 2. SAU blocajul e explicit strategic/buget (Owner e singurul care poate decide)
+    const isOwnerTask = !task.assignedBy || task.assignedBy === "OWNER" || task.assignedBy === "SYSTEM"
+    const isStrategicBlock = /buget.*aprobat|alocare.*fonduri|decizie.*proprietar|schimbare.*strateg/i.test(blockerDesc)
+
+    if (isOwnerTask || isStrategicBlock) {
+      try {
         const ownerUser = await (prisma as any).user.findFirst({
           where: { role: { in: ["OWNER", "SUPER_ADMIN"] } },
           select: { id: true },
         })
         if (ownerUser) {
-          const blockerRoleName = ROLE_LABELS[task.assignedTo] || task.assignedTo
-          const cleanBlockerDesc = stripTechJargon(blockerDesc)
-          const cleanTaskTitle = stripTechJargon(task.title)
-
           await (prisma as any).notification.create({
             data: {
               userId: ownerUser.id,
               type: "AGENT_MESSAGE",
-              title: `${blockerRoleName}: este blocat si are nevoie de directiva dumneavoastra`,
-              body: `${blockerRoleName} lucreaza la: ${cleanTaskTitle}.\nMotivul blocajului: ${cleanBlockerDesc}`,
+              title: `${blockerRoleName}: necesita decizie strategica`,
+              body: `${blockerRoleName} lucreaza la: ${cleanTaskTitle}.\nMotivul: ${cleanBlockerDesc}`,
               read: false,
               sourceRole: task.assignedTo,
               requestKind: "DECISION",
               requestData: JSON.stringify({
-                whatIsNeeded: `${blockerRoleName} este blocat si are nevoie de o decizie de la dumneavoastra pentru a continua`,
-                context: `Lucreaza la: ${cleanTaskTitle}. Motivul blocajului: ${cleanBlockerDesc}`,
+                whatIsNeeded: `${blockerRoleName} necesita o decizie strategica pentru a continua`,
+                context: `Lucreaza la: ${cleanTaskTitle}. Motivul: ${cleanBlockerDesc}`,
                 resourceLabel: cleanTaskTitle,
               }),
             },
           })
         }
-      } catch { /* notification non-blocking */ }
+      } catch {}
     }
 
     return { outcome: "BLOCKED", subTaskIds }
