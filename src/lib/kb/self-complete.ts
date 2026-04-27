@@ -89,7 +89,49 @@ export async function selfComplete(gap: KBGap): Promise<SelfCompleteResult> {
     }
   } catch { /* search L2 indisponibil — continuă */ }
 
-  // ── Pas 3: Claude generează entry targeted ─────────────
+  // ── Pas 3: Generare CREATIVĂ — brainstorm cu resursele adunate ──
+  // Se activează doar dacă agentul are subordonați (manager)
+  try {
+    const { getDirectSubordinates } = await import("@/lib/agents/hierarchy-enforcer")
+    const subs = await getDirectSubordinates(gap.agentRole)
+    if (subs.length >= 2) {
+      const { maybeTrigerBrainstorm } = await import("@/lib/agents/proactive-brainstorm")
+      const brainstorm = await maybeTrigerBrainstorm({
+        managerRole: gap.agentRole,
+        trigger: "new-objective",
+        title: gap.topic,
+        context: gap.context || "",
+      })
+      if (brainstorm.triggered && brainstorm.topIdea) {
+        // Brainstorm-ul a generat cunoaștere nouă — salvăm în KB
+        await p.kBEntry.create({
+          data: {
+            agentRole: gap.agentRole,
+            kbType: "SHARED_DOMAIN",
+            content: `[Brainstorm echipă] ${brainstorm.topIdea}`,
+            tags: ["brainstorm-generated", "creative-composition", gap.objectiveCode || "general"].filter(Boolean),
+            confidence: 0.60,
+            source: "DISTILLED_INTERACTION",
+            status: "PERMANENT",
+            usageCount: 0,
+            validatedAt: new Date(),
+          },
+        })
+        return {
+          gap,
+          resolved: true,
+          source: "kb-own" as const,
+          entriesCreated: 1,
+          message: `Rezolvat prin brainstorm echipa (${brainstorm.ideasGenerated} idei, top: ${brainstorm.topIdea?.slice(0, 80)})`,
+        }
+      }
+    }
+  } catch { /* brainstorm indisponibil — continuă */ }
+
+  // ── Pas 4: Identificare GAP specific (declarativ vs procedural) ──
+  // Claude targetat e pasul 5 — dar acum știm EXACT ce lipsește
+
+  // ── Pas 5: Claude generează entry targeted (ULTIMUL resort) ��─
   try {
     const client = new Anthropic()
     const response = await client.messages.create({
