@@ -385,9 +385,11 @@ const RULES: Rule[] = [
       const roles = Array.from(new Set(events.map((e) => e.targetId))).sort()
       const signal = events[0].signal
       const { first, last } = firstLast(events)
+      // Inactivitate si monotonie = CONFIG_NOISE, nu decizie Owner
+      const isInactivityOrMonotony = /no_activity|no_cycles|monotone_/i.test(signal)
       return {
         id: key,
-        classification: "DECISION_REQUIRED",
+        classification: isInactivityOrMonotony ? "CONFIG_NOISE" as SituationClassification : "DECISION_REQUIRED",
         severity: events.reduce<Situation["severity"]>(
           (acc, e) => maxSeverity(acc, e.severity),
           "LOW",
@@ -532,17 +534,21 @@ export function aggregateSituations(events: EventInput[]): Situation[] {
     situations.push(rule.build(clusterEvents, key))
   }
 
-  // Fallback: evenimente unmatched devin situații individuale DECISION_REQUIRED
-  // (pentru D2 single-role) sau CONFIG_NOISE (pentru orice altceva neclasificat).
+  // Fallback: evenimente unmatched devin situații individuale
+  // D2 single-role cu semnal REAL (nu inactivitate/monotonie) → DECISION_REQUIRED
+  // D2 single-role cu inactivitate/monotonie → CONFIG_NOISE (nu e decizie Owner)
+  // Orice altceva → CONFIG_NOISE
   for (const e of unmatched) {
     const isOpenD2Role =
       e.class === "D2_FUNCTIONAL_MGMT" &&
       e.targetType === "ROLE" &&
       e.status === "OPEN"
+    const isInactivityOrMonotony = /no_activity|no_cycles|monotone_|dormant|reactivare/i.test(e.signal)
+    const isRealDecision = isOpenD2Role && !isInactivityOrMonotony
     const { first, last } = firstLast([e])
     situations.push({
       id: `single:${e.targetType}:${e.targetId}:${e.signal}`,
-      classification: isOpenD2Role ? "DECISION_REQUIRED" : "CONFIG_NOISE",
+      classification: isRealDecision ? "DECISION_REQUIRED" : "CONFIG_NOISE",
       severity: e.severity,
       title: isOpenD2Role
         ? `Rol ${e.targetId}: ${e.signal}`
