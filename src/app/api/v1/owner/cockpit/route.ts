@@ -351,7 +351,7 @@ export async function GET(req: NextRequest) {
       prisma.agentTask.count({ where: { status: "COMPLETED", createdAt: { gte: d30 }, kbHit: true } }).catch(() => 0),
       prisma.agentTask.count({ where: { completedAt: { gte: d30 }, status: "COMPLETED" } }).catch(() => 0),
       // INTERACTIUNI
-      prisma.agentTask.findMany({ where: { createdBy: "cog-agent", createdAt: { gte: d7 } }, select: { assignedTo: true } }),
+      prisma.agentTask.findMany({ where: { assignedBy: "cog-agent", createdAt: { gte: d7 } }, select: { assignedTo: true } }),
       (prisma as any).agentRelationship?.findMany({ where: { parentRole: "cog-agent", isActive: true, relationType: "REPORTS_TO" }, select: { childRole: true } }).catch(() => []),
       prisma.agentTask.count({ where: { tags: { hasSome: ["lateral-collaboration"] }, createdAt: { gte: d7 } } }).catch(() => 0),
       (prisma as any).brainstormSession?.count({ where: { createdAt: { gte: d7 } } }).catch(() => 0),

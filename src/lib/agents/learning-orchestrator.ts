@@ -293,7 +293,7 @@ async function interveneOnLowMaturity(
         await p.agentTask?.create({
           data: {
             assignedTo: agent.agent,
-            createdBy: "learning-orchestrator",
+            assignedBy: "learning-orchestrator",
             title: `[Learning Boost] Consolidare cunostinte ${agent.agent}`,
             description: `Agentul ${agent.agent} are maturitate SEED (score: ${agent.score}). ` +
               `Doar ${validatedCount} artefacte validate. ` +

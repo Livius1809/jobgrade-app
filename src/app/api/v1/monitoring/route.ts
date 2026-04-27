@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     // Taskuri create de COG in ultimele 7 zile
     const cogTasks = await prisma.agentTask.findMany({
       where: {
-        createdBy: "cog-agent",
+        assignedBy: "cog-agent",
         createdAt: { gte: last7d },
       },
       select: { assignedTo: true, createdAt: true },
