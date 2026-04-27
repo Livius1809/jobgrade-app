@@ -3,19 +3,13 @@
  *
  * Sociograma Balint — masurare afinitate intre membri echipa.
  *
- * Procesul de completare (2 pasi):
- * Pas 1: Citeste scenariul. Marcheaza cu ✓ colegii cu care doreste sa colaboreze
- *        si cu ✗ pe cei cu care nu doreste.
- * Pas 2: Scoreaza de la 1 la T pe cei cu ✓ (1 = preferinta cea mai mica, T = cea mai mare)
- *        si de la 1 la P pe cei cu ✗ (1 = lipsa preferintei cea mai mica, P = cea mai mare)
- *        unde T + P = numarul total de membri din echipa (exclusiv cel care completeaza).
- *
- * Scorare: preferintele primesc valori pozitive (ranking-ul), lipsa preferintei primesc
- * valori negative (-ranking). Se totalizeaza per persoana si se face clasament descrescator.
- *
- * GET  — Lista grupuri + status completare + rezultate
- * POST — Creaza grup SAU inregistreaza raspuns membru
- * PATCH — Finalizeaza grup (calculeaza scoruri)
+ * Procesul:
+ * 1. Citeste scenariul
+ * 2. Marcheaza ✓ (prefer) sau ✗ (nu prefer) per coleg
+ * 3. Scoreaza TOTI colegii de la N la 1 (N=cel mai preferat, 1=cel mai putin)
+ *    Scorurile sunt TOATE pozitive. Respingerea e marcata doar cu asterisc (*).
+ * 4. Totalul = suma scorurilor primite. Clasament descrescator.
+ * 5. Diagrama: 3 tipuri relatii (reciproca atractie, reciproca respingere, mixta)
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -31,26 +25,26 @@ interface GroupMember {
 
 interface MemberResponse {
   fromCode: string
-  // Pas 1: marcaj preferinta (true) sau lipsa preferinta (false) per coleg
-  choices: Record<string, boolean>  // colegCode -> true (✓ prefer) | false (✗ nu prefer)
-  // Pas 2: ranking numeric — preferintele primesc scor pozitiv, lipsa preferintei scor negativ
-  scores: Record<string, number>    // colegCode -> scor (pozitiv = preferinta, negativ = lipsa pref)
+  // Per coleg: scorul (1-N, pozitiv) + flag daca e respingere (asterisc)
+  ratings: Record<string, { score: number; isRejection: boolean }>
   completedAt: string | null
+}
+
+interface RelationshipType {
+  from: string
+  to: string
+  type: "ATTRACTION" | "REJECTION" | "MIXED"
 }
 
 interface SociogramResult {
   memberCode: string
   memberName: string
-  totalScore: number             // suma tuturor scorurilor primite (pozitive + negative)
-  totalPreferences: number       // cate ✓ a primit
-  totalRejections: number        // cate ✗ a primit
-  avgPreferenceRank: number      // media ranking-urilor pozitive primite
-  avgRejectionRank: number       // media ranking-urilor negative primite
-  reciprocalPrefs: string[]      // cu cine are preferinta reciproca (ambii ✓)
-  reciprocalRejs: string[]       // cu cine are respingere reciproca (ambii ✗)
-  isIsolated: boolean            // zero preferinte primite
+  totalScore: number             // suma scorurilor primite (toate pozitive)
+  preferenceCount: number        // cati l-au ales FARA asterisc
+  rejectionCount: number         // cati l-au ales CU asterisc
+  rank: number                   // pozitia in clasament
+  isIsolated: boolean            // zero preferinte (toti cu asterisc)
   isControversial: boolean       // multe preferinte SI multe respingeri
-  rank: number                   // pozitia in clasament (1 = cel mai preferat)
 }
 
 interface SociogramGroup {
@@ -61,6 +55,7 @@ interface SociogramGroup {
   responses: MemberResponse[]
   status: "COLLECTING" | "COMPLETED"
   results: SociogramResult[] | null
+  relationships: RelationshipType[] | null
   createdAt: string
   completedAt: string | null
 }
@@ -69,7 +64,6 @@ interface SociogramState {
   groups: SociogramGroup[]
 }
 
-// Scenariul care indeparteaza criteriile rationale
 const SCENARIO_TEXT = `Stii sigur ca va urma un proiect pe care e clar ca nu il vei putea duce de unul singur la bun sfarsit, dar nu stii de cati oameni vei avea nevoie in echipa de proiect.
 
 Persoanele disponibile sunt colegii tai actuali. Nimic nu va diferentiaza din punct de vedere profesional — stiti cu totii sa faceti orice este nevoie, in cel mai scurt timp si cu maximum de profesionalism.
@@ -82,11 +76,9 @@ const INSTRUCTIONS_TEXT = `Cum completezi:
 
 PAS 1: Priveste lista colegilor tai. Marcheaza cu ✓ pe cei cu care DORESTI sa colaborezi si cu ✗ pe cei cu care NU doresti.
 
-PAS 2: Dintre cei marcati cu ✓, acorda un scor de la 1 la T (unde T este numarul total al celor cu ✓). Scorul 1 inseamna preferinta cea mai mica, iar T inseamna preferinta cea mai mare.
+PAS 2: Acorda fiecarui coleg un scor unic, de la cel mai mare (cel mai preferat) la 1 (cel mai putin preferat). Toti primesc scor — inclusiv cei marcati cu ✗. Scorurile sunt in ordine descrescatoare.
 
-La fel, dintre cei marcati cu ✗, acorda un scor de la 1 la P (unde P este numarul total al celor cu ✗). Scorul 1 inseamna lipsa de preferinta cea mai mica, iar P inseamna lipsa de preferinta cea mai mare.
-
-T + P = numarul total de colegi (fara tine).`
+Cei marcati cu ✗ vor aparea in raport cu un asterisc (*) care semnaleaza respingerea. Scorul lor ramane pozitiv — doar marcajul conteaza.`
 
 function generateId(): string {
   return "sg_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
@@ -100,71 +92,70 @@ async function saveState(tenantId: string, state: SociogramState): Promise<void>
   await setTenantData(tenantId, "SOCIOGRAM", state)
 }
 
-// Calcul rezultate sociograma conform scorare Balint
-function computeResults(group: SociogramGroup): SociogramResult[] {
+// Calcul rezultate + relatii
+function computeResults(group: SociogramGroup): { results: SociogramResult[]; relationships: RelationshipType[] } {
   const members = group.members
   const responses = group.responses
 
+  // Calcul scoruri totale per membru
   const results = members.map(member => {
     let totalScore = 0
-    let totalPrefs = 0
-    let totalRejs = 0
-    let sumPrefRanks = 0
-    let sumRejRanks = 0
-    const reciprocalPrefs: string[] = []
-    const reciprocalRejs: string[] = []
+    let prefCount = 0
+    let rejCount = 0
 
-    // Ce au raspuns ALTII despre acest membru
     for (const resp of responses) {
       if (resp.fromCode === member.code) continue
-      const score = resp.scores[member.code]
-      if (score === undefined) continue
+      const rating = resp.ratings[member.code]
+      if (!rating) continue
 
-      totalScore += score
-      if (score > 0) {
-        totalPrefs++
-        sumPrefRanks += score
-      }
-      if (score < 0) {
-        totalRejs++
-        sumRejRanks += Math.abs(score)
-      }
-    }
-
-    // Reciprocitate — bazata pe choices (✓/✗), nu pe scoruri
-    const myResponse = responses.find(r => r.fromCode === member.code)
-    if (myResponse) {
-      for (const otherMember of members) {
-        if (otherMember.code === member.code) continue
-        const iChoseOther = myResponse.choices[otherMember.code]
-        const otherResponse = responses.find(r => r.fromCode === otherMember.code)
-        const otherChoseMe = otherResponse?.choices[member.code]
-
-        if (iChoseOther === true && otherChoseMe === true) reciprocalPrefs.push(otherMember.code)
-        if (iChoseOther === false && otherChoseMe === false) reciprocalRejs.push(otherMember.code)
-      }
+      totalScore += rating.score
+      if (rating.isRejection) rejCount++
+      else prefCount++
     }
 
     return {
       memberCode: member.code,
       memberName: member.name,
       totalScore,
-      totalPreferences: totalPrefs,
-      totalRejections: totalRejs,
-      avgPreferenceRank: totalPrefs > 0 ? Math.round((sumPrefRanks / totalPrefs) * 10) / 10 : 0,
-      avgRejectionRank: totalRejs > 0 ? Math.round((sumRejRanks / totalRejs) * 10) / 10 : 0,
-      reciprocalPrefs,
-      reciprocalRejs,
-      isIsolated: totalPrefs === 0,
-      isControversial: totalPrefs >= 3 && totalRejs >= 3,
-      rank: 0, // se calculeaza dupa sortare
+      preferenceCount: prefCount,
+      rejectionCount: rejCount,
+      rank: 0,
+      isIsolated: prefCount === 0,
+      isControversial: prefCount >= 2 && rejCount >= 2,
     }
   }).sort((a, b) => b.totalScore - a.totalScore)
 
-  // Atribuie rank-uri (clasament descrescator dupa totalScore)
   results.forEach((r, idx) => { r.rank = idx + 1 })
 
-  return results
+  // Calcul relatii reciproce (3 tipuri)
+  const relationships: RelationshipType[] = []
+  const seen = new Set<string>()
+
+  for (const respA of responses) {
+    for (const respB of responses) {
+      if (respA.fromCode === respB.fromCode) continue
+      const pairKey = [respA.fromCode, respB.fromCode].sort().join("-")
+      if (seen.has(pairKey)) continue
+      seen.add(pairKey)
+
+      const aToB = respA.ratings[respB.fromCode]
+      const bToA = respB.ratings[respA.fromCode]
+      if (!aToB || !bToA) continue
+
+      let type: RelationshipType["type"]
+      if (!aToB.isRejection && !bToA.isRejection) {
+        type = "ATTRACTION" // ambii fara asterisc
+      } else if (aToB.isRejection && bToA.isRejection) {
+        type = "REJECTION" // ambii cu asterisc
+      } else {
+        type = "MIXED" // unul cu, altul fara
+      }
+
+      relationships.push({ from: respA.fromCode, to: respB.fromCode, type })
+    }
+  }
+
+  return { results, relationships }
 }
 
 // GET
@@ -195,7 +186,7 @@ export async function GET(req: NextRequest) {
   })
 }
 
-// POST — Creaza grup SAU inregistreaza raspuns
+// POST
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.tenantId) {
@@ -220,49 +211,31 @@ export async function POST(req: NextRequest) {
       responses: [],
       status: "COLLECTING",
       results: null,
+      relationships: null,
       createdAt: new Date().toISOString(),
       completedAt: null,
     }
 
     state.groups.push(group)
     await saveState(session.user.tenantId, state)
-    return NextResponse.json({ ok: true, groupId: group.id, scenario: SCENARIO_TEXT, instructions: INSTRUCTIONS_TEXT })
+    return NextResponse.json({ ok: true, groupId: group.id })
   }
 
   if (action === "submit-response") {
-    const { groupId, fromCode, choices, scores } = body
-    if (!groupId || !fromCode || !choices || !scores) {
-      return NextResponse.json({ error: "groupId, fromCode, choices si scores obligatorii" }, { status: 400 })
+    const { groupId, fromCode, ratings } = body
+    // ratings: { "colegCode": { score: 7, isRejection: false }, ... }
+    if (!groupId || !fromCode || !ratings) {
+      return NextResponse.json({ error: "groupId, fromCode si ratings obligatorii" }, { status: 400 })
     }
 
     const group = state.groups.find(g => g.id === groupId)
     if (!group) return NextResponse.json({ error: "Grup negasit" }, { status: 404 })
     if (group.status === "COMPLETED") return NextResponse.json({ error: "Grupul e deja finalizat" }, { status: 400 })
 
-    // Validare: T + P trebuie sa fie = nr colegi (exclusiv cel care completeaza)
-    const totalColegi = group.members.length - 1
-    const preferred = Object.entries(choices).filter(([_, v]) => v === true).length
-    const rejected = Object.entries(choices).filter(([_, v]) => v === false).length
-
-    if (preferred + rejected !== totalColegi) {
-      return NextResponse.json({
-        error: `Trebuie sa marchezi toti colegii (${totalColegi}). Ai marcat ${preferred + rejected}.`,
-      }, { status: 400 })
-    }
-
-    // Transformam scorurile: preferintele raman pozitive, lipsa preferintei devine negativa
-    const finalScores: Record<string, number> = {}
-    for (const [code, isPreferred] of Object.entries(choices)) {
-      const rawScore = scores[code]
-      if (rawScore === undefined) continue
-      finalScores[code] = isPreferred ? rawScore : -rawScore
-    }
-
     const idx = group.responses.findIndex(r => r.fromCode === fromCode)
     const response: MemberResponse = {
       fromCode,
-      choices: choices as Record<string, boolean>,
-      scores: finalScores,
+      ratings,
       completedAt: new Date().toISOString(),
     }
 
@@ -282,7 +255,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ error: "action necunoscuta" }, { status: 400 })
 }
 
-// PATCH — Finalizeaza grup (calculeaza scoruri)
+// PATCH — Finalizeaza
 export async function PATCH(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.tenantId) {
@@ -299,27 +272,35 @@ export async function PATCH(req: NextRequest) {
   if (!group) return NextResponse.json({ error: "Grup negasit" }, { status: 404 })
 
   if (group.responses.length < 3) {
-    return NextResponse.json({ error: "Minim 3 raspunsuri necesare pentru finalizare" }, { status: 400 })
+    return NextResponse.json({ error: "Minim 3 raspunsuri necesare" }, { status: 400 })
   }
 
-  group.results = computeResults(group)
+  const { results, relationships } = computeResults(group)
+  group.results = results
+  group.relationships = relationships
   group.status = "COMPLETED"
   group.completedAt = new Date().toISOString()
 
   await saveState(session.user.tenantId, state)
 
+  const attractionPairs = relationships.filter(r => r.type === "ATTRACTION").length
+  const rejectionPairs = relationships.filter(r => r.type === "REJECTION").length
+  const mixedPairs = relationships.filter(r => r.type === "MIXED").length
+
   return NextResponse.json({
     ok: true,
-    results: group.results,
+    results,
+    relationships,
     summary: {
-      mostPreferred: group.results[0]?.memberName,
-      mostPreferredScore: group.results[0]?.totalScore,
-      leastPreferred: group.results[group.results.length - 1]?.memberName,
-      leastPreferredScore: group.results[group.results.length - 1]?.totalScore,
-      isolated: group.results.filter(r => r.isIsolated).map(r => r.memberName),
-      controversial: group.results.filter(r => r.isControversial).map(r => r.memberName),
-      reciprocalPrefPairs: group.results.reduce((sum, r) => sum + r.reciprocalPrefs.length, 0) / 2,
-      reciprocalRejPairs: group.results.reduce((sum, r) => sum + r.reciprocalRejs.length, 0) / 2,
+      mostPreferred: results[0]?.memberName,
+      mostPreferredScore: results[0]?.totalScore,
+      leastPreferred: results[results.length - 1]?.memberName,
+      leastPreferredScore: results[results.length - 1]?.totalScore,
+      isolated: results.filter(r => r.isIsolated).map(r => r.memberName),
+      controversial: results.filter(r => r.isControversial).map(r => r.memberName),
+      attractionPairs,
+      rejectionPairs,
+      mixedPairs,
     },
   })
 }
