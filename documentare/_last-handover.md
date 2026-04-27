@@ -1,61 +1,77 @@
-# Handover — Sesiune 26 aprilie 2026
+# Handover — Sesiune 27 aprilie 2026
 
-## Realizări sesiune
+## Schimbări fundamentale implementate
 
-### Infrastructură organism
-- n8n diagnosticat (3 workflows broken dezactivate, restart)
-- Self-check orar (13→15 verificări + circuit breaker + budget cap)
-- Heartbeat endpoint + UptimeRobot configurat
-- Evolution safety net configurat în n8n (luni 07:00)
-- GDPR anonimizare în pâlnia de ingestie
-- admin/exec endpoint — toate operațiunile pe prod prin API
-- Pipeline primul client sincronizat pe prod DB
+### 1. Delegare ierarhică obligatorie
+- hierarchy-enforcer.ts: canDelegate(), redirectToCorrectLevel()
+- Nimeni nu mai sare peste niveluri — task-urile redirecționate automat cu "[Rafinează și delegă]"
+- COG system prompt recalibrat: obiective tactice la directori, nu taskuri la operaționali
+- Argumentare per nivel ierarhic (director: echipe, manager: taskuri, operator: tehnic)
 
-### Audit organism — 15 nereguli rezolvate
-1. Învățare automată din ORICE task completat
-2. Self-regulation patches → taskuri automate
-3. BLOCKED > 24h → escalare automată la manager
-4. Propagare KB fallback la DB relationships
-5. Dashboard cu context cauzal
-6-15. Cognitive state logging, feedback rejection, metrici, obiective per prioritate etc.
+### 2. Colaborare laterală mediată ierarhic
+- lateral-collaboration.ts: requestLateralHelp(), integrateLateralResponse()
+- Agent blocat cu competență lipsă → escalare la superior → direcționare la omolog
+- Integrare automată răspuns lateral → deblocare task original
 
-### B2C Card 3 — finalizat
-- Matching la posturi B2B reale + estimare Claude când lipsește JE
-- Raport compatibilitate complet (exista)
-- Tranziție gratuit→plătit (scor gratuit, raport detaliat + consiliere = plătit)
+### 3. Negociere termene cu clasificare Eisenhower
+- deadline-negotiation.ts: evaluateFeasibility(), cascadedNegotiation()
+- Structura nu acceptă orbește — evaluează, compară, propune alternative
+- Reclasificare Eisenhower argumentată (ex: IMPORTANT_URGENT → IMPORTANT)
+- API: POST /api/v1/objectives/negotiate
 
-### B2C Card 6 — confirmat complet
-- "Spune-mi despre mine" = Profiler chat (Card 6) — era deja construit
-- System prompt complet cu 5 fluxuri profilare
-- Profiler engine alimentează toți 6 agenții client-facing
-- Profiler shadow observă ORICE interacțiune
+### 4. Procesul de compunere a cunoașterii (5+1 pași)
+- PAS 1: KB propriu
+- PAS 2: Structură (L2, omologi)
+- PAS 3: Brainstorm creativ (doar pe teritoriu NOU)
+- PAS 4: Identificare gap (cunoaștere SAU competență)
+  - 4b: Gap competență → reconfigurare fișe post ÎNAINTE de Claude
+- PAS 5: Claude / extern (ULTIMUL resort, pe filiera agentului cu mandat)
+- PAS 6: Escalare Owner
 
-### Spirala evolutivă SVG
-- Componentă interactivă cu 4 faze + 6 carduri pe spirală
-- Integrată pe /personal între hero și carduri
+### 5. Brainstorming proactiv condiționat
+- proactive-brainstorm.ts: maybeTrigerBrainstorm()
+- Se activează DOAR când KB echipei nu acoperă (teritoriu nou)
+- Integrat în task executor la "[Rafinează și delegă]"
 
-### Prioritizare Eisenhower — migrat pe prod
-- Enum values adăugate pe prod: IMPORTANT_URGENT, URGENT, IMPORTANT, NECESAR
+### 6. Task hygiene complet
+- BLOCKED > 7 zile → CANCELLED
+- REVIEW_PENDING > 5 zile → auto-approve
+- ACCEPTED > 5 zile → revert ASSIGNED
+- Integrat în self-check orar
 
-### Pipeline primul client B2B — 15 taskuri
-- TIER 1 (7 blocker): FAQ legal, MB-R1 complet, onboarding
-- TIER 2 (3): pipeline 20 prospecți, outreach, pitch deck
-- TIER 3 (4): alte Media Books, SEO, LinkedIn, lead magnets
-- COA coordonează, dashboard /owner/pipeline live
+### 7. Suport client (ticketing)
+- Schema: SupportTicket + TradeSecret (partiție L2 secretă)
+- Flow: client semnalează → FW rafinează → CSA rutează → rezolvare ierarhică → răspuns calibrat L2 → distilare
+- UI: /support în portalul client
+- Protecții: L1, L3, trade secrets, calibrare emoțională
 
-### Mother Maturity — 10 indicatori + prag portare 70
-- Dashboard /owner/maturity live
-- "Moștenește priceperea fără limitele constructorilor"
+### 8. B2C billing complet
+- Credits API + Report generation API (4 rapoarte, Claude Sonnet)
+- ReportsDashboard cu 3 stări (activ/disponibil/indisponibil)
+- Debitare post-generare, overlay vizualizare raport
 
-### Ecosistem Multi-Business — arhitectura salvată
-- L1 shared, L2 upgradabil, L3 universal monitorizat
-- Spirală organică B1↔B2↔B3
-- Edu4Life viziune completă + model actanți
+### 9. Reset procedural organism
+- 238 taskuri stagnante anulate
+- 73 agenți cu proceduri noi în KB
+- COG instruit să lucreze prin ierarhie
+- Obiectiv "primul client" retransmis
 
-### Protocol handover
-- `handover {nume proiect}` = formulă standard deschidere sesiune
+## TODO sesiuni viitoare
 
-## Ce urmează
-- Marți: testare B2B live cu date reale (Owner)
-- Mother Maturity: monitorizare scor
-- Structura lucrează la pipeline Tier 1
+### Prioritar: Orchestrator unic de învățare
+7 mecanisme de învățare neconectate → un singur orchestrator:
+1. Pâlnia ingestie, 2. Learning pipeline, 3. KB propagare, 4. Cold start
+5. Brainstorming, 6. Colaborare laterală, 7. Feedback client
+
+### B2B marți
+- Owner testează cu date reale
+- Structura răspunde la obiectivul "primul client" prin noua ierarhie
+
+### De monitorizat
+- Cum deleghează COG (prin directori sau direct?)
+- kbHit rate (se rezolvă din KB?)
+- Task hygiene (se curăță automat?)
+- Mother Maturity (scor evoluează?)
+
+### Migrare DB prod
+- Tabele SupportTicket + TradeSecret de creat pe prod (prisma db push sau migrare)
