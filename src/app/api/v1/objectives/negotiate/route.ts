@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
   const {
     objectiveTitle,
     requestedDeadline,
+    eisenhower = "IMPORTANT",
     startFromRole = "COG",
     requestedBy = "OWNER",
   } = body
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
     deadline,
     startFromRole,
     requestedBy,
+    eisenhower,
   )
 
   return NextResponse.json({

@@ -24,6 +24,8 @@ export interface DeadlineProposal {
   objectiveTitle: string
   /** Termenul cerut */
   requestedDeadline: Date
+  /** Clasificare Eisenhower propusă de solicitant */
+  eisenhower: "IMPORTANT_URGENT" | "URGENT" | "IMPORTANT" | "NECESAR"
   /** Cine cere */
   requestedBy: string
   /** Cine evaluează */
@@ -61,6 +63,12 @@ export interface FeasibilityResult {
   }>
   /** Termen realist propus */
   realisticDeadline?: Date
+  /** Clasificare Eisenhower propusă de solicitant */
+  proposedEisenhower?: "IMPORTANT_URGENT" | "URGENT" | "IMPORTANT" | "NECESAR"
+  /** Clasificare Eisenhower negociată (dacă diferă) */
+  negotiatedEisenhower?: "IMPORTANT_URGENT" | "URGENT" | "IMPORTANT" | "NECESAR"
+  /** Motivul reclasificării */
+  reclassificationReason?: string
 }
 
 /**
@@ -120,15 +128,23 @@ export async function evaluateFeasibility(proposal: DeadlineProposal): Promise<F
     max_tokens: 1000,
     system: `Esti managerul ${proposal.evaluatedBy}. Evaluezi daca poti livra un obiectiv in termenul cerut.
 
+CLASIFICARE EISENHOWER:
+Obiectivul vine clasificat ca: ${proposal.eisenhower}
+- IMPORTANT_URGENT: impact mare + presiune timp → faci ACUM
+- URGENT: presiune timp, impact mai mic → faci repede
+- IMPORTANT: impact mare, fara presiune → planifici
+- NECESAR: trebuie facut, poate astepta
+
+COMPARA cu obiectivele existente din ACEEASI CATEGORIE.
+Daca consideri ca clasificarea nu e corecta, PROPUNE reclasificare cu motiv.
+Ex: "Solicitantul a clasificat IMPORTANT_URGENT dar in raport cu celelalte obiective IMPORTANT_URGENT active, acesta e de fapt IMPORTANT — nu are presiune de timp reala."
+
 REGULA FUNDAMENTALA DE ARGUMENTARE:
 - Argumentezi DOAR cu vocabularul nivelului TAU ierarhic
 - NU cobori in detalii tehnice ale subordonatilor
-- Daca esti director (COG, COA, COCSA, CCO, CFO, DMA): vorbesti despre echipe, prioritati, capacitate, directii
-- Daca esti manager (EMA, QLA, PMA, CSSA): vorbesti despre taskuri, competente, blocaje operationale
-- NICIODATA detalii de cod, API-uri, campuri din DB, endpoint-uri — alea raman la nivelul tehnic
-
-Exemplu CORECT pentru director: "Echipa comerciala are 3 prioritati mai mari in lucru"
-Exemplu GRESIT pentru director: "Endpoint-ul /api/v1/pricing returneaza 404"
+- Director: echipe, prioritati, capacitate, directii
+- Manager: taskuri, competente, blocaje operationale
+- NICIODATA: cod, API, DB, endpoint-uri
 
 Raspunde STRICT cu JSON valid:
 {
@@ -138,7 +154,10 @@ Raspunde STRICT cu JSON valid:
   "alternatives": [
     {"option": "Varianta A", "description": "ce schimbam", "consequence": "ce pierdem/castigam", "newDeadline": "2026-06-01"}
   ],
-  "realisticDays": numar_zile_realiste
+  "realisticDays": numar_zile_realiste,
+  "eisenhowerAgreed": true/false,
+  "proposedEisenhower": "IMPORTANT_URGENT/URGENT/IMPORTANT/NECESAR sau null daca de acord",
+  "reclassificationReason": "motiv reclasificare sau null"
 }`,
     messages: [{
       role: "user",
@@ -164,6 +183,11 @@ Evalueaza ONEST: pot livra in termen? Daca nu, propune alternative CONCRETE cu c
   try {
     const parsed = JSON.parse(text)
 
+    // Reclasificare Eisenhower
+    const eisenhowerNegotiated = parsed.eisenhowerAgreed === false && parsed.proposedEisenhower
+      ? parsed.proposedEisenhower
+      : undefined
+
     if (parsed.feasible) {
       return {
         feasible: true,
@@ -171,6 +195,9 @@ Evalueaza ONEST: pot livra in termen? Daca nu, propune alternative CONCRETE cu c
         currentWorkload: workload,
         currentPriorities,
         executionPlan: parsed.executionPlan || parsed.reason,
+        proposedEisenhower: proposal.eisenhower,
+        negotiatedEisenhower: eisenhowerNegotiated,
+        reclassificationReason: parsed.reclassificationReason || undefined,
       }
     }
 
@@ -184,6 +211,9 @@ Evalueaza ONEST: pot livra in termen? Daca nu, propune alternative CONCRETE cu c
       realisticDeadline: parsed.realisticDays
         ? new Date(now.getTime() + parsed.realisticDays * 24 * 3600000)
         : undefined,
+      proposedEisenhower: proposal.eisenhower,
+      negotiatedEisenhower: eisenhowerNegotiated,
+      reclassificationReason: parsed.reclassificationReason || undefined,
     }
   } catch {
     // Parse error — fallback conservator
@@ -207,6 +237,7 @@ export async function cascadedNegotiation(
   requestedDeadline: Date,
   startFromRole: string,
   requestedBy: string,
+  eisenhower: "IMPORTANT_URGENT" | "URGENT" | "IMPORTANT" | "NECESAR" = "IMPORTANT",
 ): Promise<{
   overallFeasible: boolean
   evaluations: FeasibilityResult[]
@@ -218,6 +249,7 @@ export async function cascadedNegotiation(
   const currentEval = await evaluateFeasibility({
     objectiveTitle,
     requestedDeadline,
+    eisenhower,
     requestedBy,
     evaluatedBy: startFromRole,
   })
@@ -238,6 +270,7 @@ export async function cascadedNegotiation(
     const subEval = await evaluateFeasibility({
       objectiveTitle,
       requestedDeadline,
+      eisenhower: currentEval.negotiatedEisenhower || eisenhower,
       requestedBy: startFromRole,
       evaluatedBy: sub,
     })
