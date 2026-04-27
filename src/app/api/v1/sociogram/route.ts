@@ -2,7 +2,16 @@
  * /api/v1/sociogram
  *
  * Sociograma Balint — masurare afinitate intre membri echipa.
- * Scenariu (poveste) → tabel preferinte → scorare → diagrama.
+ *
+ * Procesul de completare (2 pasi):
+ * Pas 1: Citeste scenariul. Marcheaza cu ✓ colegii cu care doreste sa colaboreze
+ *        si cu ✗ pe cei cu care nu doreste.
+ * Pas 2: Scoreaza de la 1 la T pe cei cu ✓ (1 = preferinta cea mai mica, T = cea mai mare)
+ *        si de la 1 la P pe cei cu ✗ (1 = lipsa preferintei cea mai mica, P = cea mai mare)
+ *        unde T + P = numarul total de membri din echipa (exclusiv cel care completeaza).
+ *
+ * Scorare: preferintele primesc valori pozitive (ranking-ul), lipsa preferintei primesc
+ * valori negative (-ranking). Se totalizeaza per persoana si se face clasament descrescator.
  *
  * GET  — Lista grupuri + status completare + rezultate
  * POST — Creaza grup SAU inregistreaza raspuns membru
@@ -22,20 +31,26 @@ interface GroupMember {
 
 interface MemberResponse {
   fromCode: string
-  preferences: Record<string, number> // colegCode → -2 (respingere puternica) | -1 (respingere) | 0 (neutru) | 1 (preferinta) | 2 (preferinta puternica)
+  // Pas 1: marcaj preferinta (true) sau lipsa preferinta (false) per coleg
+  choices: Record<string, boolean>  // colegCode -> true (✓ prefer) | false (✗ nu prefer)
+  // Pas 2: ranking numeric — preferintele primesc scor pozitiv, lipsa preferintei scor negativ
+  scores: Record<string, number>    // colegCode -> scor (pozitiv = preferinta, negativ = lipsa pref)
   completedAt: string | null
 }
 
 interface SociogramResult {
   memberCode: string
   memberName: string
-  totalPreferences: number   // cate preferinte a primit
-  totalRejections: number    // cate respingeri a primit
-  intensityScore: number     // scor intensitate generala (preferinte - respingeri normalizat)
-  reciprocalPrefs: string[]  // cu cine are preferinta reciproca
-  reciprocalRejs: string[]   // cu cine are respingere reciproca
-  isIsolated: boolean        // nu a primit nicio preferinta
-  isControversial: boolean   // multe preferinte SI multe respingeri
+  totalScore: number             // suma tuturor scorurilor primite (pozitive + negative)
+  totalPreferences: number       // cate ✓ a primit
+  totalRejections: number        // cate ✗ a primit
+  avgPreferenceRank: number      // media ranking-urilor pozitive primite
+  avgRejectionRank: number       // media ranking-urilor negative primite
+  reciprocalPrefs: string[]      // cu cine are preferinta reciproca (ambii ✓)
+  reciprocalRejs: string[]       // cu cine are respingere reciproca (ambii ✗)
+  isIsolated: boolean            // zero preferinte primite
+  isControversial: boolean       // multe preferinte SI multe respingeri
+  rank: number                   // pozitia in clasament (1 = cel mai preferat)
 }
 
 interface SociogramGroup {
@@ -54,25 +69,24 @@ interface SociogramState {
   groups: SociogramGroup[]
 }
 
-// Scenariul (povestea) care indeparteaza criteriile rationale
-const SCENARIO_TEXT = `Imaginati-va urmatoarea situatie:
+// Scenariul care indeparteaza criteriile rationale
+const SCENARIO_TEXT = `Stii sigur ca va urma un proiect pe care e clar ca nu il vei putea duce de unul singur la bun sfarsit, dar nu stii de cati oameni vei avea nevoie in echipa de proiect.
 
-Compania organizeaza un proiect special care dureaza 3 luni. Pentru acest proiect, aveti posibilitatea sa va alegeti echipa cu care lucrati, din colegii vostri actuali.
+Persoanele disponibile sunt colegii tai actuali. Nimic nu va diferentiaza din punct de vedere profesional — stiti cu totii sa faceti orice este nevoie, in cel mai scurt timp si cu maximum de profesionalism.
 
-Nu conteaza competentele tehnice (presupunem ca toti colegii au competentele necesare). Nu conteaza nici pozitia ierarhica sau departamentul.
+Nu conteaza competentele tehnice, pozitia ierarhica sau departamentul. Singura intrebare este: CU CINE te simti cel mai bine sa lucrezi?
 
-Singura intrebare este: CU CINE va simtiti cel mai bine sa lucrati? Cu cine comunicati natural, va intelegeti fara efort, simtiti ca va completati?
+Nu exista raspunsuri gresite. Nu e vorba de competenta sau profesionalism — e vorba de chimia naturala dintre oameni.`
 
-Si reversul: exista colegi cu care interactiunea e mai dificila, comunicarea necesita mai mult efort, sau simtiti o tensiune neexprimata?
+const INSTRUCTIONS_TEXT = `Cum completezi:
 
-Nu exista raspunsuri gresite. Nu e vorba de competenta sau profesionalism — e vorba de chimia naturala dintre oameni.
+PAS 1: Priveste lista colegilor tai. Marcheaza cu ✓ pe cei cu care DORESTI sa colaborezi si cu ✗ pe cei cu care NU doresti.
 
-Pentru fiecare coleg, alegeti:
-  ++ Preferinta puternica (as alege cu siguranta)
-  +  Preferinta (as alege)
-  0  Neutru (nici pro, nici contra)
-  -  Evitare (as prefera sa nu)
-  -- Evitare puternica (as evita cu siguranta)`
+PAS 2: Dintre cei marcati cu ✓, acorda un scor de la 1 la T (unde T este numarul total al celor cu ✓). Scorul 1 inseamna preferinta cea mai mica, iar T inseamna preferinta cea mai mare.
+
+La fel, dintre cei marcati cu ✗, acorda un scor de la 1 la P (unde P este numarul total al celor cu ✗). Scorul 1 inseamna lipsa de preferinta cea mai mica, iar P inseamna lipsa de preferinta cea mai mare.
+
+T + P = numarul total de colegi (fara tine).`
 
 function generateId(): string {
   return "sg_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
@@ -86,57 +100,71 @@ async function saveState(tenantId: string, state: SociogramState): Promise<void>
   await setTenantData(tenantId, "SOCIOGRAM", state)
 }
 
-// Calcul rezultate sociograma
+// Calcul rezultate sociograma conform scorare Balint
 function computeResults(group: SociogramGroup): SociogramResult[] {
   const members = group.members
   const responses = group.responses
 
-  return members.map(member => {
+  const results = members.map(member => {
+    let totalScore = 0
     let totalPrefs = 0
     let totalRejs = 0
-    let sumIntensity = 0
+    let sumPrefRanks = 0
+    let sumRejRanks = 0
     const reciprocalPrefs: string[] = []
     const reciprocalRejs: string[] = []
 
     // Ce au raspuns ALTII despre acest membru
     for (const resp of responses) {
       if (resp.fromCode === member.code) continue
-      const score = resp.preferences[member.code] || 0
-      if (score > 0) { totalPrefs++; sumIntensity += score }
-      if (score < 0) { totalRejs++; sumIntensity += score }
+      const score = resp.scores[member.code]
+      if (score === undefined) continue
+
+      totalScore += score
+      if (score > 0) {
+        totalPrefs++
+        sumPrefRanks += score
+      }
+      if (score < 0) {
+        totalRejs++
+        sumRejRanks += Math.abs(score)
+      }
     }
 
-    // Reciprocitate
+    // Reciprocitate — bazata pe choices (✓/✗), nu pe scoruri
     const myResponse = responses.find(r => r.fromCode === member.code)
     if (myResponse) {
       for (const otherMember of members) {
         if (otherMember.code === member.code) continue
-        const myScoreForOther = myResponse.preferences[otherMember.code] || 0
+        const iChoseOther = myResponse.choices[otherMember.code]
         const otherResponse = responses.find(r => r.fromCode === otherMember.code)
-        const otherScoreForMe = otherResponse?.preferences[member.code] || 0
+        const otherChoseMe = otherResponse?.choices[member.code]
 
-        if (myScoreForOther > 0 && otherScoreForMe > 0) reciprocalPrefs.push(otherMember.code)
-        if (myScoreForOther < 0 && otherScoreForMe < 0) reciprocalRejs.push(otherMember.code)
+        if (iChoseOther === true && otherChoseMe === true) reciprocalPrefs.push(otherMember.code)
+        if (iChoseOther === false && otherChoseMe === false) reciprocalRejs.push(otherMember.code)
       }
     }
-
-    const maxPossible = members.length - 1
-    const intensityScore = maxPossible > 0
-      ? Math.round((sumIntensity / (maxPossible * 2)) * 100) / 100 // normalizat -1 la 1
-      : 0
 
     return {
       memberCode: member.code,
       memberName: member.name,
+      totalScore,
       totalPreferences: totalPrefs,
       totalRejections: totalRejs,
-      intensityScore,
+      avgPreferenceRank: totalPrefs > 0 ? Math.round((sumPrefRanks / totalPrefs) * 10) / 10 : 0,
+      avgRejectionRank: totalRejs > 0 ? Math.round((sumRejRanks / totalRejs) * 10) / 10 : 0,
       reciprocalPrefs,
       reciprocalRejs,
       isIsolated: totalPrefs === 0,
       isControversial: totalPrefs >= 3 && totalRejs >= 3,
+      rank: 0, // se calculeaza dupa sortare
     }
-  }).sort((a, b) => b.intensityScore - a.intensityScore)
+  }).sort((a, b) => b.totalScore - a.totalScore)
+
+  // Atribuie rank-uri (clasament descrescator dupa totalScore)
+  results.forEach((r, idx) => { r.rank = idx + 1 })
+
+  return results
 }
 
 // GET
@@ -150,9 +178,10 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     scenario: SCENARIO_TEXT,
+    instructions: INSTRUCTIONS_TEXT,
     groups: state.groups.map(g => ({
       ...g,
-      responses: undefined, // nu expunem raspunsurile individuale
+      responses: undefined,
       responseCount: g.responses.length,
       memberCount: g.members.length,
       completionPct: g.members.length > 0
@@ -197,24 +226,43 @@ export async function POST(req: NextRequest) {
 
     state.groups.push(group)
     await saveState(session.user.tenantId, state)
-    return NextResponse.json({ ok: true, groupId: group.id, scenario: SCENARIO_TEXT })
+    return NextResponse.json({ ok: true, groupId: group.id, scenario: SCENARIO_TEXT, instructions: INSTRUCTIONS_TEXT })
   }
 
   if (action === "submit-response") {
-    const { groupId, fromCode, preferences } = body
-    if (!groupId || !fromCode || !preferences) {
-      return NextResponse.json({ error: "groupId, fromCode si preferences obligatorii" }, { status: 400 })
+    const { groupId, fromCode, choices, scores } = body
+    if (!groupId || !fromCode || !choices || !scores) {
+      return NextResponse.json({ error: "groupId, fromCode, choices si scores obligatorii" }, { status: 400 })
     }
 
     const group = state.groups.find(g => g.id === groupId)
     if (!group) return NextResponse.json({ error: "Grup negasit" }, { status: 404 })
     if (group.status === "COMPLETED") return NextResponse.json({ error: "Grupul e deja finalizat" }, { status: 400 })
 
-    // Inlocuieste daca exista deja raspuns de la acest membru
+    // Validare: T + P trebuie sa fie = nr colegi (exclusiv cel care completeaza)
+    const totalColegi = group.members.length - 1
+    const preferred = Object.entries(choices).filter(([_, v]) => v === true).length
+    const rejected = Object.entries(choices).filter(([_, v]) => v === false).length
+
+    if (preferred + rejected !== totalColegi) {
+      return NextResponse.json({
+        error: `Trebuie sa marchezi toti colegii (${totalColegi}). Ai marcat ${preferred + rejected}.`,
+      }, { status: 400 })
+    }
+
+    // Transformam scorurile: preferintele raman pozitive, lipsa preferintei devine negativa
+    const finalScores: Record<string, number> = {}
+    for (const [code, isPreferred] of Object.entries(choices)) {
+      const rawScore = scores[code]
+      if (rawScore === undefined) continue
+      finalScores[code] = isPreferred ? rawScore : -rawScore
+    }
+
     const idx = group.responses.findIndex(r => r.fromCode === fromCode)
     const response: MemberResponse = {
       fromCode,
-      preferences,
+      choices: choices as Record<string, boolean>,
+      scores: finalScores,
       completedAt: new Date().toISOString(),
     }
 
@@ -265,10 +313,13 @@ export async function PATCH(req: NextRequest) {
     results: group.results,
     summary: {
       mostPreferred: group.results[0]?.memberName,
-      mostRejected: [...group.results].sort((a, b) => b.totalRejections - a.totalRejections)[0]?.memberName,
+      mostPreferredScore: group.results[0]?.totalScore,
+      leastPreferred: group.results[group.results.length - 1]?.memberName,
+      leastPreferredScore: group.results[group.results.length - 1]?.totalScore,
       isolated: group.results.filter(r => r.isIsolated).map(r => r.memberName),
       controversial: group.results.filter(r => r.isControversial).map(r => r.memberName),
-      reciprocalPairs: group.results.flatMap(r => r.reciprocalPrefs.map(p => `${r.memberCode}-${p}`)).length / 2,
+      reciprocalPrefPairs: group.results.reduce((sum, r) => sum + r.reciprocalPrefs.length, 0) / 2,
+      reciprocalRejPairs: group.results.reduce((sum, r) => sum + r.reciprocalRejs.length, 0) / 2,
     },
   })
 }

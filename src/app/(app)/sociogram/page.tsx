@@ -18,18 +18,22 @@ interface Group {
 interface Result {
   memberCode: string
   memberName: string
+  totalScore: number
   totalPreferences: number
   totalRejections: number
-  intensityScore: number
+  avgPreferenceRank: number
+  avgRejectionRank: number
   reciprocalPrefs: string[]
   reciprocalRejs: string[]
   isIsolated: boolean
   isControversial: boolean
+  rank: number
 }
 
 export default function SociogramPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [scenario, setScenario] = useState("")
+  const [instructions, setInstructions] = useState("")
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -40,12 +44,13 @@ export default function SociogramPage() {
   const [newMembers, setNewMembers] = useState<Array<{ code: string; name: string }>>([{ code: "", name: "" }, { code: "", name: "" }, { code: "", name: "" }])
   const [submitting, setSubmitting] = useState(false)
 
-  // Response form
+  // Response form — 2 pasi
   const [respondGroup, setRespondGroup] = useState<Group | null>(null)
   const [respondFrom, setRespondFrom] = useState("")
-  const [prefs, setPrefs] = useState<Record<string, number>>({})
+  const [step, setStep] = useState<1 | 2>(1) // pas 1: ✓/✗, pas 2: ranking
+  const [choices, setChoices] = useState<Record<string, boolean>>({})    // true=✓, false=✗
+  const [rankings, setRankings] = useState<Record<string, number>>({})   // ranking numeric
 
-  // Expanded result
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [])
@@ -57,6 +62,7 @@ export default function SociogramPage() {
       const data = await res.json()
       setGroups(data.groups || [])
       setScenario(data.scenario || "")
+      setInstructions(data.instructions || "")
       setStats(data.stats || null)
     } catch {}
     setLoading(false)
@@ -83,9 +89,9 @@ export default function SociogramPage() {
     await fetch("/api/v1/sociogram", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "submit-response", groupId: respondGroup.id, fromCode: respondFrom, preferences: prefs }),
+      body: JSON.stringify({ action: "submit-response", groupId: respondGroup.id, fromCode: respondFrom, choices, scores: rankings }),
     })
-    setRespondGroup(null); setRespondFrom(""); setPrefs({})
+    setRespondGroup(null); setRespondFrom(""); setChoices({}); setRankings({}); setStep(1)
     setSubmitting(false)
     loadData()
   }
@@ -109,20 +115,27 @@ export default function SociogramPage() {
     setNewMembers(prev => prev.map((m, i) => i === idx ? { ...m, [field]: value } : m))
   }
 
-  const PREF_OPTIONS = [
-    { value: 2, label: "++", color: "bg-emerald-500 text-white", title: "Preferinta puternica" },
-    { value: 1, label: "+", color: "bg-emerald-200 text-emerald-800", title: "Preferinta" },
-    { value: 0, label: "0", color: "bg-slate-100 text-slate-500", title: "Neutru" },
-    { value: -1, label: "-", color: "bg-red-200 text-red-800", title: "Evitare" },
-    { value: -2, label: "--", color: "bg-red-500 text-white", title: "Evitare puternica" },
-  ]
+  function startResponding(group: Group) {
+    setRespondGroup(group)
+    setRespondFrom("")
+    setChoices({})
+    setRankings({})
+    setStep(1)
+  }
+
+  // Colegi (fara cel care completeaza)
+  const colleagues = respondGroup?.members.filter(m => m.code !== respondFrom) || []
+  const preferred = Object.entries(choices).filter(([_, v]) => v === true).map(([k]) => k)
+  const rejected = Object.entries(choices).filter(([_, v]) => v === false).map(([k]) => k)
+  const allMarked = Object.keys(choices).length === colleagues.length
+  const allRanked = preferred.every(c => rankings[c] > 0) && rejected.every(c => rankings[c] > 0)
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-foreground">Sociograma echipei</h1>
-          <p className="text-sm text-text-secondary mt-1">Masurare afinitati intre membrii echipei — preferinte naturale de colaborare</p>
+          <p className="text-sm text-text-secondary mt-1">Masurare preferinte naturale de colaborare intre membrii echipei</p>
         </div>
         <button onClick={() => setShowCreate(!showCreate)}
           className="text-sm font-medium bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
@@ -152,7 +165,7 @@ export default function SociogramPage() {
             </div>
           )}
 
-          {/* Create group form */}
+          {/* Create group */}
           {showCreate && (
             <div className="mb-6 rounded-xl border border-teal-200 bg-teal-50 p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -171,7 +184,6 @@ export default function SociogramPage() {
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="block text-xs font-medium mb-2">Membri (minim 3)</label>
                 {newMembers.map((m, idx) => (
@@ -184,7 +196,6 @@ export default function SociogramPage() {
                 ))}
                 <button onClick={addMember} className="text-[10px] text-teal-600 hover:underline mt-1">+ Adauga membru</button>
               </div>
-
               <button onClick={createGroup} disabled={submitting || !newName || newMembers.filter(m => m.code && m.name).length < 3}
                 className="bg-teal-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50 transition-colors">
                 {submitting ? "..." : "Creaza grupul"}
@@ -192,50 +203,134 @@ export default function SociogramPage() {
             </div>
           )}
 
-          {/* Response form (completare preferinte) */}
+          {/* Response form — 2 pasi */}
           {respondGroup && (
             <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5 space-y-4">
-              <h3 className="text-sm font-bold text-amber-800">Completare preferinte — {respondGroup.name}</h3>
+              <h3 className="text-sm font-bold text-amber-800">Completare sociograma — {respondGroup.name}</h3>
 
               {/* Scenariul */}
-              <div className="bg-white rounded-lg p-3 border border-amber-100 text-xs text-slate-600 whitespace-pre-line leading-relaxed max-h-48 overflow-y-auto">
+              <div className="bg-white rounded-lg p-3 border border-amber-100 text-xs text-slate-600 whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto">
                 {scenario}
               </div>
 
+              {/* Cine completeaza */}
               <div>
                 <label className="block text-xs font-medium mb-1">Cine completeaza?</label>
-                <select value={respondFrom} onChange={e => { setRespondFrom(e.target.value); setPrefs({}) }}
+                <select value={respondFrom} onChange={e => { setRespondFrom(e.target.value); setChoices({}); setRankings({}); setStep(1) }}
                   className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white text-sm">
                   <option value="">Selecteaza...</option>
-                  {respondGroup.members.map(m => <option key={m.code} value={m.code}>{m.name} ({m.code})</option>)}
+                  {respondGroup.members.map(m => <option key={m.code} value={m.code}>{m.name}</option>)}
                 </select>
               </div>
 
               {respondFrom && (
-                <div className="space-y-2">
-                  {respondGroup.members.filter(m => m.code !== respondFrom).map(m => (
-                    <div key={m.code} className="flex items-center justify-between py-1.5 border-t border-amber-100">
-                      <span className="text-xs font-medium">{m.name}</span>
-                      <div className="flex gap-1">
-                        {PREF_OPTIONS.map(opt => (
-                          <button key={opt.value} onClick={() => setPrefs(p => ({ ...p, [m.code]: opt.value }))}
-                            title={opt.title}
-                            className={`w-8 h-8 rounded text-xs font-bold transition-all ${
-                              prefs[m.code] === opt.value ? `${opt.color} ring-2 ring-offset-1 ring-slate-400` : "bg-white border border-slate-200 text-slate-400 hover:border-slate-300"
-                            }`}>
-                            {opt.label}
-                          </button>
-                        ))}
+                <>
+                  {/* Instructiuni */}
+                  <div className="bg-amber-100/50 rounded-lg p-2 text-[10px] text-amber-700 whitespace-pre-line">
+                    {step === 1
+                      ? "PAS 1: Marcheaza cu \u2713 colegii cu care DORESTI sa colaborezi si cu \u2717 pe cei cu care NU doresti."
+                      : `PAS 2: Acorda un scor de la 1 la ${preferred.length} pentru cei cu \u2713 (1=preferinta mica, ${preferred.length}=preferinta mare) si de la 1 la ${rejected.length} pentru cei cu \u2717 (1=lipsa mica, ${rejected.length}=lipsa mare).`
+                    }
+                  </div>
+
+                  {/* PAS 1: Checkmark / X */}
+                  {step === 1 && (
+                    <div className="space-y-1">
+                      {colleagues.map(m => (
+                        <div key={m.code} className="flex items-center justify-between py-2 border-t border-amber-100">
+                          <span className="text-xs font-medium">{m.name}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => setChoices(prev => ({ ...prev, [m.code]: true }))}
+                              className={`w-10 h-10 rounded-lg text-lg font-bold transition-all ${
+                                choices[m.code] === true ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-white border border-slate-200 text-slate-300 hover:border-emerald-300"
+                              }`}>{"\u2713"}</button>
+                            <button onClick={() => setChoices(prev => ({ ...prev, [m.code]: false }))}
+                              className={`w-10 h-10 rounded-lg text-lg font-bold transition-all ${
+                                choices[m.code] === false ? "bg-red-500 text-white ring-2 ring-red-300" : "bg-white border border-slate-200 text-slate-300 hover:border-red-300"
+                              }`}>{"\u2717"}</button>
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="text-[10px] text-slate-400">
+                          {preferred.length} preferinte, {rejected.length} respingeri
+                          {allMarked ? "" : ` (mai ai de marcat ${colleagues.length - Object.keys(choices).length})`}
+                        </span>
+                        <button onClick={() => setStep(2)} disabled={!allMarked}
+                          className="bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-amber-700 disabled:opacity-40 transition-colors">
+                          Pasul 2 — Scorare
+                        </button>
                       </div>
                     </div>
-                  ))}
+                  )}
 
-                  <button onClick={submitResponse}
-                    disabled={submitting || Object.keys(prefs).length < respondGroup.members.length - 1}
-                    className="w-full py-2.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-50 transition-colors">
-                    {submitting ? "..." : "Trimite raspunsul"}
-                  </button>
-                </div>
+                  {/* PAS 2: Ranking numeric */}
+                  {step === 2 && (
+                    <div className="space-y-4">
+                      {/* Preferinte (✓) */}
+                      {preferred.length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold text-emerald-700 mb-2">
+                            Colegii cu care doresti sa colaborezi — acorda scor de la 1 la {preferred.length}
+                          </p>
+                          {preferred.map(code => {
+                            const m = colleagues.find(c => c.code === code)
+                            return (
+                              <div key={code} className="flex items-center justify-between py-1.5 border-t border-emerald-100">
+                                <span className="text-xs">{m?.name} <span className="text-emerald-500">{"\u2713"}</span></span>
+                                <select value={rankings[code] || ""}
+                                  onChange={e => setRankings(prev => ({ ...prev, [code]: Number(e.target.value) }))}
+                                  className="w-16 text-xs text-center border border-emerald-200 rounded px-1 py-1 bg-white">
+                                  <option value="">—</option>
+                                  {Array.from({ length: preferred.length }, (_, i) => i + 1).map(n => (
+                                    <option key={n} value={n}>{n}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Respingeri (✗) */}
+                      {rejected.length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold text-red-700 mb-2">
+                            Colegii cu care nu doresti sa colaborezi — acorda scor de la 1 la {rejected.length}
+                          </p>
+                          {rejected.map(code => {
+                            const m = colleagues.find(c => c.code === code)
+                            return (
+                              <div key={code} className="flex items-center justify-between py-1.5 border-t border-red-100">
+                                <span className="text-xs">{m?.name} <span className="text-red-500">{"\u2717"}</span></span>
+                                <select value={rankings[code] || ""}
+                                  onChange={e => setRankings(prev => ({ ...prev, [code]: Number(e.target.value) }))}
+                                  className="w-16 text-xs text-center border border-red-200 rounded px-1 py-1 bg-white">
+                                  <option value="">—</option>
+                                  {Array.from({ length: rejected.length }, (_, i) => i + 1).map(n => (
+                                    <option key={n} value={n}>{n}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-2">
+                        <button onClick={() => setStep(1)}
+                          className="text-xs text-amber-600 px-3 py-2 hover:underline">
+                          Inapoi la Pasul 1
+                        </button>
+                        <button onClick={submitResponse} disabled={submitting || !allRanked}
+                          className="flex-1 py-2.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-40 transition-colors">
+                          {submitting ? "..." : "Trimite raspunsul"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <button onClick={() => setRespondGroup(null)} className="text-xs text-amber-600 hover:underline">Inchide</button>
@@ -246,7 +341,7 @@ export default function SociogramPage() {
           {groups.length === 0 ? (
             <div className="text-center py-12 rounded-xl border border-slate-200 bg-slate-50">
               <p className="text-sm text-slate-500">Niciun grup creat.</p>
-              <p className="text-xs text-slate-400 mt-1">Creaza un grup (departament sau echipa proiect) pentru a incepe masurarea.</p>
+              <p className="text-xs text-slate-400 mt-1">Creaza un grup (departament sau echipa proiect) pentru a incepe.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -267,7 +362,7 @@ export default function SociogramPage() {
                         {group.status === "COLLECTING" && (
                           <>
                             <span className="text-[10px] text-amber-600 font-medium">{group.completionPct}% completat</span>
-                            <button onClick={() => setRespondGroup(group as any)}
+                            <button onClick={() => startResponding(group)}
                               className="text-[10px] px-2 py-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200">
                               Completeaza
                             </button>
@@ -288,41 +383,42 @@ export default function SociogramPage() {
                       </div>
                     </div>
 
-                    {/* Progress bar */}
                     {group.status === "COLLECTING" && (
                       <div className="w-full h-1.5 rounded-full bg-slate-100 mt-2">
                         <div className="h-full rounded-full bg-teal-400 transition-all" style={{ width: `${group.completionPct}%` }} />
                       </div>
                     )}
 
-                    {/* Rezultate expandate */}
+                    {/* Rezultate */}
                     {expanded && group.results && (
                       <div className="mt-4 pt-3 border-t border-emerald-200">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="text-slate-500">
+                              <th className="text-left py-1 w-8">#</th>
                               <th className="text-left py-1">Membru</th>
-                              <th className="text-center py-1 w-16">Pref.</th>
-                              <th className="text-center py-1 w-16">Resp.</th>
-                              <th className="text-center py-1 w-20">Intensitate</th>
+                              <th className="text-center py-1 w-16">Scor</th>
+                              <th className="text-center py-1 w-12">{"\u2713"}</th>
+                              <th className="text-center py-1 w-12">{"\u2717"}</th>
                               <th className="text-center py-1 w-20">Status</th>
                             </tr>
                           </thead>
                           <tbody>
                             {group.results.map(r => (
                               <tr key={r.memberCode} className="border-t border-emerald-100">
+                                <td className="py-1.5 text-slate-400 font-mono">{r.rank}</td>
                                 <td className="py-1.5 font-medium">{r.memberName}</td>
+                                <td className="py-1.5 text-center">
+                                  <span className={`font-bold ${r.totalScore > 0 ? "text-emerald-600" : r.totalScore < 0 ? "text-red-600" : "text-slate-400"}`}>
+                                    {r.totalScore > 0 ? "+" : ""}{r.totalScore}
+                                  </span>
+                                </td>
                                 <td className="py-1.5 text-center text-emerald-600">{r.totalPreferences}</td>
                                 <td className="py-1.5 text-center text-red-600">{r.totalRejections}</td>
                                 <td className="py-1.5 text-center">
-                                  <span className={`font-bold ${r.intensityScore > 0 ? "text-emerald-600" : r.intensityScore < 0 ? "text-red-600" : "text-slate-400"}`}>
-                                    {r.intensityScore > 0 ? "+" : ""}{r.intensityScore.toFixed(1)}
-                                  </span>
-                                </td>
-                                <td className="py-1.5 text-center">
                                   {r.isIsolated && <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">Izolat</span>}
                                   {r.isControversial && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-700">Controversat</span>}
-                                  {!r.isIsolated && !r.isControversial && r.intensityScore > 0.3 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-700">Preferat</span>}
+                                  {!r.isIsolated && !r.isControversial && r.totalScore > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-700">Preferat</span>}
                                 </td>
                               </tr>
                             ))}
@@ -335,7 +431,17 @@ export default function SociogramPage() {
                             <p className="text-[10px] font-bold text-emerald-700 mb-1">Preferinte reciproce (chimie naturala):</p>
                             {group.results.filter(r => r.reciprocalPrefs.length > 0).map(r => (
                               <p key={r.memberCode} className="text-[10px] text-emerald-600">
-                                {r.memberName} ↔ {r.reciprocalPrefs.map(p => group.results?.find(x => x.memberCode === p)?.memberName || p).join(", ")}
+                                {r.memberName} {"\u2194"} {r.reciprocalPrefs.map(p => group.results?.find(x => x.memberCode === p)?.memberName || p).join(", ")}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {group.results.some(r => r.reciprocalRejs.length > 0) && (
+                          <div className="mt-2 p-2 bg-red-100 rounded-lg">
+                            <p className="text-[10px] font-bold text-red-700 mb-1">Respingeri reciproce (tensiuni):</p>
+                            {group.results.filter(r => r.reciprocalRejs.length > 0).map(r => (
+                              <p key={r.memberCode} className="text-[10px] text-red-600">
+                                {r.memberName} {"\u2194"} {r.reciprocalRejs.map(p => group.results?.find(x => x.memberCode === p)?.memberName || p).join(", ")}
                               </p>
                             ))}
                           </div>
