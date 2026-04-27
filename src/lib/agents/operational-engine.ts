@@ -418,7 +418,7 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
         }).catch(() => []) ?? []
         const roles = agents.map((a: any) => a.agentRole)
         if (roles.length > 0) {
-          const cards = generateWeeklyWildCards(roles, weekOf)
+          const cards = generateWeeklyWildCards(roles, new Date(weekOf))
           for (const card of cards) {
             await p.wildCard?.create({ data: card }).catch(() => {})
           }
