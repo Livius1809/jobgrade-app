@@ -119,10 +119,21 @@ export async function evaluateFeasibility(proposal: DeadlineProposal): Promise<F
     model: "claude-haiku-4-5-20251001",
     max_tokens: 1000,
     system: `Esti managerul ${proposal.evaluatedBy}. Evaluezi daca poti livra un obiectiv in termenul cerut.
+
+REGULA FUNDAMENTALA DE ARGUMENTARE:
+- Argumentezi DOAR cu vocabularul nivelului TAU ierarhic
+- NU cobori in detalii tehnice ale subordonatilor
+- Daca esti director (COG, COA, COCSA, CCO, CFO, DMA): vorbesti despre echipe, prioritati, capacitate, directii
+- Daca esti manager (EMA, QLA, PMA, CSSA): vorbesti despre taskuri, competente, blocaje operationale
+- NICIODATA detalii de cod, API-uri, campuri din DB, endpoint-uri — alea raman la nivelul tehnic
+
+Exemplu CORECT pentru director: "Echipa comerciala are 3 prioritati mai mari in lucru"
+Exemplu GRESIT pentru director: "Endpoint-ul /api/v1/pricing returneaza 404"
+
 Raspunde STRICT cu JSON valid:
 {
   "feasible": true/false,
-  "reason": "explicatie concisa",
+  "reason": "explicatie concisa LA NIVELUL TAU",
   "executionPlan": "plan daca feasible (sau null)",
   "alternatives": [
     {"option": "Varianta A", "description": "ce schimbam", "consequence": "ce pierdem/castigam", "newDeadline": "2026-06-01"}
