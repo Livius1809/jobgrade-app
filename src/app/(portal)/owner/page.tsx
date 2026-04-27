@@ -432,6 +432,98 @@ async function fetchSupplierLimits(): Promise<SupplierLimit[]> {
   return limits
 }
 
+// ── Fetch cele 5 axe (din cockpit API extins) ────────────────────────────────
+
+async function fetchAxes(): Promise<any> {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    const now = new Date()
+    const h24 = new Date(now.getTime() - 24 * 3600000)
+    const d7 = new Date(now.getTime() - 7 * 86400000)
+    const d30 = new Date(now.getTime() - 30 * 86400000)
+    const p = prisma as any
+
+    const [
+      kbTotal, kbValidated, kbAvgScore, kbCreated24h, kbCreated7d,
+      kbBySource7d, maturitySnapshot, orchestratorLast,
+      tasksCompleted24h, tasksKbHit24h, staleBlocked, staleAssigned,
+      activeTenants, completedSessions,
+      decisionsReq, decisionsResp, autoResolved, totalCompleted30d,
+      cogTasks, cogDirReports, lateralTasks, brainstormCount,
+      fbExec, fbLearning, fbPropagation,
+    ] = await Promise.all([
+      prisma.learningArtifact.count(),
+      prisma.learningArtifact.count({ where: { validated: true } }),
+      prisma.learningArtifact.aggregate({ _avg: { effectivenessScore: true } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: h24 } } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: d7 } } }),
+      prisma.learningArtifact.groupBy({ by: ["sourceType"], where: { createdAt: { gte: d7 } }, _count: true }),
+      prisma.systemConfig.findUnique({ where: { key: "AGENT_MATURITY_SNAPSHOT" } }).catch(() => null),
+      prisma.systemConfig.findUnique({ where: { key: "LEARNING_ORCHESTRATOR_LAST_DAILY" } }).catch(() => null),
+      prisma.agentTask.count({ where: { completedAt: { gte: h24 }, status: "COMPLETED" } }),
+      prisma.agentTask.count({ where: { completedAt: { gte: h24 }, status: "COMPLETED", kbHit: true } }),
+      prisma.agentTask.count({ where: { status: "BLOCKED", blockedAt: { lt: d7 } } }),
+      prisma.agentTask.count({ where: { status: "ASSIGNED", createdAt: { lt: d7 } } }),
+      prisma.tenant.count({ where: { status: "ACTIVE" } }).catch(() => 0),
+      prisma.evaluationSession.count({ where: { status: "COMPLETED" } }).catch(() => 0),
+      p.notification?.count({ where: { requestKind: "DECISION", createdAt: { gte: d30 } } }).catch(() => 0),
+      p.notification?.count({ where: { requestKind: "DECISION", respondedAt: { not: null }, createdAt: { gte: d30 } } }).catch(() => 0),
+      prisma.agentTask.count({ where: { status: "COMPLETED", createdAt: { gte: d30 }, kbHit: true } }).catch(() => 0),
+      prisma.agentTask.count({ where: { completedAt: { gte: d30 }, status: "COMPLETED" } }).catch(() => 0),
+      prisma.agentTask.findMany({ where: { createdBy: "cog-agent", createdAt: { gte: d7 } }, select: { assignedTo: true } }),
+      p.agentRelationship?.findMany({ where: { parentRole: "cog-agent", isActive: true, relationType: "REPORTS_TO" }, select: { childRole: true } }).catch(() => []),
+      prisma.agentTask.count({ where: { tags: { hasSome: ["lateral-collaboration"] }, createdAt: { gte: d7 } } }).catch(() => 0),
+      p.brainstormSession?.count({ where: { createdAt: { gte: d7 } } }).catch(() => 0),
+      prisma.agentTask.count({ where: { completedAt: { gte: d7 }, status: "COMPLETED" } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: d7 }, sourceType: "POST_EXECUTION" } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: d7 }, teacherRole: "learning-funnel-propagated" } }),
+    ])
+
+    const srcMap: Record<string, number> = {}
+    for (const s of kbBySource7d) srcMap[s.sourceType] = s._count
+    const adaptiveSrc = (srcMap["ESCALATION"] || 0) + (srcMap["EXTRAPOLATION"] || 0)
+
+    let maturity = null
+    if (maturitySnapshot) { try { maturity = JSON.parse(maturitySnapshot.value) } catch {} }
+
+    const dirRoles = new Set((cogDirReports ?? []).map((r: any) => r.childRole))
+    const cogToDirs = cogTasks.filter((t: any) => dirRoles.has(t.assignedTo)).length
+
+    return {
+      knowledge: {
+        totalArtifacts: kbTotal, validated: kbValidated,
+        validatedPct: kbTotal > 0 ? Math.round((kbValidated / kbTotal) * 100) : 0,
+        avgEffectiveness: Math.round((kbAvgScore._avg.effectivenessScore || 0) * 100) / 100,
+        created24h: kbCreated24h, created7d: kbCreated7d,
+        adaptiveRatio: kbCreated7d > 0 ? Math.round((adaptiveSrc / kbCreated7d) * 100) : 0,
+        maturity: maturity?.summary || null,
+        orchestratorStatus: orchestratorLast?.value
+          ? (Date.now() - new Date(orchestratorLast.value).getTime()) < 25 * 3600000 ? "ON_SCHEDULE" : "OVERDUE"
+          : "NEVER_RUN",
+      },
+      operations: {
+        completed24h: tasksCompleted24h,
+        kbHitPct: tasksCompleted24h > 0 ? Math.round((tasksKbHit24h / tasksCompleted24h) * 100) : 0,
+        hygiene: staleBlocked === 0 && staleAssigned < 10 ? "CURAT" : "ATENTIE",
+        activeTenants, completedSessions,
+      },
+      decisions: {
+        pending: (decisionsReq || 0) - (decisionsResp || 0),
+        autonomyPct: totalCompleted30d > 0 ? Math.round(((autoResolved || 0) / totalCompleted30d) * 100) : 0,
+      },
+      interactions: {
+        cogPctDirectors: cogTasks.length > 0 ? Math.round((cogToDirs / cogTasks.length) * 100) : 0,
+        cogVerdict: cogTasks.length === 0 ? "N/A" : cogToDirs / cogTasks.length >= 0.8 ? "BINE" : cogToDirs / cogTasks.length >= 0.5 ? "PARTIAL" : "SLAB",
+        lateralTasks, brainstormCount: brainstormCount || 0,
+        closedLoopPct: fbExec > 0 ? Math.round((fbLearning / fbExec) * 100) : 0,
+      },
+    }
+  } catch (e) {
+    console.error("[fetchAxes]", (e as Error).message?.slice(0, 80))
+    return null
+  }
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function OwnerDashboard() {
@@ -443,9 +535,10 @@ export default async function OwnerDashboard() {
     redirect("/portal")
   }
 
-  const [data, supplierLimits] = await Promise.all([
+  const [data, supplierLimits, axes] = await Promise.all([
     fetchCockpit(),
     fetchSupplierLimits(),
+    fetchAxes(),
   ])
   const firstName = session.user.name?.split(" ")[0] ?? "Owner"
 
@@ -476,15 +569,108 @@ export default async function OwnerDashboard() {
           </div>
           <div style={{ height: "20px" }} />
           <nav className="flex gap-3 text-xs flex-wrap">
-            <a href="#interna" className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition-colors">I. Situație internă</a>
-            <a href="#externa" className="bg-violet-50 text-violet-700 px-3 py-1.5 rounded-lg font-medium hover:bg-violet-100 transition-colors">II. Situație externă</a>
+            <a href="#organism" className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-medium hover:bg-emerald-100 transition-colors">1. Organism</a>
+            <a href="#cunoastere" className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition-colors">2. Cunoastere</a>
+            <a href="#operativ" className="bg-violet-50 text-violet-700 px-3 py-1.5 rounded-lg font-medium hover:bg-violet-100 transition-colors">3. Operativ</a>
             <a href="#decizii" className="bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg font-medium hover:bg-amber-100 transition-colors">
-              III. Decizii
+              4. Decizii
               {ownerDecisions.length > 0 && <span className="ml-1 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{ownerDecisions.length}</span>}
             </a>
-            <a href="#interactiune" className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-medium hover:bg-emerald-100 transition-colors">IV. Interacțiune</a>
+            <a href="#interactiuni" className="bg-teal-50 text-teal-700 px-3 py-1.5 rounded-lg font-medium hover:bg-teal-100 transition-colors">5. Interactiuni</a>
           </nav>
         </div>
+
+        {/* ═══ 5 AXE — COCKPIT CENTRALIZAT ═══ */}
+        {axes && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            {/* AXA 1: ORGANISM */}
+            <Link href="/owner/situations" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${
+                  data?.vitalSigns?.verdict === "ALIVE" ? "bg-emerald-400" :
+                  data?.vitalSigns?.verdict === "WEAKENED" ? "bg-amber-400" :
+                  data?.vitalSigns?.verdict === "CRITICAL" ? "bg-red-500" : "bg-slate-300"
+                }`} />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Organism</span>
+              </div>
+              <div className="text-lg font-bold text-slate-900">{data?.vitalSigns?.verdict || "—"}</div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                {data?.vitalSigns?.summary?.pass || 0} ok, {data?.vitalSigns?.summary?.warn || 0} warn, {data?.vitalSigns?.summary?.fail || 0} fail
+              </div>
+            </Link>
+
+            {/* AXA 2: CUNOASTERE */}
+            <Link href="/owner/insights" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${
+                  axes.knowledge.orchestratorStatus === "ON_SCHEDULE" ? "bg-emerald-400" :
+                  axes.knowledge.orchestratorStatus === "OVERDUE" ? "bg-amber-400" : "bg-slate-300"
+                }`} />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Cunoastere</span>
+              </div>
+              <div className="text-lg font-bold text-slate-900">{axes.knowledge.validatedPct}% validat</div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                +{axes.knowledge.created24h} azi, {axes.knowledge.adaptiveRatio}% adaptiv
+              </div>
+              {axes.knowledge.maturity && (
+                <div className="text-[10px] text-indigo-600 mt-1">
+                  {axes.knowledge.maturity.BLOOM || 0} bloom, {axes.knowledge.maturity.GROWTH || 0} growth, {axes.knowledge.maturity.SPROUT || 0} sprout, {axes.knowledge.maturity.SEED || 0} seed
+                </div>
+              )}
+            </Link>
+
+            {/* AXA 3: OPERATIV */}
+            <Link href="/owner/pipeline" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${
+                  axes.operations.hygiene === "CURAT" ? "bg-emerald-400" : "bg-amber-400"
+                }`} />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Operativ</span>
+              </div>
+              <div className="text-lg font-bold text-slate-900">{axes.operations.completed24h} taskuri/24h</div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                KB hit: {axes.operations.kbHitPct}%, hygiene: {axes.operations.hygiene}
+              </div>
+              <div className="text-[10px] text-violet-600 mt-1">
+                {axes.operations.activeTenants} clienti, {axes.operations.completedSessions} sesiuni
+              </div>
+            </Link>
+
+            {/* AXA 4: DECIZII */}
+            <Link href="/owner/reports/evolution" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${
+                  (axes.decisions.pending || 0) === 0 ? "bg-emerald-400" :
+                  (axes.decisions.pending || 0) <= 3 ? "bg-amber-400" : "bg-red-500"
+                }`} />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Decizii</span>
+              </div>
+              <div className="text-lg font-bold text-slate-900">{axes.decisions.pending || 0} pending</div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                Autonomie: {axes.decisions.autonomyPct}%
+              </div>
+            </Link>
+
+            {/* AXA 5: INTERACTIUNI */}
+            <Link href="/owner/team" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${
+                  axes.interactions.cogVerdict === "BINE" ? "bg-emerald-400" :
+                  axes.interactions.cogVerdict === "PARTIAL" ? "bg-amber-400" :
+                  axes.interactions.cogVerdict === "SLAB" ? "bg-red-500" : "bg-slate-300"
+                }`} />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Interactiuni</span>
+              </div>
+              <div className="text-lg font-bold text-slate-900">COG {axes.interactions.cogPctDirectors}% directori</div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                Bucle inchise: {axes.interactions.closedLoopPct}%
+              </div>
+              <div className="text-[10px] text-teal-600 mt-1">
+                {axes.interactions.lateralTasks} lateral, {axes.interactions.brainstormCount} brainstorm
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* ═══ LIMITE FURNIZORI ═══ */}
         {supplierLimits.length > 0 && supplierLimits.some(l => l.status !== "ok") && (

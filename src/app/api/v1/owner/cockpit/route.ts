@@ -305,7 +305,153 @@ export async function GET(req: NextRequest) {
 
     const result = computeOwnerCockpit(inputs)
 
-    return NextResponse.json(result)
+    // ═══ EXTENSIE: 5 axe unificate (fara query-uri redundante) ═══
+    // Reutilizam datele deja incarcate + adaugam doar ce lipseste
+
+    const d30 = new Date(now.getTime() - 30 * 86400000)
+
+    const [
+      // CUNOASTERE
+      kbTotal, kbValidated, kbAvgScore, kbCreated24h, kbCreated7d,
+      kbBySource7d, maturitySnapshot, orchestratorLastRun,
+      // OPERATIV
+      tasksByStatus, tasksCompleted24h, tasksKbHit24h, tasksCost7d,
+      staleBlocked, staleAssigned, cancelledRecent, activeTenants, completedSessions, supportTasks7d,
+      // DECIZII
+      decisionsRequested, decisionsResponded, tasksBlockedOwner, autoResolved,
+      totalCompleted30d,
+      // INTERACTIUNI
+      cogTasks7d, cogDirectReportsData, lateralTasks7d, brainstormSessions7d,
+      fbTotalExec, fbWithLearning, fbWithPropagation,
+    ] = await Promise.all([
+      // CUNOASTERE
+      prisma.learningArtifact.count(),
+      prisma.learningArtifact.count({ where: { validated: true } }),
+      prisma.learningArtifact.aggregate({ _avg: { effectivenessScore: true } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: h24 } } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: d7 } } }),
+      prisma.learningArtifact.groupBy({ by: ["sourceType"], where: { createdAt: { gte: d7 } }, _count: true }),
+      prisma.systemConfig.findUnique({ where: { key: "AGENT_MATURITY_SNAPSHOT" } }).catch(() => null),
+      prisma.systemConfig.findUnique({ where: { key: "LEARNING_ORCHESTRATOR_LAST_DAILY" } }).catch(() => null),
+      // OPERATIV
+      prisma.agentTask.groupBy({ by: ["status"], _count: true }),
+      prisma.agentTask.count({ where: { completedAt: { gte: h24 }, status: "COMPLETED" } }),
+      prisma.agentTask.count({ where: { completedAt: { gte: h24 }, status: "COMPLETED", kbHit: true } }),
+      prisma.agentTask.aggregate({ where: { completedAt: { gte: d7 } }, _sum: { costUsd: true } }).catch(() => ({ _sum: { costUsd: null } })),
+      prisma.agentTask.count({ where: { status: "BLOCKED", blockedAt: { lt: d7 } } }),
+      prisma.agentTask.count({ where: { status: "ASSIGNED", createdAt: { lt: d7 } } }),
+      prisma.agentTask.count({ where: { status: "CANCELLED", updatedAt: { gte: d7 } } }),
+      prisma.tenant.count({ where: { status: "ACTIVE" } }).catch(() => 0),
+      prisma.evaluationSession.count({ where: { status: "COMPLETED" } }).catch(() => 0),
+      prisma.agentTask.count({ where: { tags: { hasSome: ["support-response"] }, createdAt: { gte: d7 } } }).catch(() => 0),
+      // DECIZII
+      (prisma as any).notification?.count({ where: { requestKind: "DECISION", createdAt: { gte: d30 } } }).catch(() => 0),
+      (prisma as any).notification?.count({ where: { requestKind: "DECISION", respondedAt: { not: null }, createdAt: { gte: d30 } } }).catch(() => 0),
+      prisma.agentTask.count({ where: { status: "BLOCKED", blockerType: "OWNER_DECISION", createdAt: { gte: d30 } } }).catch(() => 0),
+      prisma.agentTask.count({ where: { status: "COMPLETED", createdAt: { gte: d30 }, kbHit: true } }).catch(() => 0),
+      prisma.agentTask.count({ where: { completedAt: { gte: d30 }, status: "COMPLETED" } }).catch(() => 0),
+      // INTERACTIUNI
+      prisma.agentTask.findMany({ where: { createdBy: "cog-agent", createdAt: { gte: d7 } }, select: { assignedTo: true } }),
+      (prisma as any).agentRelationship?.findMany({ where: { parentRole: "cog-agent", isActive: true, relationType: "REPORTS_TO" }, select: { childRole: true } }).catch(() => []),
+      prisma.agentTask.count({ where: { tags: { hasSome: ["lateral-collaboration"] }, createdAt: { gte: d7 } } }).catch(() => 0),
+      (prisma as any).brainstormSession?.count({ where: { createdAt: { gte: d7 } } }).catch(() => 0),
+      // Feedback loops
+      prisma.agentTask.count({ where: { completedAt: { gte: d7 }, status: "COMPLETED" } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: d7 }, sourceType: "POST_EXECUTION" } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: d7 }, teacherRole: "learning-funnel-propagated" } }),
+    ])
+
+    // Cunoastere
+    const sourceMap: Record<string, number> = {}
+    for (const s of kbBySource7d) sourceMap[s.sourceType] = s._count
+    const adaptiveSrc = (sourceMap["ESCALATION"] || 0) + (sourceMap["EXTRAPOLATION"] || 0)
+    const evolutiveSrc = (sourceMap["POST_EXECUTION"] || 0) + (sourceMap["SELF_INTERVIEW"] || 0)
+
+    let maturity = null
+    if (maturitySnapshot) { try { maturity = JSON.parse(maturitySnapshot.value) } catch {} }
+
+    // COG delegation
+    const dirRoles = new Set((cogDirectReportsData ?? []).map((r: any) => r.childRole))
+    const cogToDirs = cogTasks7d.filter((t: any) => dirRoles.has(t.assignedTo)).length
+
+    // Status map
+    const sMap: Record<string, number> = {}
+    for (const s of tasksByStatus) sMap[s.status] = s._count
+
+    const axes = {
+      // AXA 1: ORGANISM — deja in result.layers + result.vitalSigns
+      organism: {
+        verdict: result.vitalSigns.verdict,
+        layersSummary: Object.values(result.layers).map((l: any) => ({
+          key: l.key, status: l.status, alarms: l.alarmCount,
+        })),
+      },
+      // AXA 2: CUNOASTERE
+      knowledge: {
+        evolutionary: {
+          totalArtifacts: kbTotal, validated: kbValidated,
+          validatedPct: kbTotal > 0 ? Math.round((kbValidated / kbTotal) * 100) : 0,
+          avgEffectiveness: Math.round((kbAvgScore._avg.effectivenessScore || 0) * 100) / 100,
+          created24h: kbCreated24h, created7d: kbCreated7d, evolutiveSources: evolutiveSrc,
+        },
+        adaptive: {
+          signalsProcessed7d: signalCount24h * 7, // aproximare
+          adaptiveSources: adaptiveSrc,
+          adaptiveRatio: kbCreated7d > 0 ? Math.round((adaptiveSrc / kbCreated7d) * 100) : 0,
+          supportFeedback7d: supportTasks7d,
+        },
+        maturity: maturity ? {
+          lastUpdated: maturity.timestamp, summary: maturity.summary,
+          topAgents: (maturity.agents || []).sort((a: any, b: any) => b.score - a.score).slice(0, 5),
+          bottomAgents: (maturity.agents || []).sort((a: any, b: any) => a.score - b.score).slice(0, 5),
+        } : null,
+        orchestrator: {
+          lastDailyRun: orchestratorLastRun?.value || null,
+          status: orchestratorLastRun?.value
+            ? (Date.now() - new Date(orchestratorLastRun.value).getTime()) < 25 * 3600000 ? "ON_SCHEDULE" : "OVERDUE"
+            : "NEVER_RUN",
+        },
+      },
+      // AXA 3: OPERATIV
+      operations: {
+        internal: {
+          tasksByStatus: sMap,
+          completed24h: tasksCompleted24h, kbHit24h: tasksKbHit24h,
+          kbHitPct: tasksCompleted24h > 0 ? Math.round((tasksKbHit24h / tasksCompleted24h) * 100) : 0,
+          costUsd7d: Math.round(((tasksCost7d as any)._sum?.costUsd || 0) * 100) / 100,
+          hygiene: { staleBlocked, staleAssigned, cancelledRecent7d: cancelledRecent,
+            verdict: staleBlocked === 0 && staleAssigned < 10 ? "CURAT" : "ATENTIE" },
+        },
+        external: { activeTenants, completedSessions, supportTickets7d: supportTasks7d },
+      },
+      // AXA 4: DECIZII
+      decisions: {
+        requested30d: decisionsRequested || 0, responded30d: decisionsResponded || 0,
+        pending: (decisionsRequested || 0) - (decisionsResponded || 0),
+        responseRate: (decisionsRequested || 0) > 0 ? Math.round(((decisionsResponded || 0) / (decisionsRequested || 0)) * 100) : 100,
+        blockedByOwner: tasksBlockedOwner,
+        autoResolved30d: autoResolved || 0,
+        autonomyPct: totalCompleted30d > 0 ? Math.round(((autoResolved || 0) / totalCompleted30d) * 100) : 0,
+      },
+      // AXA 5: INTERACTIUNI
+      interactions: {
+        cogDelegation: {
+          total7d: cogTasks7d.length, toDirectors: cogToDirs, toOthers: cogTasks7d.length - cogToDirs,
+          pctViaDirectors: cogTasks7d.length > 0 ? Math.round((cogToDirs / cogTasks7d.length) * 100) : 0,
+          verdict: cogTasks7d.length === 0 ? "N/A"
+            : cogToDirs / cogTasks7d.length >= 0.8 ? "BINE"
+            : cogToDirs / cogTasks7d.length >= 0.5 ? "PARTIAL" : "SLAB",
+        },
+        lateralCollaboration7d: lateralTasks7d,
+        brainstormSessions7d: brainstormSessions7d || 0,
+        feedbackLoops: {
+          totalExecutions: fbTotalExec, withLearning: fbWithLearning, withPropagation: fbWithPropagation,
+          closedLoopPct: fbTotalExec > 0 ? Math.round((fbWithLearning / fbTotalExec) * 100) : 0,
+        },
+      },
+    }
+
+    return NextResponse.json({ ...result, axes })
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
