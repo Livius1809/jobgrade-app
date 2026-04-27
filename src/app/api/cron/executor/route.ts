@@ -262,6 +262,60 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
+    // NIVEL 5g: Signals processing (semnale externe)
+    let signalsProcessed = 0
+    try {
+      const pending = await prisma.externalSignal.findMany({
+        where: { processedAt: null },
+        take: 10,
+        orderBy: { capturedAt: "asc" },
+      })
+      const roleMap: Record<string, string> = { LEGAL_REG: "CIA", COMPETITIVE: "MKA" }
+      for (const signal of pending) {
+        await prisma.externalSignal.update({ where: { id: signal.id }, data: { processedAt: new Date() } })
+        if (signal.category === "LEGAL_REG" || signal.category === "COMPETITIVE") {
+          await prisma.agentTask.create({
+            data: {
+              title: `REACT ${signal.category}: ${(signal.title || "Signal").slice(0, 100)}`,
+              description: `Semnal extern: ${signal.category}. Sursa: ${signal.source || "?"}. Titlu: ${signal.title || "?"}. Analizeaza impactul.`,
+              assignedTo: roleMap[signal.category] || "COG",
+              assignedBy: "COSO",
+              status: "ASSIGNED",
+              priority: "URGENT",
+              taskType: "INVESTIGATION",
+              businessId: "biz_jobgrade",
+              tags: ["signal-reactive", `signal:${signal.id}`, `category:${signal.category}`],
+            },
+          })
+          signalsProcessed++
+        }
+      }
+      if (signalsProcessed > 0) console.log(`[cron/executor] Signals: ${signalsProcessed} processed`)
+    } catch {}
+
+    // NIVEL 5h: Retry stuck tasks (BLOCKED/FAILED > 24h, max 3 retries)
+    let retriedStuck = 0
+    try {
+      const stuck = await prisma.agentTask.findMany({
+        where: { status: { in: ["BLOCKED", "FAILED"] }, updatedAt: { lt: new Date(Date.now() - 24 * 3600000) } },
+        select: { id: true, tags: true },
+        take: 10,
+      })
+      for (const task of stuck) {
+        const retryCount = (task.tags || []).filter((t: string) => t.startsWith("retry:")).length
+        if (retryCount >= 3) {
+          await prisma.agentTask.update({ where: { id: task.id }, data: { status: "CANCELLED", tags: { push: "max-retries-reached" } } })
+        } else {
+          await prisma.agentTask.update({
+            where: { id: task.id },
+            data: { status: "ASSIGNED", blockerType: null, blockerDescription: null, blockedAt: null, failedAt: null, tags: { push: `retry:${retryCount + 1}` } },
+          })
+          retriedStuck++
+        }
+      }
+      if (retriedStuck > 0) console.log(`[cron/executor] Retried: ${retriedStuck} stuck tasks`)
+    } catch {}
+
     // NIVEL 6: OPERATIONAL ENGINE — heartbeat + self-check + auto-remediere
     let operationalReport: any = null
     try {
