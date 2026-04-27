@@ -73,12 +73,13 @@ export interface OperationalHealthReport {
   }
 
   selfCheck: {
-    proactiveLoopRunning: boolean
-    learningOrchestratorRunning: boolean
-    cronExecutorRunning: boolean
-    signalsCronRunning: boolean
-    kbHitHealthy: boolean              // < 80% kbHit = sanatos
-    escalationHealthy: boolean          // < 3 escaladari Owner/zi = sanatos
+    cronExecutorRunning: boolean        // executor a rulat in ultimele 2h
+    cronExecutorLastRun: string         // timestamp ultimul run
+    proactiveLoopRunning: boolean       // manageri au rulat cicluri in 48h
+    learningOrchestratorRunning: boolean // learning daily a rulat
+    kbHitHealthy: boolean               // < 80% kbHit = sanatos
+    escalationHealthy: boolean           // < 3 escaladari Owner/zi = sanatos
+    ownerEscalations24h: number         // cate escaladari Owner in 24h
   }
 
   anomalies: Anomaly[]
@@ -280,18 +281,51 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
 
   // ═══ 4. SELF-CHECK ═══
 
-  const [learningLast, lastExecConfig] = await Promise.all([
-    prisma.systemConfig.findUnique({ where: { key: "LEARNING_ORCHESTRATOR_LAST_DAILY" } }),
-    prisma.systemConfig.findUnique({ where: { key: "EXECUTOR_CRON_ENABLED" } }),
-  ])
+  // Citim TOATE timestamps per nivel
+  const checkKeys = [
+    "LEARNING_ORCHESTRATOR_LAST_DAILY",
+    "EXECUTOR_CRON_ENABLED",
+    "EXECUTOR_LAST_RUN",
+    "EXECUTOR_PROACTIVE_RUN",
+    "EXECUTOR_SIGNALS_RUN",
+    "EXECUTOR_RETRY_RUN",
+  ]
+  const configs = await Promise.all(
+    checkKeys.map(key => prisma.systemConfig.findUnique({ where: { key } }).catch(() => null))
+  )
+  const configMap: Record<string, string | null> = {}
+  checkKeys.forEach((key, i) => { configMap[key] = configs[i]?.value || null })
 
-  const learningRunning = learningLast?.value
-    ? (now.getTime() - new Date(learningLast.value).getTime()) < 25 * 3600000
+  const learningRunning = configMap["LEARNING_ORCHESTRATOR_LAST_DAILY"]
+    ? (now.getTime() - new Date(configMap["LEARNING_ORCHESTRATOR_LAST_DAILY"]).getTime()) < 25 * 3600000
     : false
-  const cronRunning = lastExecConfig?.value !== "false"
+  const cronRunning = configMap["EXECUTOR_CRON_ENABLED"] !== "false"
   const proactiveRunning = cycleCount48h > 0
   const kbHealthy = kbHitRate <= 80
-  const escalationHealthy = true // TODO: count escaladari Owner/zi
+
+  // Verificam daca executor-ul a rulat in ultimele 2 ore (ar trebui la 30 min)
+  const executorLastRun = configMap["EXECUTOR_LAST_RUN"]
+  const executorRunning = executorLastRun
+    ? (now.getTime() - new Date(executorLastRun).getTime()) < 2 * 3600000
+    : false
+
+  // Escaladari Owner — cate in ultimele 24h
+  const ownerEscalations = await (p.notification?.count({
+    where: { type: "AGENT_MESSAGE", createdAt: { gte: h24 }, respondedAt: null },
+  }).catch(() => 0)) ?? 0
+  const escalationHealthy = ownerEscalations < 3
+
+  // Verificam fiecare nivel
+  if (!executorRunning) {
+    anomalies.push({
+      type: "CRON_MISSING",
+      severity: "CRITICAL",
+      title: "Executor cron nu a rulat in ultimele 2 ore",
+      detail: `Ultimul run: ${executorLastRun || "NICIODATA"}. Vercel cron poate fi oprit sau endpoint-ul esueaza.`,
+      affectedEntities: [],
+      action: "ESCALARE_OWNER",
+    })
+  }
 
   if (!learningRunning) {
     anomalies.push({
@@ -302,6 +336,25 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
       affectedEntities: [],
       action: "LOG_ONLY",
     })
+  }
+
+  if (!proactiveRunning) {
+    // Deja detectat mai sus ca PROACTIVE_LOOP_MISSING, nu duplicam
+  }
+
+  if (!escalationHealthy) {
+    anomalies.push({
+      type: "ESCALATION_LEAK",
+      severity: "HIGH",
+      title: `${ownerEscalations} escaladari Owner in 24h — prea multe`,
+      detail: "Structura escaladeaza prea mult la Owner. Bucla de feedback ierarhic nu functioneaza corect.",
+      affectedEntities: [],
+      action: "LOG_ONLY",
+    })
+  }
+
+  if (!kbHealthy) {
+    // Deja detectat mai sus ca KB_OVER_RELIANCE, nu duplicam
   }
 
   // ═══ 5. RESOURCE MARKET — verificare bugete + propuneri redistribuire ═══
@@ -428,12 +481,13 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
       tasksWithoutObjective: tasksWithoutObj,
     },
     selfCheck: {
+      cronExecutorRunning: executorRunning,
+      cronExecutorLastRun: executorLastRun || "NEVER",
       proactiveLoopRunning: proactiveRunning,
       learningOrchestratorRunning: learningRunning,
-      cronExecutorRunning: cronRunning,
-      signalsCronRunning: true, // TODO
       kbHitHealthy: kbHealthy,
       escalationHealthy,
+      ownerEscalations24h: ownerEscalations,
     },
     anomalies,
     anomalyCount: {
