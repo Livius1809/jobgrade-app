@@ -383,12 +383,14 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
       // Auto-remediere: propune transfer buget de la sub-utilizati la supra-utilizati
       if (overBudget.length > 0 && underBudget.length > 0) {
         try {
-          const { proposeNegotiations } = await import("./resource-meter")
-          const proposals = proposeNegotiations(budgets.map((b: any) => ({
+          const { proposeNegotiations, checkBudgets } = await import("./resource-meter")
+          const budgetInputs = budgets.map((b: any) => ({
             agentRole: b.agentRole,
             maxLlmCostPerDay: b.maxLlmCostPerDay,
             usedLlmCost: b.usedLlmCost,
-          })))
+          }))
+          const checks = checkBudgets(budgetInputs)
+          const proposals = proposeNegotiations(checks, budgetInputs)
           if (proposals.length > 0) {
             console.log(`[operational-engine] Resource proposals: ${proposals.length} transfers sugerate`)
           }
