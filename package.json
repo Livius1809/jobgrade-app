@@ -15,7 +15,8 @@
     "test:e2e": "npx playwright test",
     "test:smoke": "npx playwright test tests/e2e/smoke.spec.ts",
     "test:pachet1": "npx playwright test tests/e2e/pachet1-complete.spec.ts",
-    "test:prod": "PLAYWRIGHT_BASE_URL=https://jobgrade.ro npx playwright test tests/e2e/pachet1-complete.spec.ts"
+    "test:prod": "PLAYWRIGHT_BASE_URL=https://jobgrade.ro npx playwright test tests/e2e/pachet1-complete.spec.ts",
+    "test:b2b-prep": "npx tsx scripts/prepare-b2b-test.ts"
   },
   "prisma": {
     "seed": "ts-node --project tsconfig.seed.json prisma/seed.ts"

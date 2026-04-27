@@ -272,6 +272,19 @@ export async function handleSupportRequest(
     }
   } catch {}
 
+  // Alimenteaza palnia de ingestie cu rezolutia suportului
+  try {
+    const { learningFunnel } = await import("./learning-funnel")
+    await learningFunnel({
+      agentRole: teamLead,
+      type: "FEEDBACK",
+      input: `Cerere suport de la ${request.fromAgent}: ${request.situation.slice(0, 300)}`,
+      output: integratedResponse.slice(0, 1000),
+      success: true,
+      metadata: { source: "support-response", contributors: contributions.length },
+    })
+  } catch {}
+
   return {
     request,
     triaj,

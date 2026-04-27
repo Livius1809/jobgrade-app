@@ -47,10 +47,7 @@ export async function resolveFromKB(
       studentRole: agentRole,
       problemClass: "procedure",
       effectivenessScore: { gte: 0.8 },
-      OR: [
-        { validated: true },
-        { effectivenessScore: { gte: 0.9 } }, // seeduire originală — trusted
-      ],
+      validated: true, // OBLIGATORIU — seeds trebuie create cu validated:true
     },
     orderBy: { effectivenessScore: "desc" },
   })
@@ -84,10 +81,7 @@ export async function resolveFromKB(
         rule: { contains: keyword, mode: "insensitive" },
         effectivenessScore: { gte: 0.5 },
         problemClass: { not: "procedure" },
-        OR: [
-          { validated: true },
-          { effectivenessScore: { gte: 0.8 } },
-        ],
+        validated: true, // OBLIGATORIU — previne propagare halucinații Haiku
       },
       orderBy: { effectivenessScore: "desc" },
     })
@@ -118,6 +112,7 @@ export async function resolveFromKB(
           studentRole: { in: relatedRoles },
           rule: { contains: keyword, mode: "insensitive" },
           effectivenessScore: { gte: 0.5 },
+          validated: true, // OBLIGATORIU — cross-agent tot trebuie validat
         },
         orderBy: { effectivenessScore: "desc" },
       })

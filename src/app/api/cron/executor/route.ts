@@ -166,12 +166,20 @@ export async function GET(request: NextRequest) {
       if (result.tasksExecuted === 0 && result.tasksSkippedKB === 0) break
     }
 
-    // NIVEL 4: Propagare departamentală (la fiecare ciclu)
-    let propagated = 0
+    // NIVEL 4: Orchestrator unic de invatare (propagare + consolidare + distilare + maturitate + cleanup)
+    let learningResult: any = null
     try {
-      const { propagateDepartmentLearning } = await import("@/lib/agents/learning-funnel")
-      propagated = await propagateDepartmentLearning()
-    } catch {}
+      const { runLearningOrchestrator } = await import("@/lib/agents/learning-orchestrator")
+      learningResult = await runLearningOrchestrator()
+      if (learningResult.errors.length > 0) {
+        console.log(`[cron/executor] Learning orchestrator errors: ${learningResult.errors.join("; ")}`)
+      }
+      if (learningResult.phase === "CYCLE_AND_DAILY") {
+        console.log(`[cron/executor] Learning DAILY: consolidated=${learningResult.consolidated}, distilled=${learningResult.distilled}, maturity=${learningResult.maturityUpdated}`)
+      }
+    } catch (e: any) {
+      console.log(`[cron/executor] Learning orchestrator skip: ${(e as Error).message?.slice(0, 60)}`)
+    }
 
     // NIVEL 5: Rollup obiective (de jos în sus, la fiecare ciclu)
     let rollupResult = { updated: 0, details: [] as any[] }
@@ -225,15 +233,6 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
-    // NIVEL 6: Curățare artefacte învățare expirate (săptămânal — doar luni)
-    let expiredCleaned = 0
-    if (new Date().getDay() === 1) {
-      try {
-        const { expireUnusedArtifacts } = await import("@/lib/agents/learning-pipeline")
-        expiredCleaned = await expireUnusedArtifacts()
-      } catch {}
-    }
-
     return NextResponse.json({
       ok: true,
       batches: batchCount,
@@ -242,11 +241,25 @@ export async function GET(request: NextRequest) {
       totalProcessed,
       totalExecuted,
       totalBlocked,
-      propagatedLearning: propagated,
+      learning: learningResult ? {
+        phase: learningResult.phase,
+        propagated: learningResult.propagated,
+        propagationFeedback: learningResult.propagationFeedback,
+        consolidated: learningResult.consolidated,
+        orgReinjected: learningResult.orgReinjected,
+        distilled: learningResult.distilled,
+        distillFeedback: learningResult.distillFeedback,
+        maturityUpdated: learningResult.maturityUpdated,
+        maturityInterventions: learningResult.maturityInterventions,
+        expired: learningResult.expired,
+        expirationInsights: learningResult.expirationInsights,
+        stats: learningResult.stats,
+        errors: learningResult.errors,
+        durationMs: learningResult.durationMs,
+      } : null,
       objectiveRollup: rollupResult.updated,
       invalidatedByCode,
       staleTasksCleaned,
-      expiredCleaned,
       adaptiveAdjustments,
       cognitive: cognitiveResult ? {
         heartbeat: cognitiveResult.heartbeat.urgencyLevel,

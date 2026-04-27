@@ -248,6 +248,7 @@ export async function propagateDepartmentLearning(): Promise<number> {
     where: {
       effectivenessScore: { gte: 0.85 },
       appliedCount: { gte: 3 },
+      validated: true, // OBLIGATORIU — nu propagăm halucinații
       teacherRole: { not: "learning-funnel-propagated" }, // nu propaga din nou ce a fost propagat
     },
     take: 20,
@@ -295,7 +296,7 @@ export async function consolidateOrgLearning(): Promise<number> {
   const frequent = await prisma.$queryRaw`
     SELECT rule, COUNT(DISTINCT "studentRole") as agent_count, AVG("effectivenessScore") as avg_score
     FROM learning_artifacts
-    WHERE "effectivenessScore" >= 0.8
+    WHERE "effectivenessScore" >= 0.8 AND validated = true
     GROUP BY rule
     HAVING COUNT(DISTINCT "studentRole") >= 3
     ORDER BY agent_count DESC

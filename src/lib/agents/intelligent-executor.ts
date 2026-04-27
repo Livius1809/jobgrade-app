@@ -139,6 +139,28 @@ export async function runIntelligentBatch(
     })
   }
 
+  // Prioritizare adaptiva bazata pe maturitate (citeste snapshot-ul)
+  try {
+    const maturityConfig = await prisma.systemConfig.findUnique({
+      where: { key: "AGENT_MATURITY_SNAPSHOT" },
+    })
+    if (maturityConfig) {
+      const snapshot = JSON.parse(maturityConfig.value)
+      const seedAgents = new Set(
+        (snapshot.agents || [])
+          .filter((a: any) => a.level === "SEED")
+          .map((a: any) => a.agent)
+      )
+      // SEED agents: deprioritizeaza taskuri CRITICAL (nu sunt pregatiti)
+      // Muta taskurile CRITICAL ale SEED agents la sfarsit
+      if (seedAgents.size > 0) {
+        const critical = tasks.filter(t => t.priority === "CRITICAL" && seedAgents.has(t.assignedTo))
+        const rest = tasks.filter(t => !(t.priority === "CRITICAL" && seedAgents.has(t.assignedTo)))
+        tasks = [...rest, ...critical]
+      }
+    }
+  } catch {}
+
   let tasksSkippedKB = 0
   let tasksBlockedAlignment = 0
   let tasksBlockedBudget = 0

@@ -207,5 +207,18 @@ export async function integrateLateralResponse(
     },
   })
 
+  // Capturam rezolutia laterala in sistemul de invatare
+  try {
+    const { learningFunnel } = await import("./learning-funnel")
+    await learningFunnel({
+      agentRole: originalTask.assignedTo,
+      type: "FEEDBACK",
+      input: `Cerere laterala: ${originalTask.title}`,
+      output: lateralResult.slice(0, 1500),
+      success: true,
+      metadata: { source: "lateral-collaboration", lateralTaskId },
+    })
+  } catch {}
+
   return { unblocked: true, originalTaskId: originalTask.id }
 }

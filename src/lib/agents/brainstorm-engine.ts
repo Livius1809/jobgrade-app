@@ -690,6 +690,23 @@ export async function distillBrainstormToKB(
     } catch { /* duplicate */ }
   }
 
+  // Alimenteaza palnia de ingestie cu cele mai bune idei
+  if (topIdeas.length > 0) {
+    try {
+      const { learningFunnel } = await import("./learning-funnel")
+      await learningFunnel({
+        agentRole: session.initiatedBy,
+        type: "DECISION",
+        input: `Brainstorm "${session.topic}" — ${topIdeas.length} idei top`,
+        output: topIdeas.slice(0, 3).map((i: any) =>
+          `${i.title} (scor: ${i.compositeScore}): ${(i.description || "").slice(0, 200)}`
+        ).join("\n"),
+        success: true,
+        metadata: { source: "brainstorm-distill", sessionId },
+      })
+    } catch {}
+  }
+
   console.log(`[BRAINSTORM→KB] Distilled ${distilled} entries from session ${sessionId}`)
   return distilled
 }
