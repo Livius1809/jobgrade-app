@@ -1904,9 +1904,9 @@ function FileDropZone({ file, dragOver, setDragOver, setFile, fileInputRef, acce
 interface StatFunctiiJob {
   id: string
   title: string
-  code: string | null
-  department: { name: string } | null
-  status: string
+  code?: string | null
+  department?: { name: string } | null
+  status?: string
 }
 
 interface StatFunctiiRow {
