@@ -144,10 +144,10 @@ const TAB_COLORS: Record<string, { bar: string; fill: string; text: string; bord
 // Nivelul 2 (3): + Date salariale (benchmark)
 // Nivelul 3 (4): + Departamente (dezvoltare org)
 const TABS_PER_LAYER: Record<number, string[]> = {
-  1: ["posturi", "fise"],
-  2: ["posturi", "fise", "stat-salarii"],
-  3: ["posturi", "fise", "stat-salarii", "salarii"],
-  4: ["posturi", "fise", "stat-salarii", "salarii", "departamente"],
+  1: ["posturi", "fise", "stat-functii"],
+  2: ["posturi", "fise", "stat-functii", "stat-salarii"],
+  3: ["posturi", "fise", "stat-functii", "stat-salarii", "salarii"],
+  4: ["posturi", "fise", "stat-functii", "stat-salarii", "salarii", "departamente"],
 }
 
 export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange, forceClosePanel = false, parentPanelLeft }: ClientDataTabsProps) {
@@ -219,6 +219,18 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
       ],
     },
     {
+      id: "stat-functii",
+      label: "Stat functii",
+      icon: "icon-departament",
+      description: "Statul de functii: departamente, posturi per departament, niveluri ierarhice, nr. pozitii. Se poate importa sau genera din fisele de post introduse.",
+      status: jobCount >= 3 ? "done" : "empty",
+      count: jobCount,
+      actions: [
+        { label: "Genereaza din fise", onClick: () => setPanelOpen("genereaza-stat-functii"), primary: jobCount >= 1, opensPanel: true },
+        { label: "Importa document", onClick: () => setPanelOpen("import-stat-functii"), opensPanel: true },
+      ],
+    },
+    {
       id: "stat-salarii",
       label: "Stat salarii",
       icon: "icon-compensatie",
@@ -262,6 +274,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
   const tabProgress: Record<string, number> = {
     posturi: Math.min(100, Math.round((liveJobCount / Math.max(2, 1)) * 100)),
     fise: 0,
+    "stat-functii": liveJobCount >= 3 ? 100 : Math.round((liveJobCount / 3) * 100),
     "stat-salarii": employeeCount > 0 ? 100 : 0,
     salarii: hasSalaryData ? 100 : 0,
     departamente: hasDepartments ? 100 : 0,
@@ -426,6 +439,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
             <div className="flex items-center gap-3">
               <span>
                 {panelOpen === "posturi" && <Icon name="icon-raport" size={24} />}
+                {panelOpen === "genereaza-stat-functii" && <Icon name="icon-departament" size={24} />}
                 {panelOpen === "import-stat-functii" && <Icon name="icon-download" size={24} />}
                 {panelOpen === "fise" && <Icon name="icon-profil" size={24} />}
                 {panelOpen === "upload-fise" && <Icon name="icon-download" size={24} />}
@@ -435,6 +449,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
                   {panelOpen === "posturi" && "Adaugă post"}
+                  {panelOpen === "genereaza-stat-functii" && "Stat de functii"}
                   {panelOpen === "import-stat-functii" && "Import stat de funcții"}
                   {panelOpen === "fise" && "Compune fișă de post"}
                   {panelOpen === "upload-fise" && "Încarcă fișe de post"}
@@ -442,7 +457,7 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
                   {panelOpen === "add-angajat" && "Adaugă angajat"}
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block bg-indigo-100 text-indigo-700">
-                  {panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : panelOpen === "import-stat-functii" ? "XLSX / PDF / Imagine" : panelOpen === "import-stat-salarii" ? "XLSX / XML" : panelOpen === "posturi" ? "Cu sugestii AI" : "Manual"}
+                  {panelOpen === "genereaza-stat-functii" ? "Din fisele de post" : panelOpen === "fise" ? "Generare AI" : panelOpen === "upload-fise" ? "Import PDF/Word" : panelOpen === "import-stat-functii" ? "XLSX / PDF / Imagine" : panelOpen === "import-stat-salarii" ? "XLSX / XML" : panelOpen === "posturi" ? "Cu sugestii AI" : "Manual"}
                 </span>
               </div>
             </div>
@@ -468,6 +483,10 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
           )}
 
           {/* ─── Import Stat Funcții (XLSX/PDF/Imagine) ─── */}
+          {panelOpen === "genereaza-stat-functii" && (
+            <GenereazaStatFunctiiPanel jobs={jobs} onComplete={() => setPanelOpen(null)} />
+          )}
+
           {panelOpen === "import-stat-functii" && (
             <ImportStatFunctiiPanel onComplete={() => setPanelOpen(null)} />
           )}
@@ -1877,5 +1896,185 @@ function FileDropZone({ file, dragOver, setDragOver, setFile, fileInputRef, acce
         </>
       )}
     </div>
+  )
+}
+
+// ── Genereaza Stat Functii din fisele de post existente ─────────────────────
+
+interface StatFunctiiJob {
+  id: string
+  title: string
+  code: string | null
+  department: { name: string } | null
+  status: string
+}
+
+interface StatFunctiiRow {
+  jobId: string
+  title: string
+  code: string
+  department: string
+  hierarchyLevel: number
+  positionCount: number
+  isActive: boolean
+}
+
+function GenereazaStatFunctiiPanel({ jobs, onComplete }: { jobs: StatFunctiiJob[]; onComplete: () => void }) {
+  const [rows, setRows] = useState<StatFunctiiRow[]>(() =>
+    jobs
+      .filter(j => j.status !== "ARCHIVED")
+      .map((j, idx) => ({
+        jobId: j.id,
+        title: j.title,
+        code: j.code || `P-${String(idx + 1).padStart(3, "0")}`,
+        department: j.department?.name || "Nealocat",
+        hierarchyLevel: 3,
+        positionCount: 1,
+        isActive: true,
+      }))
+  )
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const updateRow = (idx: number, field: keyof StatFunctiiRow, value: any) => {
+    setRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
+  }
+
+  const activeRows = rows.filter(r => r.isActive)
+  const departments = [...new Set(rows.map(r => r.department))].sort()
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await fetch("/api/v1/jobs/stat-functii", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: rows.filter(r => r.isActive) }),
+      })
+      setSaved(true)
+    } catch {}
+    setSaving(false)
+  }
+
+  async function handleExport(format: "excel" | "pdf") {
+    setExporting(true)
+    try {
+      const res = await fetch(`/api/v1/jobs/stat-functii/export?format=${format}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: rows.filter(r => r.isActive) }),
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `stat-functii.${format === "excel" ? "xlsx" : "pdf"}`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch {}
+    setExporting(false)
+  }
+
+  if (jobs.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-sm text-slate-500">Nu ai posturi introduse inca.</p>
+        <p className="text-xs text-slate-400 mt-2">Adauga posturi in tab-ul "Posturi" sau importa un stat de functii.</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-xs text-slate-500 mb-4">
+        Fisele de post introduse sunt listate mai jos. Stabileste ierarhia, numarul de pozitii si bifeaza posturile active.
+      </p>
+
+      {/* Tabel per departament */}
+      {departments.map(dept => (
+        <div key={dept} className="mb-4">
+          <div className="bg-slate-100 px-3 py-1.5 rounded-t-lg border border-slate-200 border-b-0">
+            <span className="text-xs font-bold text-slate-600">{dept}</span>
+            <span className="text-[10px] text-slate-400 ml-2">
+              ({rows.filter(r => r.department === dept && r.isActive).length} pozitii active)
+            </span>
+          </div>
+          <table className="w-full text-xs border border-slate-200 rounded-b-lg overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="text-left px-2 py-1.5 w-6"></th>
+                <th className="text-left px-2 py-1.5">Post</th>
+                <th className="text-center px-2 py-1.5 w-20">Nivel</th>
+                <th className="text-center px-2 py-1.5 w-16">Nr. poz.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.filter(r => r.department === dept).map((row, _) => {
+                const idx = rows.findIndex(r => r.jobId === row.jobId)
+                return (
+                  <tr key={row.jobId} className={`border-t border-slate-100 ${!row.isActive ? "opacity-40" : ""}`}>
+                    <td className="px-2 py-1.5 text-center">
+                      <input type="checkbox" checked={row.isActive}
+                        onChange={e => updateRow(idx, "isActive", e.target.checked)}
+                        className="rounded border-slate-300" />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span className="font-medium">{row.title}</span>
+                      {row.code && <span className="text-slate-400 ml-1">({row.code})</span>}
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <select value={row.hierarchyLevel}
+                        onChange={e => updateRow(idx, "hierarchyLevel", Number(e.target.value))}
+                        className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white">
+                        <option value={1}>N (Top)</option>
+                        <option value={2}>N-1</option>
+                        <option value={3}>N-2</option>
+                        <option value={4}>N-3</option>
+                        <option value={5}>N-4</option>
+                      </select>
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <input type="number" min={0} max={999} value={row.positionCount}
+                        onChange={e => updateRow(idx, "positionCount", Number(e.target.value))}
+                        className="w-12 text-xs text-center border border-slate-200 rounded px-1 py-0.5" />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      ))}
+
+      {/* Rezumat */}
+      <div className="bg-indigo-50 rounded-lg px-3 py-2 mb-4 flex items-center justify-between">
+        <span className="text-xs text-indigo-700">
+          {activeRows.length} posturi active, {activeRows.reduce((s, r) => s + r.positionCount, 0)} pozitii totale
+        </span>
+      </div>
+
+      {/* Actiuni */}
+      <div className="flex gap-2">
+        <button onClick={handleSave} disabled={saving || activeRows.length === 0}
+          className="flex-1 py-2.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-40">
+          {saving ? "Se salveaza..." : saved ? "Salvat" : "Salveaza"}
+        </button>
+        <button onClick={() => handleExport("excel")} disabled={exporting || activeRows.length === 0}
+          className="px-3 py-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40">
+          Excel
+        </button>
+        <button onClick={() => handleExport("pdf")} disabled={exporting || activeRows.length === 0}
+          className="px-3 py-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40">
+          PDF
+        </button>
+      </div>
+
+      {saved && (
+        <p className="text-[10px] text-emerald-600 text-center mt-2">Statul de functii a fost salvat. Il poti descarca oricand.</p>
+      )}
+    </>
   )
 }
