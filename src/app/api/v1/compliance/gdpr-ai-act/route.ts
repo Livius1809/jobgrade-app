@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 
 export const dynamic = "force-dynamic"
 
@@ -154,33 +154,15 @@ const AUDIT_CHECKLIST: Omit<AuditItem, "status" | "notes">[] = [
 ]
 
 async function getOrgStructureType(tenantId: string): Promise<OrgStructureType> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  return (analysis.orgStructureType as OrgStructureType) || "UMAN"
+  return await getTenantData<OrgStructureType>(tenantId, "ORG_STRUCTURE_TYPE") || "UMAN"
 }
 
 async function getAuditState(tenantId: string): Promise<Record<string, { status: string; notes: string | null }>> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  return (analysis.gdprAiActAudit as Record<string, { status: string; notes: string | null }>) || {}
+  return await getTenantData<Record<string, { status: string; notes: string | null }>>(tenantId, "GDPR_AI_ACT_AUDIT") || {}
 }
 
 async function saveAuditState(tenantId: string, state: Record<string, { status: string; notes: string | null }>): Promise<void> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  await prisma.companyProfile.update({
-    where: { tenantId },
-    data: { aiAnalysis: { ...analysis, gdprAiActAudit: state } as any },
-  })
+  await setTenantData(tenantId, "GDPR_AI_ACT_AUDIT", state)
 }
 
 export async function GET(req: NextRequest) {

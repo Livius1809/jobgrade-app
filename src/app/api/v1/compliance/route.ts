@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 
 export const dynamic = "force-dynamic"
 
@@ -119,30 +119,11 @@ function generateId(): string {
 }
 
 async function getCalendar(tenantId: string): Promise<ComplianceObligation[]> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  return (analysis.complianceCalendar as ComplianceObligation[]) || []
+  return await getTenantData<ComplianceObligation[]>(tenantId, "COMPLIANCE_CALENDAR") || []
 }
 
 async function saveCalendar(tenantId: string, calendar: ComplianceObligation[]): Promise<void> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-
-  await prisma.companyProfile.update({
-    where: { tenantId },
-    data: {
-      aiAnalysis: {
-        ...analysis,
-        complianceCalendar: calendar,
-      } as any,
-    },
-  })
+  await setTenantData(tenantId, "COMPLIANCE_CALENDAR", calendar)
 }
 
 // GET — Lista obligatii + alerte

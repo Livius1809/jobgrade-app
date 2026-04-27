@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 import Anthropic from "@anthropic-ai/sdk"
 
 export const dynamic = "force-dynamic"
@@ -190,16 +190,8 @@ Raspunde STRICT in format JSON (fara alte comentarii):
     fileName: file.name,
   }
 
-  // Salvam in CompanyProfile.aiAnalysis
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId: session.user.tenantId },
-    select: { aiAnalysis: true },
-  })
-  const existing = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  await prisma.companyProfile.update({
-    where: { tenantId: session.user.tenantId },
-    data: { aiAnalysis: { ...existing, roiAnalysis: analysis } as any },
-  })
+  // Salvam in SystemConfig via tenant-storage
+  await setTenantData(session.user.tenantId, "ROI_ANALYSIS", analysis)
 
   return NextResponse.json({ ...analysis, analyzed: true })
 }
@@ -210,12 +202,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
   }
 
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId: session.user.tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  const roiAnalysis = analysis.roiAnalysis || null
+  const roiAnalysis = await getTenantData(session.user.tenantId, "ROI_ANALYSIS")
 
   if (!roiAnalysis) {
     // Returneaza checklist gol

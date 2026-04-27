@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -126,24 +126,11 @@ const DOCUMENT_TYPES: DocumentType[] = [
 ]
 
 async function getDocuments(tenantId: string): Promise<DocumentRecord[]> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  return (analysis.documents as DocumentRecord[]) || []
+  return await getTenantData<DocumentRecord[]>(tenantId, "DOCUMENTS") || []
 }
 
 async function saveDocuments(tenantId: string, docs: DocumentRecord[]): Promise<void> {
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  await prisma.companyProfile.update({
-    where: { tenantId },
-    data: { aiAnalysis: { ...analysis, documents: docs } as any },
-  })
+  await setTenantData(tenantId, "DOCUMENTS", docs)
 }
 
 // GET — Lista tipuri + status

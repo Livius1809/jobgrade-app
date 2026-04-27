@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 
 export const dynamic = "force-dynamic"
 
@@ -33,38 +33,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nicio pozitie" }, { status: 400 })
   }
 
-  // Salvam in CompanyProfile.aiAnalysis sub cheia "statFunctii"
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId: session.user.tenantId },
-    select: { id: true },
-  })
-
-  if (!profile) {
-    return NextResponse.json({ error: "Profilul companiei nu exista" }, { status: 404 })
-  }
-
-  // Citim aiAnalysis existent si adaugam/actualizam statFunctii
-  const existing = await prisma.companyProfile.findUnique({
-    where: { tenantId: session.user.tenantId },
-    select: { aiAnalysis: true },
-  })
-
-  const currentAnalysis = (existing?.aiAnalysis as Record<string, unknown>) || {}
-
-  await prisma.companyProfile.update({
-    where: { tenantId: session.user.tenantId },
-    data: {
-      aiAnalysis: {
-        ...currentAnalysis,
-        statFunctii: {
-          rows,
-          generatedAt: new Date().toISOString(),
-          totalPositions: rows.reduce((s, r) => s + r.positionCount, 0),
-          totalJobs: rows.length,
-          departments: [...new Set(rows.map(r => r.department))],
-        },
-      } as any,
-    },
+  // Salvam in SystemConfig via tenant-storage
+  await setTenantData(session.user.tenantId, "STAT_FUNCTII", {
+    rows,
+    generatedAt: new Date().toISOString(),
+    totalPositions: rows.reduce((s, r) => s + r.positionCount, 0),
+    totalJobs: rows.length,
+    departments: [...new Set(rows.map(r => r.department))],
   })
 
   return NextResponse.json({
@@ -81,13 +56,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
   }
 
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId: session.user.tenantId },
-    select: { aiAnalysis: true },
-  })
-
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  const statFunctii = analysis.statFunctii || null
-
+  const statFunctii = await getTenantData(session.user.tenantId, "STAT_FUNCTII")
   return NextResponse.json({ statFunctii })
 }

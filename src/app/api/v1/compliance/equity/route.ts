@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 
 export const dynamic = "force-dynamic"
 
@@ -63,12 +64,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Citim dimensiuni extra de la client (daca exista)
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  const extraDimensions = (analysis.equityExtraDimensions as Record<string, Record<string, string>>) || {}
+  const extraDimensions = await getTenantData<Record<string, Record<string, string>>>(tenantId, "EQUITY_EXTRA_DIMS") || {}
   // Format: { "EMP001": { "vechime": "5-10 ani", "nivel": "N-2", "studii": "Superior" }, ... }
 
   const dimensions: EquityDimension[] = []
@@ -175,12 +171,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "dimensionData obligatoriu (obiect)" }, { status: 400 })
   }
 
-  const profile = await prisma.companyProfile.findUnique({
-    where: { tenantId: session.user.tenantId },
-    select: { aiAnalysis: true },
-  })
-  const analysis = (profile?.aiAnalysis as Record<string, unknown>) || {}
-  const existing = (analysis.equityExtraDimensions as Record<string, Record<string, string>>) || {}
+  const existing = await getTenantData<Record<string, Record<string, string>>>(session.user.tenantId, "EQUITY_EXTRA_DIMS") || {}
 
   // Merge: pastreaza existente + adauga/suprascrie noi
   for (const [empCode, dims] of Object.entries(dimensionData as Record<string, Record<string, string>>)) {
@@ -188,10 +179,7 @@ export async function POST(req: NextRequest) {
     Object.assign(existing[empCode], dims)
   }
 
-  await prisma.companyProfile.update({
-    where: { tenantId: session.user.tenantId },
-    data: { aiAnalysis: { ...analysis, equityExtraDimensions: existing } as any },
-  })
+  await setTenantData(session.user.tenantId, "EQUITY_EXTRA_DIMS", existing)
 
   return NextResponse.json({
     ok: true,
