@@ -587,11 +587,26 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
         blockedAt: now,
       },
     })
-    // FIX #15: Escalare duală (complementară, nu conflictuală):
-    // - AICI (instant): notificare Owner doar dacă blocajul e strategic/buget/conducere
-    // - SELF-CHECK (orar): escalare la manager dacă BLOCKED > 24h (orice tip)
-    // Cele două se completează: urgențe strategice → Owner imediat, restul → manager la 24h
+    // Colaborare laterală automată: dacă blocajul e de competență lipsă
     const blockerDesc = payload.blocker?.description || payload.summary || ""
+    const blockerType = normalizeBlockerType(payload.blocker?.type)
+    const needsLateral = blockerType === "WAITING_INPUT" || blockerType === "RESOURCE" ||
+      /competență|competenta|nu am date|nu am informați|alt departament|altă echipă|nu e în atribuți/i.test(blockerDesc)
+
+    if (needsLateral && !task.tags?.includes("lateral-collaboration")) {
+      try {
+        const { requestLateralHelp } = await import("./lateral-collaboration")
+        const lateral = await requestLateralHelp({
+          requestingAgent: task.assignedTo,
+          taskId: task.id,
+          whatIsNeeded: blockerDesc,
+          context: task.title || "",
+        })
+        console.log(`[executor] Lateral help: ${lateral.action} → ${lateral.routedTo || "none"} via ${lateral.mediatedBy || "none"}`)
+      } catch {}
+    }
+
+    // Escalare la Owner doar dacă blocajul e strategic/buget/conducere
     if (/owner|conducere|decizie.*strategic|buget|finanț/i.test(blockerDesc)) {
       try {
         // Găsim Owner user
@@ -766,10 +781,28 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
   })
 
   // ── FIX #1: Învățare automată din ORICE task COMPLETED ──
-  // Nu doar când managerul aprobă — organismul învață din tot ce face
   await autoExtractLearning(task, resultWithActions)
 
+  // ── Integrare laterală: dacă acest task era cerere de la omolog, deblochează originalul ──
+  await checkAndIntegrateLateralResponse(task, resultWithActions)
+
   return { outcome: "COMPLETED", subTaskIds }
+}
+
+// ── Integrare răspuns lateral (post-execuție) ──────────────────────────────────
+
+async function checkAndIntegrateLateralResponse(task: any, result: string): Promise<void> {
+  // Dacă task-ul era o cerere laterală (tag "lateral-collaboration" sau "peer-request"),
+  // integrează răspunsul în task-ul original care așteaptă
+  if (task.tags?.includes("lateral-collaboration") || task.tags?.includes("peer-request")) {
+    try {
+      const { integrateLateralResponse } = await import("./lateral-collaboration")
+      const integration = await integrateLateralResponse(task.id, result)
+      if (integration.unblocked) {
+        console.log(`[executor] Lateral response integrated → unblocked task ${integration.originalTaskId}`)
+      }
+    } catch {}
+  }
 }
 
 // ── Învățare automată post-execuție ────────────────────────────────────────────
