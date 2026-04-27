@@ -1204,17 +1204,25 @@ export async function executeTask(taskId: string): Promise<ExecutorResult> {
     // ── Detecție "[Rafinează și delegă]" — forțează descompunere, nu execuție directă ──
     const isRefinementTask = task.title?.startsWith("[Rafinează și delegă]") || task.tags?.includes("hierarchy-redirected")
     if (isRefinementTask) {
-      // Obține subordonații direcți ai acestui agent
       const { getDirectSubordinates } = await import("./hierarchy-enforcer")
       const subs = await getDirectSubordinates(task.assignedTo)
       if (subs.length > 0) {
-        // Injectăm în prompt instrucțiunea de descompunere obligatorie
+        // Brainstorm DOAR dacă obiectivul e NOU (echipa nu are experiență)
+        let brainstormContext = ""
+        try {
+          const { brainstormBeforeDecomposition } = await import("./proactive-brainstorm")
+          brainstormContext = await brainstormBeforeDecomposition(
+            task.assignedTo,
+            task.title,
+            task.description || "",
+          )
+        } catch {}
+
         const refinementInstruction = `\n\nINSTRUCȚIUNE OBLIGATORIE: Acest task TREBUIE descompus în sub-taskuri.
 NU executa singur. Descompune în taskuri specifice și alocă-le DOAR subordonaților tăi direcți: ${subs.join(", ")}.
 Folosește status "needs-subtasks" și completează array-ul subTasks.
-Fiecare sub-task trebuie atât de specific încât subordonatul să-l poată rezolva din KB fără apel Claude.`
+Fiecare sub-task trebuie atât de specific încât subordonatul să-l poată rezolva din KB fără apel Claude.${brainstormContext}`
 
-        // Override description cu instrucțiunea
         ctx.task = { ...ctx.task, description: (ctx.task.description || "") + refinementInstruction }
       }
     }
