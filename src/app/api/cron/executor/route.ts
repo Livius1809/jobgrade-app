@@ -110,37 +110,15 @@ export async function GET(request: NextRequest) {
       },
     }).catch(() => ({ count: 0 }))
 
-    // ═══ STRATURI COGNITIVE: heartbeat adaptiv ═══
-    let cognitiveResult: any = null
-    let heartbeatBatchSize = 10
+    // ═══ HEARTBEAT ADAPTIV (lightweight — doar batch size) ═══
+    let heartbeatBatchSize = 5 // default conservativ
     try {
-      const { runCognitiveLayers, calculateHeartbeat } = await import("@/lib/agents/cognitive-layers")
+      const { calculateHeartbeat } = await import("@/lib/agents/cognitive-layers")
       const heartbeat = await calculateHeartbeat()
-      heartbeatBatchSize = heartbeat.batchSize
-      console.log(`[cron/executor] Heartbeat: ${heartbeat.urgencyLevel} (batch=${heartbeat.batchSize}) — ${heartbeat.reason}`)
-
-      // Cognitive layers (anomalii, blind spots, weighted learning)
-      cognitiveResult = await runCognitiveLayers()
-      if (cognitiveResult.anomalies.length > 0) {
-        console.log(`[cron/executor] ${cognitiveResult.anomalies.length} anomalii detectate:`,
-          cognitiveResult.anomalies.map((a: any) => a.signal).join("; "))
-      }
-    } catch (e) {
-      console.log("[cron/executor] Cognitive layers skip:", (e as Error).message?.slice(0, 60))
-    }
-
-    // ═══ STRATURI COGNITIVE AVANSATE (8-13): context existențial ═══
-    let advancedCogResult: any = null
-    try {
-      const { runAdvancedCognitiveLayers } = await import("@/lib/agents/cognitive-layers-advanced")
-      advancedCogResult = await runAdvancedCognitiveLayers()
-      console.log(`[cron/executor] Phase: ${advancedCogResult.phase.currentPhase}, Failure impact: ${advancedCogResult.failureImpact.globalRiskAdjustment}%, Narrative age: ${advancedCogResult.narrativeAge}d`)
-      if (advancedCogResult.agentAnomalies.length > 0) {
-        console.log(`[cron/executor] Agent anomalies: ${advancedCogResult.agentAnomalies.join("; ")}`)
-      }
-    } catch (e) {
-      console.log("[cron/executor] Advanced cognitive skip:", (e as Error).message?.slice(0, 60))
-    }
+      heartbeatBatchSize = Math.min(heartbeat.batchSize, 5) // max 5 per batch
+      console.log(`[cron/executor] Heartbeat: ${heartbeat.urgencyLevel} (batch=${heartbeatBatchSize})`)
+    } catch {}
+    // Cognitive layers complete + advanced → mutat in /cron/maintenance
 
     // Procesează coada — batch size din heartbeat adaptiv
     let totalProcessed = 0
@@ -199,24 +177,8 @@ export async function GET(request: NextRequest) {
       totalProcessed,
       totalExecuted,
       totalBlocked,
-      cognitive: cognitiveResult ? {
-        heartbeat: cognitiveResult.heartbeat.urgencyLevel,
-        batchSize: cognitiveResult.heartbeat.batchSize,
-        anomalies: cognitiveResult.anomalies.length,
-        blindSpots: cognitiveResult.blindSpots.length,
-        weightedLearning: cognitiveResult.weightedLearningUpdated,
-        skippedByMeta: totalSkippedByMeta,
-      } : null,
-      advanced: advancedCogResult ? {
-        phase: advancedCogResult.phase.currentPhase,
-        phaseConfidence: advancedCogResult.phase.confidence,
-        failureImpact: advancedCogResult.failureImpact.globalRiskAdjustment,
-        activeTraumas: advancedCogResult.failureImpact.activeTraumas.length,
-        agentProfiles: advancedCogResult.agentProfiles,
-        agentAnomalies: advancedCogResult.agentAnomalies,
-        narrativeAge: advancedCogResult.narrativeAge,
-      } : null,
-      note: "Learning, signals, retry, operational → /api/cron/maintenance (cron separat)",
+      heartbeatBatchSize,
+      note: "Executor LEAN: doar task exec. Learning/signals/retry/operational/cognitive → /api/cron/maintenance",
       results: allResults.slice(0, 20),
       durationMs: Date.now() - Date.parse(new Date().toISOString()),
       timestamp: new Date().toISOString(),
