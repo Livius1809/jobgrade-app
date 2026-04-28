@@ -150,7 +150,24 @@ async function getBudgetSummary(): Promise<string> {
   }
 }
 
-const MAX_SUB_TASKS = 10
+const MAX_SUB_TASKS = 5  // reduced de la 10 — previne cascada
+const MAX_TASKS_PER_AGENT_PER_HOUR = 10 // rate limit generare task-uri
+
+async function checkTaskRateLimit(agentRole: string): Promise<boolean> {
+  try {
+    const oneHourAgo = new Date(Date.now() - 3600000)
+    const recentCount = await (prisma as any).agentTask.count({
+      where: { assignedBy: agentRole, createdAt: { gte: oneHourAgo } },
+    })
+    if (recentCount >= MAX_TASKS_PER_AGENT_PER_HOUR) {
+      console.log(`[executor] Rate limit: ${agentRole} a creat ${recentCount} task-uri in ultima ora (max ${MAX_TASKS_PER_AGENT_PER_HOUR})`)
+      return false // blocat
+    }
+    return true // ok
+  } catch {
+    return true // fallback permisiv
+  }
+}
 
 // Mapping pentru blocker types returnate de LLM → enum BlockerType valid în DB
 const BLOCKER_TYPE_MAP: Record<string, string> = {

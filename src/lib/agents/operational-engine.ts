@@ -518,5 +518,23 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
     })
   } catch {}
 
+  // Alerting ntfy — push notification la anomalii CRITICAL
+  const criticalAnomalies = anomalies.filter(a => a.severity === "CRITICAL")
+  if (criticalAnomalies.length > 0) {
+    try {
+      const ntfyTopic = process.env.NTFY_TOPIC || "jobgrade-owner-liviu-2026"
+      const message = criticalAnomalies.map(a => `${a.title}`).join("\n")
+      await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+        method: "POST",
+        headers: {
+          "Title": `JobGrade CRITICAL: ${criticalAnomalies.length} anomalii`,
+          "Priority": "urgent",
+          "Tags": "warning,rotating_light",
+        },
+        body: message,
+      }).catch(() => {})
+    } catch {}
+  }
+
   return report
 }
