@@ -142,8 +142,15 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
 
   // ═══ 2. STRUCTURA ═══
 
+  // Verificam proactive loop prin timestamp salvat de /agents/cycle
+  const proactiveLastRun = await prisma.systemConfig.findUnique({ where: { key: "PROACTIVE_LOOP_LAST_RUN" } }).catch(() => null)
+  const proactiveAge = proactiveLastRun?.value
+    ? (now.getTime() - new Date(proactiveLastRun.value).getTime()) / 3600000
+    : 999
+
   const [cycleCount48h, reviewPending, lateralStuck] = await Promise.all([
-    p.cycleLog?.count({ where: { startedAt: { gte: h48 } } }).catch(() => 0),
+    // Fallback: si CycleLog daca exista
+    p.cycleLog?.count({ where: { startedAt: { gte: h48 } } }).catch(() => (proactiveAge < 48 ? 1 : 0)),
     prisma.agentTask.findMany({
       where: { status: "REVIEW_PENDING" as any },
       select: { completedAt: true, assignedBy: true },

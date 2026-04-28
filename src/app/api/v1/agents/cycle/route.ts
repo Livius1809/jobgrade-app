@@ -130,6 +130,15 @@ export async function POST(req: NextRequest) {
       0
     )
 
+    // Salvam timestamp — Operational Engine verifica daca proactive loop ruleaza
+    try {
+      await prisma.systemConfig.upsert({
+        where: { key: "PROACTIVE_LOOP_LAST_RUN" },
+        update: { value: new Date().toISOString() },
+        create: { key: "PROACTIVE_LOOP_LAST_RUN", value: new Date().toISOString() },
+      })
+    } catch {}
+
     return NextResponse.json({
       mode: level ? `level:${level}` : "all",
       timeoutsProcessed,

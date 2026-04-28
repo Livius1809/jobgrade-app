@@ -60,16 +60,29 @@ async function main() {
     take: 5,
   }).catch(() => []) ?? []
 
-  if (cycles48h > 0) {
+  // Verificam si timestamp-ul salvat de /agents/cycle
+  const proactiveTS = await prisma.systemConfig.findUnique({ where: { key: "PROACTIVE_LOOP_LAST_RUN" } })
+  const proactiveAge = proactiveTS?.value
+    ? Math.round((now.getTime() - new Date(proactiveTS.value).getTime()) / 3600000)
+    : null
+
+  if (proactiveAge !== null && proactiveAge < 48) {
+    checks.push({
+      component: "Proactive Loop",
+      status: proactiveAge < 6 ? "VERDE" : proactiveAge < 24 ? "GALBEN" : "GALBEN",
+      detail: `Ultimul ciclu: ${proactiveAge}h in urma (via /agents/cycle). CycleLogs 48h: ${cycles48h}`,
+      metric: proactiveAge,
+    })
+  } else if (cycles48h > 0) {
     const managers = [...new Set(cyclesRecent.map((c: any) => c.agentRole))]
     checks.push({
       component: "Proactive Loop",
       status: cycles48h >= 7 ? "VERDE" : "GALBEN",
-      detail: `${cycles48h} cicluri in 48h. Manageri activi: ${managers.join(", ")}`,
+      detail: `${cycles48h} cicluri in 48h (CycleLog). Manageri: ${managers.join(", ")}`,
       metric: cycles48h,
     })
   } else {
-    checks.push({ component: "Proactive Loop", status: "ROSU", detail: "ZERO cicluri in 48h — managerii nu ruleaza" })
+    checks.push({ component: "Proactive Loop", status: "ROSU", detail: "ZERO cicluri in 48h — verificati n8n cron /agents/cycle" })
   }
 
   // ═══ 3. LEARNING ENGINE ═══
