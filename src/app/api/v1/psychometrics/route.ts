@@ -119,12 +119,54 @@ export async function GET(req: NextRequest) {
 
   const state = await getState(session.user.tenantId)
 
-  // Lista angajati din EmployeeSalaryRecord (daca exista)
+  // Departamente cu joburi
+  const departments = await prisma.department.findMany({
+    where: { tenantId: session.user.tenantId },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  })
+
+  // Angajati din stat salarii, grupati per departament, cu tot ce stim
   const employees = await prisma.employeeSalaryRecord.findMany({
     where: { tenantId: session.user.tenantId },
-    select: { employeeCode: true, jobCategory: true, department: true },
-    take: 200,
+    select: {
+      employeeCode: true,
+      gender: true,
+      baseSalary: true,
+      variableComp: true,
+      department: true,
+      jobCategory: true,
+      workSchedule: true,
+      salaryGradeId: true,
+      salaryGrade: { select: { name: true } },
+    },
+    orderBy: [{ department: "asc" }, { jobCategory: "asc" }],
+    take: 500,
   })
+
+  // Joburi (pentru mapare post → angajat)
+  const jobs = await prisma.job.findMany({
+    where: { tenantId: session.user.tenantId, status: "ACTIVE" },
+    select: { id: true, title: true, departmentId: true, department: { select: { name: true } } },
+    orderBy: { title: "asc" },
+  })
+
+  // Organigramă: angajați grupați per departament
+  const orgByDept: Record<string, any[]> = {}
+  for (const emp of employees) {
+    const dept = emp.department || "Fara departament"
+    if (!orgByDept[dept]) orgByDept[dept] = []
+    orgByDept[dept].push({
+      code: emp.employeeCode,
+      department: dept,
+      post: emp.jobCategory || "Nespecificat",
+      salary: emp.baseSalary,
+      variable: emp.variableComp || 0,
+      grade: emp.salaryGrade?.name || null,
+      gender: emp.gender,
+      schedule: emp.workSchedule,
+    })
+  }
 
   // Stats
   const totalResults = state.results.length
@@ -135,6 +177,9 @@ export async function GET(req: NextRequest) {
     instruments: AVAILABLE_INSTRUMENTS,
     batteries: state.batteries,
     results: state.results,
+    departments,
+    jobs,
+    orgByDept,
     employeeCount: employees.length,
     stats: {
       batteriesConfigured: state.batteries.length,

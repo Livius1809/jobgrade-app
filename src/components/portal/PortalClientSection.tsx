@@ -1952,43 +1952,23 @@ function ReportPanel() {
 function PsychometricsPanel() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
-  const [jobs, setJobs] = useState<Array<{ id: string; title: string }>>([])
-  const [selectedJob, setSelectedJob] = useState("")
+  const [step, setStep] = useState<"dept" | "people" | "reason" | "instruments" | "done">("dept")
+  const [selectedDept, setSelectedDept] = useState("")
+  const [selectedPeople, setSelectedPeople] = useState<string[]>([])
+  const [newPerson, setNewPerson] = useState({ code: "", name: "", post: "" })
+  const [addedPeople, setAddedPeople] = useState<Array<{ code: string; name: string; post: string }>>([])
+  const [reason, setReason] = useState("")
   const [selectedInstruments, setSelectedInstruments] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/v1/psychometrics").then(r => r.json()),
-      fetch("/api/v1/jobs").then(r => r.json()),
-    ]).then(([psych, jobData]) => {
-      setData(psych)
-      setJobs(Array.isArray(jobData) ? jobData : (jobData.jobs || []))
+  const loadData = () => {
+    fetch("/api/v1/psychometrics").then(r => r.json()).then(d => {
+      setData(d)
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [])
-
-  const handleConfigureBattery = async () => {
-    if (!selectedJob) return
-    setSaving(true)
-    const job = jobs.find(j => j.id === selectedJob)
-    await fetch("/api/v1/psychometrics", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "configure-battery",
-        jobId: selectedJob,
-        jobTitle: job?.title || selectedJob,
-        instruments: selectedInstruments,
-      }),
-    })
-    // Refresh
-    const fresh = await fetch("/api/v1/psychometrics").then(r => r.json())
-    setData(fresh)
-    setSelectedJob("")
-    setSelectedInstruments([])
-    setSaving(false)
   }
+
+  useEffect(() => { loadData() }, [])
 
   if (loading) return <p className="text-xs text-slate-400">Se incarca...</p>
   if (!data) return <p className="text-xs text-red-500">Eroare la incarcare.</p>
@@ -1996,14 +1976,66 @@ function PsychometricsPanel() {
   const instruments: any[] = data.instruments || []
   const batteries: any[] = data.batteries || []
   const stats = data.stats || {}
+  const orgByDept: Record<string, any[]> = data.orgByDept || {}
+  const deptNames = Object.keys(orgByDept).sort()
+  const deptPeople = selectedDept ? (orgByDept[selectedDept] || []) : []
+
+  // Toate persoanele selectate (din stat + adaugate manual)
+  const allSelected = [
+    ...deptPeople.filter((p: any) => selectedPeople.includes(p.code)),
+    ...addedPeople,
+  ]
+
+  const handleAddPerson = () => {
+    if (!newPerson.code || !newPerson.name) return
+    setAddedPeople(prev => [...prev, { ...newPerson }])
+    setNewPerson({ code: "", name: "", post: "" })
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    // Configureaza bateria per colectiv
+    await fetch("/api/v1/psychometrics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "configure-battery",
+        jobId: `eval_${selectedDept}_${Date.now()}`,
+        jobTitle: `Evaluare ${selectedDept} — ${allSelected.length} persoane`,
+        instruments: selectedInstruments,
+        evaluationContext: {
+          department: selectedDept,
+          reason,
+          people: allSelected.map((p: any) => ({ code: p.code, name: p.name, post: p.post })),
+          addedManually: addedPeople.length,
+        },
+      }),
+    })
+    // Asigneaza fiecare persoana
+    for (const person of allSelected) {
+      await fetch("/api/v1/psychometrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assign-employee",
+          employeeCode: person.code,
+          employeeName: person.name,
+          jobId: `eval_${selectedDept}_${Date.now()}`,
+        }),
+      })
+    }
+    loadData()
+    setStep("done")
+    setSaving(false)
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
+      {/* Stats compacte */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: "Baterii configurate", value: stats.batteriesConfigured || 0 },
-          { label: "Angajati asignati", value: stats.totalAssignments || 0 },
+          { label: "Evaluari active", value: stats.batteriesConfigured || 0 },
+          { label: "Persoane asignate", value: stats.totalAssignments || 0 },
           { label: "Completate", value: stats.completed || 0 },
           { label: "Completare", value: `${stats.completionPct || 0}%` },
         ].map(s => (
@@ -2014,57 +2046,198 @@ function PsychometricsPanel() {
         ))}
       </div>
 
-      {/* Configurare baterie noua */}
-      <div className="bg-white rounded-xl border border-teal-200 p-4">
-        <h4 className="text-sm font-bold text-slate-800 mb-3">Configureaza baterie per post</h4>
+      {/* Progres pasi */}
+      <div className="flex gap-1">
+        {[
+          { id: "dept", label: "1. Departament" },
+          { id: "people", label: "2. Persoane" },
+          { id: "reason", label: "3. Motiv" },
+          { id: "instruments", label: "4. Instrumente" },
+        ].map(s => (
+          <div key={s.id} className={`flex-1 text-center text-[10px] py-1.5 rounded-lg font-medium ${
+            step === s.id ? "bg-teal-500 text-white" :
+            ["dept", "people", "reason", "instruments"].indexOf(step) > ["dept", "people", "reason", "instruments"].indexOf(s.id)
+              ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-400"
+          }`}>{s.label}</div>
+        ))}
+      </div>
 
-        <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm mb-3">
-          <option value="">Selecteaza postul...</option>
-          {jobs.map(j => (
-            <option key={j.id} value={j.id}>{j.title}</option>
-          ))}
-        </select>
+      {/* PAS 1: Selecteaza departament */}
+      {step === "dept" && (
+        <div className="bg-white rounded-xl border border-teal-200 p-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-3">Selecteaza departamentul</h4>
+          {deptNames.length > 0 ? (
+            <>
+              <select value={selectedDept} onChange={e => { setSelectedDept(e.target.value); setSelectedPeople([]) }}
+                className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm mb-3">
+                <option value="">Alege departamentul...</option>
+                {deptNames.map(d => (
+                  <option key={d} value={d}>{d} ({orgByDept[d]?.length || 0} persoane)</option>
+                ))}
+              </select>
+              {selectedDept && (
+                <button onClick={() => setStep("people")}
+                  className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700">
+                  Continua — vezi persoanele
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-slate-500">Nu exista departamente. Importa mai intai statul de functii si statul de salarii.</p>
+          )}
+        </div>
+      )}
 
-        {selectedJob && (
-          <>
-            <p className="text-xs text-slate-600 mb-2">Instrumente (obligatoriile sunt pre-selectate):</p>
-            <div className="space-y-1.5 mb-3">
-              {instruments.map((inst: any) => (
-                <label key={inst.id} className={`flex items-start gap-2 text-xs p-2 rounded-lg border ${
-                  inst.required ? "bg-teal-50 border-teal-200" : "bg-white border-slate-200"
+      {/* PAS 2: Selecteaza persoanele */}
+      {step === "people" && (
+        <div className="bg-white rounded-xl border border-teal-200 p-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-1">Persoane din {selectedDept}</h4>
+          <p className="text-[10px] text-slate-500 mb-3">Bifeaza pe cine doresti sa evaluezi. Informatiile vin din organigrama.</p>
+
+          {deptPeople.length > 0 ? (
+            <div className="space-y-1.5 mb-4 max-h-64 overflow-y-auto">
+              {deptPeople.map((p: any) => (
+                <label key={p.code} className={`flex items-center gap-3 text-xs p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                  selectedPeople.includes(p.code) ? "bg-teal-50 border-teal-300" : "bg-white border-slate-200 hover:border-teal-200"
                 }`}>
                   <input type="checkbox"
-                    checked={inst.required || selectedInstruments.includes(inst.id)}
-                    disabled={inst.required}
+                    checked={selectedPeople.includes(p.code)}
                     onChange={e => {
-                      if (e.target.checked) setSelectedInstruments(prev => [...prev, inst.id])
-                      else setSelectedInstruments(prev => prev.filter(i => i !== inst.id))
+                      if (e.target.checked) setSelectedPeople(prev => [...prev, p.code])
+                      else setSelectedPeople(prev => prev.filter(c => c !== p.code))
                     }}
-                    className="mt-0.5"
                   />
-                  <div>
-                    <span className="font-medium text-slate-800">{inst.name}</span>
-                    {inst.required && <span className="text-teal-600 ml-1">(obligatoriu)</span>}
-                    {inst.type === "EXTERNAL" && <span className="text-amber-600 ml-1">(upload PDF)</span>}
-                    <p className="text-[10px] text-slate-400 mt-0.5">{inst.description}</p>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-slate-800">{p.code}</span>
+                    <span className="text-slate-500 mx-1">·</span>
+                    <span className="text-slate-600">{p.post}</span>
+                  </div>
+                  <div className="flex gap-2 text-[10px] text-slate-400 shrink-0">
+                    {p.grade && <span className="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded">{p.grade}</span>}
+                    <span>{p.salary?.toLocaleString("ro-RO")} RON</span>
+                    {p.variable > 0 && <span className="text-amber-600">+{p.variable?.toLocaleString("ro-RO")} var</span>}
                   </div>
                 </label>
               ))}
             </div>
+          ) : (
+            <p className="text-xs text-slate-500 mb-4">Nu exista angajati in acest departament. Importa statul de salarii.</p>
+          )}
 
-            <button onClick={handleConfigureBattery} disabled={saving}
+          {/* Adaugare persoane noi */}
+          <div className="border-t border-slate-100 pt-3 mb-3">
+            <p className="text-[10px] font-bold text-slate-600 uppercase mb-2">Persoana noua (nu e in stat)</p>
+            <div className="flex gap-2">
+              <input type="text" value={newPerson.code} onChange={e => setNewPerson(p => ({ ...p, code: e.target.value }))}
+                placeholder="Cod/marca" className="flex-1 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+              <input type="text" value={newPerson.name} onChange={e => setNewPerson(p => ({ ...p, name: e.target.value }))}
+                placeholder="Nume complet" className="flex-1 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+              <input type="text" value={newPerson.post} onChange={e => setNewPerson(p => ({ ...p, post: e.target.value }))}
+                placeholder="Post" className="flex-1 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+              <button onClick={handleAddPerson} disabled={!newPerson.code || !newPerson.name}
+                className="px-3 py-1.5 rounded bg-teal-600 text-white text-xs disabled:opacity-40">+</button>
+            </div>
+            {addedPeople.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {addedPeople.map((p, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg p-2">
+                    <span className="text-amber-700 font-medium">{p.code}</span>
+                    <span className="text-slate-600">{p.name}</span>
+                    <span className="text-slate-400">{p.post}</span>
+                    <span className="text-[9px] bg-amber-100 text-amber-600 px-1 rounded ml-auto">nou</span>
+                    <button onClick={() => setAddedPeople(prev => prev.filter((_, j) => j !== i))}
+                      className="text-red-400 hover:text-red-600">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={() => setStep("dept")} className="text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600">Inapoi</button>
+            <button onClick={() => setStep("reason")} disabled={allSelected.length === 0}
               className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
-              {saving ? "Se salveaza..." : "Salveaza bateria"}
+              Continua — {allSelected.length} selectat{allSelected.length !== 1 ? "e" : ""}
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
-      {/* Baterii existente */}
+      {/* PAS 3: Motivul evaluarii */}
+      {step === "reason" && (
+        <div className="bg-white rounded-xl border border-teal-200 p-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-1">De ce doriti aceasta evaluare?</h4>
+          <p className="text-[10px] text-slate-500 mb-3">Motivul ajuta la interpretarea rezultatelor si la formularea recomandarilor.</p>
+          <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3}
+            placeholder="ex: Restructurare departament IT — dorim sa intelegem compatibilitatea echipei existente cu noile roluri"
+            className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm resize-y mb-3" />
+          <div className="flex gap-2">
+            <button onClick={() => setStep("people")} className="text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600">Inapoi</button>
+            <button onClick={() => setStep("instruments")} disabled={!reason.trim()}
+              className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+              Continua — instrumente
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PAS 4: Configurare instrumente */}
+      {step === "instruments" && (
+        <div className="bg-white rounded-xl border border-teal-200 p-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-1">Instrumente psihometrice</h4>
+          <p className="text-[10px] text-slate-500 mb-3">
+            {allSelected.length} persoane din {selectedDept}. Motiv: {reason.slice(0, 80)}{reason.length > 80 ? "..." : ""}
+          </p>
+          <div className="space-y-1.5 mb-4">
+            {instruments.map((inst: any) => (
+              <label key={inst.id} className={`flex items-start gap-2 text-xs p-2.5 rounded-lg border ${
+                inst.required ? "bg-teal-50 border-teal-200" : "bg-white border-slate-200"
+              }`}>
+                <input type="checkbox"
+                  checked={inst.required || selectedInstruments.includes(inst.id)}
+                  disabled={inst.required}
+                  onChange={e => {
+                    if (e.target.checked) setSelectedInstruments(prev => [...prev, inst.id])
+                    else setSelectedInstruments(prev => prev.filter(i => i !== inst.id))
+                  }}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <span className="font-medium text-slate-800">{inst.name}</span>
+                  {inst.required && <span className="text-teal-600 ml-1">(obligatoriu)</span>}
+                  {inst.type === "EXTERNAL" && <span className="text-amber-600 ml-1">(upload PDF)</span>}
+                  {inst.costPerAdmin && <span className="text-violet-600 ml-1">({inst.costPerAdmin} credite/pers)</span>}
+                  <p className="text-[10px] text-slate-400 mt-0.5">{inst.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setStep("reason")} className="text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600">Inapoi</button>
+            <button onClick={handleSave} disabled={saving}
+              className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+              {saving ? "Se configureaza..." : `Lanseaza evaluarea (${allSelected.length} persoane)`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PAS 5: Confirmare */}
+      {step === "done" && (
+        <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4 text-center">
+          <p className="text-sm font-bold text-emerald-700 mb-1">Evaluare configurata</p>
+          <p className="text-xs text-emerald-600">{allSelected.length} persoane din {selectedDept} au fost asignate.</p>
+          <button onClick={() => { setStep("dept"); setSelectedDept(""); setSelectedPeople([]); setAddedPeople([]); setReason(""); setSelectedInstruments([]) }}
+            className="text-xs px-4 py-2 mt-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
+            Configureaza alta evaluare
+          </button>
+        </div>
+      )}
+
+      {/* Evaluari existente */}
       {batteries.length > 0 && (
         <div>
-          <h4 className="text-sm font-bold text-slate-800 mb-2">Baterii configurate</h4>
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Evaluari configurate</h4>
           <div className="space-y-2">
             {batteries.map((b: any) => (
               <div key={b.jobId} className="bg-white rounded-lg border border-slate-200 p-3">
