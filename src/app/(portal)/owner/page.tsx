@@ -451,6 +451,7 @@ async function fetchAxes(): Promise<any> {
       decisionsReq, decisionsResp, autoResolved, totalCompleted30d,
       cogTasks, cogDirReports, lateralTasks, brainstormCount,
       fbExec, fbLearning, fbPropagation,
+      diagnosticLast, maintenanceLast, proactiveLoopLast,
     ] = await Promise.all([
       prisma.learningArtifact.count(),
       prisma.learningArtifact.count({ where: { validated: true } }),
@@ -477,6 +478,10 @@ async function fetchAxes(): Promise<any> {
       prisma.agentTask.count({ where: { completedAt: { gte: d7 }, status: "COMPLETED" } }),
       prisma.learningArtifact.count({ where: { createdAt: { gte: d7 }, sourceType: "POST_EXECUTION" } }),
       prisma.learningArtifact.count({ where: { createdAt: { gte: d7 }, teacherRole: "learning-funnel-propagated" } }),
+      // Noile verificari
+      prisma.systemConfig.findUnique({ where: { key: "DIAGNOSTIC_COMPLET_LAST" } }).catch(() => null),
+      prisma.systemConfig.findUnique({ where: { key: "MAINTENANCE_LAST_RUN" } }).catch(() => null),
+      prisma.systemConfig.findUnique({ where: { key: "PROACTIVE_LOOP_LAST_RUN" } }).catch(() => null),
     ])
 
     const srcMap: Record<string, number> = {}
@@ -489,7 +494,33 @@ async function fetchAxes(): Promise<any> {
     const dirRoles = new Set((cogDirReports ?? []).map((r: any) => r.childRole))
     const cogToDirs = cogTasks.filter((t: any) => dirRoles.has(t.assignedTo)).length
 
+    // Parsam diagnostic + maintenance + proactive
+    let diagVerdict = "N/A"
+    let diagVerde = 0
+    let diagRosu = 0
+    if (diagnosticLast?.value) {
+      try {
+        const d = JSON.parse(diagnosticLast.value)
+        diagVerdict = d.verdict || "N/A"
+        diagVerde = d.verde || 0
+        diagRosu = d.rosu || 0
+      } catch {}
+    }
+    const maintAgeMin = maintenanceLast?.value
+      ? Math.round((now.getTime() - new Date(maintenanceLast.value).getTime()) / 60000)
+      : null
+    const proactiveAgeMin = proactiveLoopLast?.value
+      ? Math.round((now.getTime() - new Date(proactiveLoopLast.value).getTime()) / 60000)
+      : null
+
     return {
+      organism: {
+        diagVerdict,
+        diagVerde,
+        diagRosu,
+        maintenanceAgeMin: maintAgeMin,
+        proactiveAgeMin: proactiveAgeMin,
+      },
       knowledge: {
         totalArtifacts: kbTotal, validated: kbValidated,
         validatedPct: kbTotal > 0 ? Math.round((kbValidated / kbTotal) * 100) : 0,
@@ -583,20 +614,31 @@ export default async function OwnerDashboard() {
         {/* ═══ 5 AXE — COCKPIT CENTRALIZAT ═══ */}
         {axes && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {/* AXA 1: ORGANISM */}
-            <Link href="/owner/situations" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
+            {/* AXA 1: ORGANISM — cu diagnostic automat */}
+            <Link href="/owner/organism-health" className="block bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" style={{ padding: "16px" }}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-3 h-3 rounded-full ${
+                  axes.organism?.diagVerdict === "SANATOS" ? "bg-emerald-400" :
+                  axes.organism?.diagVerdict === "PROBLEME" ? "bg-red-500" :
                   data?.vitalSigns?.verdict === "ALIVE" ? "bg-emerald-400" :
-                  data?.vitalSigns?.verdict === "WEAKENED" ? "bg-amber-400" :
-                  data?.vitalSigns?.verdict === "CRITICAL" ? "bg-red-500" : "bg-slate-300"
+                  data?.vitalSigns?.verdict === "WEAKENED" ? "bg-amber-400" : "bg-slate-300"
                 }`} />
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Organism</span>
               </div>
-              <div className="text-lg font-bold text-slate-900">{data?.vitalSigns?.verdict || "—"}</div>
-              <div className="text-[11px] text-slate-500 mt-1">
-                {data?.vitalSigns?.summary?.pass || 0} ok, {data?.vitalSigns?.summary?.warn || 0} warn, {data?.vitalSigns?.summary?.fail || 0} fail
+              <div className="text-lg font-bold text-slate-900">
+                {axes.organism?.diagVerdict === "SANATOS" ? "SANATOS" :
+                 axes.organism?.diagVerdict === "PROBLEME" ? "PROBLEME" :
+                 data?.vitalSigns?.verdict || "—"}
               </div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                {axes.organism?.diagVerde || 0} verde, {axes.organism?.diagRosu || 0} rosu
+              </div>
+              {axes.organism?.maintenanceAgeMin != null && (
+                <div className="text-[10px] text-indigo-600 mt-1">
+                  Maintenance: {axes.organism.maintenanceAgeMin}min
+                  {axes.organism.proactiveAgeMin != null && ` | Loop: ${axes.organism.proactiveAgeMin}min`}
+                </div>
+              )}
             </Link>
 
             {/* AXA 2: CUNOASTERE */}
@@ -851,6 +893,20 @@ export default async function OwnerDashboard() {
                 <h3 className="text-sm font-bold text-slate-900">Mother Maturity</h3>
                 <div style={{ height: "4px" }} />
                 <p className="text-[10px] text-slate-400">Pricepere mostenita fara limite</p>
+              </Link>
+              <Link href="/owner/organism-health" className="block rounded-2xl border border-teal-200 bg-teal-50 hover:bg-teal-100 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">🏥</span>
+                <div style={{ height: "8px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Sanatate organism</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-[10px] text-slate-400">14 verificari verde/galben/rosu</p>
+              </Link>
+              <Link href="/owner/business-birth" className="block rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-all" style={{ padding: "20px" }}>
+                <span className="text-xl">🐣</span>
+                <div style={{ height: "8px" }} />
+                <h3 className="text-sm font-bold text-slate-900">Nastere business</h3>
+                <div style={{ height: "4px" }} />
+                <p className="text-[10px] text-slate-400">Organism-mama naste un pui</p>
               </Link>
             </div>
 
