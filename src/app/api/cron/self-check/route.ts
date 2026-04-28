@@ -227,6 +227,7 @@ export async function GET(req: NextRequest) {
 
   // ── 6. Agenți fără cold start ─────────────────────────────
   try {
+    // Verificam: agenti cu coldStartPrompts DAR fara NICIUN KB entry (orice sursa)
     const noColdStart = await p.$queryRaw`
       SELECT ad."agentRole" as role
       FROM agent_definitions ad
@@ -234,25 +235,37 @@ export async function GET(req: NextRequest) {
         AND array_length(ad."coldStartPrompts", 1) > 0
         AND NOT EXISTS (
           SELECT 1 FROM kb_entries kb
-          WHERE kb."agentRole" = ad."agentRole" AND kb.source = 'SELF_INTERVIEW' AND kb.status = 'PERMANENT'
+          WHERE kb."agentRole" = ad."agentRole" AND kb.status = 'PERMANENT'
         )
     ` as any[]
 
     if (noColdStart.length > 0) {
-      // Auto-repair: creează task la COA
-      await p.agentTask.create({
-        data: {
-          businessId: "biz_jobgrade",
-          assignedBy: "SYSTEM",
-          assignedTo: "COA",
-          title: `Self-check: ${noColdStart.length} agenti fara cold start`,
-          description: `Agentii urmatori au prompts dar nu au KB din self-interview: ${noColdStart.map((a: any) => a.role).join(", ")}. Ruleaza cold start pe fiecare.`,
-          taskType: "PROCESS_EXECUTION",
-          priority: "IMPORTANT",
-          status: "ASSIGNED",
-          tags: ["self-check", "cold-start-missing", "auto-detected"],
+      // CIRCUIT BREAKER: nu crea task daca exista deja unul activ sau anulat recent (7 zile)
+      const existingTask = await p.agentTask.findFirst({
+        where: {
+          title: { contains: "agenti fara cold start" },
+          OR: [
+            { status: { in: ["ASSIGNED", "ACCEPTED", "IN_PROGRESS", "BLOCKED"] } },
+            { status: "CANCELLED", updatedAt: { gte: new Date(Date.now() - 7 * 24 * 3600000) } },
+          ],
         },
-      }).catch(() => {})
+      }).catch(() => null)
+
+      if (!existingTask) {
+        await p.agentTask.create({
+          data: {
+            businessId: "biz_jobgrade",
+            assignedBy: "SYSTEM",
+            assignedTo: "COA",
+            title: `Self-check: ${noColdStart.length} agenti fara cold start`,
+            description: `Agentii urmatori nu au KB permanent: ${noColdStart.map((a: any) => a.role).join(", ")}. Ruleaza cold start pe fiecare conform procedura meta-organism.`,
+            taskType: "PROCESS_EXECUTION",
+            priority: "IMPORTANT",
+            status: "ASSIGNED",
+            tags: ["self-check", "cold-start-missing", "auto-detected"],
+          },
+        }).catch(() => {})
+      }
       checks.push({
         name: "cold-start-coverage",
         status: "repaired",

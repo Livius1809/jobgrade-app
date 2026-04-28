@@ -647,6 +647,22 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
       }
     }
 
+    // CIRCUIT BREAKER: daca un task similar a fost CANCELLED de 2+ ori in 7 zile, nu-l mai recrea
+    const titleSlug = cleanTaskTitle.slice(0, 40)
+    try {
+      const cancelledCount = await (prisma as any).agentTask.count({
+        where: {
+          title: { contains: titleSlug },
+          status: "CANCELLED",
+          updatedAt: { gte: new Date(Date.now() - 7 * 24 * 3600000) },
+        },
+      })
+      if (cancelledCount >= 2) {
+        console.log(`[executor] CIRCUIT BREAKER: "${titleSlug}" anulat de ${cancelledCount}x in 7 zile — NU mai recreez`)
+        return { outcome: "BLOCKED", subTaskIds }
+      }
+    } catch {}
+
     // Pas 1: Returneaza task-ul la agentul care l-a creat (assignedBy) cu feedback clar
     // NU escaladam la Owner — structura trebuie sa se rezolve singura
     if (task.assignedBy && task.assignedBy !== "OWNER" && task.assignedBy !== "SYSTEM") {
@@ -657,14 +673,14 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
             assignedBy: task.assignedTo,
             assignedTo: task.assignedBy,
             title: `[Returnat] ${cleanTaskTitle} — necesita reformulare`,
-            description: `Task-ul returnat de ${blockerRoleName} deoarece: ${cleanBlockerDesc}\n\nActiune necesara: reformuleaza cererea structurat si retrimite. Format recomandat: "Solicitam de la ${blockerRoleName} urmatoarele: 1) ..., 2) ..., 3) ... pentru a finaliza [livrabilul]."`,
+            description: `Task-ul returnat de ${blockerRoleName} deoarece: ${cleanBlockerDesc}\n\nActiune necesara: reformuleaza cererea structurat si retrimite.`,
             taskType: task.taskType || "INVESTIGATION",
             priority: task.priority || "NECESAR",
             status: "ASSIGNED",
             tags: ["feedback-loop", "returned-task", `original:${task.id}`],
           },
         })
-        console.log(`[executor] Feedback loop: ${task.assignedTo} returneaza task la ${task.assignedBy} (nu la Owner)`)
+        console.log(`[executor] Feedback loop: ${task.assignedTo} returneaza task la ${task.assignedBy}`)
       } catch {}
     }
 
