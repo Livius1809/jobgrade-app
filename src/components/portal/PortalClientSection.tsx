@@ -542,6 +542,42 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             document.body
           )}
 
+          {/* ═══ Panou baterie psihometrica ═══ */}
+          {activePanel === "psychometrics" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-teal-400 bg-teal-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Baterie psihometrica</h3>
+                  <p className="text-xs text-teal-600 mt-1">Configureaza instrumentele per post si urmareste completarea</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-teal-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <PsychometricsPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou sociograma Balint ═══ */}
+          {activePanel === "sociogram" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-teal-400 bg-teal-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Sociograma echipe — Balint</h3>
+                  <p className="text-xs text-teal-600 mt-1">Defineste grupul, membrii completeaza individual prin scenariu</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-teal-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <SociogramPanel />
+            </div>,
+            document.body
+          )}
+
           {/* Panou notificare anuala Art. 6 */}
           {activePanel === "annual-notification" && mounted && createPortal(
             <div
@@ -1907,6 +1943,319 @@ function ReportPanel() {
         Rapoartele includ: ierarhia posturilor, clase salariale, proces verbal și pagina de validare cu semnătură.
         Exportul consumă credite din sold.
       </p>
+    </div>
+  )
+}
+
+// ─── Panou Baterie Psihometrica ──────────────────────────────────────
+
+function PsychometricsPanel() {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string }>>([])
+  const [selectedJob, setSelectedJob] = useState("")
+  const [selectedInstruments, setSelectedInstruments] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/v1/psychometrics").then(r => r.json()),
+      fetch("/api/v1/jobs").then(r => r.json()),
+    ]).then(([psych, jobData]) => {
+      setData(psych)
+      setJobs(Array.isArray(jobData) ? jobData : (jobData.jobs || []))
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  const handleConfigureBattery = async () => {
+    if (!selectedJob) return
+    setSaving(true)
+    const job = jobs.find(j => j.id === selectedJob)
+    await fetch("/api/v1/psychometrics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "configure-battery",
+        jobId: selectedJob,
+        jobTitle: job?.title || selectedJob,
+        instruments: selectedInstruments,
+      }),
+    })
+    // Refresh
+    const fresh = await fetch("/api/v1/psychometrics").then(r => r.json())
+    setData(fresh)
+    setSelectedJob("")
+    setSelectedInstruments([])
+    setSaving(false)
+  }
+
+  if (loading) return <p className="text-xs text-slate-400">Se incarca...</p>
+  if (!data) return <p className="text-xs text-red-500">Eroare la incarcare.</p>
+
+  const instruments: any[] = data.instruments || []
+  const batteries: any[] = data.batteries || []
+  const stats = data.stats || {}
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Baterii configurate", value: stats.batteriesConfigured || 0 },
+          { label: "Angajati asignati", value: stats.totalAssignments || 0 },
+          { label: "Completate", value: stats.completed || 0 },
+          { label: "Completare", value: `${stats.completionPct || 0}%` },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+            <p className="text-lg font-bold text-teal-700">{s.value}</p>
+            <p className="text-[9px] text-slate-500 uppercase">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Configurare baterie noua */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-3">Configureaza baterie per post</h4>
+
+        <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm mb-3">
+          <option value="">Selecteaza postul...</option>
+          {jobs.map(j => (
+            <option key={j.id} value={j.id}>{j.title}</option>
+          ))}
+        </select>
+
+        {selectedJob && (
+          <>
+            <p className="text-xs text-slate-600 mb-2">Instrumente (obligatoriile sunt pre-selectate):</p>
+            <div className="space-y-1.5 mb-3">
+              {instruments.map((inst: any) => (
+                <label key={inst.id} className={`flex items-start gap-2 text-xs p-2 rounded-lg border ${
+                  inst.required ? "bg-teal-50 border-teal-200" : "bg-white border-slate-200"
+                }`}>
+                  <input type="checkbox"
+                    checked={inst.required || selectedInstruments.includes(inst.id)}
+                    disabled={inst.required}
+                    onChange={e => {
+                      if (e.target.checked) setSelectedInstruments(prev => [...prev, inst.id])
+                      else setSelectedInstruments(prev => prev.filter(i => i !== inst.id))
+                    }}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <span className="font-medium text-slate-800">{inst.name}</span>
+                    {inst.required && <span className="text-teal-600 ml-1">(obligatoriu)</span>}
+                    {inst.type === "EXTERNAL" && <span className="text-amber-600 ml-1">(upload PDF)</span>}
+                    <p className="text-[10px] text-slate-400 mt-0.5">{inst.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <button onClick={handleConfigureBattery} disabled={saving}
+              className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+              {saving ? "Se salveaza..." : "Salveaza bateria"}
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Baterii existente */}
+      {batteries.length > 0 && (
+        <div>
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Baterii configurate</h4>
+          <div className="space-y-2">
+            {batteries.map((b: any) => (
+              <div key={b.jobId} className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-800">{b.jobTitle}</span>
+                  <span className="text-[10px] text-slate-400">{b.instruments.length} instrumente</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {b.instruments.map((instrId: string) => {
+                    const inst = instruments.find((i: any) => i.id === instrId)
+                    return (
+                      <span key={instrId} className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700">
+                        {inst?.name || instrId}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Panou Sociograma Balint ─────────────────────────────────────────
+
+function SociogramPanel() {
+  const [loading, setLoading] = useState(true)
+  const [groups, setGroups] = useState<any[]>([])
+  const [creating, setCreating] = useState(false)
+  const [newGroup, setNewGroup] = useState({ name: "", type: "DEPARTMENT", members: "" })
+
+  const loadGroups = () => {
+    fetch("/api/v1/sociogram").then(r => r.json()).then(d => {
+      setGroups(d.groups || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }
+
+  useEffect(() => { loadGroups() }, [])
+
+  const handleCreate = async () => {
+    if (!newGroup.name || !newGroup.members.trim()) return
+    setCreating(true)
+    const members = newGroup.members.split("\n").filter(Boolean).map(line => {
+      const [code, ...nameParts] = line.split(",").map(s => s.trim())
+      return { code: code || line.trim(), name: nameParts.join(" ") || code || line.trim() }
+    })
+
+    await fetch("/api/v1/sociogram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create-group",
+        name: newGroup.name,
+        type: newGroup.type,
+        members,
+      }),
+    })
+    setNewGroup({ name: "", type: "DEPARTMENT", members: "" })
+    loadGroups()
+    setCreating(false)
+  }
+
+  const handleComplete = async (groupId: string) => {
+    await fetch("/api/v1/sociogram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "complete", groupId }),
+    })
+    loadGroups()
+  }
+
+  if (loading) return <p className="text-xs text-slate-400">Se incarca...</p>
+
+  return (
+    <div className="space-y-6">
+      {/* Scenariu explicativ */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-2">Cum functioneaza sociograma Balint</h4>
+        <div className="text-xs text-slate-600 space-y-1.5">
+          <p>1. Definesti un <strong>grup</strong> care lucreaza impreuna (departament sau echipa de proiect)</p>
+          <p>2. Fiecare membru citeste un <strong>scenariu</strong> (o poveste care indeparteaza criteriile rationale)</p>
+          <p>3. Fiecare membru <strong>ordoneaza</strong> colegii de la N la 1 (N = cel mai preferat)</p>
+          <p>4. Poate marca cu <strong>asterisc (*)</strong> colegii pe care i-ar respinge in scenariul dat</p>
+          <p>5. Platforma calculeaza automat: <strong>scoruri, clasament, relatii reciproce, izolati</strong></p>
+        </div>
+      </div>
+
+      {/* Creaza grup nou */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-3">Grup nou</h4>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="block text-xs font-medium mb-1">Numele grupului</label>
+            <input type="text" value={newGroup.name} onChange={e => setNewGroup(p => ({ ...p, name: e.target.value }))}
+              placeholder="ex: Departament IT" className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Tip</label>
+            <select value={newGroup.type} onChange={e => setNewGroup(p => ({ ...p, type: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm">
+              <option value="DEPARTMENT">Departament (permanent)</option>
+              <option value="PROJECT_TEAM">Echipa proiect (temporar)</option>
+            </select>
+          </div>
+        </div>
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1">Membri (cod, nume — cate un membru pe linie)</label>
+          <textarea value={newGroup.members} onChange={e => setNewGroup(p => ({ ...p, members: e.target.value }))}
+            rows={4} placeholder={"EMP001, Popescu Ion\nEMP002, Ionescu Maria\nEMP003, Georgescu Ana"}
+            className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm resize-y font-mono" />
+        </div>
+        <button onClick={handleCreate} disabled={creating || !newGroup.name || !newGroup.members.trim()}
+          className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+          {creating ? "Se creeaza..." : "Creeaza grupul"}
+        </button>
+      </div>
+
+      {/* Grupuri existente */}
+      {groups.length > 0 && (
+        <div>
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Grupuri existente</h4>
+          <div className="space-y-2">
+            {groups.map((g: any) => (
+              <div key={g.id} className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">{g.name}</span>
+                    <span className="text-[10px] text-slate-400 ml-2">{g.type === "DEPARTMENT" ? "Departament" : "Echipa proiect"}</span>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    g.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {g.status === "COMPLETED" ? "Finalizat" : "In colectare"}
+                  </span>
+                </div>
+
+                {/* Membri */}
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {(g.members || []).map((m: any) => {
+                    const hasResponse = (g.responses || []).some((r: any) => r.fromCode === m.code && r.completedAt)
+                    return (
+                      <span key={m.code} className={`text-[9px] px-1.5 py-0.5 rounded-full border ${
+                        hasResponse ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-500"
+                      }`}>
+                        {hasResponse ? "\u2713" : "\u25CB"} {m.name || m.code}
+                      </span>
+                    )
+                  })}
+                </div>
+
+                {/* Progres */}
+                <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                  <span>{(g.responses || []).filter((r: any) => r.completedAt).length}/{(g.members || []).length} completat</span>
+                  {g.status === "COLLECTING" && (g.responses || []).filter((r: any) => r.completedAt).length === (g.members || []).length && (
+                    <button onClick={() => handleComplete(g.id)}
+                      className="px-2 py-0.5 rounded bg-teal-600 text-white text-[10px] hover:bg-teal-700">
+                      Finalizeaza si calculeaza
+                    </button>
+                  )}
+                </div>
+
+                {/* Rezultate */}
+                {g.results && g.results.length > 0 && (
+                  <div className="mt-3 border-t border-slate-100 pt-2">
+                    <p className="text-[10px] font-bold text-slate-600 mb-1">Clasament</p>
+                    <div className="space-y-1">
+                      {g.results.sort((a: any, b: any) => a.rank - b.rank).map((r: any) => (
+                        <div key={r.memberCode} className="flex items-center gap-2 text-xs">
+                          <span className="font-mono text-slate-400 w-5">#{r.rank}</span>
+                          <span className={`font-medium ${r.isIsolated ? "text-red-600" : r.isControversial ? "text-amber-600" : "text-slate-800"}`}>
+                            {r.memberName}
+                          </span>
+                          <span className="text-slate-400">scor {r.totalScore}</span>
+                          <span className="text-emerald-600">{r.preferenceCount} pref</span>
+                          {r.rejectionCount > 0 && <span className="text-red-500">{r.rejectionCount} resp</span>}
+                          {r.isIsolated && <span className="text-[9px] bg-red-100 text-red-600 px-1 rounded">izolat</span>}
+                          {r.isControversial && <span className="text-[9px] bg-amber-100 text-amber-600 px-1 rounded">controversat</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
