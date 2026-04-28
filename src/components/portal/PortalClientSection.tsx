@@ -2274,10 +2274,30 @@ function ClimatePanel() {
   const [saving, setSaving] = useState(false)
   const [newLevel, setNewLevel] = useState("")
 
+  useEffect(() => {
+    fetch("/api/v1/card-inputs?card=C4_CLIMATE").then(r => r.json()).then(d => {
+      if (d.data) {
+        if (d.data.levels?.length) setLevels(d.data.levels)
+        if (d.data.status) setStatus(d.data.status)
+      }
+    }).catch(() => {})
+  }, [])
+
+  const saveClimate = async (newLevels?: string[]) => {
+    const lvls = newLevels || levels
+    await fetch("/api/v1/card-inputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card: "C4_CLIMATE", data: { levels: lvls, status } }),
+    }).catch(() => {})
+  }
+
   const addLevel = () => {
     if (newLevel && !levels.includes(newLevel)) {
-      setLevels(prev => [...prev, newLevel])
+      const updated = [...levels, newLevel]
+      setLevels(updated)
       setNewLevel("")
+      saveClimate(updated)
     }
   }
 
@@ -2352,6 +2372,12 @@ function StrategicObjectivesPanel() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  useEffect(() => {
+    fetch("/api/v1/card-inputs?card=C4_STRATEGIC_OBJ").then(r => r.json()).then(d => {
+      if (d.data?.objectives?.length) setObjectives(d.data.objectives)
+    }).catch(() => {})
+  }, [])
+
   const addObj = () => setObjectives(prev => [...prev, { text: "", owner: "", cascadeTo: "", kpi: "", deadline: "" }])
   const updateObj = (idx: number, field: string, value: string) =>
     setObjectives(prev => prev.map((o, i) => i === idx ? { ...o, [field]: value } : o))
@@ -2359,6 +2385,11 @@ function StrategicObjectivesPanel() {
 
   const handleSave = async () => {
     setSaving(true)
+    await fetch("/api/v1/card-inputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card: "C4_STRATEGIC_OBJ", data: { objectives } }),
+    })
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 3000)
@@ -2443,11 +2474,26 @@ function C4DocumentsPanel() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  useEffect(() => {
+    const init: Record<string, { checked: boolean; notes: string }> = {}
+    for (const dt of C4_DOCUMENT_TYPES) init[dt.id] = { checked: false, notes: "" }
+    fetch("/api/v1/card-inputs?card=C4_DOCUMENTS").then(r => r.json()).then(d => {
+      if (d.data) setDocs({ ...init, ...d.data })
+    }).catch(() => {})
+  }, [])
+
   const toggleDoc = (id: string) => setDocs(prev => ({ ...prev, [id]: { ...prev[id], checked: !prev[id]?.checked } }))
   const updateNotes = (id: string, notes: string) => setDocs(prev => ({ ...prev, [id]: { ...prev[id], notes } }))
 
   const handleSave = async () => {
-    setSaving(true); setSaved(true); setSaving(false)
+    setSaving(true)
+    await fetch("/api/v1/card-inputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card: "C4_DOCUMENTS", data: docs }),
+    })
+    setSaved(true)
+    setSaving(false)
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -2507,13 +2553,34 @@ function C4DocumentsPanel() {
 function CulturalCalibrationPanel() {
   const [enabled, setEnabled] = useState(false)
   const [hofstedeValues, setHofstedeValues] = useState({
-    powerDistance: 90,        // Romania: mare
-    individualism: 30,        // Romania: colectivist
-    masculinity: 42,          // Romania: moderat
-    uncertaintyAvoidance: 90, // Romania: mare
-    longTermOrientation: 52,  // Romania: moderat
-    indulgence: 20,           // Romania: restrictiv
+    powerDistance: 90,
+    individualism: 30,
+    masculinity: 42,
+    uncertaintyAvoidance: 90,
+    longTermOrientation: 52,
+    indulgence: 20,
   })
+
+  useEffect(() => {
+    fetch("/api/v1/card-inputs?card=C4_CALIBRATION").then(r => r.json()).then(d => {
+      if (d.data) {
+        if (d.data.enabled !== undefined) setEnabled(d.data.enabled)
+        if (d.data.hofstede) setHofstedeValues(prev => ({ ...prev, ...d.data.hofstede }))
+      }
+    }).catch(() => {})
+  }, [])
+
+  // Auto-save la fiecare schimbare toggle/slider
+  const saveCalibration = (newEnabled?: boolean, newValues?: typeof hofstedeValues) => {
+    fetch("/api/v1/card-inputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        card: "C4_CALIBRATION",
+        data: { enabled: newEnabled ?? enabled, hofstede: newValues ?? hofstedeValues },
+      }),
+    }).catch(() => {})
+  }
 
   const dimensions = [
     { key: "powerDistance", label: "Distanta fata de putere", desc: "Cat de mult se accepta inegalitatea. RO: mare (90)", low: "Egalitar", high: "Ierarhic" },
@@ -2541,7 +2608,7 @@ function CulturalCalibrationPanel() {
             <p className="text-[10px] text-slate-500 mt-0.5">Aplica Hofstede pe rapoartele Declarat vs Practicat, ROI Cultura, Plan interventie</p>
           </div>
           <div className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? "bg-purple-500" : "bg-slate-300"}`}
-            onClick={() => setEnabled(!enabled)}>
+            onClick={() => { const v = !enabled; setEnabled(v); saveCalibration(v) }}>
             <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-6" : "translate-x-0.5"}`} />
           </div>
         </label>
@@ -2563,7 +2630,11 @@ function CulturalCalibrationPanel() {
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] text-slate-400 w-16">{dim.low}</span>
                   <input type="range" min={0} max={100} value={val}
-                    onChange={e => setHofstedeValues(prev => ({ ...prev, [dim.key]: Number(e.target.value) }))}
+                    onChange={e => {
+                      const updated = { ...hofstedeValues, [dim.key]: Number(e.target.value) }
+                      setHofstedeValues(updated)
+                    }}
+                    onMouseUp={() => saveCalibration(undefined, hofstedeValues)}
                     className="flex-1 accent-purple-500" />
                   <span className="text-[9px] text-slate-400 w-16 text-right">{dim.high}</span>
                 </div>
@@ -2601,13 +2672,12 @@ function DocumentsPanel() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    fetch("/api/v1/psychometrics").then(r => r.json()).then(data => {
-      // Refolosim tenant storage prin psychometrics endpoint — sau citim direct
-    }).catch(() => {})
-    // Init cu toate nebifate
     const init: Record<string, { checked: boolean; fileName: string | null; notes: string }> = {}
     for (const dt of C3_DOCUMENT_TYPES) init[dt.id] = { checked: false, fileName: null, notes: "" }
-    setDocs(init)
+    fetch("/api/v1/card-inputs?card=C3_DOCUMENTS").then(r => r.json()).then(d => {
+      if (d.data) setDocs({ ...init, ...d.data })
+      else setDocs(init)
+    }).catch(() => setDocs(init))
   }, [])
 
   const toggleDoc = (id: string) => {
@@ -2620,8 +2690,11 @@ function DocumentsPanel() {
 
   const handleSave = async () => {
     setSaving(true)
-    // Salvam in tenant storage via psychometrics sau endpoint dedicat
-    // Pentru acum, salvam local — backend integration la nevoie
+    await fetch("/api/v1/card-inputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card: "C3_DOCUMENTS", data: docs }),
+    })
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 3000)
@@ -2694,6 +2767,15 @@ function ObjectivesPanel() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  useEffect(() => {
+    fetch("/api/v1/card-inputs?card=C3_OBJECTIVES").then(r => r.json()).then(d => {
+      if (d.data) {
+        if (d.data.objectives?.length) setObjectives(d.data.objectives)
+        if (d.data.context) setContext(d.data.context)
+      }
+    }).catch(() => {})
+  }, [])
+
   const addObjective = () => {
     setObjectives(prev => [...prev, { text: "", timeframe: "12_MONTHS", priority: "MEDIUM" }])
   }
@@ -2709,6 +2791,11 @@ function ObjectivesPanel() {
 
   const handleSave = async () => {
     setSaving(true)
+    await fetch("/api/v1/card-inputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card: "C3_OBJECTIVES", data: { objectives, context } }),
+    })
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 3000)
