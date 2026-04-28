@@ -3,6 +3,15 @@
  *
  * 40 itemi, 8 dimensiuni (7+1), scorare pe praguri variabile per dimensiune.
  * Sursa: CO.pdf + foaie_rezultate_CO.xlsx (Owner)
+ *
+ * IMPORTANT: In chestionar itemii sunt AMESTECATI — cate un item din fiecare
+ * dimensiune pe rand (1=Sarcina, 2=Structura, 3=Relatii, 4=Motivatie,
+ * 5=Suport, 6=Conducere, 7=Schimbare, 8=Performanta), repetati de 5 ori.
+ *
+ * Scala: 1 (Niciodata de acord) → 7 (Intotdeauna de acord)
+ * Etichete: Niciodata / F.Rar / Rar / Uneori / Deseori / F.Des / Intotdeauna
+ *
+ * Date demografice colectate: functie, sef direct, vechime, varsta
  */
 
 export interface CODimension {
@@ -121,6 +130,51 @@ export const CO_DIMENSIONS: CODimension[] = [
   },
 ]
 
+/**
+ * Scala 1-7 cu etichete (din CO.pdf)
+ */
+export const CO_SCALE_LABELS = [
+  "Niciodată de acord",   // 1
+  "Foarte rar de acord",  // 2
+  "Rar de acord",         // 3
+  "Uneori de acord",      // 4
+  "Deseori de acord",     // 5
+  "Foarte des de acord",  // 6
+  "Întotdeauna de acord", // 7
+]
+
+/**
+ * Ordinea itemilor in chestionar (amestecati pe dimensiuni).
+ * Item 1 = dimensiune 0 (Sarcina), item 2 = dimensiune 1 (Structura), ...
+ * Pattern: item N apartine dimensiunii (N-1) % 8
+ *
+ * Mapare: raspunsul la item-ul I din chestionar → dimensiunea (I-1) % 8, item-ul floor((I-1)/8)
+ */
+export function mapQuestionnaireToScores(answers: number[]): number[] {
+  if (answers.length !== 40) throw new Error(`40 raspunsuri asteptate, primit ${answers.length}`)
+  // answers[0] = item1 (Sarcina), answers[1] = item2 (Structura), ...
+  // Trebuie reordonat: primele 5 = Sarcina (items 1,9,17,25,33), urm 5 = Structura (2,10,18,26,34), etc.
+  const reordered: number[] = new Array(40)
+  for (let dim = 0; dim < 8; dim++) {
+    for (let itemInDim = 0; itemInDim < 5; itemInDim++) {
+      const questionnaireIdx = itemInDim * 8 + dim // pozitia in chestionar
+      const scoreIdx = dim * 5 + itemInDim // pozitia in array-ul de scoruri per dimensiune
+      reordered[scoreIdx] = answers[questionnaireIdx]
+    }
+  }
+  return reordered
+}
+
+/**
+ * Date demografice colectate per respondent
+ */
+export interface CODemographics {
+  function?: string    // functia ocupata
+  directManager?: string // numele sefului direct
+  tenure?: "0-1" | "1-5" | "5-10" | ">10"  // vechime in companie
+  age?: number
+}
+
 export type IntensityLevel = "F.SLAB" | "SLAB" | "MEDIU" | "INTENS" | "F.INTENS"
 
 export interface DimensionResult {
@@ -152,26 +206,32 @@ export function interpretScore(mean: number, thresholds: [number, number, number
 
 /**
  * Scorare completa a unui respondent (40 scoruri → 8 dimensiuni + atitudine generala)
+ * @param fromQuestionnaire - daca true, answers vine in ordinea din chestionar (amestecata);
+ *                            daca false (default), vine deja grupata pe dimensiuni
  */
 export function scoreRespondent(
   code: string,
   group: string,
-  answers: number[] // 40 scoruri (1-7), in ordinea dimensiunilor
+  answers: number[], // 40 scoruri (1-7)
+  fromQuestionnaire: boolean = false
 ): COResult {
   if (answers.length !== 40) {
     throw new Error(`Se asteapta 40 raspunsuri, primit ${answers.length}`)
   }
 
+  // Daca vine din chestionar (ordinea amestecata), reordoneaza pe dimensiuni
+  const scores = fromQuestionnaire ? mapQuestionnaireToScores(answers) : answers
+
   const dimensions: DimensionResult[] = CO_DIMENSIONS.map((dim, idx) => {
     const start = idx * 5
-    const scores = answers.slice(start, start + 5)
-    const mean = Math.round((scores.reduce((s, v) => s + v, 0) / 5) * 10) / 10
+    const dimScores = scores.slice(start, start + 5)
+    const mean = Math.round((dimScores.reduce((s, v) => s + v, 0) / 5) * 10) / 10
     return {
       dimensionId: dim.id,
       label: dim.label,
       mean,
       level: interpretScore(mean, dim.thresholds),
-      scores,
+      scores: dimScores,
     }
   })
 

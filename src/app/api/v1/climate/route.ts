@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { getTenantData, setTenantData } from "@/lib/tenant-storage"
-import { CO_DIMENSIONS, scoreRespondent, aggregateResults, type COResult } from "@/lib/climate/questionnaire"
+import { CO_DIMENSIONS, CO_SCALE_LABELS, scoreRespondent, aggregateResults, type COResult } from "@/lib/climate/questionnaire"
 
 export const dynamic = "force-dynamic"
 
@@ -119,8 +119,8 @@ export async function POST(req: NextRequest) {
       completedAt: new Date().toISOString(),
     })
 
-    // Scoreaza
-    const result = scoreRespondent(respondentCode, respondentGroup || "NPM", answers)
+    // Scoreaza (answers vine in ordinea din chestionar — amestecata)
+    const result = scoreRespondent(respondentCode, respondentGroup || "NPM", answers, true)
 
     await saveState(session.user.tenantId, state)
 
@@ -157,17 +157,26 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // Returneaza itemii chestionarului (pentru UI completare)
+  // Returneaza itemii chestionarului (in ordinea amestecata din CO.pdf)
   if (action === "get-items") {
+    // Ordinea din chestionar: item 1=Sarcina, 2=Structura, 3=Relatii, ...
+    // Repetate de 5 ori (8 dim × 5 itemi = 40)
+    const questionnaire: Array<{ index: number; text: string; dimensionId: string }> = []
+    for (let round = 0; round < 5; round++) {
+      for (let dim = 0; dim < CO_DIMENSIONS.length; dim++) {
+        questionnaire.push({
+          index: round * 8 + dim + 1,
+          text: CO_DIMENSIONS[dim].items[round],
+          dimensionId: CO_DIMENSIONS[dim].id,
+        })
+      }
+    }
     return NextResponse.json({
-      dimensions: CO_DIMENSIONS.map(d => ({
-        id: d.id,
-        label: d.label,
-        description: d.description,
-        items: d.items,
-      })),
+      items: questionnaire,
       totalItems: 40,
-      scale: { min: 1, max: 7, labels: ["Dezacord total", "Dezacord", "Dezacord partial", "Neutru", "Acord partial", "Acord", "Acord total"] },
+      scale: { min: 1, max: 7, labels: CO_SCALE_LABELS },
+      demographics: ["function", "directManager", "tenure", "age"],
+      instructions: "Citiți cu atenție fiecare afirmație și arătați în ce măsură sunteți de acord, pe o scală de la 1 (Niciodată de acord) la 7 (Întotdeauna de acord). Nu există răspunsuri bune sau rele.",
     })
   }
 
