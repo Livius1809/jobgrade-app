@@ -488,6 +488,90 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
     } catch {}
   }
 
+  // ═══ DIAGNOSTIC COMPLET (cele 14 verificari — integrat in self-check automat) ═══
+
+  type DiagStatus = "VERDE" | "GALBEN" | "ROSU"
+  const diagnosticChecks: Array<{ component: string; status: DiagStatus; detail: string }> = []
+
+  // Check: BLOCKED
+  const blockedCount = await prisma.agentTask.count({ where: { status: "BLOCKED" } })
+  diagnosticChecks.push({
+    component: "Task-uri BLOCKED",
+    status: blockedCount === 0 ? "VERDE" : blockedCount < 10 ? "GALBEN" : "ROSU",
+    detail: `${blockedCount} blocate`,
+  })
+  // Auto-remediere BLOCKED > 7 zile (deja existent mai sus)
+
+  // Check: Meta-organism KB
+  const metaKBCount = await p.kBEntry?.count({ where: { tags: { hasSome: ["meta-organism"] } } }).catch(() => 0) ?? 0
+  diagnosticChecks.push({
+    component: "Meta-organism KB",
+    status: metaKBCount >= 70 ? "VERDE" : "ROSU",
+    detail: `${metaKBCount} agenti`,
+  })
+
+  // Check: Cost estimat
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  const todayCompleted = await prisma.agentTask.count({ where: { completedAt: { gte: todayStart }, status: "COMPLETED" } })
+  const estimatedCost = todayCompleted * 0.02
+  diagnosticChecks.push({
+    component: "Cost estimat azi",
+    status: estimatedCost < 3 ? "VERDE" : estimatedCost < 5 ? "GALBEN" : "ROSU",
+    detail: `~$${estimatedCost.toFixed(2)} (${todayCompleted} tasks)`,
+  })
+
+  // Check: Productivitate
+  const h6 = new Date(now.getTime() - 6 * 3600000)
+  const created6h = await prisma.agentTask.count({ where: { createdAt: { gte: h6 } } })
+  const cancelled6h = await prisma.agentTask.count({ where: { status: "CANCELLED", updatedAt: { gte: h6 } } })
+  const prodRatio = created6h > 0 ? Math.round(((created6h - cancelled6h) / created6h) * 100) : 100
+  diagnosticChecks.push({
+    component: "Productivitate 6h",
+    status: prodRatio >= 70 ? "VERDE" : prodRatio >= 40 ? "GALBEN" : "ROSU",
+    detail: `Ratio: ${prodRatio}% (${created6h} create, ${cancelled6h} anulate)`,
+  })
+
+  // Check: Bucle (circuit breaker)
+  const loopReconfig = await prisma.agentTask.count({ where: { status: "CANCELLED", updatedAt: { gte: h24 }, title: { contains: "Reconfigurare atributii" } } })
+  const loopSelfCheck = await prisma.agentTask.count({ where: { status: "CANCELLED", updatedAt: { gte: h24 }, title: { contains: "Self-check" } } })
+  const loopTotal = loopReconfig + loopSelfCheck
+  diagnosticChecks.push({
+    component: "Bucle detectate 24h",
+    status: loopTotal === 0 ? "VERDE" : loopTotal < 10 ? "GALBEN" : "ROSU",
+    detail: `${loopTotal} (reconfig: ${loopReconfig}, self-check: ${loopSelfCheck})`,
+  })
+
+  // Check: Maintenance cron
+  const maintLast = await prisma.systemConfig.findUnique({ where: { key: "MAINTENANCE_LAST_RUN" } }).catch(() => null)
+  const maintAge = maintLast?.value ? (now.getTime() - new Date(maintLast.value).getTime()) / 3600000 : 999
+  diagnosticChecks.push({
+    component: "Maintenance cron",
+    status: maintAge < 3 ? "VERDE" : maintAge < 6 ? "GALBEN" : "ROSU",
+    detail: maintAge < 999 ? `${Math.round(maintAge * 60)}min` : "NEVER",
+  })
+
+  const diagVerde = diagnosticChecks.filter(c => c.status === "VERDE").length
+  const diagRosu = diagnosticChecks.filter(c => c.status === "ROSU").length
+
+  // Salvam diagnosticul complet
+  try {
+    await prisma.systemConfig.upsert({
+      where: { key: "DIAGNOSTIC_COMPLET_LAST" },
+      update: { value: JSON.stringify({
+        timestamp: now.toISOString(),
+        verdict: diagRosu === 0 ? "SANATOS" : "PROBLEME",
+        verde: diagVerde, rosu: diagRosu,
+        checks: diagnosticChecks,
+      }) },
+      create: { key: "DIAGNOSTIC_COMPLET_LAST", value: JSON.stringify({
+        timestamp: now.toISOString(),
+        verdict: diagRosu === 0 ? "SANATOS" : "PROBLEME",
+        verde: diagVerde, rosu: diagRosu,
+        checks: diagnosticChecks,
+      }) },
+    })
+  } catch {}
+
   // ═══ SALVARE SNAPSHOT ═══
 
   const report: OperationalHealthReport = {
