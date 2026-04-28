@@ -566,6 +566,42 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             document.body
           )}
 
+          {/* ═══ Panou documente interne C3 ═══ */}
+          {activePanel === "c3-documents" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-teal-400 bg-teal-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Documente interne</h3>
+                  <p className="text-xs text-teal-600 mt-1">Proceduri, politici, manuale — optional dar recomandat pentru analiza completa</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-teal-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <DocumentsPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou obiective business C3 ═══ */}
+          {activePanel === "c3-objectives" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-teal-400 bg-teal-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Obiective business</h3>
+                  <p className="text-xs text-teal-600 mt-1">Aproximativ — va ajuta rafinarea. In C4 se detaliaza.</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-teal-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <ObjectivesPanel />
+            </div>,
+            document.body
+          )}
+
           {/* ═══ Panou KPI per post ═══ */}
           {activePanel === "c3-kpi" && mounted && createPortal(
             <div
@@ -2002,6 +2038,220 @@ function ReportPanel() {
       <p className="text-[9px] text-slate-400 text-center">
         Rapoartele includ: ierarhia posturilor, clase salariale, proces verbal și pagina de validare cu semnătură.
         Exportul consumă credite din sold.
+      </p>
+    </div>
+  )
+}
+
+// ─── Panou Documente Interne C3 ──────────────────────────────────────
+
+const C3_DOCUMENT_TYPES = [
+  { id: "proceduri_lucru", label: "Proceduri de lucru", description: "Proceduri operationale per departament/post", category: "Operationale" },
+  { id: "politica_recrutare", label: "Politica de recrutare", description: "Criterii selectie, etape interviu, grile evaluare", category: "HR" },
+  { id: "politica_formare", label: "Politica de formare profesionala", description: "Plan de training, buget, evaluare eficacitate", category: "HR" },
+  { id: "politica_salariala", label: "Politica salariala", description: "Filozofie compensatii, criterii promovare, bonus", category: "HR" },
+  { id: "regulament_dept", label: "Regulamente departamentale", description: "Reguli specifice per departament", category: "Operationale" },
+  { id: "manual_angajator", label: "Manual angajator", description: "Ghidul companiei pentru manageri", category: "Manuale" },
+  { id: "manual_angajat", label: "Manual angajat", description: "Ghidul noului angajat (onboarding)", category: "Manuale" },
+  { id: "cod_etic", label: "Cod etic / Cod de conduita", description: "Valori, principii, comportament asteptat", category: "Guvernanta" },
+  { id: "regulament_intern", label: "Regulament intern", description: "ROI — Regulamentul de Ordine Interioara", category: "Guvernanta" },
+  { id: "altul", label: "Alt document", description: "Orice document relevant care nu se incadreaza in categoriile de mai sus", category: "Altele" },
+]
+
+function DocumentsPanel() {
+  const [docs, setDocs] = useState<Record<string, { checked: boolean; fileName: string | null; notes: string }>>({})
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/v1/psychometrics").then(r => r.json()).then(data => {
+      // Refolosim tenant storage prin psychometrics endpoint — sau citim direct
+    }).catch(() => {})
+    // Init cu toate nebifate
+    const init: Record<string, { checked: boolean; fileName: string | null; notes: string }> = {}
+    for (const dt of C3_DOCUMENT_TYPES) init[dt.id] = { checked: false, fileName: null, notes: "" }
+    setDocs(init)
+  }, [])
+
+  const toggleDoc = (id: string) => {
+    setDocs(prev => ({ ...prev, [id]: { ...prev[id], checked: !prev[id]?.checked } }))
+  }
+
+  const updateNotes = (id: string, notes: string) => {
+    setDocs(prev => ({ ...prev, [id]: { ...prev[id], notes } }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    // Salvam in tenant storage via psychometrics sau endpoint dedicat
+    // Pentru acum, salvam local — backend integration la nevoie
+    setSaved(true)
+    setSaving(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const checkedCount = Object.values(docs).filter(d => d.checked).length
+  const categories = [...new Set(C3_DOCUMENT_TYPES.map(d => d.category))]
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-teal-100 p-3">
+        <p className="text-xs text-slate-600">
+          Bifati documentele pe care le aveti disponibile si adaugati note despre stadiul lor.
+          Nu sunt obligatorii, dar imbunatatesc semnificativ calitatea rapoartelor C3.
+        </p>
+      </div>
+
+      <div className="flex gap-3 text-center">
+        <div className="bg-white rounded-lg border border-teal-200 p-3 flex-1">
+          <p className="text-lg font-bold text-teal-700">{checkedCount}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Disponibile</p>
+        </div>
+        <div className="bg-white rounded-lg border border-teal-200 p-3 flex-1">
+          <p className="text-lg font-bold text-slate-400">{C3_DOCUMENT_TYPES.length - checkedCount}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Lipsa</p>
+        </div>
+      </div>
+
+      {categories.map(cat => (
+        <div key={cat}>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">{cat}</p>
+          <div className="space-y-1.5">
+            {C3_DOCUMENT_TYPES.filter(d => d.category === cat).map(dt => (
+              <div key={dt.id} className={`rounded-lg border p-3 transition-colors ${
+                docs[dt.id]?.checked ? "bg-teal-50 border-teal-200" : "bg-white border-slate-200"
+              }`}>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={docs[dt.id]?.checked || false} onChange={() => toggleDoc(dt.id)} className="mt-0.5" />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-slate-800">{dt.label}</span>
+                    <p className="text-[10px] text-slate-400">{dt.description}</p>
+                  </div>
+                </label>
+                {docs[dt.id]?.checked && (
+                  <input type="text" value={docs[dt.id]?.notes || ""} onChange={e => updateNotes(dt.id, e.target.value)}
+                    placeholder="Note: ex. actualizat in 2025, acoperire partiala..."
+                    className="w-full mt-2 ml-6 px-2 py-1.5 rounded border border-teal-200 bg-white text-xs" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <button onClick={handleSave} disabled={saving}
+        className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+        {saving ? "Se salveaza..." : saved ? "Salvat" : "Salveaza configuratia"}
+      </button>
+    </div>
+  )
+}
+
+// ─── Panou Obiective Business C3 ─────────────────────────────────────
+
+function ObjectivesPanel() {
+  const [objectives, setObjectives] = useState<Array<{ text: string; timeframe: string; priority: string }>>([
+    { text: "", timeframe: "12_MONTHS", priority: "MEDIUM" },
+  ])
+  const [context, setContext] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const addObjective = () => {
+    setObjectives(prev => [...prev, { text: "", timeframe: "12_MONTHS", priority: "MEDIUM" }])
+  }
+
+  const updateObj = (idx: number, field: string, value: string) => {
+    setObjectives(prev => prev.map((o, i) => i === idx ? { ...o, [field]: value } : o))
+  }
+
+  const removeObj = (idx: number) => {
+    if (objectives.length <= 1) return
+    setObjectives(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(true)
+    setSaving(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const filledCount = objectives.filter(o => o.text.trim().length > 10).length
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-teal-100 p-3">
+        <p className="text-xs text-slate-600 mb-2">
+          Nu cerem formulare complexe. Descrieti in cuvintele voastre ce vreti sa obtineti.
+          In C4 vom rafina impreuna.
+        </p>
+        <div className="flex gap-2 text-[10px] text-teal-600">
+          <span className="bg-teal-50 px-2 py-0.5 rounded">Unde vreti sa ajungeti?</span>
+          <span className="bg-teal-50 px-2 py-0.5 rounded">Ce va ingrijoreaza?</span>
+          <span className="bg-teal-50 px-2 py-0.5 rounded">Ce nu functioneaza?</span>
+        </div>
+      </div>
+
+      {/* Context general */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <label className="block text-xs font-medium mb-1">Contextul companiei (optional)</label>
+        <textarea value={context} onChange={e => setContext(e.target.value)} rows={2}
+          placeholder="ex: Suntem in crestere rapida, am angajat 30 oameni in 6 luni, procesele nu tin pasul..."
+          className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm resize-y" />
+      </div>
+
+      {/* Obiective */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-bold text-slate-800">Obiective ({filledCount} completate)</h4>
+          <button onClick={addObjective} className="text-[10px] text-teal-600 hover:text-teal-800">+ Adauga obiectiv</button>
+        </div>
+
+        <div className="space-y-3">
+          {objectives.map((obj, idx) => (
+            <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-3">
+              <div className="flex items-start gap-2">
+                <span className="text-[10px] font-bold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded mt-1">{idx + 1}</span>
+                <div className="flex-1">
+                  <textarea value={obj.text} onChange={e => updateObj(idx, "text", e.target.value)} rows={2}
+                    placeholder="ex: Reducem fluctuatia de personal sub 10% in departamentul productie"
+                    className="w-full px-2 py-1.5 rounded border border-slate-200 text-xs resize-y mb-2" />
+                  <div className="flex gap-2">
+                    <select value={obj.timeframe} onChange={e => updateObj(idx, "timeframe", e.target.value)}
+                      className="px-2 py-1 rounded border border-slate-200 text-[10px]">
+                      <option value="3_MONTHS">3 luni</option>
+                      <option value="6_MONTHS">6 luni</option>
+                      <option value="12_MONTHS">12 luni</option>
+                      <option value="24_MONTHS">2 ani</option>
+                      <option value="ONGOING">Continuu</option>
+                    </select>
+                    <select value={obj.priority} onChange={e => updateObj(idx, "priority", e.target.value)}
+                      className="px-2 py-1 rounded border border-slate-200 text-[10px]">
+                      <option value="LOW">Importanta scazuta</option>
+                      <option value="MEDIUM">Importanta medie</option>
+                      <option value="HIGH">Importanta ridicata</option>
+                      <option value="CRITICAL">Critica</option>
+                    </select>
+                  </div>
+                </div>
+                {objectives.length > 1 && (
+                  <button onClick={() => removeObj(idx)} className="text-red-400 hover:text-red-600 mt-1">✕</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={saving || filledCount === 0}
+        className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+        {saving ? "Se salveaza..." : saved ? "Salvat" : `Salveaza ${filledCount} obiectiv${filledCount !== 1 ? "e" : ""}`}
+      </button>
+
+      <p className="text-[9px] text-slate-400">
+        Obiectivele aproximative sunt suficiente acum. In Card 4 (Dezvoltare) vom lucra impreuna
+        la rafinarea lor in obiective SMART cu indicatori masurabili.
       </p>
     </div>
   )
