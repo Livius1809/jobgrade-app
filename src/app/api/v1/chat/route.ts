@@ -43,6 +43,16 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await chatWithCOG(message.trim(), prisma, history)
+
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      await learningFunnel({
+        agentRole: "COG", type: "CONVERSATION",
+        input: message.trim().slice(0, 500), output: (response.reply || "").slice(0, 1000),
+        success: true, metadata: { source: "chat-proxy" },
+      })
+    } catch {}
+
     return NextResponse.json(response)
   } catch (e: any) {
     console.error("[CHAT PROXY] Error:", e instanceof Error ? e.constructor.name : "Unknown")

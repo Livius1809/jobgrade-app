@@ -240,6 +240,15 @@ export async function POST(req: NextRequest) {
       } catch {} // fire-and-forget
     }
 
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      await learningFunnel({
+        agentRole: routing.target || "SOA", type: "CONVERSATION",
+        input: message.trim().slice(0, 500), output: responseText.slice(0, 1000),
+        success: true, metadata: { source: "flying-wheels-chat", threadId: thread.id, delegatedTo: routing.target },
+      })
+    } catch {}
+
     return NextResponse.json({
       response: responseText,
       threadId: thread.id,

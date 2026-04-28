@@ -119,5 +119,14 @@ LUNGIME: 2-3 paragrafe maxim. Nu monologa.`
     })
   } catch {}
 
+  try {
+    const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+    await learningFunnel({
+      agentRole: "CAREER_COUNSELOR", type: "CONVERSATION",
+      input: message.trim().slice(0, 500), output: answer.slice(0, 1000),
+      success: true, metadata: { source: "card-3-chat" },
+    })
+  } catch {}
+
   return NextResponse.json({ answer })
 }
