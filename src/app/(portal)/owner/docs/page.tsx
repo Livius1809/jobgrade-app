@@ -3,6 +3,26 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 
+/** Redimensionează imagine pe client și returnează base64 (max maxPx pe latura mare) */
+async function resizeImageToBase64(file: File, maxPx: number): Promise<{ data: string; type: string }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const canvas = document.createElement("canvas")
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8)
+      const base64 = dataUrl.split(",")[1]
+      resolve({ data: base64, type: "image/jpeg" })
+    }
+    img.onerror = reject
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 interface DocEntry {
   title: string
   agents: string[]
@@ -65,7 +85,8 @@ export default function DocsPage() {
     setTitle(""); setAuthor(""); setContent(""); setTags("")
     setTargetAgents(""); setFile(null); setPublisher("")
     setYear(""); setFocusTopics(""); setTargetEntries("30")
-    setIngestResult(null)
+    setIngestResult(null); setMessage(""); setSubmitting(false)
+    setCoverImage(null); setCoverPreview(null)
   }
 
   // ── Submit: Text paste (mod vechi) ──────────────────────
@@ -124,6 +145,7 @@ export default function DocsPage() {
     if (!title.trim() || !author.trim()) {
       setMessage("Titlu si autor sunt obligatorii"); return
     }
+    setMessage(""); setIngestResult(null) // Reset starea anterioară
     setSubmitting(true); setMessage("Se extrage cunoastere din referinta... (poate dura 1-3 minute)")
     try {
       const body: any = {
@@ -137,12 +159,15 @@ export default function DocsPage() {
       if (year.trim()) body.year = parseInt(year)
       if (focusTopics.trim()) body.focusTopics = focusTopics.split(",").map((t: string) => t.trim()).filter(Boolean)
 
-      // Dacă e copertă, convertește în base64 și adaugă
+      // Dacă e copertă, redimensionează + convertește în base64
       if (coverImage) {
-        const buffer = await coverImage.arrayBuffer()
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        body.coverImageBase64 = base64
-        body.coverImageType = coverImage.type || "image/jpeg"
+        try {
+          const resizedBase64 = await resizeImageToBase64(coverImage, 800) // max 800px
+          body.coverImageBase64 = resizedBase64.data
+          body.coverImageType = resizedBase64.type
+        } catch {
+          // Imaginea nu s-a putut procesa — continuăm fără
+        }
       }
 
       const res = await fetch("/api/v1/kb/ingest", {
