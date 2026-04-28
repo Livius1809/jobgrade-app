@@ -23,20 +23,35 @@ export async function GET(request: NextRequest) {
   const start = Date.now()
   const results: Record<string, any> = {}
 
+  // Timeout wrapper — fiecare pas are max 30s
+  async function withTimeout<T>(label: string, fn: () => Promise<T>, maxMs = 30000): Promise<T | null> {
+    try {
+      const result = await Promise.race([
+        fn(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`TIMEOUT ${maxMs}ms`)), maxMs)),
+      ])
+      return result
+    } catch (e: any) {
+      console.log(`[maintenance] ${label} skip: ${e.message?.slice(0, 60)}`)
+      results[label] = { error: e.message?.slice(0, 80) }
+      return null
+    }
+  }
+
   // 1. LEARNING ORCHESTRATOR
-  try {
+  const lr = await withTimeout("learning", async () => {
     const { runLearningOrchestrator } = await import("@/lib/agents/learning-orchestrator")
-    const lr = await runLearningOrchestrator()
+    return await runLearningOrchestrator()
+  }, 40000) // learning poate dura mai mult (daily)
+  if (lr) {
     results.learning = { phase: lr.phase, propagated: lr.propagated, errors: lr.errors.length, durationMs: lr.durationMs }
     if (lr.phase === "CYCLE_AND_DAILY") {
       console.log(`[maintenance] Learning DAILY: consolidated=${lr.consolidated}, distilled=${lr.distilled}, maturity=${lr.maturityUpdated}`)
     }
-  } catch (e: any) {
-    results.learning = { error: e.message?.slice(0, 80) }
   }
 
   // 2. SIGNALS PROCESSING
-  try {
+  await withTimeout("signals", async () => {
     const pending = await prisma.externalSignal.findMany({
       where: { processedAt: null },
       take: 10,
@@ -51,24 +66,18 @@ export async function GET(request: NextRequest) {
         data: {
           title: `REACT ${signal.category}: ${(signal.title || "Signal").slice(0, 100)}`,
           description: `Semnal extern: ${signal.category}. Sursa: ${signal.source || "?"}. Analizeaza impactul.`,
-          assignedTo: assignTo,
-          assignedBy: "COSO",
-          status: "ASSIGNED",
-          priority: "URGENT",
-          taskType: "INVESTIGATION",
-          businessId: "biz_jobgrade",
+          assignedTo: assignTo, assignedBy: "COSO", status: "ASSIGNED", priority: "URGENT",
+          taskType: "INVESTIGATION", businessId: "biz_jobgrade",
           tags: ["signal-reactive", `signal:${signal.id}`, `category:${signal.category}`],
         },
       }).catch(() => {})
       processed++
     }
     results.signals = { processed }
-  } catch (e: any) {
-    results.signals = { error: e.message?.slice(0, 80) }
-  }
+  })
 
   // 3. RETRY STUCK TASKS
-  try {
+  await withTimeout("retry", async () => {
     const stuck = await prisma.agentTask.findMany({
       where: { status: { in: ["BLOCKED", "FAILED"] }, updatedAt: { lt: new Date(Date.now() - 24 * 3600000) } },
       select: { id: true, tags: true },
@@ -88,12 +97,10 @@ export async function GET(request: NextRequest) {
       }
     }
     results.retry = { retried, stuck: stuck.length }
-  } catch (e: any) {
-    results.retry = { error: e.message?.slice(0, 80) }
-  }
+  })
 
   // 4. OPERATIONAL ENGINE
-  try {
+  await withTimeout("operational", async () => {
     const { runOperationalEngine } = await import("@/lib/agents/operational-engine")
     const op = await runOperationalEngine()
     results.operational = {
@@ -105,27 +112,53 @@ export async function GET(request: NextRequest) {
     if (op.anomalies.length > 0) {
       console.log(`[maintenance] Anomalii: ${op.anomalyCount.critical}C ${op.anomalyCount.high}H ${op.anomalyCount.medium}M`)
     }
-  } catch (e: any) {
-    results.operational = { error: e.message?.slice(0, 80) }
-  }
+  })
 
   // 5. ROLLUP OBIECTIVE
-  try {
+  await withTimeout("rollup", async () => {
     const { rollupAllObjectives } = await import("@/lib/agents/objective-rollup")
     const rollup = await rollupAllObjectives()
     results.rollup = { updated: rollup.updated }
-  } catch (e: any) {
-    results.rollup = { error: e.message?.slice(0, 80) }
-  }
+  })
 
   // 6. TASK HYGIENE
-  try {
+  await withTimeout("hygiene", async () => {
     const { cleanStaleTasks } = await import("@/lib/agents/task-hygiene")
     const cleaned = await cleanStaleTasks()
     results.hygiene = { cleaned }
-  } catch (e: any) {
-    results.hygiene = { error: e.message?.slice(0, 80) }
-  }
+  })
+
+  // 7. COST BUDGET CHECK — opreste executorul daca depaseste bugetul zilnic
+  await withTimeout("costBudget", async () => {
+    const DAILY_BUDGET_USD = 5.0 // $5/zi max
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    const todayTasks = await prisma.agentTask.count({
+      where: { completedAt: { gte: todayStart }, status: "COMPLETED" },
+    })
+    const estimatedCost = todayTasks * 0.02 // ~$0.02 per task avg
+    const budgetPct = Math.round((estimatedCost / DAILY_BUDGET_USD) * 100)
+
+    results.costBudget = { estimatedCost: Math.round(estimatedCost * 100) / 100, budgetPct, dailyBudget: DAILY_BUDGET_USD }
+
+    if (budgetPct >= 100) {
+      // Opreste executorul pana maine
+      await prisma.systemConfig.upsert({
+        where: { key: "EXECUTOR_CRON_ENABLED" },
+        update: { value: "false" },
+        create: { key: "EXECUTOR_CRON_ENABLED", value: "false" },
+      })
+      console.log(`[maintenance] BUDGET EXCEEDED: $${estimatedCost.toFixed(2)}/$${DAILY_BUDGET_USD} (${budgetPct}%) — executor PAUSED`)
+    } else if (budgetPct >= 80) {
+      console.log(`[maintenance] Budget warning: $${estimatedCost.toFixed(2)}/$${DAILY_BUDGET_USD} (${budgetPct}%)`)
+    }
+
+    // Re-enable executorul daca e o zi noua si era oprit
+    const ks = await prisma.systemConfig.findUnique({ where: { key: "EXECUTOR_CRON_ENABLED" } })
+    if (ks?.value === "false" && budgetPct < 10) {
+      await prisma.systemConfig.update({ where: { key: "EXECUTOR_CRON_ENABLED" }, data: { value: "true" } })
+      console.log("[maintenance] Budget reset — executor RE-ENABLED")
+    }
+  })
 
   // Salvam timestamp
   try {
