@@ -8,17 +8,22 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 import { checkBirthReadiness, birthNewBusiness, type BirthConfig } from "@/lib/engines/business-birth"
 
 export const dynamic = "force-dynamic"
 
-function checkAuth(req: NextRequest): boolean {
-  return req.headers.get("x-internal-key") === process.env.INTERNAL_API_KEY
+async function checkAuth(req: NextRequest): Promise<boolean> {
+  // Internal key (cron, Claude)
+  if (req.headers.get("x-internal-key") === process.env.INTERNAL_API_KEY) return true
+  // Session Owner/SUPER_ADMIN
+  const session = await auth()
+  return session?.user?.role === "OWNER" || session?.user?.role === "SUPER_ADMIN"
 }
 
 // GET — Readiness check
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const readiness = await checkBirthReadiness()
   return NextResponse.json(readiness)
@@ -26,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 // POST — Nastere business
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()
   const config: BirthConfig = {

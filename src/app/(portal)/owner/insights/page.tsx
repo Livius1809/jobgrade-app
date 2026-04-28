@@ -418,7 +418,7 @@ export default async function InsightsPage() {
         SELECT kb."agentRole" as role, ad."displayName" as name, kb.content, kb.source, kb."createdAt"
         FROM kb_entries kb
         JOIN agent_definitions ad ON ad."agentRole" = kb."agentRole"
-        WHERE kb."createdAt" > ${oneWeekAgo} AND kb.status = 'PERMANENT'::"KBStatus"
+        WHERE kb."createdAt" > ${oneWeekAgo} AND kb.status IN ('PERMANENT'::"KBStatus", 'BUFFER'::"KBStatus")
         UNION ALL
         SELECT la."studentRole" as role, ad."displayName" as name, left(la.rule, 300) as content, la."teacherRole" as source, la."createdAt"
         FROM learning_artifacts la
@@ -668,7 +668,7 @@ export default async function InsightsPage() {
           <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Health score — raportori direcți</h2>
           <div className="space-y-2">
             {reporterHealth.map((r: any, i: number) => {
-              const score = Number(r.score || 0)
+              const score = Math.round(Number(r.score || 0))
               const color = score >= 70 ? "emerald" : score >= 40 ? "amber" : "red"
               return (
                 <div key={i} className="flex items-center gap-3">

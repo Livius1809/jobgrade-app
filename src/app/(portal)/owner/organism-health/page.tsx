@@ -74,6 +74,9 @@ export default function OrganismHealthPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
+      <a href="/owner" className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 mb-4">
+        <span>←</span> Dashboard
+      </a>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
