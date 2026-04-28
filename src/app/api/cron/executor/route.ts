@@ -175,27 +175,6 @@ export async function GET(request: NextRequest) {
     // Executor-ul ramane LEAN: doar task execution + cognitive layers
     // Learning, signals, retry, operational engine, rollup, hygiene → maintenance
 
-    // Salvam timestamp per nivel — self-check-ul operational engine le verifica
-    try {
-      const runTimestamp = new Date().toISOString()
-      const levels: Record<string, string> = {
-        EXECUTOR_LAST_RUN: runTimestamp,
-        EXECUTOR_TASK_PROCESSED: String(totalProcessed),
-        EXECUTOR_PROACTIVE_RUN: proactiveResult.managersRun > 0 ? runTimestamp : "",
-        EXECUTOR_SIGNALS_RUN: signalsProcessed > 0 ? runTimestamp : "",
-        EXECUTOR_RETRY_RUN: retriedStuck > 0 ? runTimestamp : "",
-      }
-      for (const [key, value] of Object.entries(levels)) {
-        if (value) {
-          await prisma.systemConfig.upsert({
-            where: { key },
-            update: { value },
-            create: { key, value },
-          }).catch(() => {})
-        }
-      }
-    } catch {}
-
     // Salvam timestamp
     try {
       await prisma.systemConfig.upsert({
