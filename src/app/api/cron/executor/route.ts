@@ -149,12 +149,20 @@ export async function GET(request: NextRequest) {
     let totalSkippedByMeta = 0
     let allResults: any[] = []
     let batchCount = 0
-    const maxBatches = 10
+    const maxBatches = 3 // MAX 3 batches × batch size = ~30 tasks (sub 120s)
+    const executorStartTime = Date.now()
+    const MAX_EXECUTOR_MS = 180000 // 180s safety limit (Vercel max 300s)
 
     while (batchCount < maxBatches) {
+      // Safety: oprim daca am depasit 180s
+      if (Date.now() - executorStartTime > MAX_EXECUTOR_MS) {
+        console.log(`[cron/executor] Safety timeout: ${Math.round((Date.now() - executorStartTime) / 1000)}s — oprire`)
+        break
+      }
+
       const result = await runIntelligentBatch(heartbeatBatchSize)
 
-      if (result.tasksProcessed === 0) break // nu mai sunt task-uri
+      if (result.tasksProcessed === 0) break
 
       totalProcessed += result.tasksProcessed
       totalExecuted += result.tasksExecuted
@@ -162,7 +170,6 @@ export async function GET(request: NextRequest) {
       allResults = allResults.concat(result.results)
       batchCount++
 
-      // Dacă toate task-urile din batch sunt blocked/skipped, oprim (evităm loop infinit)
       if (result.tasksExecuted === 0 && result.tasksSkippedKB === 0) break
     }
 
