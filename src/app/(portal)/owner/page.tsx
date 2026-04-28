@@ -785,6 +785,7 @@ export default async function OwnerDashboard() {
 
             <SafeSection component={CognitiveHealthSection} />
             <SafeSection component={PipelineTelemetrySection} />
+            <SafeSection component={ClaudeCallsBreakdownSection} />
 
             <div className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Straturi organism</p>
@@ -1100,6 +1101,178 @@ async function PipelineTelemetrySection() {
   } catch {
     return null
   }
+}
+
+// ── Apeluri Claude per categorie ─────────────────────────────────────────────
+
+async function ClaudeCallsBreakdownSection() {
+  const { prisma } = await import("@/lib/prisma")
+  const h24 = new Date(Date.now() - 24 * 3600000)
+  const h48 = new Date(Date.now() - 48 * 3600000)
+
+  // Categorii: grupăm agentRole + taskType în categorii logice
+  const raw: any[] = (await prisma.$queryRaw`
+    SELECT
+      "agentRole",
+      "taskType",
+      "modelUsed",
+      COUNT(*) as calls,
+      ROUND(SUM("estimatedCostUSD")::numeric, 3) as cost,
+      SUM("tokensInput") as tokens_in,
+      SUM("tokensOutput") as tokens_out
+    FROM execution_telemetry
+    WHERE "createdAt" > ${h24}
+    GROUP BY "agentRole", "taskType", "modelUsed"
+    ORDER BY cost DESC
+  `.catch(() => [])) as any[]
+
+  if (raw.length === 0) return null
+
+  // Categorize
+  const CATEGORY_MAP: Record<string, string> = {
+    // Proactive loop = evaluare subordonati
+    "proactive-cycle": "Proactive Loop (evaluare)",
+    "proactive-eval": "Proactive Loop (evaluare)",
+    // Task execution
+    "CONTENT_CREATION": "Executie task-uri",
+    "INVESTIGATION": "Executie task-uri",
+    "ANALYSIS": "Executie task-uri",
+    "DECISION": "Executie task-uri",
+    "COORDINATION": "Executie task-uri",
+    "KB_RESEARCH": "Executie task-uri",
+    // Review
+    "review": "Review completate",
+    // Self-tasks
+    "self-task": "Self-tasks manageri",
+    // Chat (client-facing)
+    "chat": "Chat client-facing",
+    // Alignment check
+    "alignment": "Alignment check",
+    // Cold start / KB
+    "SELF_INTERVIEW": "Cold start KB",
+    "cold-start": "Cold start KB",
+  }
+
+  const categories: Record<string, { calls: number; cost: number; tokensIn: number; tokensOut: number; agents: Set<string>; models: Set<string> }> = {}
+
+  for (const r of raw) {
+    const taskType = r.taskType || ""
+    const agentRole = r.agentRole || ""
+    let cat = CATEGORY_MAP[taskType] || "Altele"
+
+    // Heuristic: if agent is a manager and taskType is generic, it's proactive
+    const MANAGERS = ["COG", "COA", "COCSA", "PMA", "EMA", "QLA", "CSSA"]
+    if (MANAGERS.includes(agentRole) && !CATEGORY_MAP[taskType]) {
+      cat = "Proactive Loop (evaluare)"
+    }
+
+    if (!categories[cat]) categories[cat] = { calls: 0, cost: 0, tokensIn: 0, tokensOut: 0, agents: new Set(), models: new Set() }
+    categories[cat].calls += Number(r.calls)
+    categories[cat].cost += Number(r.cost || 0)
+    categories[cat].tokensIn += Number(r.tokens_in || 0)
+    categories[cat].tokensOut += Number(r.tokens_out || 0)
+    categories[cat].agents.add(agentRole)
+    categories[cat].models.add(r.modelUsed || "?")
+  }
+
+  const totalCost = Object.values(categories).reduce((s, c) => s + c.cost, 0)
+  const totalCalls = Object.values(categories).reduce((s, c) => s + c.calls, 0)
+
+  // Sort by cost descending
+  const sorted = Object.entries(categories).sort((a, b) => b[1].cost - a[1].cost)
+
+  // Color per category
+  const CAT_COLORS: Record<string, string> = {
+    "Proactive Loop (evaluare)": "bg-red-400",
+    "Executie task-uri": "bg-indigo-400",
+    "Review completate": "bg-emerald-400",
+    "Self-tasks manageri": "bg-amber-400",
+    "Chat client-facing": "bg-teal-400",
+    "Alignment check": "bg-violet-400",
+    "Cold start KB": "bg-blue-400",
+    "Altele": "bg-slate-400",
+  }
+
+  // Comparative cu 24h anterioare
+  const prevRaw: any[] = (await prisma.$queryRaw`
+    SELECT COUNT(*) as calls, ROUND(SUM("estimatedCostUSD")::numeric, 3) as cost
+    FROM execution_telemetry
+    WHERE "createdAt" BETWEEN ${h48} AND ${h24}
+  `.catch(() => [{ calls: 0, cost: 0 }])) as any[]
+  const prevCost = Number(prevRaw[0]?.cost || 0)
+  const costDelta = totalCost - prevCost
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-200" style={{ padding: "28px" }}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-[10px] text-red-700 font-bold uppercase tracking-wide">Apeluri Claude — ultimele 24h</p>
+          <p className="text-[9px] text-slate-400">{totalCalls} apeluri, ${totalCost.toFixed(2)} total</p>
+        </div>
+        <div className="text-right">
+          <p className={`text-sm font-bold ${costDelta > 0 ? "text-red-600" : "text-emerald-600"}`}>
+            {costDelta > 0 ? "+" : ""}${costDelta.toFixed(2)}
+          </p>
+          <p className="text-[9px] text-slate-400">vs 24h anterioare</p>
+        </div>
+      </div>
+
+      {/* Stacked bar */}
+      <div className="flex h-6 rounded-full overflow-hidden mb-4">
+        {sorted.map(([cat, data]) => {
+          const pct = totalCost > 0 ? (data.cost / totalCost) * 100 : 0
+          if (pct < 1) return null
+          return (
+            <div
+              key={cat}
+              className={`${CAT_COLORS[cat] || "bg-slate-400"} relative group`}
+              style={{ width: `${pct}%` }}
+              title={`${cat}: $${data.cost.toFixed(2)} (${Math.round(pct)}%)`}
+            />
+          )
+        })}
+      </div>
+
+      {/* Legend + details */}
+      <div className="space-y-2">
+        {sorted.map(([cat, data]) => {
+          const pct = totalCost > 0 ? Math.round((data.cost / totalCost) * 100) : 0
+          const isProactive = cat.includes("Proactive")
+          return (
+            <div key={cat} className={`flex items-center gap-3 text-xs rounded-lg px-3 py-2 ${isProactive && data.calls > 10 ? "bg-red-50 border border-red-200" : "bg-slate-50"}`}>
+              <span className={`w-3 h-3 rounded-full shrink-0 ${CAT_COLORS[cat] || "bg-slate-400"}`} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${isProactive && data.calls > 10 ? "text-red-700" : "text-slate-700"}`}>{cat}</span>
+                  <span className="font-bold text-slate-800">${data.cost.toFixed(2)}</span>
+                </div>
+                <div className="flex gap-3 text-[10px] text-slate-400 mt-0.5">
+                  <span>{data.calls} apeluri</span>
+                  <span>{pct}%</span>
+                  <span>{[...data.agents].slice(0, 4).join(", ")}{data.agents.size > 4 ? ` +${data.agents.size - 4}` : ""}</span>
+                  <span>{[...data.models].join("/")}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Alerta daca proactive loop e >30% din cost */}
+      {(() => {
+        const proactiveCost = categories["Proactive Loop (evaluare)"]?.cost || 0
+        const proactivePct = totalCost > 0 ? Math.round((proactiveCost / totalCost) * 100) : 0
+        if (proactivePct > 30) {
+          return (
+            <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+              Proactive Loop consuma {proactivePct}% din cost. Doar COG ar trebui sa evalueze prin Claude — verifica daca alti manageri tot apeleaza.
+            </div>
+          )
+        }
+        return null
+      })()}
+    </section>
+  )
 }
 
 // ── Componente auxiliare ─────────────────────────────────────────────────────
