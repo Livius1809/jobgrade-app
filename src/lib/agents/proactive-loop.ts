@@ -917,18 +917,29 @@ export async function runProactiveCycle(
 
 // ── Batch: toți managerii ─────────────────────────────────────────────────────
 
+/**
+ * Ciclul principal al organismului — DOAR COG evaluează prin Claude.
+ *
+ * Principiu: COG e singurul care "gândește" (apel Claude). Managerii de sub el
+ * execută deterministic: review task-uri completate, self-tasks, delegare.
+ * Asta reduce costul de la 7× Claude/ciclu la 1× Claude/ciclu.
+ *
+ * Flux:
+ *   1. Manageri tactici/operaționali → review + self-tasks (FĂRĂ Claude)
+ *   2. COG → evaluare completă cu Claude (1 apel) → acțiuni
+ *   3. Acțiunile COG sunt distribuite determinist la manageri
+ */
 export async function runAllManagerCycles(
   configs: ManagerConfig[],
   prisma: any,
   options?: { apiKey?: string; dryRun?: boolean; level?: "operational" | "tactical" | "strategic" }
 ): Promise<CycleResult[]> {
-  // Filtrează per nivel dacă specificat
   let targetConfigs = configs
   if (options?.level) {
     const levelMap: Record<string, number[]> = {
-      operational: [4], // 4h cycle
-      tactical: [12],   // 12h cycle
-      strategic: [24],  // 24h cycle
+      operational: [4],
+      tactical: [12],
+      strategic: [24],
     }
     const intervals = levelMap[options.level] || []
     targetConfigs = configs.filter((c) => intervals.includes(c.cycleIntervalHours))
@@ -940,18 +951,93 @@ export async function runAllManagerCycles(
   )
 
   const results: CycleResult[] = []
+  const cogConfig = targetConfigs.find((c) => c.agentRole === "COG")
+  const nonCogConfigs = targetConfigs.filter((c) => c.agentRole !== "COG")
 
-  // Rulează secvențial: bottom-up (operațional → tactic → strategic)
-  // Astfel managerii de nivel superior au date actualizate de la cei inferiori
-  targetConfigs.sort((a, b) => a.cycleIntervalHours - b.cycleIntervalHours)
+  // PASUL 1: Managerii NON-COG rulează ciclu LEAN (review + self-tasks, FĂRĂ evaluare Claude)
+  // Sortăm bottom-up: operaționali (4h) → tactici (12h)
+  nonCogConfigs.sort((a, b) => a.cycleIntervalHours - b.cycleIntervalHours)
 
-  for (const config of targetConfigs) {
-    const result = await runProactiveCycle(config, prisma, options)
+  for (const config of nonCogConfigs) {
+    const result = await runLeanCycle(config, prisma, options)
     results.push(result)
+  }
 
-    // Pauză între cicluri (evită overload API)
-    await new Promise((r) => setTimeout(r, 2000))
+  // PASUL 2: COG — singurul cu evaluare Claude completă
+  if (cogConfig) {
+    const result = await runProactiveCycle(cogConfig, prisma, options)
+    results.push(result)
   }
 
   return results
+}
+
+/**
+ * Ciclu LEAN pentru manageri NON-COG: review completate + self-tasks.
+ * ZERO apeluri Claude — doar operații deterministe pe DB.
+ */
+async function runLeanCycle(
+  config: ManagerConfig,
+  prisma: any,
+  options?: { apiKey?: string; dryRun?: boolean }
+): Promise<CycleResult> {
+  const startTime = Date.now()
+  const timestamp = new Date().toISOString()
+  console.log(`\n🔄 [${config.agentRole}] Ciclu LEAN (review + self-tasks, fără Claude)`)
+
+  let selfTasksExecuted = 0
+  let selfTasksBlocked = 0
+  let selfTasksFailed = 0
+
+  // 1. SELF-TASKS — execută taskurile proprii ASSIGNED
+  try {
+    const selfTasks = await prisma.agentTask.findMany({
+      where: {
+        assignedTo: config.agentRole,
+        status: "ASSIGNED",
+        createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+      },
+      orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+      take: 3,
+      select: { id: true, title: true, priority: true },
+    })
+
+    if (selfTasks.length > 0 && !options?.dryRun) {
+      console.log(`   ⤷ Self-tasks: ${selfTasks.length}`)
+      const { executeTask } = await import("./task-executor")
+      for (const t of selfTasks) {
+        try {
+          const r = await executeTask(t.id)
+          if (r.outcome === "COMPLETED") selfTasksExecuted++
+          else if (r.outcome === "BLOCKED") selfTasksBlocked++
+          else selfTasksFailed++
+        } catch {
+          selfTasksFailed++
+        }
+      }
+    }
+  } catch {}
+
+  // 2. REVIEW taskuri completate de subordonați
+  try {
+    await reviewCompletedTasks(config, prisma, options?.dryRun)
+  } catch {}
+
+  const result: CycleResult = {
+    managerId: config.agentRole.toLowerCase(),
+    managerRole: config.agentRole,
+    timestamp,
+    durationMs: Date.now() - startTime,
+    subordinatesChecked: 0,
+    evaluations: [],
+    actions: [],
+    summary: `lean_cycle: ${selfTasksExecuted} self-tasks, review completat`,
+    nextCycleAt: new Date(Date.now() + config.cycleIntervalHours * 60 * 60 * 1000).toISOString(),
+    selfTasksExecuted,
+    selfTasksBlocked,
+    selfTasksFailed,
+  }
+
+  console.log(`   📊 [${config.agentRole}] LEAN done: ${selfTasksExecuted} exec, ${selfTasksBlocked} blocked (${result.durationMs}ms)`)
+  return result
 }
