@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     try {
       const { calculateHeartbeat } = await import("@/lib/agents/cognitive-layers")
       const heartbeat = await calculateHeartbeat()
-      heartbeatBatchSize = Math.min(heartbeat.batchSize, 5) // max 5 per batch
+      heartbeatBatchSize = Math.min(heartbeat.batchSize, 3) // max 3 per batch (conservativ)
       console.log(`[cron/executor] Heartbeat: ${heartbeat.urgencyLevel} (batch=${heartbeatBatchSize})`)
     } catch {}
     // Cognitive layers complete + advanced → mutat in /cron/maintenance
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     let totalSkippedByMeta = 0
     let allResults: any[] = []
     let batchCount = 0
-    const maxBatches = 3 // MAX 3 batches × batch size = ~30 tasks (sub 120s)
+    const maxBatches = 2 // MAX 2 batches × 3 tasks = 6 tasks max (~60s)
     const executorStartTime = Date.now()
     const MAX_EXECUTOR_MS = 180000 // 180s safety limit (Vercel max 300s)
 
