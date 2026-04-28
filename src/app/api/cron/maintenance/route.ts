@@ -201,6 +201,12 @@ export async function GET(request: NextRequest) {
     })
   } catch {}
 
+  // Heartbeat ping — confirmă la UptimeRobot că maintenance a rulat
+  try {
+    const heartbeatUrl = process.env.UPTIMEROBOT_MAINTENANCE_HEARTBEAT
+    if (heartbeatUrl) await fetch(heartbeatUrl).catch(() => {})
+  } catch {}
+
   const durationMs = Date.now() - start
   console.log(`[maintenance] Done in ${durationMs}ms`)
 

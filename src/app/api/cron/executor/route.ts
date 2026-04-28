@@ -169,6 +169,16 @@ export async function GET(request: NextRequest) {
       })
     } catch {}
 
+    // ═══ HEARTBEAT PING — confirmă la UptimeRobot că executorul a rulat ═══
+    // Creează un monitor "Heartbeat" în UptimeRobot → copiază URL-ul generat
+    // → setează ca UPTIMEROBOT_EXECUTOR_HEARTBEAT în Vercel env vars
+    try {
+      const heartbeatUrl = process.env.UPTIMEROBOT_EXECUTOR_HEARTBEAT
+      if (heartbeatUrl) {
+        await fetch(heartbeatUrl, { method: "GET" }).catch(() => {})
+      }
+    } catch {}
+
     return NextResponse.json({
       ok: true,
       batches: batchCount,
