@@ -369,6 +369,118 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             </div>
           )}
 
+          {/* ═══ COMPETITIVITATE (Layer 3) — Pachet 3 ═══ */}
+          {purchasedLayer >= 3 && isValidated && (
+            <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white" style={{ padding: "28px" }}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-teal-500 text-white font-bold shrink-0">
+                  <Icon name="icon-benchmark" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Competitivitate</h3>
+                  <p className="text-xs text-teal-600 font-medium">Pachet 3 · Benchmark, echipe, leadership</p>
+                </div>
+              </div>
+
+              {/* Inputuri preluate automat din C1+C2 */}
+              <div className="mb-4 bg-teal-50 rounded-xl border border-teal-100 p-3">
+                <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide mb-2">Preluat automat din evaluarea anterioara</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "Fise post standardizate", ok: jobCount >= 3 },
+                    { label: "Grila salariala", ok: purchasedLayer >= 2 },
+                    { label: "Structura departamente", ok: purchasedLayer >= 2 },
+                    { label: "Stat salarii", ok: purchasedEmployees > 0 },
+                    { label: "Analiza pay gap", ok: purchasedLayer >= 2 },
+                  ].map(item => (
+                    <span key={item.label} className={`text-[10px] px-2 py-1 rounded-full border ${
+                      item.ok
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        : "bg-slate-50 border-slate-200 text-slate-400"
+                    }`}>
+                      {item.ok ? "\u2713" : "\u25CB"} {item.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Inputuri noi C3 */}
+              <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide mb-2">Inputuri specifice Competitivitate</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {/* Baterie psihometrica */}
+                <button onClick={() => openPanel("psychometrics")}
+                  className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-profil" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Baterie psihometrica</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Herrmann HBDI + MBTI obligatoriu. Optional: instrumente externe.</p>
+                </button>
+
+                {/* Sociograma Balint */}
+                <button onClick={() => openPanel("sociogram")}
+                  className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-consens" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Sociograma echipe</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Scenariu Balint — relatii intr-un departament sau proiect.</p>
+                </button>
+
+                {/* Documente interne */}
+                <button onClick={() => openPanel("c3-documents")}
+                  className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-raport" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Documente interne</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Proceduri, politici, manual angajator, cod etic.</p>
+                </button>
+
+                {/* Obiective business */}
+                <button onClick={() => openPanel("c3-objectives")}
+                  className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-dashboard" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Obiective business</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Aproximativ — va ajuta rafinarea. Nu cerem formulare complexe.</p>
+                </button>
+              </div>
+
+              {/* Rapoarte C3 (activate de date) */}
+              <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide mb-2">Rapoarte disponibile</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Benchmark vs piata", icon: "icon-benchmark", href: "/benchmark" },
+                  { label: "Profil individual", icon: "icon-profil", panel: "c3-profil-individual" },
+                  { label: "Compatibilitate om \u2194 post", icon: "icon-consens", panel: "c3-compatibilitate" },
+                  { label: "Sociograma Balint", icon: "icon-echipa", panel: "c3-sociogram-results" },
+                  { label: "Raport echipa (manager)", icon: "icon-raport", panel: "c3-raport-echipa-mgr" },
+                  { label: "Raport echipa (HR)", icon: "icon-raport", panel: "c3-raport-echipa-hr" },
+                  { label: "Manual calitate", icon: "icon-manual", panel: "c3-manual-calitate" },
+                  { label: "Cost pozitie vacanta", icon: "icon-compensatie", panel: "c3-cost-vacant" },
+                  { label: "KPI per post/echipa", icon: "icon-dashboard", panel: "c3-kpi" },
+                  { label: "Pachete salariale", icon: "icon-clase-salariale", panel: "c3-pachete-salariale" },
+                ].map(item => (
+                  item.href ? (
+                    <a key={item.label} href={item.href}
+                      className="flex items-center gap-2 text-xs bg-white rounded-lg border border-teal-100 hover:border-teal-300 p-2.5 transition-colors">
+                      <Icon name={item.icon} size={14} className="opacity-40" />
+                      <span className="text-slate-700">{item.label}</span>
+                    </a>
+                  ) : (
+                    <button key={item.label} onClick={() => openPanel(item.panel!)}
+                      className="flex items-center gap-2 text-xs bg-white rounded-lg border border-teal-100 hover:border-teal-300 p-2.5 transition-colors text-left">
+                      <Icon name={item.icon} size={14} className="opacity-40" />
+                      <span className="text-slate-700">{item.label}</span>
+                    </button>
+                  )
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ═══ Rapoarte ═══ */}
           {purchasedLayer > 0 && canAccess("AUDIT_TRAIL") && (
             <div

@@ -146,8 +146,8 @@ const TAB_COLORS: Record<string, { bar: string; fill: string; text: string; bord
 const TABS_PER_LAYER: Record<number, string[]> = {
   1: ["posturi", "fise", "stat-functii"],
   2: ["posturi", "fise", "stat-functii", "stat-salarii"],
-  3: ["posturi", "fise", "stat-functii", "stat-salarii", "salarii"],
-  4: ["posturi", "fise", "stat-functii", "stat-salarii", "salarii", "departamente"],
+  3: ["posturi", "fise", "stat-functii", "stat-salarii", "salarii", "psihometrie", "sociograma"],
+  4: ["posturi", "fise", "stat-functii", "stat-salarii", "salarii", "psihometrie", "sociograma", "departamente"],
 }
 
 export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer, employeeCount = 0, hasDepartments = false, hasSalaryData = false, onPanelChange, forceClosePanel = false, parentPanelLeft }: ClientDataTabsProps) {
@@ -250,6 +250,28 @@ export default function ClientDataTabs({ jobCount, selectedLayer, purchasedLayer
       status: hasSalaryData ? "done" : "empty",
       actions: [
         { label: "Importă grila", href: "/compensation", primary: true },
+      ],
+    },
+    {
+      id: "psihometrie",
+      label: "Baterie psihometrica",
+      icon: "icon-profil",
+      description: "Instrumente psihometrice: Herrmann HBDI + MBTI obligatoriu. Optional: instrumente de la furnizori externi (upload PDF rezultate).",
+      status: "empty",
+      actions: [
+        { label: "Configureaza bateria", onClick: () => setPanelOpen("psychometrics"), primary: true, opensPanel: true },
+        { label: "Upload rezultate PDF", onClick: () => setPanelOpen("upload-psychometrics"), opensPanel: true },
+      ],
+    },
+    {
+      id: "sociograma",
+      label: "Sociograma echipe",
+      icon: "icon-consens",
+      description: "Sociograma Balint — masoara afinitati intr-un grup prin scenariu narativ. Definesti grupul, membrii completeaza individual.",
+      status: "empty",
+      actions: [
+        { label: "Creeaza sociograma", onClick: () => setPanelOpen("sociogram"), primary: true, opensPanel: true },
+        { label: "Vezi rezultate", onClick: () => setPanelOpen("sociogram-results"), opensPanel: true },
       ],
     },
     {
