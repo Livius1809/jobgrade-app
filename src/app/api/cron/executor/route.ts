@@ -166,34 +166,10 @@ export async function GET(request: NextRequest) {
       if (result.tasksExecuted === 0 && result.tasksSkippedKB === 0) break
     }
 
-    // NIVEL 3b: PROACTIVE LOOP — managerii review-ează, delegă, escaladează
-    // FĂRĂ ASTA, structura e moartă: nimeni nu review-ează, nimeni nu delegă
-    let proactiveResult = { managersRun: 0, totalActions: 0, errors: [] as string[] }
-    try {
-      const { runProactiveCycle } = await import("@/lib/agents/proactive-loop")
-      const { MANAGER_CONFIGS } = await import("@/lib/agents/manager-configs")
-      const { prisma: p } = await import("@/lib/prisma")
-
-      for (const config of MANAGER_CONFIGS) {
-        try {
-          const result = await runProactiveCycle(config, p, { dryRun: false })
-          proactiveResult.managersRun++
-          const actions = result.actions?.length || 0
-          proactiveResult.totalActions += actions
-          if (actions > 0) {
-            console.log(`[cron/executor] Proactive ${config.agentRole}: ${actions} actiuni (${result.actions?.map((a: any) => a.decision).join(", ")})`)
-          }
-        } catch (e: any) {
-          proactiveResult.errors.push(`${config.agentRole}: ${e.message?.slice(0, 60)}`)
-        }
-      }
-
-      if (proactiveResult.managersRun > 0) {
-        console.log(`[cron/executor] Proactive loop: ${proactiveResult.managersRun} manageri, ${proactiveResult.totalActions} actiuni totale`)
-      }
-    } catch (e: any) {
-      console.log(`[cron/executor] Proactive loop skip: ${(e as Error).message?.slice(0, 60)}`)
-    }
+    // NIVEL 3b: PROACTIVE LOOP — ruleaza SEPARAT prin /api/v1/agents/cycle (n8n cron)
+    // NU il includem in executor — 7 manageri × Claude call = depaseste 300s timeout Vercel
+    // Confirmat functional: COG cycle "8 ON_TRACK, 0 AT_RISK, 1 BLOCKED" (log prod 28.04)
+    const proactiveResult = { managersRun: 0, totalActions: 0, errors: [] as string[] }
 
     // NIVEL 4: Orchestrator unic de invatare (propagare + consolidare + distilare + maturitate + cleanup)
     let learningResult: any = null
