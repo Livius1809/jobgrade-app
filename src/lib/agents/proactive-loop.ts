@@ -72,6 +72,35 @@ export interface CycleResult {
 
 const MODEL = "claude-sonnet-4-20250514"
 
+// ── Verificare fezabilitate pre-creare task ──────────────────────────────────
+
+const INFEASIBLE_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+  // Necesită client real
+  { pattern: /case study|testimonial|client real|date client|feedback client|NPS|churn|satisfacție client/i, reason: "necesita clienti reali (nu avem inca)" },
+  // Necesită echipă umană
+  { pattern: /designer|thumbnail|grafic|ilustra[tț]i|video|animat|voice.?over|inregistr/i, reason: "necesita echipa umana (designer/video)" },
+  // Necesită acces fizic la infrastructură
+  { pattern: /npm install|npm audit|git log|git push|deploy|docker|server|infrastructure|chmod|mkdir|curl|wget/i, reason: "necesita acces fizic la server" },
+  // Acțiuni imposibile pentru AI
+  { pattern: /upload|download|trimite email|suna|apel telefon|intalnire fizica|print|tipar/i, reason: "actiune fizica imposibila pentru AI" },
+  // Date externe inexistente
+  { pattern: /import.*CSV|import.*Excel|fisier.*atasat|document.*primit|dataset.*extern/i, reason: "necesita date externe inexistente" },
+]
+
+/**
+ * Verifică dacă un task e fezabil ÎNAINTE de a-l crea.
+ * Returnează motivul blocării sau null dacă e OK.
+ */
+export function checkTaskFeasibility(title: string, description: string, targetRole: string): string | null {
+  const text = `${title} ${description}`.toLowerCase()
+
+  for (const { pattern, reason } of INFEASIBLE_PATTERNS) {
+    if (pattern.test(text)) return reason
+  }
+
+  return null
+}
+
 // ── Colectare status subordonați ──────────────────────────────────────────────
 
 async function collectSubordinateStatuses(
@@ -167,11 +196,21 @@ THRESHOLD-URI:
 ESCALĂRI ACTIVE (deja raportate la nivelul superior):
 {{escalations}}
 
+CONDIȚII CRITICE DE FEZABILITATE (verifică ÎNAINTE de a propune orice acțiune):
+- Nu avem clienți B2B reali încă → NU crea taskuri care cer date client, feedback client, case study-uri reale
+- Nu avem echipă umană → NU crea taskuri care cer designer, developer uman, reviewer extern
+- Nu avem acces la sisteme externe → NU crea taskuri npm/git/deploy/infrastructure care cer acces fizic la server
+- Agenții sunt AI, nu oameni → taskurile trebuie să fie rezolvabile prin text/analiză/generare, NU prin acțiuni fizice
+- Un agent IDLE fără clienți este NORMAL — nu e o problemă de rezolvat, e o stare de așteptare
+
+REGULA DE AUR: Mai bine ZERO taskuri decât taskuri imposibile. Un task imposibil consumă resurse, blochează pipeline-ul și creează zgomot.
+
 INSTRUCȚIUNI:
 1. Evaluează fiecare subordonat: ON_TRACK, AT_RISK, BLOCKED, sau IDLE
-2. Pentru fiecare care NU e ON_TRACK, propune o acțiune concretă
+2. Pentru fiecare care NU e ON_TRACK, verifică dacă problema e reală și rezolvabilă CU RESURSELE EXISTENTE
 3. Decide: TRACK (monitorizare), INTERVENE (acțiune directă), ESCALATE (nu poți rezolva singur)
 4. ESCALATE DOAR dacă nu ai resurse/autoritate să rezolvi — nu pentru orice problemă
+5. Dacă subordonatul e IDLE dar nu are ce face (lipsesc clienți/date), răspunsul corect e TRACK, NU INTERVENE
 
 FORMAT RĂSPUNS — JSON strict:
 {
@@ -404,7 +443,16 @@ async function executeActions(
             { target: action.target, type: "INTERVENE", description: action.description, details: action.details },
             config.agentRole,
           )
-          // Dedup: nu crea task dacă deja există unul activ
+
+          // ── GATE 0: Verificare fezabilitate — task-ul e realizabil? ──
+          const feasibilityBlock = checkTaskFeasibility(delegated.title, delegated.description, action.target)
+          if (feasibilityBlock) {
+            console.log(`   ⛔ Task BLOCAT pre-creare: ${feasibilityBlock} → ${delegated.title.slice(0, 60)}`)
+            executedActions.push({ ...action, details: `BLOCAT PRE-CREARE: ${feasibilityBlock}` })
+            continue
+          }
+
+          // ── GATE 1: Dedup — nu crea task dacă deja există unul activ ──
           const existingTask = await prisma.agentTask.findFirst({
             where: {
               assignedTo: action.target,
@@ -412,6 +460,18 @@ async function executeActions(
               status: { in: ["ASSIGNED", "ACCEPTED", "IN_PROGRESS"] },
             },
           }).catch(() => null)
+
+          // ── GATE 2: Overflow — maxim 3 task-uri active per agent din același manager ──
+          const activeCountForAgent = await prisma.agentTask.count({
+            where: {
+              assignedTo: action.target,
+              status: { in: ["ASSIGNED", "ACCEPTED", "IN_PROGRESS"] },
+            },
+          }).catch(() => 0)
+          if (activeCountForAgent >= 5) {
+            console.log(`   ⛔ Agent ${action.target} are deja ${activeCountForAgent} task-uri active — skip`)
+            continue
+          }
 
           if (!existingTask) {
             // Validare ierarhică: deleghez DOAR la subordonații mei direcți

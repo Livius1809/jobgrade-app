@@ -97,6 +97,14 @@ export async function generateTasksFromObjectives(options?: {
           continue
         }
 
+        // Verificare fezabilitate înainte de creare
+        const { checkTaskFeasibility } = await import("./proactive-loop")
+        const block = checkTaskFeasibility(task.title, task.description || "", task.assignedTo)
+        if (block) {
+          skipped++
+          continue
+        }
+
         allTasks.push(task)
 
         if (!dryRun) {

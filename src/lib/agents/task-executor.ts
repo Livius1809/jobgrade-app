@@ -753,8 +753,14 @@ async function applyEffects(task: any, payload: ExecutorPayload): Promise<{
       return { outcome: "FAILED", subTaskIds }
     }
 
-    // Creează fiecare sub-task linked la același obiectiv
+    // Creează fiecare sub-task linked la același obiectiv (cu verificare fezabilitate)
+    const { checkTaskFeasibility } = await import("./proactive-loop")
     for (const s of subs) {
+      const block = checkTaskFeasibility(s.title || "", s.description || "", s.assignedTo || "")
+      if (block) {
+        console.log(`   ⛔ Sub-task BLOCAT pre-creare: ${block} → ${(s.title || "").slice(0, 60)}`)
+        continue
+      }
       const created = await (prisma as any).agentTask.create({
         data: {
           businessId: task.businessId,
