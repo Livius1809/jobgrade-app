@@ -26,6 +26,32 @@ import { logExecutionTelemetry, updateAgentBudget } from "./execution-telemetry"
 import { extractPostExecutionLearning } from "./learning-pipeline"
 import { learningFunnel } from "./learning-funnel"
 
+// ── WHITELIST AGENȚI AUTORIZAȚI PENTRU EXECUȚIE AUTONOMĂ ─────────────────────
+// Principiu: cronul execută DOAR ce a decis COG + vigilență.
+// Restul structurii primește task-uri prin delegare COG, nu direct din cron.
+//
+// Grupuri:
+// 1. COG — singurul care evaluează și delegă (1 apel Claude/ciclu)
+// 2. VIGILENȚĂ — funcționează independent, protejează organismul
+// 3. DIRECTORI COG — execută ce le delegă COG (ciclu LEAN, fără Claude propriu)
+//
+// Toți ceilalți agenți: task-urile lor rămân ASSIGNED dar NU se execută
+// autonom din cron. Se execută doar când un manager le delegă explicit.
+
+const CRON_AUTHORIZED_AGENTS = new Set([
+  // COG — creierul
+  "COG",
+  // Directori COG — execută delegări COG (lean, fără evaluare proprie)
+  "COA", "COCSA", "CJA", "CIA", "CCIA",
+  // Vigilență — funcționare independentă
+  "SVHA",           // Vulnerabilități & securitate
+  "SA",             // Security Agent
+  "TDA",            // Technical Debt Agent
+  "SAFETY_MONITOR", // Monitor siguranță B2C
+  "SQA",            // Security QA
+  "CJA",            // Consilier Juridic (conformitate)
+])
+
 export interface IntelligentRunResult {
   thresholdResult: ThresholdResult
   tasksProcessed: number
@@ -96,33 +122,35 @@ export async function runIntelligentBatch(
     compromise = getTaskSelectionCriteria(comp)
   } catch {}
 
+  // ═══ FILTRU FUNDAMENTAL: doar agenți autorizați pentru execuție autonomă ═══
+  // COG + vigilență + directori COG. Restul structurii primește task-uri prin delegare.
+  const authorizedFilter = { assignedTo: { in: [...CRON_AUTHORIZED_AGENTS] } }
+
   // Selectăm taskuri cu prioritizare extern/intern
   let tasks: any[]
   if (compromise) {
     const [externalTasks, internalTasks] = await Promise.all([
       prisma.agentTask.findMany({
-        where: { status: "ASSIGNED", blockerType: null, tags: { hasSome: compromise.externalTags } },
+        where: { status: "ASSIGNED", blockerType: null, ...authorizedFilter, tags: { hasSome: compromise.externalTags } },
         orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
         take: compromise.externalSlots,
         select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
       }),
       prisma.agentTask.findMany({
-        where: { status: "ASSIGNED", blockerType: null, tags: { hasSome: compromise.internalTags } },
+        where: { status: "ASSIGNED", blockerType: null, ...authorizedFilter, tags: { hasSome: compromise.internalTags } },
         orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
         take: compromise.internalSlots,
         select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
       }),
     ])
-    // Combinăm, deduplicăm
     const seen = new Set<string>()
     tasks = []
     for (const t of [...externalTasks, ...internalTasks]) {
       if (!seen.has(t.id)) { tasks.push(t); seen.add(t.id) }
     }
-    // Completăm cu taskuri generice dacă nu avem destule
     if (tasks.length < maxTasks) {
       const filler = await prisma.agentTask.findMany({
-        where: { status: "ASSIGNED", blockerType: null, id: { notIn: [...seen] } },
+        where: { status: "ASSIGNED", blockerType: null, ...authorizedFilter, id: { notIn: [...seen] } },
         orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
         take: maxTasks - tasks.length,
         select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
@@ -130,9 +158,9 @@ export async function runIntelligentBatch(
       tasks.push(...filler)
     }
   } else {
-    // Fallback: selecție clasică fără arbitru
+    // Fallback: selecție clasică — tot cu filtru autorizat
     tasks = await prisma.agentTask.findMany({
-      where: { status: "ASSIGNED", blockerType: null },
+      where: { status: "ASSIGNED", blockerType: null, ...authorizedFilter },
       orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
       take: maxTasks,
       select: { id: true, assignedTo: true, title: true, description: true, taskType: true, priority: true, tags: true },
