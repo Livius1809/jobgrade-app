@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       const { learningFunnel } = await import("@/lib/agents/learning-funnel")
       await learningFunnel({
         agentRole: "COG", type: "CONVERSATION",
-        input: message.trim().slice(0, 500), output: (response.reply || "").slice(0, 1000),
+        input: message.trim().slice(0, 500), output: ((response as any).reply || (response as any).response || "").slice(0, 1000),
         success: true, metadata: { source: "chat-proxy" },
       })
     } catch {}
