@@ -171,146 +171,9 @@ export async function GET(request: NextRequest) {
     // Confirmat functional: COG cycle "8 ON_TRACK, 0 AT_RISK, 1 BLOCKED" (log prod 28.04)
     const proactiveResult = { managersRun: 0, totalActions: 0, errors: [] as string[] }
 
-    // NIVEL 4: Orchestrator unic de invatare (propagare + consolidare + distilare + maturitate + cleanup)
-    let learningResult: any = null
-    try {
-      const { runLearningOrchestrator } = await import("@/lib/agents/learning-orchestrator")
-      learningResult = await runLearningOrchestrator()
-      if (learningResult.errors.length > 0) {
-        console.log(`[cron/executor] Learning orchestrator errors: ${learningResult.errors.join("; ")}`)
-      }
-      if (learningResult.phase === "CYCLE_AND_DAILY") {
-        console.log(`[cron/executor] Learning DAILY: consolidated=${learningResult.consolidated}, distilled=${learningResult.distilled}, maturity=${learningResult.maturityUpdated}`)
-      }
-    } catch (e: any) {
-      console.log(`[cron/executor] Learning orchestrator skip: ${(e as Error).message?.slice(0, 60)}`)
-    }
-
-    // NIVEL 5: Rollup obiective (de jos în sus, la fiecare ciclu)
-    let rollupResult = { updated: 0, details: [] as any[] }
-    try {
-      const { rollupAllObjectives } = await import("@/lib/agents/objective-rollup")
-      rollupResult = await rollupAllObjectives()
-    } catch {}
-
-    // NIVEL 5b: Invalidare obiective deja livrate prin cod (deploy awareness)
-    let invalidatedByCode = 0
-    try {
-      const { invalidateDeliveredObjectives } = await import("@/lib/agents/objective-invalidation")
-      invalidatedByCode = await invalidateDeliveredObjectives()
-    } catch {}
-
-    // NIVEL 5c: Curățare taskuri redundante (acțiuni care au devenit inutile)
-    let staleTasksCleaned = 0
-    try {
-      const { cleanStaleTasks } = await import("@/lib/agents/task-hygiene")
-      staleTasksCleaned = await cleanStaleTasks()
-    } catch {}
-
-    // NIVEL 5d: Calibrare parametri adaptivi (feedback loops)
-    let adaptiveAdjustments: string[] = []
-    try {
-      const { calibrateAll } = await import("@/lib/agents/adaptive-parameters")
-      const calibResult = await calibrateAll()
-      adaptiveAdjustments = calibResult.adjustments
-      if (adaptiveAdjustments.length > 0) {
-        console.log(`[cron/executor] Adaptive calibration: ${adaptiveAdjustments.join("; ")}`)
-      }
-    } catch {}
-
-    // NIVEL 5e: Workflow engine — avansare procese active
-    let workflowResult = { advanced: 0, completed: 0, escalated: 0, failed: 0 }
-    try {
-      const { advanceProcesses } = await import("@/lib/agents/workflow-engine")
-      workflowResult = await advanceProcesses()
-      if (workflowResult.advanced + workflowResult.completed + workflowResult.escalated > 0) {
-        console.log(`[cron/executor] Workflow: ${workflowResult.advanced} advanced, ${workflowResult.completed} completed, ${workflowResult.escalated} SLA breaches`)
-      }
-    } catch {}
-
-    // NIVEL 5f: Continuitate procese (orizontal + vertical)
-    let continuityReport: any = null
-    try {
-      const { runProcessContinuityChecks } = await import("@/lib/agents/process-continuity")
-      continuityReport = await runProcessContinuityChecks()
-      if (continuityReport.totalFixes > 0) {
-        console.log(`[cron/executor] Process continuity: ${continuityReport.totalFixes} fixes (quality:${continuityReport.qualityEscalations}, kb:${continuityReport.kbEffectivenessUpdated}, unblock:${continuityReport.blockersAutoRetried})`)
-      }
-    } catch {}
-
-    // NIVEL 5g: Signals processing (semnale externe)
-    let signalsProcessed = 0
-    try {
-      const pending = await prisma.externalSignal.findMany({
-        where: { processedAt: null },
-        take: 10,
-        orderBy: { capturedAt: "asc" },
-      })
-      for (const signal of pending) {
-        await prisma.externalSignal.update({ where: { id: signal.id }, data: { processedAt: new Date() } })
-        // Procesam toate categoriile — fiecare are un agent responsabil
-        const catRoleMap: Record<string, string> = { MARKET_HR: "MKA", TECH_AI: "COA", CULTURAL_SOCIAL: "COCSA", COMPETITOR: "CIA", MACRO_ECONOMIC: "CFO" }
-        const assignTo = catRoleMap[signal.category] || "COG"
-        if (assignTo) {
-          await prisma.agentTask.create({
-            data: {
-              title: `REACT ${signal.category}: ${(signal.title || "Signal").slice(0, 100)}`,
-              description: `Semnal extern: ${signal.category}. Sursa: ${signal.source || "?"}. Titlu: ${signal.title || "?"}. Analizeaza impactul.`,
-              assignedTo: assignTo,
-              assignedBy: "COSO",
-              status: "ASSIGNED",
-              priority: "URGENT",
-              taskType: "INVESTIGATION",
-              businessId: "biz_jobgrade",
-              tags: ["signal-reactive", `signal:${signal.id}`, `category:${signal.category}`],
-            },
-          })
-          signalsProcessed++
-        }
-      }
-      if (signalsProcessed > 0) console.log(`[cron/executor] Signals: ${signalsProcessed} processed`)
-    } catch {}
-
-    // NIVEL 5h: Retry stuck tasks (BLOCKED/FAILED > 24h, max 3 retries)
-    let retriedStuck = 0
-    try {
-      const stuck = await prisma.agentTask.findMany({
-        where: { status: { in: ["BLOCKED", "FAILED"] }, updatedAt: { lt: new Date(Date.now() - 24 * 3600000) } },
-        select: { id: true, tags: true },
-        take: 10,
-      })
-      for (const task of stuck) {
-        const retryCount = (task.tags || []).filter((t: string) => t.startsWith("retry:")).length
-        if (retryCount >= 3) {
-          await prisma.agentTask.update({ where: { id: task.id }, data: { status: "CANCELLED", tags: { push: "max-retries-reached" } } })
-        } else {
-          await prisma.agentTask.update({
-            where: { id: task.id },
-            data: { status: "ASSIGNED", blockerType: null, blockerDescription: null, blockedAt: null, failedAt: null, tags: { push: `retry:${retryCount + 1}` } },
-          })
-          retriedStuck++
-        }
-      }
-      if (retriedStuck > 0) console.log(`[cron/executor] Retried: ${retriedStuck} stuck tasks`)
-    } catch {}
-
-    // NIVEL 6: OPERATIONAL ENGINE — heartbeat + self-check + auto-remediere
-    let operationalReport: any = null
-    try {
-      const { runOperationalEngine } = await import("@/lib/agents/operational-engine")
-      operationalReport = await runOperationalEngine()
-      if (operationalReport.anomalies.length > 0) {
-        console.log(`[cron/executor] Operational engine: ${operationalReport.anomalies.length} anomalii (${operationalReport.anomalyCount.critical} critical, ${operationalReport.anomalyCount.high} high)`)
-        for (const a of operationalReport.anomalies.filter((x: any) => x.severity === "CRITICAL")) {
-          console.log(`  CRITICAL: ${a.title}`)
-        }
-      }
-      if (operationalReport.autoRemediationsApplied > 0) {
-        console.log(`[cron/executor] Auto-remedieri: ${operationalReport.autoRemediationsApplied}`)
-      }
-    } catch (e: any) {
-      console.log(`[cron/executor] Operational engine skip: ${(e as Error).message?.slice(0, 60)}`)
-    }
+    // NIVEL 4-6: MUTAT in /api/cron/maintenance (cron separat la 1h)
+    // Executor-ul ramane LEAN: doar task execution + cognitive layers
+    // Learning, signals, retry, operational engine, rollup, hygiene → maintenance
 
     // Salvam timestamp per nivel — self-check-ul operational engine le verifica
     try {
@@ -333,6 +196,15 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
+    // Salvam timestamp
+    try {
+      await prisma.systemConfig.upsert({
+        where: { key: "EXECUTOR_LAST_RUN" },
+        update: { value: new Date().toISOString() },
+        create: { key: "EXECUTOR_LAST_RUN", value: new Date().toISOString() },
+      })
+    } catch {}
+
     return NextResponse.json({
       ok: true,
       batches: batchCount,
@@ -341,37 +213,6 @@ export async function GET(request: NextRequest) {
       totalProcessed,
       totalExecuted,
       totalBlocked,
-      learning: learningResult ? {
-        phase: learningResult.phase,
-        propagated: learningResult.propagated,
-        propagationFeedback: learningResult.propagationFeedback,
-        consolidated: learningResult.consolidated,
-        orgReinjected: learningResult.orgReinjected,
-        distilled: learningResult.distilled,
-        distillFeedback: learningResult.distillFeedback,
-        maturityUpdated: learningResult.maturityUpdated,
-        maturityInterventions: learningResult.maturityInterventions,
-        expired: learningResult.expired,
-        expirationInsights: learningResult.expirationInsights,
-        stats: learningResult.stats,
-        errors: learningResult.errors,
-        durationMs: learningResult.durationMs,
-      } : null,
-      proactiveLoop: {
-        managersRun: proactiveResult.managersRun,
-        totalActions: proactiveResult.totalActions,
-        errors: proactiveResult.errors,
-      },
-      operational: operationalReport ? {
-        anomalies: operationalReport.anomalyCount,
-        autoRemediations: operationalReport.autoRemediationsApplied,
-        selfCheck: operationalReport.selfCheck,
-        efficiency: operationalReport.efficiency,
-      } : null,
-      objectiveRollup: rollupResult.updated,
-      invalidatedByCode,
-      staleTasksCleaned,
-      adaptiveAdjustments,
       cognitive: cognitiveResult ? {
         heartbeat: cognitiveResult.heartbeat.urgencyLevel,
         batchSize: cognitiveResult.heartbeat.batchSize,
@@ -389,7 +230,9 @@ export async function GET(request: NextRequest) {
         agentAnomalies: advancedCogResult.agentAnomalies,
         narrativeAge: advancedCogResult.narrativeAge,
       } : null,
+      note: "Learning, signals, retry, operational → /api/cron/maintenance (cron separat)",
       results: allResults.slice(0, 20),
+      durationMs: Date.now() - Date.parse(new Date().toISOString()),
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
