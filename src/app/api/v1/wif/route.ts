@@ -33,5 +33,20 @@ export async function POST(req: NextRequest) {
 
   const result = await runSimulation(input)
 
+  // WIF → Learning: fiecare simulare produce cunoastere despre tipare organizationale
+  // Cunoasterea e UNA — folosita de Profiler B2B/B2C, de agenti interni, de WIF insusi
+  try {
+    const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+    const impactSummary = `${result.summary.pozitive} pozitive, ${result.summary.riscuri} riscuri pe ${result.summary.areasAffected.join(", ")}`
+    await learningFunnel({
+      agentRole: "PMA", // Product Manager — agreca cunoasterea despre comportament organizational
+      type: "DECISION",
+      input: `WIF simulare ${preset} (${mode}): ${JSON.stringify(params).slice(0, 200)}`,
+      output: `Impact: ${impactSummary}. ${result.transformationalInsight || ""}`.slice(0, 1000),
+      success: true,
+      metadata: { source: "wif-simulation", preset, mode, tenantId: session.user.tenantId, areasAffected: result.summary.areasAffected },
+    })
+  } catch {}
+
   return NextResponse.json(result)
 }

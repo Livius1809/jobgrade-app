@@ -64,6 +64,22 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await rebuildMVV(session.user.tenantId)
+
+    // MVV = cunoastere despre cum se defineste clientul — valoros universal
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      const mvvSummary = [result.mission?.slice(0, 100), result.vision?.slice(0, 100)].filter(Boolean).join(" | ")
+      if (mvvSummary.length > 20) {
+        await learningFunnel({
+          agentRole: "COCSA", type: "DECISION",
+          input: `MVV rebuild pentru tenant ${session.user.tenantId}`,
+          output: mvvSummary,
+          success: true,
+          metadata: { source: "mvv-builder", maturity: result.maturity },
+        })
+      }
+    } catch {}
+
     return NextResponse.json(result)
   } catch (error) {
     console.error("[MVV REBUILD]", error)

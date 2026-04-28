@@ -104,6 +104,22 @@ Nu adăuga text în afara JSON-ului.`
     }
 
     const parsed = JSON.parse(jsonMatch[0])
+
+    // ANAF extract = cunoastere despre tipul companiei — valoros pentru profiling
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      const extractSummary = [parsed.industry, parsed.caenName, parsed.size].filter(Boolean).join(", ")
+      if (extractSummary) {
+        await learningFunnel({
+          agentRole: "CIA", type: "SIGNAL",
+          input: `ANAF extract: ${parsed.cui || "?"}`,
+          output: extractSummary,
+          success: true,
+          metadata: { source: "anaf-extract", cui: parsed.cui },
+        })
+      }
+    } catch {}
+
     return NextResponse.json(parsed)
   } catch (error) {
     if (error instanceof z.ZodError) {

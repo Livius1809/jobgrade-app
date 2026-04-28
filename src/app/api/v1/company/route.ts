@@ -75,6 +75,21 @@ export async function PUT(req: NextRequest) {
       }).catch(() => {})
     }
 
+    // Profiler B2B alimenteaza learning — ce aflam despre client e cunoastere universala
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      const profileSummary = [data.industry, data.size, data.description?.slice(0, 100)].filter(Boolean).join(". ")
+      if (profileSummary.length > 20) {
+        await learningFunnel({
+          agentRole: "SOA", type: "FEEDBACK",
+          input: `Profil companie actualizat: ${data.cui || "fara CUI"}`,
+          output: profileSummary,
+          success: true,
+          metadata: { source: "company-profiler", tenantId, industry: data.industry },
+        })
+      }
+    } catch {}
+
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
