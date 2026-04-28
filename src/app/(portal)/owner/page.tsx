@@ -1130,20 +1130,23 @@ async function ClaudeCallsBreakdownSection() {
 
   // Categorize
   const CATEGORY_MAP: Record<string, string> = {
-    // Proactive loop = evaluare subordonati
+    // Proactive loop = evaluare subordonati (doar COG ar trebui)
     "proactive-cycle": "Proactive Loop (evaluare)",
     "proactive-eval": "Proactive Loop (evaluare)",
-    // Task execution
-    "CONTENT_CREATION": "Executie task-uri",
-    "INVESTIGATION": "Executie task-uri",
-    "ANALYSIS": "Executie task-uri",
-    "DECISION": "Executie task-uri",
-    "COORDINATION": "Executie task-uri",
-    "KB_RESEARCH": "Executie task-uri",
+    // Executie task-uri (munca reala)
+    "PROCESS_EXECUTION": "Executie task-uri",
+    "CONTENT_CREATION": "Creare continut",
+    "INVESTIGATION": "Investigatii",
+    "DECISION": "Decizii",
+    "COORDINATION": "Coordonare",
+    // Cunoastere suplimentara
+    "KB_RESEARCH": "Cunoastere (KB research)",
+    "DATA_ANALYSIS": "Analiza date",
     // Review
+    "REVIEW": "Review completate",
     "review": "Review completate",
-    // Self-tasks
-    "self-task": "Self-tasks manageri",
+    // Outreach / comunicare
+    "OUTREACH": "Outreach / comunicare",
     // Chat (client-facing)
     "chat": "Chat client-facing",
     // Alignment check
@@ -1185,7 +1188,14 @@ async function ClaudeCallsBreakdownSection() {
   const CAT_COLORS: Record<string, string> = {
     "Proactive Loop (evaluare)": "bg-red-400",
     "Executie task-uri": "bg-indigo-400",
+    "Creare continut": "bg-purple-400",
+    "Cunoastere (KB research)": "bg-cyan-400",
+    "Analiza date": "bg-sky-400",
+    "Investigatii": "bg-indigo-300",
+    "Decizii": "bg-orange-400",
+    "Coordonare": "bg-pink-400",
     "Review completate": "bg-emerald-400",
+    "Outreach / comunicare": "bg-lime-400",
     "Self-tasks manageri": "bg-amber-400",
     "Chat client-facing": "bg-teal-400",
     "Alignment check": "bg-violet-400",

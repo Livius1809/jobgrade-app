@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -22,8 +23,14 @@ interface Check {
 }
 
 export async function GET(req: NextRequest) {
+  // Auth: internal key SAU session Owner/SUPER_ADMIN
   const key = req.headers.get("x-internal-key")
-  if (key !== process.env.INTERNAL_API_KEY) {
+  let authorized = key === process.env.INTERNAL_API_KEY
+  if (!authorized) {
+    const session = await auth()
+    authorized = session?.user?.role === "OWNER" || session?.user?.role === "SUPER_ADMIN"
+  }
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
