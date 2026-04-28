@@ -10,8 +10,8 @@ import { test, expect } from "@playwright/test"
  * va ieși la iveală aici.
  */
 
-const DEMO_EMAIL = "owner@techvision.ro"
-const DEMO_PASSWORD = "Demo2026!"
+const DEMO_EMAIL = "pilot@jobgrade.ro"
+const DEMO_PASSWORD = "Pilot2026!"
 
 const PAGES_TO_AUDIT = [
   "/portal",
