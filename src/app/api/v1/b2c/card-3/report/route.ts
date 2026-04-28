@@ -198,6 +198,12 @@ ${REPORT_PROMPTS[reportType]}`
     },
   }).catch(() => {})
 
+  // Raport B2C = cunoaștere despre profiluri candidați și matching
+  try {
+    const { learnFromReport } = await import("@/lib/learning-hooks")
+    await learnFromReport(`B2C_${reportType.toUpperCase().replace(/-/g, "_")}`, userId, `Raport ${reportType}: ${user?.alias || "anonim"}, ${reportContent.slice(0, 400)}`)
+  } catch {}
+
   return NextResponse.json({
     ok: true,
     reportType,

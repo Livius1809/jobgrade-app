@@ -136,6 +136,12 @@ export async function GET(req: NextRequest) {
   const criticalCount = validDimensions.filter(d => d.gapStatus === "CRITICAL").length
   const attentionCount = validDimensions.filter(d => d.gapStatus === "ATTENTION").length
 
+  // Echitate = cunoaștere despre gap-uri salariale per structură organizațională
+  try {
+    const { learnFromReport } = await import("@/lib/learning-hooks")
+    await learnFromReport("EQUITY_ANALYSIS", tenantId, `Echitate: ${employees.length} angajati, ${criticalCount} critical, ${attentionCount} atentie. Dimensiuni: ${validDimensions.map(d => `${d.label}=${d.maxGapPct}%`).join(", ")}`)
+  } catch {}
+
   return NextResponse.json({
     dimensions: validDimensions,
     employeeCount: employees.length,

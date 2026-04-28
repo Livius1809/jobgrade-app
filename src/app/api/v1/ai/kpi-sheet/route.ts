@@ -87,6 +87,12 @@ Asigură-te că suma ponderilor este exact 100.`
       job.id
     )
 
+    // KPI generat = cunoaștere despre metrici relevante per post/industrie
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("KPI_SHEET", tenantId, `KPI-uri generate: ${job.title} (${job.department?.name || "?"}) — ${JSON.stringify(parsed.kpis?.map((k: any) => k.name) || []).slice(0, 300)}`)
+    } catch {}
+
     return NextResponse.json(parsed)
   } catch (error) {
     if (error instanceof z.ZodError) {

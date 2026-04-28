@@ -162,6 +162,12 @@ export async function POST(
       sessionId
     )
 
+    // Export JSON EU = cunoaștere despre conformitate solicitată
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("EXPORT_JSON_EU", tenantId, `Export JSON EU2023/970: ${evalSession.name}`)
+    } catch {}
+
     const filename = `${evalSession.name.replace(/[^a-zA-Z0-9]/g, "_")}_EU2023970.json`
 
     return new NextResponse(JSON.stringify(exportData, null, 2), {

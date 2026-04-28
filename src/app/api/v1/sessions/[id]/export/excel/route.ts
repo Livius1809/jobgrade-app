@@ -216,6 +216,12 @@ export async function POST(
       sessionId
     )
 
+    // Export = cunoaștere despre ce rezultate solicită clientul
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("EXPORT_EXCEL", tenantId, `Export Excel: ${evalSession.name}`)
+    } catch {}
+
     const filename = `${evalSession.name.replace(/[^a-zA-Z0-9]/g, "_")}_rezultate.xlsx`
 
     return new NextResponse(buffer, {

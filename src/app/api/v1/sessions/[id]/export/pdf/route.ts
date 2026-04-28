@@ -498,6 +498,12 @@ export async function POST(
       sessionId
     )
 
+    // Export PDF = cunoaștere despre ce rezultate solicită clientul
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("EXPORT_PDF", tenantId, `Export PDF: ${evalSession.name}`)
+    } catch {}
+
     const filename = `${evalSession.name.replace(/[^a-zA-Z0-9]/g, "_")}_raport.pdf`
 
     return new NextResponse(buffer as unknown as BodyInit, {

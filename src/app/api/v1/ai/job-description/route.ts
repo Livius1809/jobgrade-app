@@ -123,6 +123,12 @@ Nu adăuga text în afara JSON-ului.`
 
     const parsed = JSON.parse(jsonMatch[0])
 
+    // JD generată = cunoaștere despre structura posturilor per industrie
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("JOB_DESCRIPTION", session.user.tenantId, `JD generata: ${data.title}${data.department ? ` (${data.department})` : ""} — ${JSON.stringify(parsed.criteriaMapping || {}).slice(0, 300)}`)
+    } catch {}
+
     return NextResponse.json(parsed)
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -145,6 +145,13 @@ export async function POST(request: NextRequest) {
           )
         }
         const result = await compareBulk(body.entries, prisma)
+
+        // Benchmark compare = cunoaștere despre poziționare salarială vs piață
+        try {
+          const { learnFromReport } = await import("@/lib/learning-hooks")
+          await learnFromReport("BENCHMARK_COMPARE", session.user.tenantId, `Comparație benchmark: ${body.entries.length} posturi, ${JSON.stringify(result).slice(0, 400)}`)
+        } catch {}
+
         return NextResponse.json(result)
       }
 

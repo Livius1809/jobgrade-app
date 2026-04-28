@@ -247,6 +247,12 @@ Fii specific, folosește datele furnizate, și oferă perspective practice pentr
       evalSession.id
     )
 
+    // Analiza sesiune = cunoaștere despre tipare evaluare, consens, ierarhizare
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("SESSION_ANALYSIS", tenantId, `Analiza ${evalSession.name}: ${totalJobs} joburi, ${totalParticipants} participanti, scor ${minScore}-${maxScore}, ${consensusStats.facilitated} facilitate. ${analysis.slice(0, 300)}`)
+    } catch {}
+
     return NextResponse.json({ analysis })
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     // MVV = cunoastere despre cum se defineste clientul — valoros universal
     try {
       const { learningFunnel } = await import("@/lib/agents/learning-funnel")
-      const mvvSummary = [result.mission?.slice(0, 100), result.vision?.slice(0, 100)].filter(Boolean).join(" | ")
+      const mvvSummary = [(result.missionValidated || result.missionDraft)?.slice(0, 100), (result.visionValidated || result.visionDraft)?.slice(0, 100)].filter(Boolean).join(" | ")
       if (mvvSummary.length > 20) {
         await learningFunnel({
           agentRole: "COCSA", type: "DECISION",

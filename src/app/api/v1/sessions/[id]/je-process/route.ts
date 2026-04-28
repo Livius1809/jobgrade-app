@@ -343,6 +343,12 @@ export async function POST(
         return err(`Acțiunea "${action}" nu este implementată.`, 400)
     }
 
+    // Fiecare actiune JE = cunoastere despre evaluare posturi per industrie
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport(`JE_${action}`, session.user.tenantId, JSON.stringify(result).slice(0, 500))
+    } catch {}
+
     return NextResponse.json(result)
   } catch (error: any) {
     console.error("[JE-PROCESS POST]", error)

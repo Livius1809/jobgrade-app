@@ -100,6 +100,13 @@ export async function POST(req: NextRequest) {
     // Company Profiler: acțiune semnificativă — raport pay gap generat
     import("@/lib/company-profiler").then(m => m.onSignificantAction(tenantId)).catch(() => {})
 
+    // Pay Gap = cunoaștere despre echitate salarială per industrie/structură
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      const summary = `Pay gap ${year}: ${records.length} angajați, gap general=${JSON.stringify(indicatorsJson).slice(0, 300)}`
+      await learnFromReport("PAY_GAP", tenantId, summary)
+    } catch {}
+
     return NextResponse.json({ report, profilerSections }, { status: 201 })
   } catch (error) {
     console.error("[PAY-GAP REPORT POST]", error)

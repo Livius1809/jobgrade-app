@@ -179,6 +179,12 @@ export async function GET(
 
     const buffer = await renderToBuffer(doc as any)
 
+    // Jurnal export = cunoaștere despre transparența procesului
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("JOURNAL_PDF", session.user.tenantId, `Export jurnal proces: sesiune ${sessionId}`)
+    } catch {}
+
     return new NextResponse(buffer as unknown as BodyInit, {
       headers: {
         "Content-Type": "application/pdf",

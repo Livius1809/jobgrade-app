@@ -63,6 +63,12 @@ export async function POST(req: NextRequest) {
     import("@/lib/mvv/builder").then(m => m.mvvRebuildIfNeeded(session.user.tenantId)).catch(() => {})
     import("@/lib/company-profiler").then(m => m.onSignificantAction(session.user.tenantId)).catch(() => {})
 
+    // Job creat = cunoaștere despre structura organizațională a clientului
+    try {
+      const { learnFromClientInput } = await import("@/lib/learning-hooks")
+      await learnFromClientInput(session.user.tenantId, "JOB", `Post creat: ${data.title}${data.departmentId ? ` (dept ${data.departmentId})` : ""}, scop: ${(data.purpose || "nespecificat").slice(0, 200)}`)
+    } catch {}
+
     return NextResponse.json({ id: job.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

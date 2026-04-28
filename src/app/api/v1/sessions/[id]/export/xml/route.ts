@@ -157,6 +157,12 @@ ${evalSession.jobResults
       sessionId
     )
 
+    // Export XML EU = cunoaștere despre conformitate solicitată
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("EXPORT_XML_EU", tenantId, `Export XML EU2023/970: ${evalSession.name}`)
+    } catch {}
+
     const filename = `${evalSession.name.replace(/[^a-zA-Z0-9]/g, "_")}_EU2023970.xml`
 
     return new NextResponse(xml, {

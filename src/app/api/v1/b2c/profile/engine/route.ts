@@ -25,6 +25,12 @@ export async function GET(req: NextRequest) {
     // Nu trimitem agentContext la client (invizibil)
     const { agentContext, ...clientSafe } = profile
 
+    // Profil B2C accesat = cunoaștere despre structura profilurilor candidați
+    try {
+      const { learnFromReport } = await import("@/lib/learning-hooks")
+      await learnFromReport("B2C_PROFILE_ENGINE", userId, `Profil accesat: cards=${Object.keys((profile as any).cards || {}).join(",") || "?"}`)
+    } catch {}
+
     return NextResponse.json(clientSafe)
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
