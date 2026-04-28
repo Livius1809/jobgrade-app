@@ -2268,37 +2268,39 @@ const CLIMATE_DIMENSIONS = [
 ]
 
 function ClimatePanel() {
-  const [levels, setLevels] = useState<string[]>(["management", "middle", "operational"])
-  const [selectedLevel, setSelectedLevel] = useState("management")
-  const [status, setStatus] = useState<Record<string, { sent: number; completed: number }>>({})
-  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
+  const [levels] = useState(["management", "middle", "operational"])
   const [newLevel, setNewLevel] = useState("")
+  const [creatingSession, setCreatingSession] = useState("")
 
-  useEffect(() => {
-    fetch("/api/v1/card-inputs?card=C4_CLIMATE").then(r => r.json()).then(d => {
-      if (d.data) {
-        if (d.data.levels?.length) setLevels(d.data.levels)
-        if (d.data.status) setStatus(d.data.status)
-      }
-    }).catch(() => {})
-  }, [])
-
-  const saveClimate = async (newLevels?: string[]) => {
-    const lvls = newLevels || levels
-    await fetch("/api/v1/card-inputs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ card: "C4_CLIMATE", data: { levels: lvls, status } }),
-    }).catch(() => {})
+  const loadData = () => {
+    fetch("/api/v1/climate").then(r => r.json()).then(d => {
+      setData(d)
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }
 
-  const addLevel = () => {
-    if (newLevel && !levels.includes(newLevel)) {
-      const updated = [...levels, newLevel]
-      setLevels(updated)
-      setNewLevel("")
-      saveClimate(updated)
-    }
+  useEffect(() => { loadData() }, [])
+
+  const createSession = async (level: string) => {
+    setCreatingSession(level)
+    await fetch("/api/v1/climate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create-session", level }),
+    })
+    loadData()
+    setCreatingSession("")
+  }
+
+  const completeSession = async (sessionId: string) => {
+    await fetch("/api/v1/climate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "complete-session", sessionId }),
+    })
+    loadData()
   }
 
   const LEVEL_LABELS: Record<string, string> = {
@@ -2307,11 +2309,24 @@ function ClimatePanel() {
     operational: "Operational (specialisti, executanti)",
   }
 
+  const LEVEL_COLORS: Record<string, string> = {
+    "F.SLAB": "bg-red-100 text-red-700",
+    "SLAB": "bg-orange-100 text-orange-700",
+    "MEDIU": "bg-amber-100 text-amber-700",
+    "INTENS": "bg-emerald-100 text-emerald-700",
+    "F.INTENS": "bg-teal-100 text-teal-700",
+  }
+
+  if (loading) return <p className="text-xs text-slate-400">Se incarca...</p>
+
+  const dimensions = data?.dimensions || []
+  const sessions: any[] = data?.sessions || []
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl border border-purple-100 p-3">
         <p className="text-xs text-slate-600">
-          Chestionarul masoara 8 dimensiuni ale climatului organizational.
+          <strong>40 itemi</strong> pe <strong>8 dimensiuni</strong>, scala 1-7.
           Se administreaza <strong>bottom-up pe niveluri ierarhice</strong> — fiecare nivel
           raspunde separat, apoi se compara perceptiile.
         </p>
@@ -2321,41 +2336,107 @@ function ClimatePanel() {
       <div className="bg-white rounded-xl border border-purple-200 p-4">
         <h4 className="text-sm font-bold text-slate-800 mb-3">8 dimensiuni evaluate</h4>
         <div className="grid grid-cols-2 gap-2">
-          {CLIMATE_DIMENSIONS.map(dim => (
+          {dimensions.map((dim: any) => (
             <div key={dim.id} className="bg-purple-50 rounded-lg border border-purple-100 p-2.5">
               <span className="text-xs font-medium text-purple-800">{dim.label}</span>
+              <span className="text-[9px] text-slate-400 ml-1">({dim.itemCount} itemi)</span>
               <p className="text-[10px] text-slate-500 mt-0.5">{dim.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Niveluri ierarhice */}
+      {/* Niveluri ierarhice — creaza sesiuni */}
       <div className="bg-white rounded-xl border border-purple-200 p-4">
-        <h4 className="text-sm font-bold text-slate-800 mb-3">Niveluri ierarhice (cine completeaza)</h4>
+        <h4 className="text-sm font-bold text-slate-800 mb-3">Administrare per nivel ierarhic</h4>
         <div className="space-y-2 mb-3">
-          {levels.map(level => (
-            <div key={level} className="flex items-center justify-between bg-purple-50 rounded-lg border border-purple-100 p-2.5">
-              <span className="text-xs font-medium text-slate-800">{LEVEL_LABELS[level] || level}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400">{status[level]?.completed || 0}/{status[level]?.sent || 0} completat</span>
-                <button className="text-[10px] px-2 py-0.5 rounded bg-purple-600 text-white hover:bg-purple-700">
-                  Trimite chestionar
-                </button>
+          {levels.map(level => {
+            const session = sessions.find((s: any) => s.level === level)
+            return (
+              <div key={level} className="flex items-center justify-between bg-purple-50 rounded-lg border border-purple-100 p-2.5">
+                <span className="text-xs font-medium text-slate-800">{LEVEL_LABELS[level] || level}</span>
+                <div className="flex items-center gap-2">
+                  {session ? (
+                    <>
+                      <span className="text-[10px] text-slate-400">{session.respondentCount} raspunsuri</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${session.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        {session.status === "COMPLETED" ? "Finalizat" : "In colectare"}
+                      </span>
+                      {session.status === "COLLECTING" && session.respondentCount > 0 && (
+                        <button onClick={() => completeSession(session.id)}
+                          className="text-[10px] px-2 py-0.5 rounded bg-purple-600 text-white">Finalizeaza</button>
+                      )}
+                    </>
+                  ) : (
+                    <button onClick={() => createSession(level)} disabled={creatingSession === level}
+                      className="text-[10px] px-2 py-0.5 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
+                      {creatingSession === level ? "..." : "Lanseaza chestionar"}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
         <div className="flex gap-2">
           <input type="text" value={newLevel} onChange={e => setNewLevel(e.target.value)}
             placeholder="Alt nivel (ex: board, consultanti)" className="flex-1 px-2 py-1.5 rounded border border-purple-200 text-xs" />
-          <button onClick={addLevel} disabled={!newLevel} className="px-3 py-1.5 rounded bg-purple-600 text-white text-xs disabled:opacity-40">+</button>
+          <button onClick={() => { if (newLevel) createSession(newLevel); setNewLevel("") }} disabled={!newLevel}
+            className="px-3 py-1.5 rounded bg-purple-600 text-white text-xs disabled:opacity-40">+</button>
         </div>
       </div>
 
+      {/* Rezultate sesiuni completate */}
+      {sessions.filter((s: any) => s.status === "COMPLETED").map((s: any) => (
+        <div key={s.id} className="bg-white rounded-xl border border-purple-200 p-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-1">Rezultate — {LEVEL_LABELS[s.level] || s.level}</h4>
+          <p className="text-[10px] text-slate-400 mb-3">{s.respondentCount} respondenti</p>
+
+          {s.aggregate?.dimensionMeans?.length > 0 && (
+            <div className="space-y-1.5">
+              {s.aggregate.dimensionMeans.map((d: any) => (
+                <div key={d.id} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-700 w-24 shrink-0">{d.label}</span>
+                  <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="h-full rounded-full bg-purple-400" style={{ width: `${(d.mean / 7) * 100}%` }} />
+                  </div>
+                  <span className="text-xs font-mono text-slate-600 w-8">{d.mean}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${LEVEL_COLORS[d.level] || "bg-slate-100 text-slate-600"}`}>
+                    {d.level}
+                  </span>
+                </div>
+              ))}
+              <div className="border-t border-purple-100 pt-2 mt-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">Atitudine generala</span>
+                <span className={`text-sm font-bold px-2 py-0.5 rounded ${LEVEL_COLORS[s.aggregate.overallLevel] || ""}`}>
+                  {s.aggregate.overallMean} — {s.aggregate.overallLevel}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Comparatie pe grupuri */}
+          {Object.keys(s.byGroup || {}).length > 1 && (
+            <div className="mt-4 border-t border-purple-100 pt-3">
+              <p className="text-[10px] font-bold text-slate-600 uppercase mb-2">Comparatie pe grupuri</p>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(s.byGroup).map(([group, agg]: [string, any]) => (
+                  <div key={group} className="bg-purple-50 rounded-lg p-2">
+                    <span className="text-[10px] font-bold text-purple-700">{group} ({agg.respondentCount})</span>
+                    <p className={`text-sm font-bold mt-1 ${LEVEL_COLORS[agg.overallLevel] ? "" : ""}`}>
+                      {agg.overallMean} — {agg.overallLevel}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
       <p className="text-[9px] text-slate-400">
-        Rezultatele se compara intre niveluri: ce vede managementul vs ce simte operationalul.
-        Diferentele mari indica probleme de comunicare sau perceptie.
+        Diferentele mari intre niveluri indica probleme de comunicare sau perceptie.
+        Raportul complet se genereaza din Master Report.
       </p>
     </div>
   )
