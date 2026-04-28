@@ -156,6 +156,19 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     }))
 
+    // Alimentam learning funnel — decizia Owner = eveniment strategic
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      for (const role of (affectedRoles || []).slice(0, 5)) {
+        await learningFunnel({
+          agentRole: role, type: "DECISION",
+          input: `Situatie: ${situationId}`,
+          output: `Owner a decis: ${optionLabel}. Actiuni: ${JSON.stringify(actions).slice(0, 500)}`,
+          success: true, metadata: { source: "owner-decide", situationId, optionLabel },
+        })
+      }
+    } catch {}
+
     return NextResponse.json({
       decision: optionLabel,
       situationId,

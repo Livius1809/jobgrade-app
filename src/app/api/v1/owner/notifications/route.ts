@@ -153,6 +153,19 @@ export async function PATCH(request: NextRequest) {
         source: "EXPERT_HUMAN",
       },
     }).catch(() => {})
+
+    // Alimentam learning funnel — Owner response = eveniment DECISION de maxima incredere
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      await learningFunnel({
+        agentRole: targetRole,
+        type: "DECISION",
+        input: notification.title || "",
+        output: `[Owner ${responseLabel}] ${responseText || kbContent}`,
+        success: responseKind !== "REJECTED",
+        metadata: { source: "owner-response", responseKind, notificationId: id },
+      })
+    } catch {}
   }
 
   // 2. Creăm task pentru agentul solicitant

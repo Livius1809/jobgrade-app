@@ -144,5 +144,19 @@ export async function PATCH(req: NextRequest) {
   if (body.brainstormIdeaId !== undefined) data.brainstormIdeaId = body.brainstormIdeaId
 
   const updated = await prisma.wildCard.update({ where: { id }, data })
+
+  // Alimentam learning — wild card response = explorare creativa
+  if (body.response) {
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      await learningFunnel({
+        agentRole: (updated as any).targetRole || "COG", type: "FEEDBACK",
+        input: `Wild card: ${(updated as any).prompt || ""}`.slice(0, 500),
+        output: String(body.response).slice(0, 1000),
+        success: true, metadata: { source: "wild-card", cardId: id },
+      })
+    } catch {}
+  }
+
   return NextResponse.json({ card: updated })
 }

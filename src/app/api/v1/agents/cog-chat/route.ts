@@ -44,6 +44,16 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await chatWithCOG(message, prisma, history)
+
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      await learningFunnel({
+        agentRole: "COG", type: "CONVERSATION",
+        input: message.slice(0, 500), output: (response.reply || "").slice(0, 1000),
+        success: true, metadata: { source: "cog-chat" },
+      })
+    } catch {}
+
     return NextResponse.json(response)
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

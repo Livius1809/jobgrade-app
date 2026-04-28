@@ -306,6 +306,15 @@ export async function POST(req: NextRequest) {
       }, prisma).catch(() => {})
     }
 
+    try {
+      const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+      await learningFunnel({
+        agentRole: AGENT_ROLE, type: "CONVERSATION",
+        input: message.trim().slice(0, 500), output: assistantText.slice(0, 1000),
+        success: true, metadata: { source: "hr-counselor-chat", threadId: thread.id },
+      })
+    } catch {}
+
     return NextResponse.json({
       reply: assistantText,
       threadId: thread.id,

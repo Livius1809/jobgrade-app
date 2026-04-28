@@ -99,6 +99,17 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  // Alimentam learning — intrebare client = feedback din teren
+  try {
+    const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+    await learningFunnel({
+      agentRole: parsed.data.delegatedTo || "SOA", type: "CONVERSATION",
+      input: (parsed.data.question || "").slice(0, 500),
+      output: (parsed.data.answer || "").slice(0, 1000),
+      success: true, metadata: { source: "guide-journal", tenantId },
+    })
+  } catch {}
+
   return NextResponse.json(entry, { status: 201 })
 }
 
