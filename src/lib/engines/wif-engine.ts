@@ -350,6 +350,127 @@ async function simulateToggleHumanAI(params: any, mode: SimulationMode, impacts:
 
 // ═══ INSIGHT TRANSFORMATIONAL ═══
 
+// ═══ BUCLA DECIZIONALA: simulare → variante → optim → aplicare → masurare → invatare ═══
+
+export interface DecisionVariant {
+  id: string
+  description: string
+  simulationResult: SimulationResult
+  score: number // 0-100 — calculat din impacte
+}
+
+export interface DecisionProposal {
+  context: string
+  variants: DecisionVariant[]
+  recommended: DecisionVariant | null
+  reasoning: string
+}
+
+export interface DecisionOutcome {
+  proposalId: string
+  variantChosen: string
+  appliedAt: string
+  measuredAt?: string
+  actualImpacts?: ImpactItem[] // ce s-a intamplat de fapt
+  deltaScore?: number // diferenta intre simulat si real
+  lessonLearned?: string
+}
+
+/**
+ * Genereaza N variante de simulare si recomanda optima.
+ * Organismul nu doar arata impact — PROPUNE decizia.
+ */
+export async function proposeOptimalDecision(
+  context: string,
+  variants: Array<{ description: string; input: SimulationInput }>,
+): Promise<DecisionProposal> {
+  const evaluated: DecisionVariant[] = []
+
+  for (const variant of variants) {
+    const result = await runSimulation(variant.input)
+
+    // Scor: pozitive +10, neutre +0, atentie -5, riscuri -15
+    const score = result.impacts.reduce((sum, imp) => {
+      if (imp.severity === "POZITIV") return sum + 10
+      if (imp.severity === "NEUTRU") return sum + 0
+      if (imp.severity === "ATENTIE") return sum - 5
+      if (imp.severity === "RISC") return sum - 15
+      return sum
+    }, 50) // start de la 50 (neutru)
+
+    evaluated.push({
+      id: `v_${Math.random().toString(36).slice(2, 8)}`,
+      description: variant.description,
+      simulationResult: result,
+      score: Math.max(0, Math.min(100, score)),
+    })
+  }
+
+  // Sortam descrescator dupa scor
+  evaluated.sort((a, b) => b.score - a.score)
+
+  const recommended = evaluated[0] || null
+  const reasoning = recommended
+    ? `Varianta "${recommended.description}" are scorul cel mai mare (${recommended.score}/100) cu ${recommended.simulationResult.summary.pozitive} impacte pozitive si ${recommended.simulationResult.summary.riscuri} riscuri.`
+    : "Nicio varianta simulata."
+
+  return {
+    context,
+    variants: evaluated,
+    recommended,
+    reasoning,
+  }
+}
+
+/**
+ * Dupa ce decizia e aplicata si trece timp, masuram rezultatul REAL
+ * si comparam cu ce a simulat WIF. Delta = cunoastere noua.
+ */
+export async function measureDecisionOutcome(
+  outcome: DecisionOutcome,
+): Promise<{ deltaScore: number; lessonLearned: string }> {
+  // Comparam impactele simulate cu cele reale
+  const simulated = outcome.actualImpacts || []
+  const simulatedRisks = simulated.filter(i => i.severity === "RISC").length
+  const simulatedPositive = simulated.filter(i => i.severity === "POZITIV").length
+
+  // Scor real (acelasi calcul ca la simulare)
+  const realScore = simulated.reduce((sum, imp) => {
+    if (imp.severity === "POZITIV") return sum + 10
+    if (imp.severity === "RISC") return sum - 15
+    if (imp.severity === "ATENTIE") return sum - 5
+    return sum
+  }, 50)
+
+  const deltaScore = realScore - (outcome.deltaScore || 50)
+
+  let lessonLearned: string
+  if (Math.abs(deltaScore) < 10) {
+    lessonLearned = "Simularea a fost precisa — WIF a estimat corect impactul."
+  } else if (deltaScore > 0) {
+    lessonLearned = `Realitatea a fost mai buna decat simularea (+${deltaScore} puncte). WIF a fost prea pesimist pe ${simulatedPositive} impacte pozitive.`
+  } else {
+    lessonLearned = `Realitatea a fost mai proasta decat simularea (${deltaScore} puncte). WIF a subestimat ${simulatedRisks} riscuri. Calibrare necesara.`
+  }
+
+  // Alimentam learning funnel cu lectia
+  try {
+    const { learningFunnel } = await import("@/lib/agents/learning-funnel")
+    await learningFunnel({
+      agentRole: "COG",
+      type: "DECISION",
+      input: `WIF simulare: ${outcome.variantChosen}`,
+      output: `Delta: ${deltaScore}. ${lessonLearned}`,
+      success: Math.abs(deltaScore) < 15,
+      metadata: { source: "wif-feedback", proposalId: outcome.proposalId, deltaScore },
+    })
+  } catch {}
+
+  return { deltaScore, lessonLearned }
+}
+
+// ═══ INSIGHT TRANSFORMATIONAL ═══
+
 function generateTransformationalInsight(preset: SimulationPreset, impacts: ImpactItem[]): string {
   const riscuri = impacts.filter(i => i.severity === "RISC").length
   const pozitive = impacts.filter(i => i.severity === "POZITIV").length
