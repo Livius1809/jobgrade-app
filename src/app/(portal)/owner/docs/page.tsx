@@ -42,6 +42,10 @@ export default function DocsPage() {
   const [focusTopics, setFocusTopics] = useState("")
   const [targetEntries, setTargetEntries] = useState("30")
 
+  // Copertă imagine (referință)
+  const [coverImage, setCoverImage] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
+
   // Rezultat ingestie
   const [ingestResult, setIngestResult] = useState<any>(null)
 
@@ -132,6 +136,14 @@ export default function DocsPage() {
       if (publisher.trim()) body.publisher = publisher.trim()
       if (year.trim()) body.year = parseInt(year)
       if (focusTopics.trim()) body.focusTopics = focusTopics.split(",").map((t: string) => t.trim()).filter(Boolean)
+
+      // Dacă e copertă, convertește în base64 și adaugă
+      if (coverImage) {
+        const buffer = await coverImage.arrayBuffer()
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        body.coverImageBase64 = base64
+        body.coverImageType = coverImage.type || "image/jpeg"
+      }
 
       const res = await fetch("/api/v1/kb/ingest", {
         method: "POST",
@@ -374,9 +386,40 @@ export default function DocsPage() {
                   Separate prin virgula. Daca nu specifici, Claude extrage tot ce stie despre sursa.
                 </p>
               </div>
+              {/* Copertă imagine */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Coperta cartii (optional — ajuta la identificare)</label>
+                <div className="flex items-start gap-4">
+                  <label className="flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 border-dashed border-indigo/20 bg-surface hover:border-indigo/40 cursor-pointer transition-colors">
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0] || null
+                        setCoverImage(f)
+                        if (f) {
+                          const reader = new FileReader()
+                          reader.onload = ev => setCoverPreview(ev.target?.result as string)
+                          reader.readAsDataURL(f)
+                        } else {
+                          setCoverPreview(null)
+                        }
+                      }}
+                    />
+                    <span className="text-xs text-text-secondary">
+                      {coverImage ? coverImage.name : "Click pentru a incarca o imagine cu coperta"}
+                    </span>
+                  </label>
+                  {coverPreview && (
+                    <div className="relative w-20 h-28 rounded-lg overflow-hidden border border-border shadow-sm shrink-0">
+                      <img src={coverPreview} alt="Coperta" className="w-full h-full object-cover" />
+                      <button onClick={() => { setCoverImage(null); setCoverPreview(null) }}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[8px] leading-none flex items-center justify-center">✕</button>
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
                 <p className="text-xs text-amber-700">
-                  Claude extrage din cunoasterea sa despre aceasta sursa. Daca sursa nu e cunoscuta, vei fi invitat sa incarci documentul.
+                  Claude extrage din cunoasterea sa despre aceasta sursa. Coperta ajuta la identificare precisa. Daca sursa nu e cunoscuta, vei fi invitat sa incarci documentul.
                 </p>
               </div>
             </div>

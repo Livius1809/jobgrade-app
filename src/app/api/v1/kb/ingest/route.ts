@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
       isbn: body.isbn,
       focusTopics: body.focusTopics,
       targetEntries: body.targetEntries,
+      coverImageBase64: body.coverImageBase64,
+      coverImageType: body.coverImageType,
     })
 
     return NextResponse.json(result)

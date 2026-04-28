@@ -59,6 +59,10 @@ export interface IngestDocumentInput {
   edition?: string
   /** ISBN */
   isbn?: string
+  /** Imagine copertă (base64) — ajută Claude la identificare precisă */
+  coverImageBase64?: string
+  /** MIME type imagine copertă */
+  coverImageType?: string
   /** Capitole sau teme specifice de extras (opțional — focalizează extracția) */
   focusTopics?: string[]
   /** Câte entries să genereze per referință bibliografică (default 30) */
@@ -360,19 +364,43 @@ async function extractFromBibliography(input: IngestDocumentInput): Promise<{ en
   const sourceTag = input.sourceAuthor.toLowerCase().split(" ").pop() || "unknown"
 
   for (let batch = 0; batch < batches; batch++) {
+    // Construieste mesajul — text + optional imagine copertă
+    const userContent: any[] = []
+
+    // Dacă avem copertă, o adăugăm ca imagine (Claude e multimodal)
+    if (batch === 0 && input.coverImageBase64) {
+      userContent.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: input.coverImageType || "image/jpeg",
+          data: input.coverImageBase64,
+        },
+      })
+      userContent.push({
+        type: "text",
+        text: "Mai sus este coperta cărții. Folosește informațiile vizibile (titlu, autor, editură, ediție) pentru identificare precisă.\n\n",
+      })
+    }
+
+    userContent.push({
+      type: "text",
+      text: `REFERINȚĂ BIBLIOGRAFICĂ:\n${reference}\n\nGenerează ${batchSize} KB entries (batch ${batch + 1}/${batches}).${
+        batch > 0 ? `\n\nATENȚIE: NU repeta entries deja generate. Acoperă ALTE aspecte ale sursei.` : ""
+      }${
+        allEntries.length > 0
+          ? `\n\nDeja generate (NU repeta):\n${allEntries.slice(-10).map(e => `- [${e.agentRole}] ${e.content.slice(0, 60)}...`).join("\n")}`
+          : ""
+      }`,
+    })
+
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4000,
       system: BIBLIO_SYSTEM_PROMPT,
       messages: [{
         role: "user",
-        content: `REFERINȚĂ BIBLIOGRAFICĂ:\n${reference}\n\nGenerează ${batchSize} KB entries (batch ${batch + 1}/${batches}).${
-          batch > 0 ? `\n\nATENȚIE: NU repeta entries deja generate. Acoperă ALTE aspecte ale sursei.` : ""
-        }${
-          allEntries.length > 0
-            ? `\n\nDeja generate (NU repeta):\n${allEntries.slice(-10).map(e => `- [${e.agentRole}] ${e.content.slice(0, 60)}...`).join("\n")}`
-            : ""
-        }`,
+        content: userContent.length === 1 ? userContent[0].text : userContent,
       }],
     })
 
