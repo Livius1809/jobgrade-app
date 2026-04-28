@@ -141,7 +141,9 @@ export default function DocsPage() {
       const data = await res.json()
 
       if (data.knownSource === false) {
-        setMessage("Sursa nu e cunoscuta — incarca documentul PDF in schimb.")
+        setMessage("Sursa nu e cunoscuta de Claude. Comut pe upload PDF — incarca documentul.")
+        // Comută automat pe tab upload cu datele pre-completate
+        setInputMode("upload")
       } else if (data.entriesCreated > 0 || data.entries?.length > 0) {
         const roles = Object.entries(data.byRole || {}).map(([r, n]) => `${r}:${n}`).join(", ")
         setMessage(`"${data.sourceTitle}" — ${data.entriesCreated} entries create\nConsultanti: ${roles}`)
