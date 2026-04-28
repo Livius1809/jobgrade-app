@@ -225,9 +225,32 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
       title: `${lateralStuck} cereri laterale fara raspuns > 48h`,
       detail: "Cereri inter-departamentale blocate. Posibil: managerul omolog nu a delegat.",
       affectedEntities: [],
-      action: "ESCALARE_MANAGER",
+      action: "AUTO_REMEDIERE",
+      autoRemediation: "Cereri laterale blocate > 48h → CANCELLED automat",
     })
+    // Self-healing: anulam cereri laterale blocate > 48h
+    const cancelledLateral = await prisma.agentTask.updateMany({
+      where: {
+        status: "BLOCKED",
+        blockerType: "DEPENDENCY",
+        tags: { hasSome: ["lateral-collaboration"] },
+        blockedAt: { lt: h48 },
+      },
+      data: { status: "CANCELLED" },
+    })
+    if (cancelledLateral.count > 0) autoRemediations += cancelledLateral.count
   }
+
+  // Self-healing: ACCEPTED > 5 zile fara progres → revert la ASSIGNED
+  const old5dAccepted = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+  const staleAccepted = await prisma.agentTask.updateMany({
+    where: { status: "ACCEPTED", acceptedAt: { lt: old5dAccepted } },
+    data: { status: "ASSIGNED", acceptedAt: null },
+  })
+  if (staleAccepted.count > 0) autoRemediations += staleAccepted.count
+
+  // Self-healing: task-uri cu acelasi titlu CANCELLED 3+ ori → blacklist (nu mai crea)
+  // Acesta e deja implementat ca circuit breaker in task-executor.ts
 
   // Auto-remediere: ASSIGNED > 14 zile → CANCELLED
   const old14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
