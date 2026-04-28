@@ -160,6 +160,38 @@ export async function GET(request: NextRequest) {
     }
   })
 
+  // 8. METRICS SNAPSHOT ZILNIC
+  await withTimeout("metricsSnapshot", async () => {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const existing = await prisma.systemConfig.findUnique({ where: { key: `METRICS_SNAPSHOT_${todayStr}` } }).catch(() => null)
+    // Salvam/actualizam o data pe zi
+    const todayStart = new Date(todayStr + "T00:00:00Z")
+    const [completed, created, cancelled, kbHit, artCreated, artTotal, validated] = await Promise.all([
+      prisma.agentTask.count({ where: { completedAt: { gte: todayStart }, status: "COMPLETED" } }),
+      prisma.agentTask.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.agentTask.count({ where: { status: "CANCELLED", updatedAt: { gte: todayStart } } }),
+      prisma.agentTask.count({ where: { completedAt: { gte: todayStart }, status: "COMPLETED", kbHit: true } }),
+      prisma.learningArtifact.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.learningArtifact.count(),
+      prisma.learningArtifact.count({ where: { validated: true } }),
+    ])
+    const kbRate = completed > 0 ? Math.round((kbHit / completed) * 100) : 0
+    const snapshot = {
+      date: todayStr, tasksCompleted: completed, tasksCreated: created, tasksCancelled: cancelled,
+      kbHitRate: kbRate, realExecRate: 100 - kbRate,
+      learningArtifactsCreated: artCreated, learningArtifactsTotal: artTotal,
+      validatedPct: artTotal > 0 ? Math.round((validated / artTotal) * 100) : 0,
+      costEstimated: Math.round(completed * 0.02 * 100) / 100,
+      productivityRatio: created > 0 ? Math.round(((created - cancelled) / created) * 100) : 100,
+    }
+    await prisma.systemConfig.upsert({
+      where: { key: `METRICS_SNAPSHOT_${todayStr}` },
+      update: { value: JSON.stringify(snapshot) },
+      create: { key: `METRICS_SNAPSHOT_${todayStr}`, value: JSON.stringify(snapshot) },
+    })
+    results.metricsSnapshot = { date: todayStr, tasksCompleted: completed }
+  })
+
   // Salvam timestamp
   try {
     await prisma.systemConfig.upsert({
