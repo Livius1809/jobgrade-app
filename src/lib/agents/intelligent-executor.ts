@@ -27,29 +27,33 @@ import { extractPostExecutionLearning } from "./learning-pipeline"
 import { learningFunnel } from "./learning-funnel"
 
 // ── WHITELIST AGENȚI AUTORIZAȚI PENTRU EXECUȚIE AUTONOMĂ ─────────────────────
-// Principiu: cronul execută DOAR ce a decis COG + vigilență.
-// Restul structurii primește task-uri prin delegare COG, nu direct din cron.
 //
-// Grupuri:
-// 1. COG — singurul care evaluează și delegă (1 apel Claude/ciclu)
-// 2. VIGILENȚĂ — funcționează independent, protejează organismul
-// 3. DIRECTORI COG — execută ce le delegă COG (ciclu LEAN, fără Claude propriu)
+// Arhitectura: doar 3 surse comunică cu Claude:
+//   COG  — evaluare organism, decizii strategice, delegare
+//   L2   — cunoaștere domeniu (learning, distilare, cold start, KB enrichment)
+//   L3   — legislație (scanare reglementări, conformitate, AI Act, GDPR)
 //
-// Toți ceilalți agenți: task-urile lor rămân ASSIGNED dar NU se execută
-// autonom din cron. Se execută doar când un manager le delegă explicit.
+// Restul structurii: muncește din L2 (KB-first). Claude doar la KB miss.
+// Cronul nu execută task-uri ale agenților ne-autorizați.
+//
+// Grupuri autorizate:
+// 1. COG — creierul (evaluare + delegare, 1 apel Claude Sonnet/ciclu)
+// 2. DIRECTORI COG — execută delegări COG, rezolvă din L2
+// 3. L3/VIGILENȚĂ — funcționare independentă, protejează organismul
 
 const CRON_AUTHORIZED_AGENTS = new Set([
   // COG — creierul
   "COG",
-  // Directori COG — execută delegări COG (lean, fără evaluare proprie)
-  "COA", "COCSA", "CJA", "CIA", "CCIA",
+  // Directori COG — execută delegări, rezolvă din L2 (KB-first)
+  "COA", "COCSA", "CIA", "CCIA",
+  // L3 — legislație + conformitate
+  "CJA",            // Consilier Juridic (conformitate, Directiva EU, GDPR)
   // Vigilență — funcționare independentă
   "SVHA",           // Vulnerabilități & securitate
   "SA",             // Security Agent
   "TDA",            // Technical Debt Agent
   "SAFETY_MONITOR", // Monitor siguranță B2C
   "SQA",            // Security QA
-  "CJA",            // Consilier Juridic (conformitate)
 ])
 
 export interface IntelligentRunResult {
@@ -323,8 +327,15 @@ export async function runIntelligentBatch(
     // KB ca context pentru task-uri de acțiune (injectat în prompt la PAS 6)
     const kbContext = kbResult.hit ? kbResult.content?.slice(0, 1000) : undefined
 
-    if (kbResult.hit && isKnowledgeTask) {
-      // DOAR task-uri de cunoaștere: KB e răspunsul complet
+    // ═══ KB-FIRST PENTRU ORICE TASK (nu doar KB_RESEARCH) ═══
+    // Principiu: L2 (cunoașterea) e sursa primară. Claude doar la KB miss.
+    // Dacă KB-ul dă hit cu confidence ridicat, task-ul se rezolvă fără Claude.
+    // Threshold mai strict pentru task-uri de acțiune vs cunoaștere.
+    const kbConfidenceOk = isKnowledgeTask
+      ? kbResult.hit  // knowledge: orice hit e suficient
+      : kbResult.hit && (kbResult.confidence ?? 0) >= 0.80  // acțiune: confidence >80%
+
+    if (kbConfidenceOk) {
       kbHit = true
       tasksSkippedKB++
 
@@ -361,7 +372,7 @@ export async function runIntelligentBatch(
       })
       continue
     }
-    // Task de acțiune cu KB hit → kbContext va fi injectat la execuție (PAS 6)
+    // KB miss sau confidence insuficientă → continuă la Claude (PAS 4+)
 
     // ═══ PAS 4: ALIGNMENT CHECK (P6) — SIMPLIFICAT ═══
     // Doar Nivel 1 (pattern-uri interzise). Task creat de COG/Owner/Claude = deja validat.
