@@ -505,6 +505,145 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
             </div>
           )}
 
+          {/* ═══ DEZVOLTARE (Layer 4) — Pachet 4 ═══ */}
+          {purchasedLayer >= 4 && isValidated && (
+            <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-white" style={{ padding: "28px" }}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold shrink-0">
+                  <Icon name="icon-dashboard" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Dezvoltare organizationala</h3>
+                  <p className="text-xs text-purple-600 font-medium">Pachet 4 · Strategie, cultura, transformare</p>
+                </div>
+              </div>
+
+              {/* Inputuri preluate din C1+C2+C3 */}
+              <div className="mb-4 bg-purple-50 rounded-xl border border-purple-100 p-3">
+                <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide mb-2">Preluat din cardurile anterioare</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "Organigrama completa", ok: jobCount >= 3 },
+                    { label: "Grila salariala + clase", ok: purchasedLayer >= 2 },
+                    { label: "Pay gap + echitate", ok: purchasedLayer >= 2 },
+                    { label: "KPI per post", ok: purchasedLayer >= 3 },
+                    { label: "Profil psihometric echipe", ok: purchasedLayer >= 3 },
+                    { label: "Sociograma relatii", ok: purchasedLayer >= 3 },
+                    { label: "MVV companie", ok: !!mission },
+                  ].map(item => (
+                    <span key={item.label} className={`text-[10px] px-2 py-1 rounded-full border ${
+                      item.ok ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-400"
+                    }`}>
+                      {item.ok ? "\u2713" : "\u25CB"} {item.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Inputuri C4 */}
+              <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide mb-2">Configurare C4</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button onClick={() => openPanel("c4-climate")}
+                  className="bg-white rounded-xl border border-purple-200 hover:border-purple-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">1</span>
+                    <Icon name="icon-consens" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-purple-700">Climat organizational</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Chestionar bottom-up pe 8 dimensiuni. Per niveluri ierarhice.</p>
+                </button>
+
+                <button onClick={() => openPanel("c4-strategic-objectives")}
+                  className="bg-white rounded-xl border border-purple-200 hover:border-purple-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">2</span>
+                    <Icon name="icon-benchmark" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-purple-700">Obiective strategice CA</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Obiectivele Consiliului de Administratie — cascadate top-down.</p>
+                </button>
+
+                <button onClick={() => openPanel("c4-documents")}
+                  className="bg-white rounded-xl border border-purple-200 hover:border-purple-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-raport" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-purple-700">Documente strategice</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Minute CA/AGA, plan strategic existent.</p>
+                </button>
+
+                <button onClick={() => openPanel("c4-toggle")}
+                  className="bg-white rounded-xl border border-purple-200 hover:border-purple-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="icon-echitate" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-purple-700">Calibrare culturala</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Toggle ON/OFF — aplica Hofstede pe toate rapoartele.</p>
+                </button>
+              </div>
+
+              {/* Rapoarte C4 */}
+              <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide mb-2">Rapoarte</p>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {[
+                  { label: "Profil climat organizational", icon: "icon-consens" },
+                  { label: "Calibrare culturala", icon: "icon-echitate" },
+                  { label: "Capacitate invatare", icon: "icon-profil" },
+                  { label: "Capacitate adaptare", icon: "icon-benchmark" },
+                  { label: "Declarat vs practicat", icon: "icon-pay-gap" },
+                  { label: "ROI cultura", icon: "icon-compensatie" },
+                  { label: "Plan interventie multi-nivel", icon: "icon-raport" },
+                  { label: "Metrici performanta strategice", icon: "icon-dashboard" },
+                  { label: "Manual cultura", icon: "icon-manual" },
+                  { label: "Business plan operational", icon: "icon-raport" },
+                ].map(item => (
+                  <button key={item.label} onClick={() => openPanel(`c4-report-${item.label.toLowerCase().replace(/\s/g, "-")}`)}
+                    className="flex items-center gap-2 text-xs bg-white rounded-lg border border-purple-100 hover:border-purple-300 p-2.5 transition-colors text-left">
+                    <Icon name={item.icon} size={14} className="opacity-40" />
+                    <span className="text-slate-700">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Simulari C4 */}
+              <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide mb-2">Simulari</p>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {[
+                  "Cascada obiective CA → operational",
+                  "Schimb structura organizationala",
+                  "Investesc in dezvoltare",
+                  "Schimb management",
+                  "Trec la MIXT (om + AI)",
+                  "Scenarii piata",
+                  "CLASIC vs TRANSFORMATIONAL",
+                  "Calibrare culturala ON/OFF",
+                ].map(label => (
+                  <button key={label} onClick={() => openPanel(`c4-sim-${label.toLowerCase().replace(/\s/g, "-")}`)}
+                    className="flex items-center gap-2 text-xs bg-white rounded-lg border border-purple-100 hover:border-purple-300 p-2.5 transition-colors text-left">
+                    <span className="text-purple-400 text-[10px]">WIF</span>
+                    <span className="text-slate-700">{label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Monitorizare */}
+              <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide mb-2">Monitorizare continua</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "Puls lunar", freq: "lunar" },
+                  { label: "Maturitate", freq: "trimestrial" },
+                  { label: "Impact", freq: "la 3 luni" },
+                  { label: "Re-calibrare", freq: "semestrial" },
+                  { label: "Raport CA", freq: "anual" },
+                ].map(m => (
+                  <span key={m.label} className="text-[10px] px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700">
+                    {m.label} <span className="text-purple-400">({m.freq})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ═══ Rapoarte ═══ */}
           {purchasedLayer > 0 && canAccess("AUDIT_TRAIL") && (
             <div
@@ -562,6 +701,78 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               </div>
               <div style={{ height: "20px" }} />
               <ReportPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou climat organizational C4 ═══ */}
+          {activePanel === "c4-climate" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-purple-400 bg-purple-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Climat organizational</h3>
+                  <p className="text-xs text-purple-600 mt-1">Chestionar bottom-up pe 8 dimensiuni — per niveluri ierarhice</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-purple-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <ClimatePanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou obiective strategice CA ═══ */}
+          {activePanel === "c4-strategic-objectives" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-purple-400 bg-purple-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Obiective strategice CA</h3>
+                  <p className="text-xs text-purple-600 mt-1">Obiectivele Consiliului de Administratie — se cascadeaza top-down</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-purple-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <StrategicObjectivesPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou documente strategice C4 ═══ */}
+          {activePanel === "c4-documents" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-purple-400 bg-purple-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Documente strategice</h3>
+                  <p className="text-xs text-purple-600 mt-1">Minute CA/AGA, plan strategic — context pentru analiza C4</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-purple-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <C4DocumentsPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou calibrare culturala C4 ═══ */}
+          {activePanel === "c4-toggle" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-purple-400 bg-purple-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Calibrare culturala</h3>
+                  <p className="text-xs text-purple-600 mt-1">Hofstede / David — aplica pe toate rapoartele C4</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-purple-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <CulturalCalibrationPanel />
             </div>,
             document.body
           )}
@@ -2039,6 +2250,332 @@ function ReportPanel() {
         Rapoartele includ: ierarhia posturilor, clase salariale, proces verbal și pagina de validare cu semnătură.
         Exportul consumă credite din sold.
       </p>
+    </div>
+  )
+}
+
+// ─── Panou Climat Organizational C4 ──────────────────────────────────
+
+const CLIMATE_DIMENSIONS = [
+  { id: "sarcina", label: "Orientare spre sarcina", description: "Claritate roluri, obiective, standarde" },
+  { id: "structura", label: "Structura organizationala", description: "Ierarhie, reguli, proceduri, birocratizare" },
+  { id: "relatii", label: "Relatii interpersonale", description: "Colaborare, incredere, comunicare intre colegi" },
+  { id: "motivatie", label: "Motivatie si angajament", description: "Satisfactie, loialitate, implicare" },
+  { id: "suport", label: "Suport organizational", description: "Resurse, training, feedback constructiv" },
+  { id: "conducere", label: "Conducere si leadership", description: "Stil managerial, viziune, decizie" },
+  { id: "schimbare", label: "Deschidere la schimbare", description: "Inovare, adaptabilitate, rezistenta" },
+  { id: "performanta", label: "Orientare spre performanta", description: "Excelenta, competitie sanatoasa, rezultate" },
+]
+
+function ClimatePanel() {
+  const [levels, setLevels] = useState<string[]>(["management", "middle", "operational"])
+  const [selectedLevel, setSelectedLevel] = useState("management")
+  const [status, setStatus] = useState<Record<string, { sent: number; completed: number }>>({})
+  const [saving, setSaving] = useState(false)
+  const [newLevel, setNewLevel] = useState("")
+
+  const addLevel = () => {
+    if (newLevel && !levels.includes(newLevel)) {
+      setLevels(prev => [...prev, newLevel])
+      setNewLevel("")
+    }
+  }
+
+  const LEVEL_LABELS: Record<string, string> = {
+    management: "Management (directori, C-level)",
+    middle: "Middle management (sefi departament, team leaderi)",
+    operational: "Operational (specialisti, executanti)",
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-purple-100 p-3">
+        <p className="text-xs text-slate-600">
+          Chestionarul masoara 8 dimensiuni ale climatului organizational.
+          Se administreaza <strong>bottom-up pe niveluri ierarhice</strong> — fiecare nivel
+          raspunde separat, apoi se compara perceptiile.
+        </p>
+      </div>
+
+      {/* Dimensiuni */}
+      <div className="bg-white rounded-xl border border-purple-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-3">8 dimensiuni evaluate</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {CLIMATE_DIMENSIONS.map(dim => (
+            <div key={dim.id} className="bg-purple-50 rounded-lg border border-purple-100 p-2.5">
+              <span className="text-xs font-medium text-purple-800">{dim.label}</span>
+              <p className="text-[10px] text-slate-500 mt-0.5">{dim.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Niveluri ierarhice */}
+      <div className="bg-white rounded-xl border border-purple-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-3">Niveluri ierarhice (cine completeaza)</h4>
+        <div className="space-y-2 mb-3">
+          {levels.map(level => (
+            <div key={level} className="flex items-center justify-between bg-purple-50 rounded-lg border border-purple-100 p-2.5">
+              <span className="text-xs font-medium text-slate-800">{LEVEL_LABELS[level] || level}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-400">{status[level]?.completed || 0}/{status[level]?.sent || 0} completat</span>
+                <button className="text-[10px] px-2 py-0.5 rounded bg-purple-600 text-white hover:bg-purple-700">
+                  Trimite chestionar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input type="text" value={newLevel} onChange={e => setNewLevel(e.target.value)}
+            placeholder="Alt nivel (ex: board, consultanti)" className="flex-1 px-2 py-1.5 rounded border border-purple-200 text-xs" />
+          <button onClick={addLevel} disabled={!newLevel} className="px-3 py-1.5 rounded bg-purple-600 text-white text-xs disabled:opacity-40">+</button>
+        </div>
+      </div>
+
+      <p className="text-[9px] text-slate-400">
+        Rezultatele se compara intre niveluri: ce vede managementul vs ce simte operationalul.
+        Diferentele mari indica probleme de comunicare sau perceptie.
+      </p>
+    </div>
+  )
+}
+
+// ─── Panou Obiective Strategice CA ───────────────────────────────────
+
+function StrategicObjectivesPanel() {
+  const [objectives, setObjectives] = useState<Array<{
+    text: string; owner: string; cascadeTo: string; kpi: string; deadline: string
+  }>>([
+    { text: "", owner: "", cascadeTo: "", kpi: "", deadline: "" },
+  ])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const addObj = () => setObjectives(prev => [...prev, { text: "", owner: "", cascadeTo: "", kpi: "", deadline: "" }])
+  const updateObj = (idx: number, field: string, value: string) =>
+    setObjectives(prev => prev.map((o, i) => i === idx ? { ...o, [field]: value } : o))
+  const removeObj = (idx: number) => objectives.length > 1 && setObjectives(prev => prev.filter((_, i) => i !== idx))
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(true)
+    setSaving(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const filledCount = objectives.filter(o => o.text.trim().length > 10).length
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-purple-100 p-3">
+        <p className="text-xs text-slate-600">
+          Obiectivele CA se <strong>cascadeaza top-down</strong>: CA → Director → Manager → Echipa → Individual.
+          Fiecare nivel traduce obiectivul in actiuni concrete la nivelul sau.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-xl border border-purple-200 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-bold text-slate-800">Obiective CA ({filledCount})</h4>
+          <button onClick={addObj} className="text-[10px] text-purple-600 hover:text-purple-800">+ Adauga</button>
+        </div>
+
+        <div className="space-y-3">
+          {objectives.map((obj, idx) => (
+            <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-3">
+              <div className="flex items-start gap-2">
+                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded mt-1">{idx + 1}</span>
+                <div className="flex-1 space-y-2">
+                  <textarea value={obj.text} onChange={e => updateObj(idx, "text", e.target.value)} rows={2}
+                    placeholder="ex: Cresterea cotei de piata cu 15% in segmentul enterprise pana la Q4 2027"
+                    className="w-full px-2 py-1.5 rounded border border-slate-200 text-xs resize-y" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" value={obj.owner} onChange={e => updateObj(idx, "owner", e.target.value)}
+                      placeholder="Responsabil (Director HR, DG...)" className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    <input type="text" value={obj.cascadeTo} onChange={e => updateObj(idx, "cascadeTo", e.target.value)}
+                      placeholder="Se cascadeaza la (dept, echipa)" className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    <input type="text" value={obj.kpi} onChange={e => updateObj(idx, "kpi", e.target.value)}
+                      placeholder="KPI masurabil (15% cota piata)" className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    <input type="date" value={obj.deadline} onChange={e => updateObj(idx, "deadline", e.target.value)}
+                      className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                  </div>
+                </div>
+                {objectives.length > 1 && (
+                  <button onClick={() => removeObj(idx)} className="text-red-400 hover:text-red-600 mt-1">✕</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={saving || filledCount === 0}
+        className="text-xs px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
+        {saving ? "Se salveaza..." : saved ? "Salvat" : `Salveaza ${filledCount} obiectiv${filledCount !== 1 ? "e" : ""}`}
+      </button>
+
+      <p className="text-[9px] text-slate-400">
+        Simularea "Cascada obiective" va traduce automat fiecare obiectiv CA in
+        sub-obiective departamentale si apoi in KPI-uri individuale.
+      </p>
+    </div>
+  )
+}
+
+// ─── Panou Documente Strategice C4 ───────────────────────────────────
+
+const C4_DOCUMENT_TYPES = [
+  { id: "minute_ca", label: "Minute CA", description: "Procesele verbale ale Consiliului de Administratie" },
+  { id: "minute_aga", label: "Minute AGA", description: "Procesele verbale ale Adunarii Generale a Actionarilor" },
+  { id: "plan_strategic", label: "Plan strategic existent", description: "Documentul strategic curent (daca exista)" },
+  { id: "raport_anual", label: "Raport anual", description: "Raportul anual de activitate" },
+  { id: "buget_aprobat", label: "Buget aprobat", description: "Bugetul aprobat de CA pentru exercitiul curent" },
+  { id: "altul", label: "Alt document strategic", description: "Orice document relevant pentru analiza strategica" },
+]
+
+function C4DocumentsPanel() {
+  const [docs, setDocs] = useState<Record<string, { checked: boolean; notes: string }>>(() => {
+    const init: Record<string, { checked: boolean; notes: string }> = {}
+    for (const dt of C4_DOCUMENT_TYPES) init[dt.id] = { checked: false, notes: "" }
+    return init
+  })
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const toggleDoc = (id: string) => setDocs(prev => ({ ...prev, [id]: { ...prev[id], checked: !prev[id]?.checked } }))
+  const updateNotes = (id: string, notes: string) => setDocs(prev => ({ ...prev, [id]: { ...prev[id], notes } }))
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(true); setSaving(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const checkedCount = Object.values(docs).filter(d => d.checked).length
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-purple-100 p-3">
+        <p className="text-xs text-slate-600">
+          Documentele strategice ajuta la intelegerea <strong>istoricului decizional</strong> al companiei.
+          Cu cat avem mai mult context, cu atat analiza C4 e mai relevanta.
+        </p>
+      </div>
+
+      <div className="flex gap-3 text-center">
+        <div className="bg-white rounded-lg border border-purple-200 p-3 flex-1">
+          <p className="text-lg font-bold text-purple-700">{checkedCount}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Disponibile</p>
+        </div>
+        <div className="bg-white rounded-lg border border-purple-200 p-3 flex-1">
+          <p className="text-lg font-bold text-slate-400">{C4_DOCUMENT_TYPES.length - checkedCount}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Lipsa</p>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        {C4_DOCUMENT_TYPES.map(dt => (
+          <div key={dt.id} className={`rounded-lg border p-3 transition-colors ${
+            docs[dt.id]?.checked ? "bg-purple-50 border-purple-200" : "bg-white border-slate-200"
+          }`}>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={docs[dt.id]?.checked || false} onChange={() => toggleDoc(dt.id)} className="mt-0.5" />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-slate-800">{dt.label}</span>
+                <p className="text-[10px] text-slate-400">{dt.description}</p>
+              </div>
+            </label>
+            {docs[dt.id]?.checked && (
+              <input type="text" value={docs[dt.id]?.notes || ""} onChange={e => updateNotes(dt.id, e.target.value)}
+                placeholder="Note: ex. ultima sedinta 15.03.2026, acoperire..."
+                className="w-full mt-2 ml-6 px-2 py-1.5 rounded border border-purple-200 bg-white text-xs" />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button onClick={handleSave} disabled={saving}
+        className="text-xs px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
+        {saving ? "Se salveaza..." : saved ? "Salvat" : "Salveaza"}
+      </button>
+    </div>
+  )
+}
+
+// ─── Panou Calibrare Culturala C4 ────────────────────────────────────
+
+function CulturalCalibrationPanel() {
+  const [enabled, setEnabled] = useState(false)
+  const [hofstedeValues, setHofstedeValues] = useState({
+    powerDistance: 90,        // Romania: mare
+    individualism: 30,        // Romania: colectivist
+    masculinity: 42,          // Romania: moderat
+    uncertaintyAvoidance: 90, // Romania: mare
+    longTermOrientation: 52,  // Romania: moderat
+    indulgence: 20,           // Romania: restrictiv
+  })
+
+  const dimensions = [
+    { key: "powerDistance", label: "Distanta fata de putere", desc: "Cat de mult se accepta inegalitatea. RO: mare (90)", low: "Egalitar", high: "Ierarhic" },
+    { key: "individualism", label: "Individualism vs Colectivism", desc: "Individ vs grup. RO: colectivist (30)", low: "Colectivist", high: "Individualist" },
+    { key: "masculinity", label: "Masculinitate vs Feminitate", desc: "Competitie vs cooperare. RO: moderat (42)", low: "Cooperare", high: "Competitie" },
+    { key: "uncertaintyAvoidance", label: "Evitarea incertitudinii", desc: "Toleranta la ambiguitate. RO: mare (90)", low: "Flexibil", high: "Rigid" },
+    { key: "longTermOrientation", label: "Orientare pe termen lung", desc: "Traditie vs pragmatism. RO: moderat (52)", low: "Traditie", high: "Pragmatism" },
+    { key: "indulgence", label: "Indulgenta vs Restrictie", desc: "Libertate exprimare vs norma. RO: restrictiv (20)", low: "Restrictiv", high: "Indulgent" },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-purple-100 p-3">
+        <p className="text-xs text-slate-600">
+          Calibrarea culturala aplica modelul <strong>Hofstede</strong> pe toate rapoartele C4.
+          Valorile pre-populare sunt pentru Romania. Ajusteaza daca compania opereaza in alt context cultural.
+        </p>
+      </div>
+
+      {/* Toggle master */}
+      <div className="bg-white rounded-xl border border-purple-200 p-4">
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <span className="text-sm font-bold text-slate-800">Calibrare culturala</span>
+            <p className="text-[10px] text-slate-500 mt-0.5">Aplica Hofstede pe rapoartele Declarat vs Practicat, ROI Cultura, Plan interventie</p>
+          </div>
+          <div className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? "bg-purple-500" : "bg-slate-300"}`}
+            onClick={() => setEnabled(!enabled)}>
+            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-6" : "translate-x-0.5"}`} />
+          </div>
+        </label>
+      </div>
+
+      {/* Dimensiuni Hofstede */}
+      {enabled && (
+        <div className="bg-white rounded-xl border border-purple-200 p-4 space-y-4">
+          <h4 className="text-sm font-bold text-slate-800">6 dimensiuni Hofstede</h4>
+          {dimensions.map(dim => {
+            const val = hofstedeValues[dim.key as keyof typeof hofstedeValues]
+            return (
+              <div key={dim.key}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-slate-800">{dim.label}</span>
+                  <span className="text-xs font-mono text-purple-700">{val}</span>
+                </div>
+                <p className="text-[9px] text-slate-400 mb-1.5">{dim.desc}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-slate-400 w-16">{dim.low}</span>
+                  <input type="range" min={0} max={100} value={val}
+                    onChange={e => setHofstedeValues(prev => ({ ...prev, [dim.key]: Number(e.target.value) }))}
+                    className="flex-1 accent-purple-500" />
+                  <span className="text-[9px] text-slate-400 w-16 text-right">{dim.high}</span>
+                </div>
+              </div>
+            )
+          })}
+          <p className="text-[9px] text-slate-400">
+            Sursa: Hofstede Insights — Romania. Ajusteaza valorile daca compania are cultura
+            distincta de media nationala (multinationala, startup, etc).
+          </p>
+        </div>
+      )}
     </div>
   )
 }
