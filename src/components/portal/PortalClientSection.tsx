@@ -404,30 +404,54 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                 </div>
               </div>
 
-              {/* Inputuri noi C3 */}
-              <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide mb-2">Inputuri specifice Competitivitate</p>
+              {/* Inputuri noi C3 — ordinea conteaza: KPI → Pachete → Evaluare → Sociograma */}
+              <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide mb-2">Configurare (in ordine)</p>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                {/* Baterie psihometrica */}
+                {/* 1. KPI per post */}
+                <button onClick={() => openPanel("c3-kpi")}
+                  className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-bold">1</span>
+                    <Icon name="icon-dashboard" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">KPI per post</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Indicatori de performanta — generati AI sau definiti manual.</p>
+                </button>
+
+                {/* 2. Pachete salariale */}
+                <button onClick={() => openPanel("c3-pachete-salariale")}
+                  className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-bold">2</span>
+                    <Icon name="icon-clase-salariale" size={18} className="opacity-60" />
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Pachete salariale</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Fix + variabil per post. Leaga KPI de compensatie.</p>
+                </button>
+
+                {/* 3. Baterie psihometrica */}
                 <button onClick={() => openPanel("psychometrics")}
                   className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
                   <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-bold">3</span>
                     <Icon name="icon-profil" size={18} className="opacity-60" />
-                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Baterie psihometrica</span>
+                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Evaluare psihometrica</span>
                   </div>
-                  <p className="text-xs text-slate-500">Herrmann HBDI + MBTI obligatoriu. Optional: instrumente externe.</p>
+                  <p className="text-xs text-slate-500">Selecteaza departament, persoane, motiv, instrumente.</p>
                 </button>
 
-                {/* Sociograma Balint */}
+                {/* 4. Sociograma Balint */}
                 <button onClick={() => openPanel("sociogram")}
                   className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
                   <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-bold">4</span>
                     <Icon name="icon-consens" size={18} className="opacity-60" />
                     <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Sociograma echipe</span>
                   </div>
                   <p className="text-xs text-slate-500">Scenariu Balint — relatii intr-un departament sau proiect.</p>
                 </button>
 
-                {/* Documente interne */}
+                {/* 5. Documente interne */}
                 <button onClick={() => openPanel("c3-documents")}
                   className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
                   <div className="flex items-center gap-2 mb-2">
@@ -437,14 +461,14 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
                   <p className="text-xs text-slate-500">Proceduri, politici, manual angajator, cod etic.</p>
                 </button>
 
-                {/* Obiective business */}
+                {/* 6. Obiective business */}
                 <button onClick={() => openPanel("c3-objectives")}
                   className="bg-white rounded-xl border border-teal-200 hover:border-teal-400 transition-colors p-4 group text-left">
                   <div className="flex items-center gap-2 mb-2">
                     <Icon name="icon-dashboard" size={18} className="opacity-60" />
                     <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Obiective business</span>
                   </div>
-                  <p className="text-xs text-slate-500">Aproximativ — va ajuta rafinarea. Nu cerem formulare complexe.</p>
+                  <p className="text-xs text-slate-500">Aproximativ — va ajuta rafinarea.</p>
                 </button>
               </div>
 
@@ -538,6 +562,42 @@ export default function PortalClientSection({ jobCount, purchasedLayer, purchase
               </div>
               <div style={{ height: "20px" }} />
               <ReportPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou KPI per post ═══ */}
+          {activePanel === "c3-kpi" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-teal-400 bg-teal-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">KPI per post</h3>
+                  <p className="text-xs text-teal-600 mt-1">Defineste indicatori de performanta — manual sau genereaza cu AI</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-teal-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <KpiPanel />
+            </div>,
+            document.body
+          )}
+
+          {/* ═══ Panou pachete salariale ═══ */}
+          {activePanel === "c3-pachete-salariale" && mounted && createPortal(
+            <div
+              style={{ borderWidth: "3px", top: "100px", left: `${panelLeft}px`, right: "24px", maxHeight: "calc(100vh - 130px)", padding: "28px" }}
+              className="fixed rounded-2xl border-teal-400 bg-teal-50 overflow-y-auto shadow-xl z-40"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Pachete salariale</h3>
+                  <p className="text-xs text-teal-600 mt-1">Fix + variabil per post. Leaga KPI de compensatie.</p>
+                </div>
+                <button onClick={() => setActivePanel(null)} className="text-teal-700 hover:opacity-70 text-xl font-bold leading-none p-1 rounded transition-opacity">✕</button>
+              </div>
+              <CompensationPanel />
             </div>,
             document.body
           )}
@@ -1943,6 +2003,382 @@ function ReportPanel() {
         Rapoartele includ: ierarhia posturilor, clase salariale, proces verbal și pagina de validare cu semnătură.
         Exportul consumă credite din sold.
       </p>
+    </div>
+  )
+}
+
+// ─── Panou KPI per post ──────────────────────────────────────────────
+
+function KpiPanel() {
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string }>>([])
+  const [selectedJob, setSelectedJob] = useState("")
+  const [kpis, setKpis] = useState<any[]>([])
+  const [allKpis, setAllKpis] = useState<Record<string, any[]>>({})
+  const [generating, setGenerating] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/v1/jobs").then(r => r.json()),
+      fetch("/api/v1/compensation-packages").then(r => r.json()),
+    ]).then(([jobData, compData]) => {
+      setJobs(Array.isArray(jobData) ? jobData : (jobData.jobs || []))
+      // Group KPIs per job from compensation endpoint
+      const kpiMap: Record<string, any[]> = {}
+      for (const pkg of (compData.packages || [])) {
+        if (pkg.kpis?.length) kpiMap[pkg.jobId] = pkg.kpis
+      }
+      setAllKpis(kpiMap)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  const handleGenerate = async () => {
+    if (!selectedJob) return
+    setGenerating(true)
+    try {
+      const res = await fetch("/api/v1/ai/kpi-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: selectedJob }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setKpis(data.kpis || [])
+      }
+    } catch {}
+    setGenerating(false)
+  }
+
+  const handleSave = async () => {
+    if (!selectedJob || kpis.length === 0) return
+    setSaving(true)
+    await fetch("/api/v1/kpis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId: selectedJob, kpis }),
+    })
+    setAllKpis(prev => ({ ...prev, [selectedJob]: kpis }))
+    setKpis([])
+    setSelectedJob("")
+    setSaving(false)
+  }
+
+  const addManualKpi = () => {
+    setKpis(prev => [...prev, { name: "", description: "", targetValue: "", measurementUnit: "", frequency: "MONTHLY", weight: 0 }])
+  }
+
+  const updateKpi = (idx: number, field: string, value: any) => {
+    setKpis(prev => prev.map((k, i) => i === idx ? { ...k, [field]: value } : k))
+  }
+
+  const removeKpi = (idx: number) => setKpis(prev => prev.filter((_, i) => i !== idx))
+
+  if (loading) return <p className="text-xs text-slate-400">Se incarca...</p>
+
+  const jobsWithKpi = Object.keys(allKpis).length
+  const totalKpis = Object.values(allKpis).reduce((s, arr) => s + arr.length, 0)
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+          <p className="text-lg font-bold text-teal-700">{jobsWithKpi}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Posturi cu KPI</p>
+        </div>
+        <div className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+          <p className="text-lg font-bold text-teal-700">{totalKpis}</p>
+          <p className="text-[9px] text-slate-500 uppercase">KPI-uri totale</p>
+        </div>
+        <div className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+          <p className="text-lg font-bold text-teal-700">{jobs.length - jobsWithKpi}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Posturi fara KPI</p>
+        </div>
+      </div>
+
+      {/* Configurare per post */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-3">Defineste KPI pentru un post</h4>
+        <select value={selectedJob} onChange={e => { setSelectedJob(e.target.value); setKpis([]) }}
+          className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm mb-3">
+          <option value="">Selecteaza postul...</option>
+          {jobs.map(j => (
+            <option key={j.id} value={j.id}>
+              {j.title} {allKpis[j.id] ? `(${allKpis[j.id].length} KPI)` : ""}
+            </option>
+          ))}
+        </select>
+
+        {selectedJob && kpis.length === 0 && (
+          <div className="flex gap-2 mb-3">
+            <button onClick={handleGenerate} disabled={generating}
+              className="text-xs px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40">
+              {generating ? "AI genereaza..." : "Genereaza cu AI (3 credite)"}
+            </button>
+            <button onClick={addManualKpi}
+              className="text-xs px-4 py-2 rounded-lg border border-teal-200 text-teal-700 hover:bg-teal-50">
+              Adauga manual
+            </button>
+          </div>
+        )}
+
+        {/* Editor KPI */}
+        {kpis.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {kpis.map((kpi, idx) => (
+              <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <input type="text" value={kpi.name} onChange={e => updateKpi(idx, "name", e.target.value)}
+                      placeholder="Numele KPI" className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    <input type="text" value={kpi.targetValue} onChange={e => updateKpi(idx, "targetValue", e.target.value)}
+                      placeholder="Valoare tinta" className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    <input type="text" value={kpi.measurementUnit} onChange={e => updateKpi(idx, "measurementUnit", e.target.value)}
+                      placeholder="Unitate (%, RON, nr)" className="px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    <div className="flex gap-1">
+                      <select value={kpi.frequency} onChange={e => updateKpi(idx, "frequency", e.target.value)}
+                        className="flex-1 px-2 py-1.5 rounded border border-slate-200 text-xs">
+                        <option value="MONTHLY">Lunar</option>
+                        <option value="QUARTERLY">Trimestrial</option>
+                        <option value="ANNUALLY">Anual</option>
+                      </select>
+                      <input type="number" value={kpi.weight} onChange={e => updateKpi(idx, "weight", Number(e.target.value))}
+                        placeholder="%" className="w-16 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                    </div>
+                  </div>
+                  <button onClick={() => removeKpi(idx)} className="text-red-400 hover:text-red-600 mt-1">✕</button>
+                </div>
+                {kpi.description && <p className="text-[10px] text-slate-400 mt-1">{kpi.description}</p>}
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <button onClick={addManualKpi} className="text-xs px-3 py-1.5 rounded border border-teal-200 text-teal-700">+ Adauga</button>
+              <button onClick={handleSave} disabled={saving || kpis.some(k => !k.name)}
+                className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+                {saving ? "Se salveaza..." : `Salveaza ${kpis.length} KPI-uri`}
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-400">Suma ponderilor trebuie sa fie 100%. Acum: {kpis.reduce((s, k) => s + (k.weight || 0), 0)}%</p>
+          </div>
+        )}
+      </div>
+
+      {/* Posturi cu KPI deja configurate */}
+      {jobsWithKpi > 0 && (
+        <div>
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Posturi cu KPI configurate</h4>
+          <div className="space-y-2">
+            {Object.entries(allKpis).map(([jobId, jobKpis]) => {
+              const job = jobs.find(j => j.id === jobId)
+              return (
+                <div key={jobId} className="bg-white rounded-lg border border-slate-200 p-3">
+                  <span className="text-sm font-medium text-slate-800">{job?.title || jobId}</span>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {jobKpis.map((k: any, i: number) => (
+                      <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700">
+                        {k.name} ({k.weight}%)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Panou Pachete Salariale ─────────────────────────────────────────
+
+function CompensationPanel() {
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string }>>([])
+  const [packages, setPackages] = useState<any[]>([])
+  const [selectedJob, setSelectedJob] = useState("")
+  const [baseSalary, setBaseSalary] = useState("")
+  const [components, setComponents] = useState<Array<{ name: string; type: string; value: string; linkedKpi: string }>>([])
+  const [benefits, setBenefits] = useState<Array<{ name: string; value: string }>>([])
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const loadData = () => {
+    Promise.all([
+      fetch("/api/v1/jobs").then(r => r.json()),
+      fetch("/api/v1/compensation-packages").then(r => r.json()),
+    ]).then(([jobData, compData]) => {
+      setJobs(Array.isArray(jobData) ? jobData : (jobData.jobs || []))
+      setPackages(compData.packages || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }
+
+  useEffect(() => { loadData() }, [])
+
+  const addComponent = () => setComponents(prev => [...prev, { name: "", type: "BONUS", value: "", linkedKpi: "" }])
+  const addBenefit = () => setBenefits(prev => [...prev, { name: "", value: "" }])
+
+  const handleSave = async () => {
+    if (!selectedJob || !baseSalary) return
+    setSaving(true)
+    await fetch("/api/v1/compensation-packages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId: selectedJob,
+        baseSalary: Number(baseSalary),
+        components: {
+          variable: components.filter(c => c.name),
+        },
+        benefits: benefits.filter(b => b.name).length > 0 ? { items: benefits.filter(b => b.name) } : null,
+      }),
+    })
+    setSelectedJob("")
+    setBaseSalary("")
+    setComponents([])
+    setBenefits([])
+    loadData()
+    setSaving(false)
+  }
+
+  if (loading) return <p className="text-xs text-slate-400">Se incarca...</p>
+
+  // KPI-uri per job (din packages)
+  const selectedPkg = packages.find(p => p.jobId === selectedJob)
+  const selectedKpis = selectedPkg?.kpis || []
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+          <p className="text-lg font-bold text-teal-700">{packages.length}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Pachete configurate</p>
+        </div>
+        <div className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+          <p className="text-lg font-bold text-teal-700">{packages.filter(p => (p.components?.variable || []).length > 0).length}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Cu parte variabila</p>
+        </div>
+        <div className="bg-white rounded-lg border border-teal-200 p-3 text-center">
+          <p className="text-lg font-bold text-teal-700">{jobs.length - packages.length}</p>
+          <p className="text-[9px] text-slate-500 uppercase">Posturi fara pachet</p>
+        </div>
+      </div>
+
+      {/* Configurare */}
+      <div className="bg-white rounded-xl border border-teal-200 p-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-3">Configureaza pachet salarial</h4>
+        <select value={selectedJob} onChange={e => { setSelectedJob(e.target.value); setComponents([]); setBenefits([]) }}
+          className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm mb-3">
+          <option value="">Selecteaza postul...</option>
+          {jobs.map(j => {
+            const pkg = packages.find(p => p.jobId === j.id)
+            return <option key={j.id} value={j.id}>{j.title} {pkg ? `(${pkg.baseSalary.toLocaleString("ro-RO")} RON)` : ""}</option>
+          })}
+        </select>
+
+        {selectedJob && (
+          <>
+            {/* Salariu fix */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium mb-1">Salariu brut fix (RON)</label>
+              <input type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)}
+                placeholder={selectedPkg ? String(selectedPkg.baseSalary) : "ex: 5000"}
+                className="w-full px-3 py-2 rounded-lg border border-teal-200 bg-white text-sm" />
+            </div>
+
+            {/* Parte variabila */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium">Componente variabile</label>
+                <button onClick={addComponent} className="text-[10px] text-teal-600 hover:text-teal-800">+ Adauga componenta</button>
+              </div>
+              {components.length === 0 && (
+                <p className="text-[10px] text-slate-400 bg-slate-50 rounded-lg p-2">Nicio componenta variabila. Adauga bonus, comision, prima.</p>
+              )}
+              {components.map((comp, idx) => (
+                <div key={idx} className="flex gap-2 mb-1.5">
+                  <input type="text" value={comp.name} onChange={e => setComponents(prev => prev.map((c, i) => i === idx ? { ...c, name: e.target.value } : c))}
+                    placeholder="Nume (Bonus Q)" className="flex-1 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                  <select value={comp.type} onChange={e => setComponents(prev => prev.map((c, i) => i === idx ? { ...c, type: e.target.value } : c))}
+                    className="px-2 py-1.5 rounded border border-slate-200 text-xs">
+                    <option value="BONUS">Bonus</option>
+                    <option value="COMMISSION">Comision</option>
+                    <option value="PRIMA">Prima</option>
+                    <option value="OTHER">Altul</option>
+                  </select>
+                  <input type="text" value={comp.value} onChange={e => setComponents(prev => prev.map((c, i) => i === idx ? { ...c, value: e.target.value } : c))}
+                    placeholder="Valoare/%" className="w-24 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                  {selectedKpis.length > 0 && (
+                    <select value={comp.linkedKpi} onChange={e => setComponents(prev => prev.map((c, i) => i === idx ? { ...c, linkedKpi: e.target.value } : c))}
+                      className="px-2 py-1.5 rounded border border-slate-200 text-xs">
+                      <option value="">Legat de KPI...</option>
+                      {selectedKpis.map((k: any) => (
+                        <option key={k.id || k.name} value={k.name}>{k.name} ({k.weight}%)</option>
+                      ))}
+                    </select>
+                  )}
+                  <button onClick={() => setComponents(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600">✕</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Beneficii */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium">Beneficii non-salariale</label>
+                <button onClick={addBenefit} className="text-[10px] text-teal-600 hover:text-teal-800">+ Adauga beneficiu</button>
+              </div>
+              {benefits.map((ben, idx) => (
+                <div key={idx} className="flex gap-2 mb-1.5">
+                  <input type="text" value={ben.name} onChange={e => setBenefits(prev => prev.map((b, i) => i === idx ? { ...b, name: e.target.value } : b))}
+                    placeholder="Tichete masa, asigurare..." className="flex-1 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                  <input type="text" value={ben.value} onChange={e => setBenefits(prev => prev.map((b, i) => i === idx ? { ...b, value: e.target.value } : b))}
+                    placeholder="Valoare/luna" className="w-28 px-2 py-1.5 rounded border border-slate-200 text-xs" />
+                  <button onClick={() => setBenefits(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600">✕</button>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={handleSave} disabled={saving || !baseSalary}
+              className="text-xs px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40">
+              {saving ? "Se salveaza..." : "Salveaza pachetul"}
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Pachete existente */}
+      {packages.length > 0 && (
+        <div>
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Pachete configurate</h4>
+          <div className="space-y-2">
+            {packages.map((pkg: any) => (
+              <div key={pkg.id} className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-slate-800">{pkg.jobTitle}</span>
+                  <span className="text-sm font-bold text-teal-700">{pkg.baseSalary.toLocaleString("ro-RO")} RON</span>
+                </div>
+                {pkg.department && <p className="text-[10px] text-slate-400 mb-1">{pkg.department}</p>}
+                <div className="flex flex-wrap gap-1">
+                  {(pkg.components?.variable || []).map((v: any, i: number) => (
+                    <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
+                      {v.name}: {v.value} {v.linkedKpi ? `→ ${v.linkedKpi}` : ""}
+                    </span>
+                  ))}
+                  {pkg.kpis?.length > 0 && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700">
+                      {pkg.kpis.length} KPI
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
