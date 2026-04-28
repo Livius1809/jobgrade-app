@@ -250,7 +250,7 @@ Răspunde STRICT cu JSON valid:
 Dacă fragmentul nu conține cunoaștere extractabilă: {"entries": []}
 `
 
-async function extractKnowledgeFromChunk(
+export async function extractKnowledgeFromChunk(
   chunk: string,
   sourceTitle: string,
   sourceAuthor: string,
