@@ -91,17 +91,27 @@ Returnează **EXCLUSIV** un JSON valid cu structura:
       "evidence": "Elemente concrete"
     }
   },
-  "missingInfo": ["Ce informații lipsesc pentru o evaluare mai precisă (array de întrebări)"]
+  "missingInfo": ["Ce informații lipsesc pentru o evaluare mai precisă (array de întrebări)"],
+  "standardSections": {
+    "gdpr": "Obligații privind protecția datelor personale specifice acestui post (1-3 propoziții adaptate la responsabilitățile postului)",
+    "ssm": "Obligații privind securitatea și sănătatea în muncă (1-3 propoziții adaptate la condițiile de lucru ale postului)",
+    "psi": "Obligații privind prevenirea și stingerea incendiilor (1-2 propoziții)",
+    "confidentiality": "Obligații privind păstrarea confidențialității informațiilor (1-3 propoziții adaptate la nivelul de acces al postului)",
+    "internalControl": "Responsabilități de control intern — DOAR pentru posturi de management (oameni sau procese). Dacă postul nu are funcție de conducere, pune null."
+  }
 }
 
 IMPORTANT:
 - "responsibilities" și "requirements" sunt text CURSIV, profesional — clientul le citește ca document
 - "criteriaMapping" este structura INTERNĂ — informația mapată pe cele 6 criterii de evaluare
+- "standardSections" sunt secțiuni obligatorii/opționale din fișa de post — text adaptat postului, nu generic
+- "standardSections.internalControl" = null dacă postul NU are funcție de conducere (oameni sau procese)
 - "missingInfo" — dacă informația e insuficientă pentru un criteriu, pune întrebarea aici
 - Evaluezi POSTUL (cerințele poziției), nu o persoană
 - Niveluri: Educație A(minim)-G(maxim), Comunicare A-E, Rezolvare probleme A-G, Decizii A-G, Impact A(operațional)-D(strategic), Condiții A(birou)-C(risc)
 - Un "Manager magazin" = Impact B-C (operațional), NU D (strategic)
 - Bazează-te pe CONȚINUT, nu pe titlu
+- Textul la GDPR, SSM, PSI trebuie ADAPTAT la post, nu copy-paste generic
 
 Nu adăuga text în afara JSON-ului.`
 
