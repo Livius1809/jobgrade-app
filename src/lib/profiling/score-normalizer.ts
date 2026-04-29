@@ -97,6 +97,138 @@ export function tScoreToLevel(t: number): NormalizedScore["level"] {
   return "FOARTE_RIDICAT"
 }
 
+// ── Zona mediană și semnificație ──────────────────────────
+
+/**
+ * Zona mediană per instrument — scorurile din această zonă NU sunt
+ * semnificative pentru interpretare punctuală (sunt "ca toată lumea").
+ *
+ * Doar scorurile care IES din zona mediană sunt relevante:
+ * - Sub zona mediană → arie de perfecționare (cu excepții)
+ * - Peste zona mediană → zonă de excelență (cu excepții)
+ */
+export interface MedianZone {
+  instrumentId: string
+  tMin: number // limita inferioară a zonei mediane (T-score)
+  tMax: number // limita superioară
+}
+
+export const MEDIAN_ZONES: Record<string, MedianZone> = {
+  cpi260: { instrumentId: "cpi260", tMin: 45, tMax: 55 },
+  ami: { instrumentId: "ami", tMin: 43, tMax: 57 }, // stanine 4-6
+  esq2: { instrumentId: "esq2", tMin: 40, tMax: 60 }, // centile 16-84
+  pasat: { instrumentId: "pasat", tMin: 40, tMax: 60 },
+  hbdi: { instrumentId: "hbdi", tMin: 42, tMax: 58 },
+  co: { instrumentId: "co", tMin: 44, tMax: 56 },
+}
+
+/**
+ * Scale cu interpretare INVERSĂ — scor MIC = bine, scor MARE = problemă.
+ * Aceste scale sunt excepții de la regula "mare = excelență, mic = perfecționare".
+ */
+export const INVERSE_SCALES: Array<{ instrumentId: string; scaleName: string; reason: string }> = [
+  // ESQ-2: scalele de risc — scor MIC = bun (fără risc)
+  { instrumentId: "esq2", scaleName: "Consum de Alcool", reason: "Scor mic = fără consum problematic" },
+  { instrumentId: "esq2", scaleName: "Concediu Medical Neautorizat", reason: "Scor mic = nu abuzează de concedii" },
+  { instrumentId: "esq2", scaleName: "Infractiuni Rutiere", reason: "Scor mic = fără antecedente" },
+  { instrumentId: "esq2", scaleName: "Intarzieri", reason: "Scor mic = punctual" },
+  { instrumentId: "esq2", scaleName: "Indolenta", reason: "Scor mic = nu e leneș" },
+  { instrumentId: "esq2", scaleName: "Sabotaj", reason: "Scor mic = fără tendințe distructive" },
+  { instrumentId: "esq2", scaleName: "Nerespectarea Protectiei", reason: "Scor mic = respectă normele" },
+  { instrumentId: "esq2", scaleName: "Furt", reason: "Scor mic = onest" },
+  { instrumentId: "esq2", scaleName: "Risc de Comportament Contraproductiv", reason: "Scor mic = integritate ridicată" },
+  // CPI: scale speciale
+  { instrumentId: "cpi260", scaleName: "ANX", reason: "Scor mic = anxietate scăzută (bine)" },
+  { instrumentId: "cpi260", scaleName: "HOS", reason: "Scor mic = ostilitate scăzută (bine)" },
+  { instrumentId: "cpi260", scaleName: "NAR", reason: "Scor mic = narcisism scăzut (bine)" },
+]
+
+/**
+ * Verifică dacă un scor e semnificativ (iese din zona mediană)
+ */
+export function isSignificant(score: NormalizedScore): boolean {
+  const zone = MEDIAN_ZONES[score.instrumentId]
+  if (!zone) return true // dacă nu avem zona mediană, considerăm semnificativ
+  return score.normalizedT < zone.tMin || score.normalizedT > zone.tMax
+}
+
+/**
+ * Verifică dacă o scală are interpretare inversă
+ */
+export function isInverseScale(instrumentId: string, scaleName: string): boolean {
+  return INVERSE_SCALES.some(inv =>
+    inv.instrumentId === instrumentId && scaleName.includes(inv.scaleName)
+  )
+}
+
+/**
+ * Interpretare semnificativă: doar scorurile care ies din zona mediană,
+ * cu respectarea excepțiilor (scale inverse)
+ */
+export interface SignificantScore extends NormalizedScore {
+  significance: "EXCELENTA" | "PERFECTIONARE" | "MEDIAN"
+  interpretationNote: string
+}
+
+export function interpretScore(score: NormalizedScore): SignificantScore {
+  const zone = MEDIAN_ZONES[score.instrumentId]
+  const inverse = isInverseScale(score.instrumentId, score.scaleName)
+
+  // Zona mediană — nu e semnificativ
+  if (zone && score.normalizedT >= zone.tMin && score.normalizedT <= zone.tMax) {
+    return {
+      ...score,
+      significance: "MEDIAN",
+      interpretationNote: "Scor în zona mediană — nu necesită interpretare punctuală",
+    }
+  }
+
+  const isHigh = score.normalizedT > (zone?.tMax || 55)
+
+  if (inverse) {
+    // Scalele inverse: mare = problemă, mic = bine
+    return {
+      ...score,
+      significance: isHigh ? "PERFECTIONARE" : "EXCELENTA",
+      interpretationNote: isHigh
+        ? `Scor ridicat pe scală inversă — arie de atenție`
+        : `Scor scăzut pe scală inversă — indicator pozitiv`,
+    }
+  }
+
+  // Scalele normale: mare = excelență, mic = perfecționare
+  return {
+    ...score,
+    significance: isHigh ? "EXCELENTA" : "PERFECTIONARE",
+    interpretationNote: isHigh
+      ? `Zonă de excelență — punct forte identificat`
+      : `Arie de perfecționare — oportunitate de dezvoltare`,
+  }
+}
+
+/**
+ * Filtrează doar scorurile semnificative (care ies din zona mediană)
+ */
+export function filterSignificant(scores: NormalizedScore[]): SignificantScore[] {
+  return scores.map(interpretScore).filter(s => s.significance !== "MEDIAN")
+}
+
+/**
+ * Grupează scorurile semnificative pe excelență vs perfecționare
+ */
+export function groupBySignificance(scores: NormalizedScore[]): {
+  excellence: SignificantScore[]
+  development: SignificantScore[]
+} {
+  const significant = filterSignificant(scores)
+  return {
+    excellence: significant.filter(s => s.significance === "EXCELENTA")
+      .sort((a, b) => b.normalizedT - a.normalizedT),
+    development: significant.filter(s => s.significance === "PERFECTIONARE")
+      .sort((a, b) => a.normalizedT - b.normalizedT),
+  }
+}
+
 /** T-score → percentila estimata */
 export function tToPercentile(t: number): number {
   const z = (t - 50) / 10
