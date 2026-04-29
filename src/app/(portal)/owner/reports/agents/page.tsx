@@ -16,7 +16,7 @@ export default async function AgentsReportPage() {
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  let pipeline = { total: 0, completed: 0, inProgress: 0, postponed: 0, escalated: 0, claudeCalls: 0, byDept: [] as any[] }
+  let pipeline = { total: 0, completed: 0, inProgress: 0, postponed: 0, escalated: 0, claudeCalls: 0, claudeCallsYesterday: 0, claudeCallsWeek: 0, costToday: 0, costWeek: 0, byDept: [] as any[] }
   let diagnosis = { onTime: 0, postponed: 0, ownerDependent: 0, reasons: [] as any[] }
   let learning = { total: 0, prevTotal: 0, totalKB: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromSeed: 0, fromExternal: 0 }
   let objectives = [] as any[]
@@ -41,16 +41,28 @@ export default async function AgentsReportPage() {
         GROUP BY "assignedBy" ORDER BY total DESC LIMIT 10
       ` as Promise<any[]>,
       p.escalation.count({ where: { createdAt: { gte: oneWeekAgo } } }).catch(() => 0),
-      p.agentTask.count({ where: { createdAt: { gte: oneWeekAgo }, status: "COMPLETED", result: { not: null } } }).catch(() => 0),
+      p.$queryRaw`
+        SELECT COUNT(*) as total,
+          COUNT(*) FILTER (WHERE "createdAt"::date = CURRENT_DATE) as today,
+          COUNT(*) FILTER (WHERE "createdAt"::date = CURRENT_DATE - 1) as yesterday,
+          ROUND(SUM("estimatedCostUSD")::numeric, 2) as cost_week,
+          ROUND(SUM("estimatedCostUSD") FILTER (WHERE "createdAt"::date = CURRENT_DATE)::numeric, 2) as cost_today
+        FROM execution_telemetry WHERE "createdAt" > ${oneWeekAgo}
+      `.catch(() => [{}]) as Promise<any[]>,
     ])
 
+    const telemetry = (claudeCallCount as any[])[0] || {}
     pipeline = {
       total: Number(taskStats[0]?.total || 0),
       completed: Number(taskStats[0]?.completed || 0),
       inProgress: Number(taskStats[0]?.in_progress || 0),
       postponed: Number(taskStats[0]?.postponed || 0),
       escalated: escalationCount,
-      claudeCalls: claudeCallCount,
+      claudeCalls: Number(telemetry.today || 0),
+      claudeCallsYesterday: Number(telemetry.yesterday || 0),
+      claudeCallsWeek: Number(telemetry.total || 0),
+      costToday: Number(telemetry.cost_today || 0),
+      costWeek: Number(telemetry.cost_week || 0),
       byDept: tasksByDept.map((d: any) => ({ dept: d.dept, total: Number(d.total), completed: Number(d.completed) })),
     }
 
@@ -334,7 +346,18 @@ export default async function AgentsReportPage() {
           <SC label="În lucru" value={pipeline.inProgress} accent="indigo" />
           <SC label="Amânate" value={pipeline.postponed} accent={pipeline.postponed > 0 ? "amber" : undefined} />
           <SC label="Rata escalare" value={`${escalationRate}%`} accent={escalationRate > 30 ? "red" : undefined} />
-          <SC label="Apeluri Claude" value={pipeline.claudeCalls} accent="violet" />
+          <div className="rounded-xl border border-border bg-surface p-3 text-center">
+            <p className="text-xl font-bold text-violet-600">{pipeline.claudeCalls}</p>
+            <p className="text-[10px] text-text-secondary uppercase tracking-wider mt-0.5">Apeluri Claude azi</p>
+            <div className="flex items-center justify-center gap-1 mt-1">
+              {pipeline.claudeCallsYesterday > 0 && (
+                <span className={`text-[9px] font-bold ${pipeline.claudeCalls < pipeline.claudeCallsYesterday ? "text-emerald-600" : "text-red-500"}`}>
+                  {pipeline.claudeCalls < pipeline.claudeCallsYesterday ? "↓" : "↑"}{Math.abs(Math.round((1 - pipeline.claudeCalls / pipeline.claudeCallsYesterday) * 100))}% vs ieri ({pipeline.claudeCallsYesterday})
+                </span>
+              )}
+            </div>
+            <p className="text-[9px] text-slate-400 mt-0.5">${pipeline.costToday} azi · ${pipeline.costWeek} /7z · {pipeline.claudeCallsWeek} total</p>
+          </div>
         </div>
         <div className="mt-3 bg-slate-100 rounded-full h-3 overflow-hidden">
           <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${completionRate}%` }} />
