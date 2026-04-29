@@ -91,6 +91,16 @@ Returnează **EXCLUSIV** un JSON valid cu structura:
       "evidence": "Elemente concrete"
     }
   },
+  "relationships": {
+    "hierarchical": {
+      "reportsTo": "Titlul postului superior direct (ex: Director Departament)",
+      "supervises": ["Titlurile posturilor subordonate directe (array, poate fi gol)"]
+    },
+    "functional": {
+      "receivesInputFrom": ["De la cine primește inputuri — titluri posturi sau departamente"],
+      "deliversOutputTo": ["Cui livrează outputuri — titluri posturi sau departamente"]
+    }
+  },
   "missingInfo": ["Ce informații lipsesc pentru o evaluare mai precisă (array de întrebări)"],
   "standardSections": {
     "gdpr": "Obligații privind protecția datelor personale specifice acestui post (1-3 propoziții adaptate la responsabilitățile postului)",
