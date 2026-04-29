@@ -3,10 +3,25 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 
-/** Extrage text din PDF pe client (browser) — fără upload la server */
-async function extractTextFromPDFClient(file: File): Promise<string> {
+/** Renderizează o pagină PDF ca imagine base64 (pentru grafice/diagrame) */
+async function renderPDFPageAsImage(file: File, pageNum: number, scale: number = 1.5): Promise<string> {
   const pdfjsLib = await import("pdfjs-dist")
-  // Worker-ul trebuie setat explicit
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const page = await pdf.getPage(pageNum)
+  const viewport = page.getViewport({ scale })
+  const canvas = document.createElement("canvas")
+  canvas.width = viewport.width
+  canvas.height = viewport.height
+  const ctx = canvas.getContext("2d")!
+  await page.render({ canvasContext: ctx, viewport } as any).promise
+  return canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
+}
+
+/** Extrage text din PDF pe client (browser) — fără upload la server */
+async function extractTextFromPDFClient(file: File): Promise<{ text: string; numPages: number }> {
+  const pdfjsLib = await import("pdfjs-dist")
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
 
   const arrayBuffer = await file.arrayBuffer()
@@ -20,7 +35,7 @@ async function extractTextFromPDFClient(file: File): Promise<string> {
     if (text.trim()) pages.push(text)
   }
 
-  return pages.join("\n\n")
+  return { text: pages.join("\n\n"), numPages: pdf.numPages }
 }
 
 /** Redimensionează imagine pe client și returnează base64 (max maxPx pe latura mare) */
@@ -86,6 +101,11 @@ export default function DocsPage() {
   const [coverImage, setCoverImage] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
+  // Ingestie mixtă (text + imagini pe pagini selectate)
+  const [mixedMode, setMixedMode] = useState(false)
+  const [mixedPages, setMixedPages] = useState("") // ex: "23, 67, 98"
+  const [totalPages, setTotalPages] = useState(0)
+
   // Rezultat ingestie
   const [ingestResult, setIngestResult] = useState<any>(null)
 
@@ -147,7 +167,9 @@ export default function DocsPage() {
 
       if (ext === "pdf") {
         setMessage("Se extrage textul din PDF (local, în browser)...")
-        rawText = await extractTextFromPDFClient(file)
+        const result = await extractTextFromPDFClient(file)
+        rawText = result.text
+        setTotalPages(result.numPages)
       } else if (ext === "txt") {
         rawText = await file.text()
       } else {
@@ -175,7 +197,16 @@ export default function DocsPage() {
       }
 
       // Trimite DOAR textul (nu fișierul) — zero limită dimensiune
-      setMessage(`Text extras: ${rawText.length.toLocaleString()} caractere (~${Math.round(rawText.length / 2500)} pagini). Se pornește ingestia...`)
+      const estPages = Math.round(rawText.length / 2500)
+      setMessage(`Text extras: ${rawText.length.toLocaleString()} caractere (~${estPages} pagini). Se pornește ingestia...`)
+
+      // Dacă mixedMode: pregătim paginile cu imagini
+      const mixedPageNums = mixedMode && mixedPages.trim()
+        ? mixedPages.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0)
+        : []
+      if (mixedPageNums.length > 0) {
+        setMessage(`Text extras + ${mixedPageNums.length} pagini cu grafice de procesat vizual...`)
+      }
 
       const startRes = await fetch("/api/v1/kb/ingest-chunked", {
         method: "POST",
@@ -197,9 +228,35 @@ export default function DocsPage() {
       }
 
       const { jobId, totalChunks, estimatedMinutes } = startData
-      setMessage(`Document incarcat: ${totalChunks} sectiuni, ~${estimatedMinutes} minute. Procesare...`)
+      setMessage(`Document încarcat: ${totalChunks} secțiuni text${mixedPageNums.length > 0 ? ` + ${mixedPageNums.length} pagini grafice` : ""}, ~${estimatedMinutes} minute. Procesare...`)
 
-      // 2. Process: polling pe transe
+      // 2a. Procesare pagini mixte (imagini) — separat, prin referință cu imagine
+      if (mixedPageNums.length > 0 && file) {
+        for (const pageNum of mixedPageNums) {
+          try {
+            setMessage(`Procesare grafic pagina ${pageNum}...`)
+            const imgBase64 = await renderPDFPageAsImage(file, pageNum)
+            await fetch("/api/v1/kb/ingest", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                bibliographicReference: true,
+                sourceTitle: `${title.trim()} — Pagina ${pageNum} (grafic/diagramă)`,
+                sourceAuthor: author.trim(),
+                sourceType,
+                coverImageBase64: imgBase64,
+                coverImageType: "image/jpeg",
+                targetEntries: 5,
+                focusTopics: ["interpretare grafic", "date vizuale", "tendințe"],
+              }),
+            }).catch(() => {})
+          } catch {
+            // Pagina nu s-a putut renderiza — continuăm
+          }
+        }
+      }
+
+      // 2b. Process: polling pe tranșe text
       let completed = false
       while (!completed) {
         const processRes = await fetch("/api/v1/kb/ingest-chunked", {
@@ -475,6 +532,25 @@ export default function DocsPage() {
               <p className="text-xs text-text-secondary/50 mt-1">
                 Claude extrage cunoastere declarativa si procedurala si o ruteaza automat pe consultantii L2 relevanti.
               </p>
+
+              {/* Toggle: text only vs mixt (text + imagini pe pagini selectate) */}
+              <div className="mt-3 p-3 rounded-lg bg-indigo/5 border border-indigo/10">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={mixedMode} onChange={e => setMixedMode(e.target.checked)} />
+                  <span className="text-xs font-medium text-foreground">Pagini cu grafice/diagrame</span>
+                  <span className="text-[10px] text-text-secondary">(~$0.01/pagina vs $0.003 text)</span>
+                </label>
+                {mixedMode && (
+                  <div className="mt-2">
+                    <input type="text" value={mixedPages} onChange={e => setMixedPages(e.target.value)}
+                      placeholder="Numerele paginilor separate prin virgulă (ex: 23, 67, 98)"
+                      className="w-full px-3 py-1.5 rounded-lg border border-indigo/20 bg-background text-sm" />
+                    <p className="text-[10px] text-text-secondary/50 mt-1">
+                      Textul se extrage din toate paginile. Paginile specificate sunt procesate și vizual (grafice, diagrame, tabele).
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
