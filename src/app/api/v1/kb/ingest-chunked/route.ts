@@ -98,10 +98,84 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!(await checkAuth(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const contentType = req.headers.get("content-type") || ""
+
+  // ═══ START din FILE UPLOAD (FormData) ═══
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData()
+    const file = formData.get("file") as File | null
+    const sourceTitle = formData.get("sourceTitle") as string
+    const sourceAuthor = formData.get("sourceAuthor") as string
+    const sourceType = (formData.get("sourceType") as string) || "carte"
+
+    if (!file || !sourceTitle || !sourceAuthor) {
+      return NextResponse.json({ error: "file, sourceTitle, sourceAuthor obligatorii" }, { status: 400 })
+    }
+
+    // Extrage text din PDF/DOCX
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const ext = "." + file.name.toLowerCase().split(".").pop()
+    let rawText = ""
+
+    try {
+      if (ext === ".pdf") {
+        // pdf-parse
+        const pdfParseModule = await import("pdf-parse")
+        const pdfParse = (pdfParseModule as any).default || pdfParseModule
+        const result = await pdfParse(buffer)
+        rawText = result.text
+      } else if (ext === ".docx" || ext === ".doc") {
+        const mammoth = await import("mammoth")
+        const result = await mammoth.extractRawText({ buffer })
+        rawText = result.value
+      } else if (ext === ".txt") {
+        rawText = buffer.toString("utf-8")
+      } else {
+        return NextResponse.json({ error: `Format nesuportat: ${ext}` }, { status: 400 })
+      }
+    } catch (e: any) {
+      return NextResponse.json({ error: `Eroare extragere text: ${e.message}` }, { status: 500 })
+    }
+
+    if (rawText.length < 200) {
+      return NextResponse.json({ error: "Prea putin text extras (<200 caractere). PDF-ul poate fi scanat (imagine)." }, { status: 400 })
+    }
+
+    // Chunk + salvare job (refolosim logica de mai jos)
+    const maxChars = 3000
+    const paragraphs = rawText.split(/\n\s*\n/)
+    const chunks: string[] = []
+    let current = ""
+    for (const p of paragraphs) {
+      if ((current + "\n\n" + p).length > maxChars && current.length > 0) {
+        chunks.push(current.trim())
+        current = p
+      } else {
+        current = current ? current + "\n\n" + p : p
+      }
+    }
+    if (current.trim()) chunks.push(current.trim())
+
+    const jobId = `ingest_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    const job: ChunkedJob = {
+      id: jobId, sourceTitle, sourceAuthor, sourceType,
+      chunks, processedUpTo: 0, entriesCreated: 0, byRole: {},
+      status: "IN_PROGRESS", createdAt: new Date().toISOString(),
+    }
+    await saveJob(job)
+
+    return NextResponse.json({
+      ok: true, jobId, totalChunks: chunks.length,
+      textLength: rawText.length,
+      estimatedPages: Math.round(rawText.length / 2500),
+      estimatedMinutes: Math.ceil(chunks.length * 0.5),
+    })
+  }
+
   const body = await req.json()
   const { action } = body
 
-  // ═══ START — creează job din text brut ═══
+  // ═══ START — creează job din text brut (JSON) ═══
   if (action === "start") {
     const { rawText, sourceTitle, sourceAuthor, sourceType, chunkSize } = body
     if (!rawText || !sourceTitle || !sourceAuthor) {

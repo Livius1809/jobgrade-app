@@ -112,29 +112,65 @@ export default function DocsPage() {
     setSubmitting(false)
   }
 
-  // ── Submit: Upload PDF/DOCX (pâlnia nouă) ──────────────
+  // ── Submit: Upload PDF/DOCX (chunked — orice dimensiune) ──────────────
   async function submitUpload() {
     if (!file || !title.trim() || !author.trim()) {
       setMessage("Fisier, titlu si autor sunt obligatorii"); return
     }
-    setSubmitting(true); setMessage("Se extrage cunoastere din document... (poate dura 1-2 minute)")
+    setMessage(""); setIngestResult(null)
+    setSubmitting(true); setMessage("Se incarca documentul...")
+
     try {
+      // 1. Start: trimite fisierul la chunked endpoint
       const fd = new FormData()
       fd.append("file", file)
       fd.append("sourceTitle", title.trim())
       fd.append("sourceAuthor", author.trim())
       fd.append("sourceType", sourceType)
 
-      const res = await fetch("/api/v1/kb/ingest", { method: "POST", body: fd })
-      const data = await res.json()
+      const startRes = await fetch("/api/v1/kb/ingest-chunked", { method: "POST", body: fd })
+      const startData = await startRes.json()
 
-      if (data.entriesCreated > 0 || data.entries?.length > 0) {
-        const roles = Object.entries(data.byRole || {}).map(([r, n]) => `${r}:${n}`).join(", ")
-        setMessage(`"${data.sourceTitle}" — ${data.entriesCreated} entries create\nConsultanti: ${roles}`)
-        setIngestResult(data)
-        loadDocs()
-      } else {
-        setMessage(`Nu s-a extras cunoastere din document.`)
+      if (!startRes.ok || !startData.jobId) {
+        setMessage(`Eroare: ${startData.error || "Nu s-a putut porni ingestia"}`)
+        setSubmitting(false)
+        return
+      }
+
+      const { jobId, totalChunks, estimatedMinutes } = startData
+      setMessage(`Document incarcat: ${totalChunks} sectiuni, ~${estimatedMinutes} minute. Procesare...`)
+
+      // 2. Process: polling pe transe
+      let completed = false
+      while (!completed) {
+        const processRes = await fetch("/api/v1/kb/ingest-chunked", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "process", jobId, batchSize: 3 }),
+        })
+        const data = await processRes.json()
+
+        if (!processRes.ok) {
+          setMessage(`Eroare la procesare: ${data.error || "necunoscuta"}`)
+          break
+        }
+
+        const pct = data.completionPct || 0
+        setMessage(`Procesare: ${pct}% (${data.processedUpTo}/${totalChunks} sectiuni, ${data.entriesCreated} entries)`)
+
+        if (data.status === "COMPLETED") {
+          completed = true
+          const roles = Object.entries(data.byRole || {}).map(([r, n]: [string, any]) => `${r}:${n}`).join(", ")
+          setMessage(`"${title.trim()}" — ${data.entriesCreated} entries create\nConsultanti: ${roles}`)
+          setIngestResult(data)
+          loadDocs()
+        } else if (data.status === "FAILED") {
+          setMessage(`Eroare: ${data.error || "procesare esuata"}`)
+          break
+        }
+
+        // Pauza 3s intre transe
+        if (!completed) await new Promise(r => setTimeout(r, 3000))
       }
     } catch (e: any) { setMessage(`Eroare: ${e.message}`) }
     setSubmitting(false)

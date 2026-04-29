@@ -41,9 +41,8 @@ export async function POST(req: NextRequest) {
 
   if (!hasInternalKey) {
     const session = await auth()
-    console.log("[kb/ingest] auth check:", session?.user?.email, session?.user?.role)
     if (!session?.user?.role || !["OWNER", "SUPER_ADMIN", "COMPANY_ADMIN"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Acces rezervat Owner", debug: { hasSession: !!session, role: session?.user?.role || "none" } }, { status: 401 })
+      return NextResponse.json({ error: "Acces rezervat Owner" }, { status: 401 })
     }
   }
 
