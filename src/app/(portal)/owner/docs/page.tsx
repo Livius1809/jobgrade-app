@@ -224,18 +224,36 @@ export default function DocsPage() {
       }
       if (cur.trim()) textChunks.push(cur.trim())
 
-      setMessage(`${textChunks.length} secțiuni pregătite. Se creează jobul...`)
+      setMessage(`${textChunks.length} secțiuni pregătite. Se autentifică...`)
 
-      // Trimitem chunk-urile în loturi de max 50 (fiecare lot ~150KB)
+      // Obține cheia de ingestie (GET mic — auth funcționează pe GET)
+      let ingestKey = ""
+      try {
+        const keyRes = await fetch("/api/v1/kb/get-ingest-key")
+        if (keyRes.ok) {
+          const keyData = await keyRes.json()
+          ingestKey = keyData.key || ""
+        }
+      } catch {}
+
+      if (!ingestKey) {
+        setMessage("Eroare autentificare. Relogați-vă și reîncercați.")
+        setSubmitting(false)
+        return
+      }
+
+      setMessage(`Autentificat. Se creează jobul...`)
+
+      // Trimitem chunk-urile în loturi de max 50 cu cheia de ingestie
       const BATCH = 50
+      const authHeaders = { "Content-Type": "application/json", "x-internal-key": ingestKey }
       let ingestJobId = ""
       for (let i = 0; i < textChunks.length; i += BATCH) {
         const batch = textChunks.slice(i, i + BATCH)
         if (i === 0) {
-          // Primul lot: creează jobul
           const res = await fetch("/api/v1/kb/ingest-chunked", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             body: JSON.stringify({
               action: "start",
               rawText: batch.join("\n\n"),
@@ -251,12 +269,11 @@ export default function DocsPage() {
             return
           }
           ingestJobId = data.jobId
-          setMessage(`Job creat: ${data.totalChunks} secțiuni din lotul 1. Se încarcă restul...`)
+          setMessage(`Job creat: ${data.totalChunks} secțiuni. Se încarcă restul...`)
         } else {
-          // Loturi următoare: adăugăm chunk-uri la job existent
           await fetch("/api/v1/kb/ingest-chunked", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             body: JSON.stringify({ action: "append-chunks", jobId: ingestJobId, chunks: batch }),
           })
           setMessage(`Încărcat ${Math.min(i + BATCH, textChunks.length)}/${textChunks.length} secțiuni...`)
@@ -305,7 +322,7 @@ export default function DocsPage() {
       while (!completed) {
         const processRes = await fetch("/api/v1/kb/ingest-chunked", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           body: JSON.stringify({ action: "process", jobId, batchSize: 3 }),
         })
         const data = await processRes.json()
