@@ -3,6 +3,26 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 
+/** Extrage text din PDF pe client (browser) — fără upload la server */
+async function extractTextFromPDFClient(file: File): Promise<string> {
+  const pdfjsLib = await import("pdfjs-dist")
+  // Worker-ul trebuie setat explicit
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const pages: string[] = []
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const text = content.items.map((item: any) => item.str).join(" ")
+    if (text.trim()) pages.push(text)
+  }
+
+  return pages.join("\n\n")
+}
+
 /** Redimensionează imagine pe client și returnează base64 (max maxPx pe latura mare) */
 async function resizeImageToBase64(file: File, maxPx: number): Promise<{ data: string; type: string }> {
   return new Promise((resolve, reject) => {
@@ -121,14 +141,53 @@ export default function DocsPage() {
     setSubmitting(true); setMessage("Se incarca documentul...")
 
     try {
-      // 1. Start: trimite fisierul la chunked endpoint
-      const fd = new FormData()
-      fd.append("file", file)
-      fd.append("sourceTitle", title.trim())
-      fd.append("sourceAuthor", author.trim())
-      fd.append("sourceType", sourceType)
+      // 1. Extrage text pe CLIENT (browser) — fără upload fișier la server
+      let rawText = ""
+      const ext = file.name.toLowerCase().split(".").pop()
 
-      const startRes = await fetch("/api/v1/kb/ingest-chunked", { method: "POST", body: fd })
+      if (ext === "pdf") {
+        setMessage("Se extrage textul din PDF (local, în browser)...")
+        rawText = await extractTextFromPDFClient(file)
+      } else if (ext === "txt") {
+        rawText = await file.text()
+      } else {
+        // DOCX — trimitem ca FormData (mic, nu PDF)
+        const fd = new FormData()
+        fd.append("file", file)
+        fd.append("sourceTitle", title.trim())
+        fd.append("sourceAuthor", author.trim())
+        fd.append("sourceType", sourceType)
+        const startRes = await fetch("/api/v1/kb/ingest-chunked", { method: "POST", body: fd })
+        const startData = await startRes.json()
+        if (!startRes.ok || !startData.jobId) {
+          setMessage(`Eroare: ${startData.error || "Format nesuportat"}`)
+          setSubmitting(false)
+          return
+        }
+        // Continuă cu polling (DOCX e mic, merge)
+        rawText = "" // flag: deja trimis ca FormData
+      }
+
+      if (!rawText && ext !== "docx" && ext !== "doc") {
+        setMessage("Nu s-a putut extrage text din fișier.")
+        setSubmitting(false)
+        return
+      }
+
+      // Trimite DOAR textul (nu fișierul) — zero limită dimensiune
+      setMessage(`Text extras: ${rawText.length.toLocaleString()} caractere (~${Math.round(rawText.length / 2500)} pagini). Se pornește ingestia...`)
+
+      const startRes = await fetch("/api/v1/kb/ingest-chunked", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start",
+          rawText,
+          sourceTitle: title.trim(),
+          sourceAuthor: author.trim(),
+          sourceType,
+        }),
+      })
       const startData = await startRes.json()
 
       if (!startRes.ok || !startData.jobId) {
