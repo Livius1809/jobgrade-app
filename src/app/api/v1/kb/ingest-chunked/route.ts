@@ -52,8 +52,14 @@ async function saveJob(job: ChunkedJob): Promise<void> {
 async function checkAuth(req: NextRequest): Promise<boolean> {
   const key = req.headers.get("x-internal-key")
   if (key === process.env.INTERNAL_API_KEY) return true
-  const session = await auth()
-  return !!session?.user?.role && ["OWNER", "SUPER_ADMIN", "COMPANY_ADMIN"].includes(session.user.role)
+  try {
+    const session = await auth()
+    console.log("[ingest-chunked] auth:", session?.user?.email, session?.user?.role, "cookies:", req.cookies.getAll().map(c => c.name).join(","))
+    return !!session?.user?.role && ["OWNER", "SUPER_ADMIN", "COMPANY_ADMIN"].includes(session.user.role)
+  } catch (e: any) {
+    console.error("[ingest-chunked] auth error:", e.message)
+    return false
+  }
 }
 
 // GET — Status

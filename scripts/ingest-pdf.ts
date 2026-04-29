@@ -127,8 +127,14 @@ async function main() {
     })
 
     if (!processRes.ok) {
-      const err = await processRes.text()
-      console.error(`\n❌ Eroare la batch ${batch}: ${processRes.status} ${err}`)
+      const errText = await processRes.text()
+      if (processRes.status === 429) {
+        // Rate limit — așteptăm 60s și reîncercăm
+        process.stdout.write(`\n   ⏳ Rate limit — aștept 60s...`)
+        await sleep(60000)
+        continue
+      }
+      console.error(`\n❌ Eroare la batch ${batch}: ${processRes.status} ${errText}`)
       console.log("   Poți relua cu: POST { action: 'process', jobId: '" + jobId + "' }")
       process.exit(1)
     }
@@ -158,7 +164,7 @@ async function main() {
     }
 
     // Pauză între tranșe (evită rate limit)
-    await sleep(5000)
+    await sleep(10000)
   }
 }
 
