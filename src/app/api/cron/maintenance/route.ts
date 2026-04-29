@@ -192,6 +192,83 @@ export async function GET(request: NextRequest) {
     results.metricsSnapshot = { date: todayStr, tasksCompleted: completed }
   })
 
+  // 9. INGESTIE AUTONOMA — procesare joburi IN_PROGRESS (documente mari)
+  await withTimeout("ingestion", async () => {
+    // Gaseste joburi de ingestie nefinalizate
+    const configs = await prisma.systemConfig.findMany({
+      where: { key: { startsWith: "INGEST_JOB_" } },
+    })
+    let processedChunks = 0
+    let processedJobs = 0
+
+    for (const config of configs) {
+      try {
+        const job = JSON.parse(config.value)
+        if (job.status !== "IN_PROGRESS") continue
+
+        processedJobs++
+        // Procesam max 5 chunk-uri per job per ciclu maintenance (control cost)
+        const batch = 5
+        const startIdx = job.processedUpTo
+        const endIdx = Math.min(startIdx + batch, job.chunks.length)
+
+        if (startIdx >= job.chunks.length) {
+          job.status = "COMPLETED"
+          await prisma.systemConfig.update({ where: { key: config.key }, data: { value: JSON.stringify(job) } })
+          continue
+        }
+
+        const { extractKnowledgeFromChunk } = await import("@/lib/kb/ingest-document")
+
+        for (let i = startIdx; i < endIdx; i++) {
+          const entries = await extractKnowledgeFromChunk(
+            job.chunks[i], job.sourceTitle, job.sourceAuthor, job.sourceType, i, job.chunks.length,
+          )
+          for (const entry of entries) {
+            const existing = await prisma.kBEntry.findFirst({
+              where: { agentRole: entry.agentRole, content: entry.content, status: "PERMANENT" },
+            })
+            if (!existing) {
+              await prisma.kBEntry.create({
+                data: {
+                  agentRole: entry.agentRole, kbType: (entry.kbType || "METHODOLOGY") as any,
+                  content: entry.content, source: "EXPERT_HUMAN",
+                  tags: [...(entry.tags || []), `ingest:${job.id}`, `source:${job.sourceTitle}`],
+                  status: "PERMANENT", confidence: entry.confidence || 0.8,
+                },
+              })
+              job.entriesCreated++
+              job.byRole[entry.agentRole] = (job.byRole[entry.agentRole] || 0) + 1
+            }
+          }
+          processedChunks++
+        }
+
+        job.processedUpTo = endIdx
+        if (endIdx >= job.chunks.length) {
+          job.status = "COMPLETED"
+          // Notificare Owner ca ingestia e completa
+          try {
+            const { Resend } = await import("resend")
+            const resend = new Resend(process.env.RESEND_API_KEY)
+            await resend.emails.send({
+              from: "JobGrade <noreply@jobgrade.ro>",
+              to: process.env.OWNER_EMAIL || "liviu.stroie@psibus.ro",
+              subject: `[JobGrade] Ingestie completă: ${job.sourceTitle}`,
+              text: `Documentul "${job.sourceTitle}" (${job.sourceAuthor}) a fost procesat complet.\n\n${job.entriesCreated} entries create.\nConsultanți: ${Object.entries(job.byRole).map(([r, n]) => `${r}: ${n}`).join(", ")}`,
+            }).catch(() => {})
+          } catch {}
+        }
+
+        await prisma.systemConfig.update({ where: { key: config.key }, data: { value: JSON.stringify(job) } })
+      } catch (e: any) {
+        console.error(`[maintenance/ingestion] Error on ${config.key}: ${e.message}`)
+      }
+    }
+
+    results.ingestion = { processedJobs, processedChunks }
+  }, 60000) // 60s timeout (ingestia poate fi lenta)
+
   // Salvam timestamp
   try {
     await prisma.systemConfig.upsert({
