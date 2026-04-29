@@ -96,11 +96,21 @@ function createWindow() {
     if (url.includes("/b2c/") || url.includes("/b2c-")) {
       const { dialog } = require("electron")
       dialog.showMessageBox(mainWindow, {
-        type: "warning",
-        title: "Acces restricționat",
-        message: "Contul personal B2C nu poate fi accesat din aplicația desktop.",
-        detail: "Pentru contul personal, utilizați browser-ul web (jobgrade.ro).\nAplicația desktop este dedicată contului de companie.",
-        buttons: ["Am înțeles"],
+        type: "info",
+        title: "Contul personal se accesează din browser",
+        message: "Profilul personal este separat de contul companiei — pentru protecția dumneavoastră.",
+        detail: "De ce?\n" +
+          "• Datele personale (profil psihologic, evaluări individuale) nu trebuie să rămână pe calculatorul companiei\n" +
+          "• La plecarea din companie, contul personal rămâne al dumneavoastră\n" +
+          "• Nimeni din companie nu poate accesa profilul personal\n\n" +
+          "Ce recomandăm:\n" +
+          "• Deschideți jobgrade.ro în browser pe telefonul personal sau laptopul personal\n" +
+          "• Instalați aplicația pe telefon (opțiunea „Adaugă pe ecranul de pornire")\n" +
+          "• Sesiunea din browser nu lasă urme pe acest calculator\n\n" +
+          "Aplicația desktop rămâne dedicată activităților companiei.",
+        buttons: ["Am înțeles, deschid în browser"],
+      }).then(({ response }) => {
+        if (response === 0) shell.openExternal(`${BASE_URL}/b2c`)
       })
       mainWindow.loadURL(`${BASE_URL}/portal`)
     }
