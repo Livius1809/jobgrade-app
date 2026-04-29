@@ -129,6 +129,55 @@ export default function DocsClient({ ingestKey }: { ingestKey: string }) {
     setCoverImage(null); setCoverPreview(null)
   }
 
+  // ── Reluare job de ingestie nefinalizat ──────────────────
+  async function resumeJob(resumeJobId: string) {
+    setSubmitting(true)
+    setMessage("Se reia procesarea...")
+    const authHeaders = { "Content-Type": "application/json", "x-internal-key": ingestKey }
+
+    // Citim status curent
+    const statusRes = await fetch(`/api/v1/kb/ingest-chunked?jobId=${resumeJobId}`, { headers: { "x-internal-key": ingestKey } })
+    const statusData = await statusRes.json()
+    if (!statusRes.ok) { setMessage(`Eroare: ${statusData.error}`); setSubmitting(false); return }
+
+    const totalChunks = statusData.totalChunks
+    let completed = false
+    let retries = 0
+    while (!completed) {
+      let processRes: Response
+      try {
+        processRes = await fetch("/api/v1/kb/ingest-chunked", {
+          method: "POST", headers: authHeaders,
+          body: JSON.stringify({ action: "process", jobId: resumeJobId, batchSize: 1 }),
+        })
+      } catch {
+        retries++
+        if (retries > 3) { setMessage("Eroare rețea persistentă."); break }
+        setMessage(`Eroare rețea, reîncerc (${retries}/3)...`)
+        await new Promise(r => setTimeout(r, 10000)); continue
+      }
+      if (processRes.status === 504) {
+        retries++
+        if (retries > 3) { setMessage("Timeout persistent. Progresul e salvat — reîncarcă pagina."); break }
+        setMessage(`Timeout, reîncerc după 15s (${retries}/3)...`)
+        await new Promise(r => setTimeout(r, 15000)); continue
+      }
+      if (processRes.status === 429) { setMessage("Rate limit — aștept 60s..."); await new Promise(r => setTimeout(r, 60000)); continue }
+      const data = await processRes.json()
+      if (!processRes.ok) { setMessage(`Eroare: ${data.error}`); break }
+      retries = 0
+      setMessage(`Procesare: ${data.completionPct}% (${data.processedUpTo}/${totalChunks} secțiuni, ${data.entriesCreated} entries)`)
+      if (data.status === "COMPLETED") {
+        completed = true
+        const roles = Object.entries(data.byRole || {}).map(([r, n]: [string, any]) => `${r}:${n}`).join(", ")
+        setMessage(`Complet — ${data.entriesCreated} entries\nConsultanți: ${roles}`)
+        setIngestResult(data); loadDocs()
+      } else if (data.status === "FAILED") { setMessage(`Eroare: ${data.error}`); break }
+      if (!completed) await new Promise(r => setTimeout(r, 8000))
+    }
+    setSubmitting(false)
+  }
+
   // ── Submit: Text paste (mod vechi) ──────────────────────
   async function submitText() {
     if (!title.trim() || !content.trim()) {
@@ -271,9 +320,8 @@ export default function DocsClient({ ingestKey }: { ingestKey: string }) {
       }
 
       const { jobId, totalChunks, estimatedMinutes } = startData
-      setMessage(`Document încarcat: ${totalChunks} secțiuni text${mixedPageNums.length > 0 ? ` + ${mixedPageNums.length} pagini grafice` : ""}, ~${estimatedMinutes} minute. Procesare...`)
 
-      // 2a. Procesare pagini mixte (imagini) — separat, prin referință cu imagine
+      // 2a. Procesare pagini mixte (imagini) — separat
       if (mixedPageNums.length > 0 && file) {
         for (const pageNum of mixedPageNums) {
           try {
@@ -293,44 +341,14 @@ export default function DocsClient({ ingestKey }: { ingestKey: string }) {
                 focusTopics: ["interpretare grafic", "date vizuale", "tendințe"],
               }),
             }).catch(() => {})
-          } catch {
-            // Pagina nu s-a putut renderiza — continuăm
-          }
+          } catch {}
         }
       }
 
-      // 2b. Process: polling pe tranșe text
-      let completed = false
-      while (!completed) {
-        const processRes = await fetch("/api/v1/kb/ingest-chunked", {
-          method: "POST",
-          headers: authHeaders,
-          body: JSON.stringify({ action: "process", jobId, batchSize: 3 }),
-        })
-        const data = await processRes.json()
-
-        if (!processRes.ok) {
-          setMessage(`Eroare la procesare: ${data.error || "necunoscuta"}`)
-          break
-        }
-
-        const pct = data.completionPct || 0
-        setMessage(`Procesare: ${pct}% (${data.processedUpTo}/${totalChunks} sectiuni, ${data.entriesCreated} entries)`)
-
-        if (data.status === "COMPLETED") {
-          completed = true
-          const roles = Object.entries(data.byRole || {}).map(([r, n]: [string, any]) => `${r}:${n}`).join(", ")
-          setMessage(`"${title.trim()}" — ${data.entriesCreated} entries create\nConsultanti: ${roles}`)
-          setIngestResult(data)
-          loadDocs()
-        } else if (data.status === "FAILED") {
-          setMessage(`Eroare: ${data.error || "procesare esuata"}`)
-          break
-        }
-
-        // Pauza 3s intre transe
-        if (!completed) await new Promise(r => setTimeout(r, 3000))
-      }
+      // 2b. Documentele mari se procesează LOCAL (zero timeout)
+      // Portalul doar încarcă chunk-urile — procesarea rulează pe calculator
+      setMessage(`Document pregătit: ${totalChunks} secțiuni (~${estimatedMinutes} min procesare).\n\nProcesarea rulează pe calculatorul local:\nnpx tsx scripts/process-pending-jobs.ts\n\nSau apasă "Procesează online" pentru documente mici.`)
+      setIngestResult({ jobId, totalChunks, pendingLocal: true })
     } catch (e: any) { setMessage(`Eroare: ${e.message}`) }
     setSubmitting(false)
   }
@@ -739,8 +757,25 @@ export default function DocsClient({ ingestKey }: { ingestKey: string }) {
               : (inputMode === "text" ? "Adauga in biblioteca" : inputMode === "upload" ? "Extrage si infuzeaza" : inputMode === "bibliography" ? "Proceseaza bibliografie" : "Extrage din referinta")}
           </button>
 
-          {/* Rezultat ingestie (dacă e disponibil) */}
-          {ingestResult && ingestResult.byRole && (
+          {/* Rezultat ingestie — pending local */}
+          {ingestResult && ingestResult.pendingLocal && (
+            <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 space-y-3">
+              <p className="text-sm font-medium text-blue-800">Document încărcat — așteaptă procesare</p>
+              <p className="text-xs text-blue-600 font-mono bg-blue-100 p-2 rounded">
+                npx tsx scripts/process-pending-jobs.ts
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => resumeJob(ingestResult.jobId)} disabled={submitting}
+                  className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  Procesează online
+                </button>
+                <span className="text-[10px] text-blue-500 self-center">(poate da timeout la documente mari)</span>
+              </div>
+            </div>
+          )}
+
+          {/* Rezultat ingestie — complet */}
+          {ingestResult && ingestResult.byRole && !ingestResult.pendingLocal && (
             <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
               <p className="text-sm font-medium text-emerald-800 mb-2">Cunoastere extrasa si rutata:</p>
               <div className="flex flex-wrap gap-2">
