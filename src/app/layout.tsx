@@ -50,8 +50,9 @@ export default function RootLayout({
         {children}
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js').catch(() => {});
+            // Dezinstalează orice SW vechi care intercepta API calls
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              regs.forEach(r => r.unregister());
             });
           }
         ` }} />
