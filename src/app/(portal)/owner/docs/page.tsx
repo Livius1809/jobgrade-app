@@ -223,9 +223,13 @@ export default function DocsPage() {
         setIngestResult(data)
         loadDocs()
       } else {
-        setMessage("Nu s-a extras cunoastere.")
+        setMessage("Nu s-a extras suficientă cunoaștere din referință. Încărcați documentul PDF.")
+        setInputMode("upload")
       }
-    } catch (e: any) { setMessage(`Eroare: ${e.message}`) }
+    } catch (e: any) {
+      setMessage(`Eroare: ${e.message}. Încercați upload PDF.`)
+      setInputMode("upload")
+    }
     setSubmitting(false)
   }
 
