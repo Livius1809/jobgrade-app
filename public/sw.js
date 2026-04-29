@@ -31,8 +31,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url)
 
-  // API calls — always network
-  if (url.pathname.startsWith("/api/")) return
+  // API calls — passthrough direct la network (nu intercepta!)
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(event.request))
+    return
+  }
 
   // Static assets — cache first
   event.respondWith(
