@@ -96,9 +96,16 @@ Returnează **EXCLUSIV** un JSON valid cu structura:
       "reportsTo": "Titlul postului superior direct (ex: Director Departament)",
       "supervises": ["Titlurile posturilor subordonate directe (array, poate fi gol)"]
     },
+    "coordination": {
+      "coordinatesWith": ["Posturi/departamente cu care colaborează lateral pe proiecte sau procese comune"]
+    },
     "functional": {
       "receivesInputFrom": ["De la cine primește inputuri — titluri posturi sau departamente"],
       "deliversOutputTo": ["Cui livrează outputuri — titluri posturi sau departamente"]
+    },
+    "representation": {
+      "substitutes": ["Pe cine înlocuiește în anumite situații (concediu, delegare, urgențe) — titluri posturi"],
+      "substitutedBy": ["De cine este înlocuit în absență — titluri posturi"]
     }
   },
   "missingInfo": ["Ce informații lipsesc pentru o evaluare mai precisă (array de întrebări)"],
@@ -120,6 +127,7 @@ IMPORTANT:
 - Evaluezi POSTUL (cerințele poziției), nu o persoană
 - Niveluri: Educație A(minim)-G(maxim), Comunicare A-E, Rezolvare probleme A-G, Decizii A-G, Impact A(operațional)-D(strategic), Condiții A(birou)-C(risc)
 - Un "Manager magazin" = Impact B-C (operațional), NU D (strategic)
+- "relationships" cuprinde 4 tipuri: ierarhice (cui raportează, pe cine coordonează), de coordonare (colaborare laterală), funcționale (inputuri/outputuri), de reprezentare (pe cine înlocuiește la absență și de cine e înlocuit)
 - Bazează-te pe CONȚINUT, nu pe titlu
 - Textul la GDPR, SSM, PSI trebuie ADAPTAT la post, nu copy-paste generic
 

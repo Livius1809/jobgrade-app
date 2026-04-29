@@ -34,6 +34,8 @@ const schema = z.object({
   responsibilities: z.string().optional(),
   requirements: z.string().optional(),
   status: z.nativeEnum(JobStatus).default(JobStatus.DRAFT),
+  aiAnalysis: z.any().optional(),
+  aiAnalyzed: z.boolean().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -71,6 +73,8 @@ export async function POST(req: NextRequest) {
         responsibilities: data.responsibilities || null,
         requirements: data.requirements || null,
         status: data.status,
+        aiAnalysis: data.aiAnalysis || undefined,
+        aiAnalyzed: data.aiAnalyzed || false,
       },
     })
 

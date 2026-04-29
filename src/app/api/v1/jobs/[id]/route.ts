@@ -13,6 +13,8 @@ const schema = z.object({
   responsibilities: z.string().optional().nullable(),
   requirements: z.string().optional().nullable(),
   status: z.nativeEnum(JobStatus).optional(),
+  aiAnalysis: z.any().optional(),
+  aiAnalyzed: z.boolean().optional(),
 })
 
 export async function PATCH(
@@ -56,6 +58,8 @@ export async function PATCH(
           requirements: data.requirements,
         }),
         ...(data.status !== undefined && { status: data.status }),
+        ...(data.aiAnalysis !== undefined && { aiAnalysis: data.aiAnalysis }),
+        ...(data.aiAnalyzed !== undefined && { aiAnalyzed: data.aiAnalyzed }),
       },
     })
 

@@ -66,6 +66,7 @@ interface JobFormProps {
   representatives: Representative[]
   defaultValues?: Partial<FormData>
   jobId?: string
+  existingAiAnalysis?: any
 }
 
 export default function JobForm({
@@ -73,11 +74,19 @@ export default function JobForm({
   representatives,
   defaultValues,
   jobId,
+  existingAiAnalysis,
 }: JobFormProps) {
   const router = useRouter()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
+  const [relationships, setRelationships] = useState<{
+    hierarchical?: { reportsTo?: string; supervises?: string[] }
+    coordination?: { coordinatesWith?: string[] }
+    functional?: { receivesInputFrom?: string[]; deliversOutputTo?: string[] }
+    representation?: { substitutes?: string[]; substitutedBy?: string[] }
+  } | null>(existingAiAnalysis?.relationships || null)
+  const [aiAnalysisData, setAiAnalysisData] = useState<any>(existingAiAnalysis || null)
 
   const {
     register,
@@ -104,10 +113,16 @@ export default function JobForm({
       const url = jobId ? `/api/v1/jobs/${jobId}` : "/api/v1/jobs"
       const method = jobId ? "PATCH" : "POST"
 
+      const payload: any = { ...data }
+      if (aiAnalysisData) {
+        payload.aiAnalysis = { ...aiAnalysisData, relationships }
+        payload.aiAnalyzed = true
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
 
       const json = await res.json()
@@ -152,6 +167,8 @@ export default function JobForm({
       if (json.purpose) setValue("purpose", json.purpose)
       if (json.responsibilities) setValue("responsibilities", json.responsibilities)
       if (json.requirements) setValue("requirements", json.requirements)
+      if (json.relationships) setRelationships(json.relationships)
+      setAiAnalysisData(json)
     } catch {
       setError("Eroare la generarea cu AI.")
     } finally {
@@ -312,6 +329,83 @@ export default function JobForm({
           />
         </div>
       </div>
+
+      {/* Relații post */}
+      {relationships && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <h2 className="font-semibold text-gray-900">Relații organizaționale</h2>
+
+          {/* Ierarhice */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">Ierarhice</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Raportează către</label>
+                <input type="text" value={relationships.hierarchical?.reportsTo || ""}
+                  onChange={e => setRelationships(r => ({ ...r, hierarchical: { ...r?.hierarchical, reportsTo: e.target.value } }))}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Director Departament" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Coordonează (subordonate)</label>
+                <input type="text" value={(relationships.hierarchical?.supervises || []).join(", ")}
+                  onChange={e => setRelationships(r => ({ ...r, hierarchical: { ...r?.hierarchical, supervises: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } }))}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Specialist, Asistent" />
+              </div>
+            </div>
+          </div>
+
+          {/* Coordonare */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">De coordonare</h3>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Colaborează lateral cu</label>
+              <input type="text" value={(relationships.coordination?.coordinatesWith || []).join(", ")}
+                onChange={e => setRelationships(r => ({ ...r, coordination: { coordinatesWith: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } }))}
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Marketing, Vânzări, IT" />
+            </div>
+          </div>
+
+          {/* Funcționale */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">Funcționale</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Primește inputuri de la</label>
+                <input type="text" value={(relationships.functional?.receivesInputFrom || []).join(", ")}
+                  onChange={e => setRelationships(r => ({ ...r, functional: { ...r?.functional, receivesInputFrom: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } }))}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Clienti, Departament X" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Livrează outputuri către</label>
+                <input type="text" value={(relationships.functional?.deliversOutputTo || []).join(", ")}
+                  onChange={e => setRelationships(r => ({ ...r, functional: { ...r?.functional, deliversOutputTo: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } }))}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Management, Contabilitate" />
+              </div>
+            </div>
+          </div>
+
+          {/* Reprezentare */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">De reprezentare</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Înlocuiește pe</label>
+                <input type="text" value={(relationships.representation?.substitutes || []).join(", ")}
+                  onChange={e => setRelationships(r => ({ ...r, representation: { ...r?.representation, substitutes: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } }))}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Director la absență" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Este înlocuit de</label>
+                <input type="text" value={(relationships.representation?.substitutedBy || []).join(", ")}
+                  onChange={e => setRelationships(r => ({ ...r, representation: { ...r?.representation, substitutedBy: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } }))}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="ex: Adjunct, Specialist Senior" />
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-400">Separate prin virgulă. Se completează automat la generarea AI și pot fi editate manual.</p>
+        </div>
+      )}
 
       <div className="flex gap-3 justify-end">
         <button

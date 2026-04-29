@@ -82,6 +82,7 @@ export default async function EditJobPage({
           status: job.status,
         }}
         jobId={job.id}
+        existingAiAnalysis={job.aiAnalysis}
       />
 
       {/* Sesiuni asociate */}
