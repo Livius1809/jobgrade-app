@@ -226,7 +226,7 @@ export default function DocsPage() {
 
       setMessage(`${textChunks.length} secțiuni pregătite. Se autentifică...`)
 
-      // Obține cheia de ingestie (GET mic — auth funcționează pe GET)
+      // Obține cheia de ingestie (verificare cookie direct, nu auth())
       let ingestKey = ""
       try {
         const keyRes = await fetch("/api/v1/kb/get-ingest-key")
@@ -241,8 +241,6 @@ export default function DocsPage() {
         setSubmitting(false)
         return
       }
-
-      setMessage(`Autentificat. Se creează jobul...`)
 
       // Trimitem chunk-urile în loturi de max 50 cu cheia de ingestie
       const BATCH = 50
