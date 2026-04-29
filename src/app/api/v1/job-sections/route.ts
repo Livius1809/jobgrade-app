@@ -33,6 +33,12 @@ const SUGGESTED_CUSTOM_SECTIONS = [
   "Oportunități de dezvoltare profesională",
   "Limbi străine necesare",
   "Competențe digitale",
+  "Regulament de ordine interioară (ROI)",
+  "Cod de conduită",
+  "Cod de etică",
+  "Reguli privind egalitatea de șanse",
+  "Prevenirea și combaterea hărțuirii",
+  "Contract colectiv de muncă — prevederi specifice",
 ]
 
 interface CustomSection {
