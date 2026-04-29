@@ -207,26 +207,74 @@ export function interpretScore(score: NormalizedScore): SignificantScore {
 }
 
 /**
- * Filtrează doar scorurile semnificative (care ies din zona mediană)
+ * Clasifică TOATE scorurile pe 3 categorii:
+ * - EXCELENȚĂ: peste zona mediană (sau sub, pentru scale inverse)
+ * - PERFECȚIONARE: sub zona mediană (sau peste, pentru scale inverse)
+ * - ÎN NORMĂ: zona mediană — context, nu se interpretează punctual
+ *
+ * Toate 3 categoriile apar în raport:
+ * - Excelența și perfecționarea se interpretează punctual
+ * - Medianul se MENȚIONEAZĂ ca context ("se înscrie în normă la...")
  */
-export function filterSignificant(scores: NormalizedScore[]): SignificantScore[] {
-  return scores.map(interpretScore).filter(s => s.significance !== "MEDIAN")
+export function classifyAllScores(scores: NormalizedScore[]): {
+  excellence: SignificantScore[]
+  development: SignificantScore[]
+  inNorm: SignificantScore[]
+} {
+  const classified = scores.map(interpretScore)
+  return {
+    excellence: classified.filter(s => s.significance === "EXCELENTA")
+      .sort((a, b) => b.normalizedT - a.normalizedT),
+    development: classified.filter(s => s.significance === "PERFECTIONARE")
+      .sort((a, b) => a.normalizedT - b.normalizedT),
+    inNorm: classified.filter(s => s.significance === "MEDIAN")
+      .sort((a, b) => a.scaleName.localeCompare(b.scaleName)),
+  }
 }
 
 /**
- * Grupează scorurile semnificative pe excelență vs perfecționare
+ * Construiește narativul decalajelor per subiect pe post
  */
-export function groupBySignificance(scores: NormalizedScore[]): {
-  excellence: SignificantScore[]
-  development: SignificantScore[]
-} {
-  const significant = filterSignificant(scores)
-  return {
-    excellence: significant.filter(s => s.significance === "EXCELENTA")
-      .sort((a, b) => b.normalizedT - a.normalizedT),
-    development: significant.filter(s => s.significance === "PERFECTIONARE")
-      .sort((a, b) => a.normalizedT - b.normalizedT),
+export function buildGapNarrative(
+  subjectName: string,
+  jobTitle: string,
+  classified: ReturnType<typeof classifyAllScores>,
+): string {
+  const parts: string[] = []
+
+  parts.push(`${subjectName} în raport cu postul ${jobTitle}:`)
+
+  if (classified.excellence.length > 0) {
+    parts.push(`\nZone de excelență (${classified.excellence.length}):`)
+    for (const s of classified.excellence) {
+      parts.push(`  • ${s.scaleName} (${s.instrumentName}): T=${s.normalizedT} — ${s.interpretationNote}`)
+    }
   }
+
+  if (classified.development.length > 0) {
+    parts.push(`\nArii de perfecționare (${classified.development.length}):`)
+    for (const s of classified.development) {
+      parts.push(`  • ${s.scaleName} (${s.instrumentName}): T=${s.normalizedT} — ${s.interpretationNote}`)
+    }
+  }
+
+  if (classified.inNorm.length > 0) {
+    parts.push(`\nSe înscrie în normă conform etalon la (${classified.inNorm.length}):`)
+    parts.push(`  ${classified.inNorm.map(s => s.scaleName).join(", ")}`)
+  }
+
+  return parts.join("\n")
+}
+
+// Backward compat
+export function filterSignificant(scores: NormalizedScore[]): SignificantScore[] {
+  const c = classifyAllScores(scores)
+  return [...c.excellence, ...c.development]
+}
+
+export function groupBySignificance(scores: NormalizedScore[]) {
+  const c = classifyAllScores(scores)
+  return { excellence: c.excellence, development: c.development }
 }
 
 /** T-score → percentila estimata */
