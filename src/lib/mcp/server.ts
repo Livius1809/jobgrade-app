@@ -159,6 +159,68 @@ export const MCP_TOOLS: MCPToolDefinition[] = [
     },
   },
 
+  // ═══ SCRIERE (inputuri prin MCP) ═══
+  {
+    name: "submit_salary_data",
+    description: "Import date salariale per angajat. Alternativă la upload CSV.",
+    category: "ACTION",
+    creditCost: 0,
+    parameters: {
+      tenantId: { type: "string", description: "ID-ul tenantului", required: true },
+      employees: { type: "array", description: "Array de {employeeCode, gender, baseSalary, variableComp, department, jobCategory}", required: true },
+    },
+  },
+  {
+    name: "add_job",
+    description: "Adaugă un post nou în organigrama companiei.",
+    category: "ACTION",
+    creditCost: 0,
+    parameters: {
+      tenantId: { type: "string", description: "ID-ul tenantului", required: true },
+      title: { type: "string", description: "Titlul postului", required: true },
+      department: { type: "string", description: "Departament" },
+      purpose: { type: "string", description: "Scopul rolului" },
+      responsibilities: { type: "string", description: "Responsabilități principale" },
+    },
+  },
+  {
+    name: "configure_kpi",
+    description: "Setează KPI-uri per post. Poate genera cu AI sau primi manual.",
+    category: "ACTION",
+    creditCost: 0,
+    parameters: {
+      tenantId: { type: "string", description: "ID-ul tenantului", required: true },
+      jobId: { type: "string", description: "ID-ul postului", required: true },
+      kpis: { type: "array", description: "Array de {name, targetValue, measurementUnit, frequency, weight}", required: true },
+    },
+  },
+  {
+    name: "submit_climate_response",
+    description: "Completează chestionarul climat organizațional (40 răspunsuri 1-7).",
+    category: "ACTION",
+    creditCost: 0,
+    parameters: {
+      tenantId: { type: "string", description: "ID-ul tenantului", required: true },
+      sessionId: { type: "string", description: "ID sesiune climat", required: true },
+      respondentCode: { type: "string", description: "Codul respondentului", required: true },
+      respondentGroup: { type: "string", description: "Grupul: PM sau NPM" },
+      answers: { type: "array", description: "40 răspunsuri (1-7) în ordinea din chestionar", required: true },
+    },
+  },
+  {
+    name: "update_company_profile",
+    description: "Actualizează datele companiei: MVV, website, industrie.",
+    category: "ACTION",
+    creditCost: 0,
+    parameters: {
+      tenantId: { type: "string", description: "ID-ul tenantului", required: true },
+      companyName: { type: "string", description: "Nume companie" },
+      mission: { type: "string", description: "Misiune" },
+      vision: { type: "string", description: "Viziune" },
+      values: { type: "string", description: "Valori" },
+    },
+  },
+
   // ═══ PROACTIVE (FW) ═══
   {
     name: "check_deadlines",
@@ -410,6 +472,91 @@ export async function executeMCPTool(toolName: string, params: Record<string, an
         }
 
         return { success: true, data: { suggestions, focus: focus || "all" }, creditsUsed: 1 }
+      }
+
+      // ═══ SCRIERE ═══
+
+      case "submit_salary_data": {
+        const { employees: emps } = params
+        if (!Array.isArray(emps) || emps.length === 0) return { success: false, error: "employees obligatoriu (array)" }
+        let created = 0
+        for (const emp of emps) {
+          if (!emp.employeeCode || !emp.baseSalary) continue
+          // Verifică dacă există
+          const existing = await prisma.employeeSalaryRecord.findFirst({ where: { tenantId, employeeCode: emp.employeeCode } })
+          if (existing) {
+            await prisma.employeeSalaryRecord.update({
+              where: { id: existing.id },
+              data: { baseSalary: Number(emp.baseSalary), variableComp: emp.variableComp ? Number(emp.variableComp) : 0, department: emp.department || null, jobCategory: emp.jobCategory || null, gender: emp.gender || null },
+            })
+          } else {
+            await (prisma as any).employeeSalaryRecord.create({
+              data: { tenantId, employeeCode: emp.employeeCode, baseSalary: Number(emp.baseSalary), variableComp: emp.variableComp ? Number(emp.variableComp) : 0, department: emp.department || null, jobCategory: emp.jobCategory || null, gender: emp.gender || null, periodYear: new Date().getFullYear() },
+            })
+          }
+          created++
+        }
+        return { success: true, data: { imported: created, total: emps.length } }
+      }
+
+      case "add_job": {
+        const { title: jobTitle, department: deptName, purpose, responsibilities } = params
+        if (!jobTitle) return { success: false, error: "title obligatoriu" }
+        let departmentId = null
+        if (deptName) {
+          const dept = await prisma.department.findFirst({ where: { tenantId, name: deptName } })
+          departmentId = dept?.id || null
+          if (!departmentId) {
+            const newDept = await prisma.department.create({ data: { tenantId, name: deptName } })
+            departmentId = newDept.id
+          }
+        }
+        const job = await prisma.job.create({
+          data: { tenantId, title: jobTitle, departmentId, purpose: purpose || null, responsibilities: responsibilities || null, status: "ACTIVE" },
+        })
+        return { success: true, data: { jobId: job.id, title: jobTitle } }
+      }
+
+      case "configure_kpi": {
+        const { jobId, kpis: kpiList } = params
+        if (!jobId || !Array.isArray(kpiList)) return { success: false, error: "jobId si kpis obligatorii" }
+        await prisma.kpiDefinition.createMany({
+          data: kpiList.map((k: any) => ({
+            tenantId, jobId,
+            name: k.name, weight: Number(k.weight || 0),
+            targetValue: parseFloat(k.targetValue) || 0,
+            measurementUnit: k.measurementUnit || "%",
+            frequency: k.frequency || "MONTHLY",
+          })),
+        })
+        return { success: true, data: { created: kpiList.length, jobId } }
+      }
+
+      case "submit_climate_response": {
+        const { sessionId, respondentCode, respondentGroup, answers } = params
+        if (!sessionId || !respondentCode || !Array.isArray(answers) || answers.length !== 40) {
+          return { success: false, error: "sessionId, respondentCode, 40 answers obligatorii" }
+        }
+        const { scoreRespondent } = await import("@/lib/climate/questionnaire")
+        // Trimitem la API-ul climate existent
+        const state = await getTenantData<any>(tenantId, "CLIMATE_CO") || { sessions: [], responses: [], results: [] }
+        state.responses = state.responses.filter((r: any) => !(r.sessionId === sessionId && r.respondentCode === respondentCode))
+        state.responses.push({ sessionId, respondentCode, respondentGroup: respondentGroup || "NPM", answers, completedAt: new Date().toISOString() })
+        const { setTenantData: setTD } = await import("@/lib/tenant-storage")
+        await setTD(tenantId, "CLIMATE_CO", state)
+        const result = scoreRespondent(respondentCode, respondentGroup || "NPM", answers, true)
+        return { success: true, data: result }
+      }
+
+      case "update_company_profile": {
+        const { companyName, mission, vision, values } = params
+        if (companyName) await prisma.tenant.update({ where: { id: tenantId }, data: { name: companyName } })
+        if (mission || vision || values) {
+          const { setTenantData: setTD } = await import("@/lib/tenant-storage")
+          const existing = await getTenantData<any>(tenantId, "MVV_STATE") || {}
+          await setTD(tenantId, "MVV_STATE", { ...existing, ...(mission ? { missionDraft: mission } : {}), ...(vision ? { visionDraft: vision } : {}), ...(values ? { valuesDraft: values } : {}) })
+        }
+        return { success: true, data: { updated: true } }
       }
 
       default:
