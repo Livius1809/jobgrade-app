@@ -50,6 +50,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           data: { lastLogin: new Date() },
         })
 
+        // Verificare silentă: email încă activ pe domeniu (non-blocking)
+        // Dacă OAuth fail sau bounce → suspendare + notificare admini
+        import("@/lib/auth/email-check").then(({ checkEmailActive, suspendUserAndNotifyAdmins }) => {
+          checkEmailActive(user.email).then(result => {
+            if (!result.valid) {
+              suspendUserAndNotifyAdmins(user.id, result.reason || "Email dezactivat pe domeniu")
+            }
+          }).catch(() => {})
+        }).catch(() => {})
+
         return {
           id: user.id,
           email: user.email,
