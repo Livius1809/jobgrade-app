@@ -6,7 +6,7 @@ import Link from "next/link"
 /** Renderizează o pagină PDF ca imagine base64 (pentru grafice/diagrame) */
 async function renderPDFPageAsImage(file: File, pageNum: number, scale: number = 1.5): Promise<string> {
   const pdfjsLib = await import("pdfjs-dist")
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
   const page = await pdf.getPage(pageNum)
@@ -22,7 +22,7 @@ async function renderPDFPageAsImage(file: File, pageNum: number, scale: number =
 /** Extrage text din PDF pe client (browser) — fără upload la server */
 async function extractTextFromPDFClient(file: File): Promise<{ text: string; numPages: number }> {
   const pdfjsLib = await import("pdfjs-dist")
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
 
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
