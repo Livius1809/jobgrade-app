@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
 
 const schema = z.object({
   title: z.string().min(2),
-  code: z.string().optional(),
+  code: z.string().optional(), // Cod COR (ex: "2514")
+  corName: z.string().optional(), // Denumire COR (ex: "Programatori")
   departmentId: z.string().optional(),
   representativeId: z.string().optional(),
   purpose: z.string().optional(),
@@ -45,11 +46,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = schema.parse(body)
 
+    // Sugestie COR automată dacă nu e specificat
+    let corCode = data.code || null
+    let corName = data.corName || null
+    if (!corCode && data.title) {
+      try {
+        const { suggestCOR } = await import("@/lib/cor/nomenclator")
+        const suggestions = suggestCOR(data.title)
+        if (suggestions.length > 0) {
+          corCode = suggestions[0].code
+          corName = suggestions[0].name
+        }
+      } catch {}
+    }
+
     const job = await prisma.job.create({
       data: {
         tenantId: session.user.tenantId,
         title: data.title,
-        code: data.code || null,
+        code: corCode,
         departmentId: data.departmentId || null,
         representativeId: data.representativeId || null,
         purpose: data.purpose || null,

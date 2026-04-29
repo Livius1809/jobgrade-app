@@ -123,6 +123,16 @@ Nu adăuga text în afara JSON-ului.`
 
     const parsed = JSON.parse(jsonMatch[0])
 
+    // Sugestie cod COR automat pe baza titlului
+    try {
+      const { suggestCOR } = await import("@/lib/cor/nomenclator")
+      const corSuggestions = suggestCOR(data.title)
+      if (corSuggestions.length > 0) {
+        parsed.corSuggestion = corSuggestions[0] // prima sugestie
+        parsed.corAlternatives = corSuggestions.slice(1, 4) // alternative
+      }
+    } catch {}
+
     // JD generată = cunoaștere despre structura posturilor per industrie
     try {
       const { learnFromReport } = await import("@/lib/learning-hooks")
