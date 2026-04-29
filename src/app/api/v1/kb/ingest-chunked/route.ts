@@ -224,6 +224,22 @@ export async function POST(req: NextRequest) {
   }
 
   // ═══ PROCESS — procesează următoarea tranșă ═══
+  // ═══ APPEND-CHUNKS — adaugă chunk-uri la job existent ═══
+  if (action === "append-chunks") {
+    const { jobId, chunks: newChunks } = body
+    if (!jobId || !Array.isArray(newChunks)) {
+      return NextResponse.json({ error: "jobId si chunks[] obligatorii" }, { status: 400 })
+    }
+    const job = await getJob(jobId)
+    if (!job) return NextResponse.json({ error: "Job negasit" }, { status: 404 })
+
+    job.chunks.push(...newChunks)
+    await saveJob(job)
+
+    return NextResponse.json({ ok: true, totalChunks: job.chunks.length, appended: newChunks.length })
+  }
+
+  // ═══ PROCESS — procesează următoarea tranșă ═══
   if (action === "process") {
     const { jobId, batchSize } = body
     if (!jobId) return NextResponse.json({ error: "jobId obligatoriu" }, { status: 400 })

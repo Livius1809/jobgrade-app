@@ -208,21 +208,65 @@ export default function DocsPage() {
         setMessage(`Text extras + ${mixedPageNums.length} pagini cu grafice de procesat vizual...`)
       }
 
-      const startRes = await fetch("/api/v1/kb/ingest-chunked", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "start",
-          rawText,
-          sourceTitle: title.trim(),
-          sourceAuthor: author.trim(),
-          sourceType,
-        }),
-      })
-      const startData = await startRes.json()
+      // Chunk-uim pe client și trimitem chunk-urile (nu textul brut mare)
+      // Evită limita 4.5MB Vercel body
+      const MAX_CHUNK_SIZE = 3000
+      const paragraphs = rawText.split(/\n\s*\n/)
+      const textChunks: string[] = []
+      let cur = ""
+      for (const p of paragraphs) {
+        if ((cur + "\n\n" + p).length > MAX_CHUNK_SIZE && cur.length > 0) {
+          textChunks.push(cur.trim())
+          cur = p
+        } else {
+          cur = cur ? cur + "\n\n" + p : p
+        }
+      }
+      if (cur.trim()) textChunks.push(cur.trim())
 
-      if (!startRes.ok || !startData.jobId) {
-        setMessage(`Eroare: ${startData.error || "Nu s-a putut porni ingestia"}`)
+      setMessage(`${textChunks.length} secțiuni pregătite. Se creează jobul...`)
+
+      // Trimitem chunk-urile în loturi de max 50 (fiecare lot ~150KB)
+      const BATCH = 50
+      let ingestJobId = ""
+      for (let i = 0; i < textChunks.length; i += BATCH) {
+        const batch = textChunks.slice(i, i + BATCH)
+        if (i === 0) {
+          // Primul lot: creează jobul
+          const res = await fetch("/api/v1/kb/ingest-chunked", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "start",
+              rawText: batch.join("\n\n"),
+              sourceTitle: title.trim(),
+              sourceAuthor: author.trim(),
+              sourceType,
+            }),
+          })
+          const data = await res.json()
+          if (!res.ok || !data.jobId) {
+            setMessage(`Eroare: ${data.error || "Nu s-a putut crea jobul"}`)
+            setSubmitting(false)
+            return
+          }
+          ingestJobId = data.jobId
+          setMessage(`Job creat: ${data.totalChunks} secțiuni din lotul 1. Se încarcă restul...`)
+        } else {
+          // Loturi următoare: adăugăm chunk-uri la job existent
+          await fetch("/api/v1/kb/ingest-chunked", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "append-chunks", jobId: ingestJobId, chunks: batch }),
+          })
+          setMessage(`Încărcat ${Math.min(i + BATCH, textChunks.length)}/${textChunks.length} secțiuni...`)
+        }
+      }
+
+      const startData = { jobId: ingestJobId, totalChunks: textChunks.length, estimatedMinutes: Math.ceil(textChunks.length * 0.5) }
+
+      if (!startData.jobId) {
+        setMessage("Eroare la crearea jobului de ingestie")
         setSubmitting(false)
         return
       }
