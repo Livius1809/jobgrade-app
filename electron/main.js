@@ -90,6 +90,22 @@ function createWindow() {
     mainWindow.show()
   })
 
+  // Blocare B2C în Electron — doar cont B2B permis
+  mainWindow.webContents.on("did-navigate", (event, url) => {
+    // Dacă URL-ul conține /b2c/ → blochează și redirecționează
+    if (url.includes("/b2c/") || url.includes("/b2c-")) {
+      const { dialog } = require("electron")
+      dialog.showMessageBox(mainWindow, {
+        type: "warning",
+        title: "Acces restricționat",
+        message: "Contul personal B2C nu poate fi accesat din aplicația desktop.",
+        detail: "Pentru contul personal, utilizați browser-ul web (jobgrade.ro).\nAplicația desktop este dedicată contului de companie.",
+        buttons: ["Am înțeles"],
+      })
+      mainWindow.loadURL(`${BASE_URL}/portal`)
+    }
+  })
+
   // Open external links in browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(BASE_URL)) {
