@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       // KPI-uri definite
       prisma.kpiDefinition.findMany({
         where: { tenantId },
-        select: { id: true, jobId: true, name: true, weight: true, target: true },
+        select: { id: true, jobId: true, name: true, weight: true, targetValue: true },
       }),
       // Pachete compensare
       prisma.compensationPackage.findMany({
@@ -120,7 +120,7 @@ ${jobs.map(j => `- ${j.title} (${j.department?.name ?? "fără dept"}) — statu
 ${employees.map(e => `- ${e.employeeCode}: dept ${e.department ?? "—"}, salariu bază ${e.baseSalary}, variabil ${e.variableComp}`).join("\n")}
 
 ### KPI-uri definite (${kpis.length}):
-${kpis.map(k => `- ${k.name} (job: ${k.jobId}, pondere: ${k.weight}%, target: ${k.target})`).join("\n")}
+${kpis.map(k => `- ${k.name} (job: ${k.jobId}, pondere: ${k.weight}%, target: ${k.targetValue})`).join("\n")}
 
 ### Pachete compensare (${packages.length}):
 ${packages.map(p => `- Job ${p.jobId}: bază ${p.baseSalary} ${p.currency}`).join("\n")}

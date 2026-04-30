@@ -72,26 +72,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Jobul nu a fost găsit." }, { status: 404 })
     }
 
-    // Încarcă evaluările existente pentru acest job (scoruri pe cele 6 criterii)
-    const evaluations = await prisma.evaluation.findMany({
-      where: {
-        sessionJob: { jobId: data.jobId },
-      },
-      include: {
-        criterion: { select: { name: true } },
-        subfactor: { select: { name: true } },
-      },
+    // Încarcă rezultatele evaluării pentru acest job
+    const jobResults = await prisma.jobResult.findMany({
+      where: { job: { id: data.jobId, tenantId } },
+      select: { totalScore: true, rank: true, salaryGradeId: true },
     })
 
     // Caută profiluri B2C disponibile
     const b2cProfiles = await prisma.b2CProfile.findMany({
       include: {
-        user: {
-          select: {
-            pseudonym: true,
-            status: true,
-          },
-        },
+        user: true,
       },
     })
 
@@ -113,14 +103,14 @@ export async function POST(req: NextRequest) {
       job.description ? `Descriere: ${job.description}` : null,
       job.requirements ? `Cerințe: ${job.requirements}` : null,
       job.responsibilities ? `Responsabilități: ${job.responsibilities}` : null,
-      evaluations.length > 0
-        ? `Evaluări JE:\n${evaluations.map(e => `  - ${e.criterion.name}/${e.subfactor?.name}: nivel ${e.level}`).join("\n")}`
+      jobResults.length > 0
+        ? `Rezultate JE: scor ${jobResults[0].totalScore}, grad ${jobResults[0].salaryGradeId}, rank ${jobResults[0].rank}`
         : null,
     ].filter(Boolean).join("\n")
 
     // Construiește lista de profiluri B2C (anonimizate)
     const profilesSummary = b2cProfiles.map((p, idx) => {
-      const pseudonym = p.user.pseudonym ?? `Candidat_${idx + 1}`
+      const pseudonym = (p as any).user?.pseudonym ?? `Candidat_${idx + 1}`
       return {
         pseudonym,
         herrmann: p.herrmannA != null ? `A:${p.herrmannA} B:${p.herrmannB} C:${p.herrmannC} D:${p.herrmannD}` : "nedisponibil",

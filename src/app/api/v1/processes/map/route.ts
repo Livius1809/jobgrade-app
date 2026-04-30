@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     })
 
     const companyContext = company
-      ? `Companie: ${company.name}\nDomeniu: ${company.industry || "nespecificat"}\nDescriere: ${company.description || "nespecificata"}`
+      ? `Companie: ${(company as any).name ?? "Nespecificata"}\nDomeniu: ${company.industry || "nespecificat"}\nDescriere: ${company.description || "nespecificata"}`
       : "Profil companie necompletat."
 
     // Prompt pentru Claude — generare harta procese

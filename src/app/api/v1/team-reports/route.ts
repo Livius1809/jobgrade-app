@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
       where: { id: departmentId, tenantId },
       include: {
         jobs: {
-          select: { id: true, title: true, description: true, grade: true },
+          select: { id: true, title: true, description: true, status: true },
         },
       },
     })
@@ -173,8 +173,8 @@ export async function POST(req: NextRequest) {
     const company = await prisma.companyProfile.findUnique({ where: { tenantId } })
 
     // Construim contextul
-    const jobsContext = department.jobs
-      .map(j => `- ${j.title}${j.grade ? ` (Grad: ${j.grade})` : ""}${j.description ? ": " + j.description.slice(0, 100) : ""}`)
+    const jobsContext = ((department as any).jobs ?? [])
+      .map((j: any) => `- ${j.title}${j.status ? ` (Status: ${j.status})` : ""}${j.description ? ": " + j.description.slice(0, 100) : ""}`)
       .join("\n")
 
     // Prompt pentru Claude
@@ -192,7 +192,7 @@ Adapteaza limbajul si profunzimea la audienta: ${
 
     const userPrompt = `Genereaza raportul de tip ${reportType} pentru departamentul "${department.name}".
 
-COMPANIE: ${company?.name || "Nespecificata"} — ${company?.industry || "Domeniu nespecificat"}
+COMPANIE: ${(company as any)?.name || "Nespecificata"} — ${company?.industry || "Domeniu nespecificat"}
 
 POSTURI IN DEPARTAMENT:
 ${jobsContext || "Nu exista posturi definite."}
@@ -253,7 +253,7 @@ Raspunde STRICT in formatul JSON de mai sus.`
       dataSources: {
         sociogram: !!sociogramData,
         psychometric: !!psychometricData,
-        jobs: department.jobs.length,
+        jobs: ((department as any).jobs ?? []).length,
       },
     })
   } catch (error) {
