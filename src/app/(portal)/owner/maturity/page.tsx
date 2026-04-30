@@ -34,7 +34,7 @@ export default async function MaturityPage() {
 
   const p = prisma as any
   const now = new Date()
-  const d30 = new Date(now.getTime() - 30 * 24 * 3600000)
+  const d30 = new Date(now.getTime() - 7 * 24 * 3600000) // Fereastra principală: 7 zile (era 30 — prea rar pentru galben)
   const d7 = new Date(now.getTime() - 7 * 24 * 3600000)
 
   const indicators: MaturityIndicator[] = []

@@ -658,7 +658,7 @@ export default async function AgentsReportPage() {
                   <th className="text-right px-3 py-2">Făcut</th>
                   <th className="text-right px-3 py-2">Știut</th>
                   <th className="text-right px-3 py-2">Amânate</th>
-                  <th className="text-right px-3 py-2">Rata reală</th>
+                  <th className="text-right px-3 py-2" title="Raport Făcut/Știut — presiunea de a converti cunoaștere în acțiune">Conversie</th>
                 </tr>
               </thead>
               <tbody>
@@ -684,14 +684,25 @@ export default async function AgentsReportPage() {
                     <td className="px-3 py-2 text-right font-mono text-indigo-600">{a.learnedWeek || "—"}</td>
                     <td className="px-3 py-2 text-right font-mono">{a.tasks || "—"}</td>
                     <td className="px-3 py-2 text-right font-mono text-emerald-600" title="Executat real cu AI">{a.realExecuted || "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono text-amber-500" title="KB-RESOLVED — recitat din memorie">{a.kbResolved || "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono text-slate-400">{a.postponed || "—"}</td>
-                    <td className="px-3 py-2 text-right">
-                      {a.realRate !== null ? (
-                        <span className={`font-bold ${a.realRate >= 60 ? "text-emerald-600" : a.realRate >= 30 ? "text-amber-600" : "text-red-600"}`}>
-                          {a.realRate}%
+                    <td className="px-3 py-2 text-right font-mono text-amber-500" title="KB-RESOLVED — știut din memorie, nu neapărat acționat">
+                      {a.kbResolved ? (
+                        <span className={a.kbResolved > a.realExecuted ? "text-amber-600 font-bold" : "text-amber-400"}>
+                          {a.kbResolved}
+                          {a.kbResolved > a.realExecuted * 2 && <span className="text-[9px] text-red-500 ml-1" title="Știe mult, face puțin">!</span>}
                         </span>
                       ) : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-slate-400">{a.postponed || "—"}</td>
+                    <td className="px-3 py-2 text-right" title="Făcut / (Făcut+Știut) — cât din ce știe se transformă în acțiune">
+                      {(a.realExecuted || a.kbResolved) ? (() => {
+                        const total = (a.realExecuted || 0) + (a.kbResolved || 0)
+                        const conversion = total > 0 ? Math.round((a.realExecuted || 0) / total * 100) : 0
+                        return (
+                          <span className={`font-bold ${conversion >= 60 ? "text-emerald-600" : conversion >= 30 ? "text-amber-600" : "text-red-600"}`}>
+                            {conversion}%
+                          </span>
+                        )
+                      })() : "—"}
                     </td>
                   </tr>
                 ))}

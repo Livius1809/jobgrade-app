@@ -36,6 +36,8 @@ export interface SubordinateStatus {
   activeTasksCount: number
   blockedTasksCount: number
   healthScore: number // 0-100
+  kbResolved7d: number   // tasks rezolvate din KB (știute)
+  realExecuted7d: number // tasks executate real (făcute)
 }
 
 export interface CycleEvaluation {
@@ -161,6 +163,13 @@ async function collectSubordinateStatuses(
     if (blockedTasks > 0) healthScore -= 15 * blockedTasks
     healthScore = Math.max(0, Math.min(100, healthScore))
 
+    // Tasks completate 7 zile: câte din KB (știute) vs reale (făcute)
+    const d7ago = new Date(Date.now() - 7 * 24 * 3600000)
+    const [kbResolved7d, realExecuted7d] = await Promise.all([
+      prisma.agentTask.count({ where: { assignedTo: role, status: "COMPLETED", kbHit: true, completedAt: { gte: d7ago } } }).catch(() => 0),
+      prisma.agentTask.count({ where: { assignedTo: role, status: "COMPLETED", kbHit: false, completedAt: { gte: d7ago } } }).catch(() => 0),
+    ])
+
     statuses.push({
       agentRole: role,
       kbEntriesCount: kbCount,
@@ -169,6 +178,8 @@ async function collectSubordinateStatuses(
       activeTasksCount: activeTasks,
       blockedTasksCount: blockedTasks,
       healthScore,
+      kbResolved7d,
+      realExecuted7d,
     })
   }
 
@@ -204,6 +215,14 @@ CONDIȚII CRITICE DE FEZABILITATE (verifică ÎNAINTE de a propune orice acțiun
 - Un agent IDLE fără clienți este NORMAL — nu e o problemă de rezolvat, e o stare de așteptare
 
 REGULA DE AUR: Mai bine ZERO taskuri decât taskuri imposibile. Un task imposibil consumă resurse, blochează pipeline-ul și creează zgomot.
+
+RAPORTUL ȘTIUT/FĂCUT:
+Fiecare subordonat are câmpurile kbResolved7d (tasks rezolvate din memorie — "știute") și realExecuted7d (tasks executate real — "făcute").
+- Dacă un agent are multe "știute" dar puține "făcute": INVESTIGHEAZĂ de ce. Posibile cauze:
+  - Nu are instrucțiuni concrete de acțiune → furnizează procedură
+  - E blocat de o dependență → deblochează
+  - Cunoașterea nu e acționabilă → marchează și curăță
+- NU escaladezi direct. Escaladezi DOAR când nici tu nu poți ajuta.
 
 INSTRUCȚIUNI:
 1. Evaluează fiecare subordonat: ON_TRACK, AT_RISK, BLOCKED, sau IDLE
