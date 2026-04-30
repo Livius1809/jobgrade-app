@@ -484,6 +484,20 @@ async function fetchAxes(): Promise<any> {
       prisma.systemConfig.findUnique({ where: { key: "PROACTIVE_LOOP_LAST_RUN" } }).catch(() => null),
     ])
 
+    // Citim vital signs pentru corelație organism ↔ puls
+    let pulseVerdict = "UNKNOWN"
+    let pulseWarn = 0
+    let pulseFail = 0
+    try {
+      const vsConfig = await prisma.systemConfig.findUnique({ where: { key: "VITAL_SIGNS_LATEST" } })
+      if (vsConfig) {
+        const vs = JSON.parse(vsConfig.value)
+        pulseVerdict = vs.overallStatus || "UNKNOWN"
+        pulseWarn = vs.summary?.warn || 0
+        pulseFail = vs.summary?.fail || 0
+      }
+    } catch {}
+
     const srcMap: Record<string, number> = {}
     for (const s of kbBySource7d) srcMap[s.sourceType] = s._count
     const adaptiveSrc = (srcMap["ESCALATION"] || 0) + (srcMap["EXTRAPOLATION"] || 0)
@@ -513,11 +527,21 @@ async function fetchAxes(): Promise<any> {
       ? Math.round((now.getTime() - new Date(proactiveLoopLast.value).getTime()) / 60000)
       : null
 
+    // Corelație organism ↔ puls: verdictul final integrează ambele surse
+    // Un organism sănătos = ȘI diagnostic bun ȘI puls stabil
+    let finalVerdict = diagVerdict
+    if (diagVerdict === "SANATOS" && (pulseVerdict === "CRITICAL" || pulseFail > 0)) {
+      finalVerdict = "INSTABIL" // respiră dar are probleme — risc deteriorare
+    } else if (diagVerdict === "SANATOS" && (pulseVerdict === "WEAKENED" || pulseWarn > 2)) {
+      finalVerdict = "ATENTIE" // funcțional dar cu semne de slăbire
+    }
+
     return {
       organism: {
-        diagVerdict,
+        diagVerdict: finalVerdict,
         diagVerde,
         diagRosu,
+        diagGalben: pulseWarn,
         maintenanceAgeMin: maintAgeMin,
         proactiveAgeMin: proactiveAgeMin,
       },
@@ -619,19 +643,22 @@ export default async function OwnerDashboard() {
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-3 h-3 rounded-full ${
                   axes.organism?.diagVerdict === "SANATOS" ? "bg-emerald-400" :
-                  axes.organism?.diagVerdict === "PROBLEME" ? "bg-red-500" :
-                  data?.vitalSigns?.verdict === "ALIVE" ? "bg-emerald-400" :
-                  data?.vitalSigns?.verdict === "WEAKENED" ? "bg-amber-400" : "bg-slate-300"
+                  axes.organism?.diagVerdict === "ATENTIE" ? "bg-amber-400" :
+                  axes.organism?.diagVerdict === "INSTABIL" ? "bg-orange-500" :
+                  axes.organism?.diagVerdict === "PROBLEME" ? "bg-red-500" : "bg-slate-300"
                 }`} />
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Organism</span>
               </div>
-              <div className="text-lg font-bold text-slate-900">
-                {axes.organism?.diagVerdict === "SANATOS" ? "SANATOS" :
-                 axes.organism?.diagVerdict === "PROBLEME" ? "PROBLEME" :
-                 data?.vitalSigns?.verdict || "—"}
+              <div className={`text-lg font-bold ${
+                axes.organism?.diagVerdict === "SANATOS" ? "text-emerald-700" :
+                axes.organism?.diagVerdict === "ATENTIE" ? "text-amber-700" :
+                axes.organism?.diagVerdict === "INSTABIL" ? "text-orange-700" :
+                axes.organism?.diagVerdict === "PROBLEME" ? "text-red-700" : "text-slate-900"
+              }`}>
+                {axes.organism?.diagVerdict || "—"}
               </div>
               <div className="text-[11px] text-slate-500 mt-1">
-                {axes.organism?.diagVerde || 0} verde, {axes.organism?.diagRosu || 0} rosu
+                {axes.organism?.diagVerde || 0} verde{axes.organism?.diagGalben ? `, ${axes.organism.diagGalben} galben` : ""}, {axes.organism?.diagRosu || 0} rosu
               </div>
               {axes.organism?.maintenanceAgeMin != null && (
                 <div className="text-[10px] text-indigo-600 mt-1">
