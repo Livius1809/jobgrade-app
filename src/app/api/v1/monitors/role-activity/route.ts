@@ -187,7 +187,7 @@ export async function GET(req: NextRequest) {
     // DORMANT_UNTIL_DELEGATED: NU raportăm absența — agentul așteaptă mecanism
     //   de delegare funcțională (sprint viitor "orchestrare execuție").
     const cycleWindowMs = thr.cycleWindowH * 60 * 60 * 1000
-    const cyclesInWindow = thr.cycleWindowH === 24 ? c24h : c48h
+    const cyclesInWindow = thr.cycleWindowH <= 24 ? c24h : c48h
 
     let d2 = false
     const d2Reasons: string[] = []
