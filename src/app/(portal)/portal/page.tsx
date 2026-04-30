@@ -6,6 +6,7 @@ import PortalClientSection from "@/components/portal/PortalClientSection"
 import PortalC1Pipeline from "@/components/portal/PortalC1Pipeline"
 import PortalC2Pipeline from "@/components/portal/PortalC2Pipeline"
 import PortalC3Pipeline from "@/components/portal/PortalC3Pipeline"
+import PortalC4Pipeline from "@/components/portal/PortalC4Pipeline"
 import { needsRoleOnboarding } from "@/lib/onboarding-check"
 import { getUserPermissions } from "@/lib/permissions"
 
@@ -297,6 +298,24 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           processMapCount={0}
           hasQualityManual={false}
           sopCount={0}
+        />
+      )}
+
+      {/* ═══ Pipeline C4 — Dezvoltare ═══ */}
+      {purchasedLayer >= 4 && (
+        <PortalC4Pipeline
+          c1c2c3Complete={client.isValidated && client.salaryGradeCount > 0}
+          hasClimateResults={false}
+          climateDimensionsScored={0}
+          hasAuditCultural={false}
+          hasMVV={!!(client.mission || client.vision)}
+          has3CReport={false}
+          hasROICulture={false}
+          hasInterventionPlan={false}
+          hasSimulations={false}
+          hasMonitoring={false}
+          pulseCount={0}
+          hasStrategicObjectives={false}
         />
       )}
 
