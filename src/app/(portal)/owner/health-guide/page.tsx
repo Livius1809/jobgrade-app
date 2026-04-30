@@ -39,6 +39,27 @@ export default function HealthGuidePage() {
         </div>
       </Section>
 
+      {/* Rezolvare galben */}
+      <Section title="Cum se rezolvă un status galben">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm space-y-3 text-text-warm">
+          <p>
+            Statusurile galbene se <strong>auto-rezolvă</strong> atunci când condiția subiacentă se îmbunătățește
+            — de exemplu, un cron rulează cu succes, un task blocat se completează sau o metrică revine în parametri.
+          </p>
+          <p>
+            Dashboard-ul se actualizează la fiecare încărcare a paginii. Nu este necesară nicio acțiune manuală
+            pentru a vedea statusul curent — reîncarcă pagina și vezi starea reală.
+          </p>
+          <p className="text-amber-700 font-medium">
+            Dacă un status galben persistă mai mult de 24h, indică o problemă structurală (nu doar de timing)
+            — verifică cauza din stratul respectiv și intervino punctual.
+          </p>
+          <p className="text-xs text-text-secondary italic mt-2">
+            Statusurile se actualizează automat la fiecare încărcare a paginii.
+          </p>
+        </div>
+      </Section>
+
       {/* 8 Straturi */}
       <Section title="Cele 8 straturi">
         <div className="space-y-6">

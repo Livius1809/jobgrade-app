@@ -16,7 +16,7 @@ export default async function AgentsReportPage() {
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  let pipeline = { total: 0, completed: 0, inProgress: 0, postponed: 0, escalated: 0, claudeCalls: 0, claudeCallsYesterday: 0, claudeCallsWeek: 0, costToday: 0, costWeek: 0, byDept: [] as any[] }
+  let pipeline = { total: 0, totalWeek: 0, completed: 0, completedWeek: 0, yesterdayTotal: 0, yesterdayCompleted: 0, prevWeekTotal: 0, prevWeekCompleted: 0, cumulativeTotal: 0, cumulativeCompleted: 0, inProgress: 0, postponed: 0, escalated: 0, claudeCalls: 0, claudeCallsYesterday: 0, claudeCallsWeek: 0, costToday: 0, costWeek: 0, byDept: [] as any[] }
   let diagnosis = { onTime: 0, postponed: 0, ownerDependent: 0, reasons: [] as any[] }
   let learning = { total: 0, prevTotal: 0, totalKB: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromSeed: 0, fromExternal: 0 }
   let objectives = [] as any[]
@@ -29,10 +29,14 @@ export default async function AgentsReportPage() {
         SELECT
           count(*) as total,
           count(*) FILTER (WHERE status = 'COMPLETED') as completed,
-          count(*) FILTER (WHERE status IN ('ASSIGNED','IN_PROGRESS')) as in_progress,
-          count(*) FILTER (WHERE status = 'BLOCKED') as postponed
+          count(*) FILTER (WHERE status IN ('ASSIGNED','IN_PROGRESS','ACCEPTED')) as in_progress,
+          count(*) FILTER (WHERE status = 'BLOCKED') as postponed,
+          count(*) FILTER (WHERE "createdAt"::date = CURRENT_DATE) as today_total,
+          count(*) FILTER (WHERE "createdAt"::date = CURRENT_DATE AND status = 'COMPLETED') as today_completed,
+          count(*) FILTER (WHERE "createdAt"::date = CURRENT_DATE - 1) as yesterday_total,
+          count(*) FILTER (WHERE "createdAt"::date = CURRENT_DATE - 1 AND status = 'COMPLETED') as yesterday_completed
         FROM agent_tasks
-        WHERE "createdAt" > ${oneWeekAgo}
+        WHERE "createdAt" > ${oneWeekAgo} AND status != 'CANCELLED'
       ` as Promise<any[]>,
       p.$queryRaw`
         SELECT "assignedBy" as dept, count(*) as total,
@@ -51,12 +55,36 @@ export default async function AgentsReportPage() {
       `.catch(() => [{}]) as Promise<any[]>,
     ])
 
+    // Cumulative + previous week queries
+    const [cumulativeStats, prevWeekStats] = await Promise.all([
+      p.$queryRaw`
+        SELECT count(*) as total, count(*) FILTER (WHERE status = 'COMPLETED') as completed
+        FROM agent_tasks WHERE status != 'CANCELLED'
+      `.catch(() => [{ total: 0, completed: 0 }]) as Promise<any[]>,
+      p.$queryRaw`
+        SELECT count(*) as total, count(*) FILTER (WHERE status = 'COMPLETED') as completed
+        FROM agent_tasks WHERE "createdAt" > ${twoWeeksAgo} AND "createdAt" <= ${oneWeekAgo} AND status != 'CANCELLED'
+      `.catch(() => [{ total: 0, completed: 0 }]) as Promise<any[]>,
+    ])
+
+    const cumRow = cumulativeStats[0] || {}
+    const prevRow = prevWeekStats[0] || {}
+
     const telemetry = (claudeCallCount as any[])[0] || {}
+    const ts = taskStats[0] || {}
     pipeline = {
-      total: Number(taskStats[0]?.total || 0),
-      completed: Number(taskStats[0]?.completed || 0),
-      inProgress: Number(taskStats[0]?.in_progress || 0),
-      postponed: Number(taskStats[0]?.postponed || 0),
+      total: Number(ts.today_total || 0),
+      totalWeek: Number(ts.total || 0),
+      completed: Number(ts.today_completed || 0),
+      completedWeek: Number(ts.completed || 0),
+      yesterdayTotal: Number(ts.yesterday_total || 0),
+      yesterdayCompleted: Number(ts.yesterday_completed || 0),
+      prevWeekTotal: Number(prevRow.total || 0),
+      prevWeekCompleted: Number(prevRow.completed || 0),
+      cumulativeTotal: Number(cumRow.total || 0),
+      cumulativeCompleted: Number(cumRow.completed || 0),
+      inProgress: Number(ts.in_progress || 0),
+      postponed: Number(ts.postponed || 0),
       escalated: escalationCount,
       claudeCalls: Number(telemetry.today || 0),
       claudeCallsYesterday: Number(telemetry.yesterday || 0),
@@ -340,19 +368,92 @@ export default async function AgentsReportPage() {
       {/* ═══ PIPELINE ═══ */}
       <section>
         <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Pipeline task-uri</h2>
-        <div className="grid grid-cols-6 gap-3">
-          <SC label="Total alocate" value={pipeline.total} />
-          <SC label="Completate" value={pipeline.completed} accent="emerald" />
-          <SC label="În lucru" value={pipeline.inProgress} accent="indigo" />
-          <SC label="Amânate" value={pipeline.postponed} accent={pipeline.postponed > 0 ? "amber" : undefined} />
+
+        {/* 3 perioade: Azi / 7 zile / Cumulat */}
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          {/* AZI */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-2">Azi</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{pipeline.total}</p>
+                <p className="text-[10px] text-slate-400">Create</p>
+                {pipeline.yesterdayTotal > 0 && (
+                  <p className={`text-[9px] font-bold ${pipeline.total >= pipeline.yesterdayTotal ? "text-emerald-600" : "text-amber-600"}`}>
+                    {pipeline.total >= pipeline.yesterdayTotal ? "+" : ""}{pipeline.total - pipeline.yesterdayTotal} vs ieri
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-600">{pipeline.completed}</p>
+                <p className="text-[10px] text-slate-400">Completate</p>
+                {pipeline.yesterdayCompleted > 0 && (
+                  <p className={`text-[9px] font-bold ${pipeline.completed >= pipeline.yesterdayCompleted ? "text-emerald-600" : "text-amber-600"}`}>
+                    {pipeline.completed >= pipeline.yesterdayCompleted ? "+" : ""}{pipeline.completed - pipeline.yesterdayCompleted} vs ieri
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 7 ZILE */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-2">7 zile</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{pipeline.totalWeek}</p>
+                <p className="text-[10px] text-slate-400">Create</p>
+                {pipeline.prevWeekTotal > 0 && (
+                  <p className={`text-[9px] font-bold ${pipeline.totalWeek >= pipeline.prevWeekTotal ? "text-emerald-600" : "text-amber-600"}`}>
+                    {pipeline.totalWeek >= pipeline.prevWeekTotal ? "+" : ""}{pipeline.totalWeek - pipeline.prevWeekTotal} vs sapt. ant.
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-600">{pipeline.completedWeek}</p>
+                <p className="text-[10px] text-slate-400">Completate</p>
+                {pipeline.prevWeekCompleted > 0 && (
+                  <p className={`text-[9px] font-bold ${pipeline.completedWeek >= pipeline.prevWeekCompleted ? "text-emerald-600" : "text-amber-600"}`}>
+                    {pipeline.completedWeek >= pipeline.prevWeekCompleted ? "+" : ""}{pipeline.completedWeek - pipeline.prevWeekCompleted} vs sapt. ant.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* CUMULAT */}
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+            <p className="text-[10px] text-indigo-400 uppercase tracking-wide font-bold mb-2">Cumulat</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-2xl font-bold text-slate-800">{pipeline.cumulativeTotal.toLocaleString("ro-RO")}</p>
+                <p className="text-[10px] text-slate-400">Total create</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-600">{pipeline.cumulativeCompleted.toLocaleString("ro-RO")}</p>
+                <p className="text-[10px] text-slate-400">Total completate</p>
+                {pipeline.cumulativeTotal > 0 && (
+                  <p className="text-[9px] text-indigo-500 font-bold">
+                    {Math.round(pipeline.cumulativeCompleted / pipeline.cumulativeTotal * 100)}% rata globala
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status + Claude calls */}
+        <div className="grid grid-cols-4 gap-3">
+          <SC label="In lucru" value={pipeline.inProgress} accent="indigo" />
+          <SC label="Amanate" value={pipeline.postponed} accent={pipeline.postponed > 0 ? "amber" : undefined} />
           <SC label="Rata escalare" value={`${escalationRate}%`} accent={escalationRate > 30 ? "red" : undefined} />
-          <div className="rounded-xl border border-border bg-surface p-3 text-center">
-            <p className="text-xl font-bold text-violet-600">{pipeline.claudeCalls}</p>
-            <p className="text-[10px] text-text-secondary uppercase tracking-wider mt-0.5">Apeluri Claude azi</p>
-            <div className="flex items-center justify-center gap-1 mt-1">
+          <div className="bg-white rounded-xl border border-slate-200 p-3">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide">Apeluri Claude azi</p>
+            <p className="text-xl font-bold text-violet-600 mt-1">{pipeline.claudeCalls}</p>
+            <div className="flex items-center gap-1 mt-0.5">
               {pipeline.claudeCallsYesterday > 0 && (
                 <span className={`text-[9px] font-bold ${pipeline.claudeCalls < pipeline.claudeCallsYesterday ? "text-emerald-600" : "text-red-500"}`}>
-                  {pipeline.claudeCalls < pipeline.claudeCallsYesterday ? "↓" : "↑"}{Math.abs(Math.round((1 - pipeline.claudeCalls / pipeline.claudeCallsYesterday) * 100))}% vs ieri ({pipeline.claudeCallsYesterday})
+                  {pipeline.claudeCalls < pipeline.claudeCallsYesterday ? "↓" : "↑"}{Math.abs(Math.round((1 - pipeline.claudeCalls / pipeline.claudeCallsYesterday) * 100))}% vs ieri
                 </span>
               )}
             </div>
@@ -362,7 +463,7 @@ export default async function AgentsReportPage() {
         <div className="mt-3 bg-slate-100 rounded-full h-3 overflow-hidden">
           <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${completionRate}%` }} />
         </div>
-        <p className="text-xs text-slate-400 mt-1">{completionRate}% rata de completare</p>
+        <p className="text-xs text-slate-400 mt-1">{completionRate}% rata de completare (azi)</p>
       </section>
 
       {/* ═══ DIAGNOZĂ ═══ */}

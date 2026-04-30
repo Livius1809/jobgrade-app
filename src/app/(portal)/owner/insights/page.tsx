@@ -625,10 +625,10 @@ export default async function InsightsPage() {
             <p className="text-2xl font-bold text-slate-500">—</p>
             <p className="text-[10px] text-slate-300">La primul client</p>
           </div>
-          <div className={`rounded-lg p-4 text-center border ${activeEscalations.length === 0 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
-            <p className="text-[10px] text-slate-400 uppercase">Escalări active</p>
-            <p className={`text-2xl font-bold ${activeEscalations.length === 0 ? "text-emerald-600" : "text-amber-600"}`}>{activeEscalations.length}</p>
-            <p className="text-[10px] text-slate-400">Deschise acum</p>
+          <div className="bg-slate-50 rounded-lg p-4 text-center border border-slate-200">
+            <p className="text-[10px] text-slate-400 uppercase">Timp mediu task</p>
+            <p className="text-2xl font-bold text-slate-600">{feedbackLoops.avgHours ? `${feedbackLoops.avgHours}h` : "—"}</p>
+            <p className="text-[10px] text-slate-300">Rezolvare medie</p>
           </div>
         </div>
       </section>
@@ -834,7 +834,7 @@ export default async function InsightsPage() {
             { label: "Agenti activi", value: heatMap.processes?.length || 0, color: "indigo" },
             { label: "KB total", value: agentCards.reduce((s: number, a: any) => s + a.total, 0), color: "violet" },
             { label: "Invatat sapt.", value: agentCards.reduce((s: number, a: any) => s + (a.learnedWeek || 0), 0), color: "emerald" },
-            { label: "Escalari deschise", value: activeEscalations.length, color: activeEscalations.length > 3 ? "red" : activeEscalations.length > 0 ? "amber" : "emerald" },
+            { label: "Feedback rate", value: feedbackLoops.feedbackRate || 0, color: feedbackLoops.feedbackRate >= 50 ? "emerald" : feedbackLoops.feedbackRate >= 20 ? "amber" : "red" },
           ].map((m, i) => (
             <div key={i} className={`rounded-lg p-4 text-center border ${
               m.color === "red" ? "bg-red-50 border-red-200" :
@@ -956,9 +956,7 @@ export default async function InsightsPage() {
                       {redAgents.length} agenti inactivi (fara taskuri si fara invatare saptamana asta): {redAgents.slice(0, 5).map((a: any) => a.role).join(", ")}{redAgents.length > 5 ? ` + inca ${redAgents.length - 5}` : ""}.
                     </p>
                   )}
-                  {activeEscalations.length > 0 && (
-                    <p className="text-amber-600">{activeEscalations.length} escalari deschise — cel mai vechi de {Math.round((Date.now() - new Date(activeEscalations[0]?.createdAt).getTime()) / 3600000)}h.</p>
-                  )}
+                  {/* Escalări detaliate — vezi secțiunea dedicată mai sus */}
                   {feedbackLoops.feedbackRate < 30 && feedbackLoops.total > 0 && (
                     <p className="text-amber-600">Rata de feedback {feedbackLoops.feedbackRate}% — sub 30% inseamna ca organismul nu invata din ce face.</p>
                   )}
