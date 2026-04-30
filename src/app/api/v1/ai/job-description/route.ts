@@ -4,6 +4,7 @@ import { authOrKey as auth } from "@/lib/auth-or-key"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { buildKBContext } from "@/lib/kb/inject"
 import { parseAIJson } from "@/lib/ai/sanitize-json"
+import { getResilienceStatus, respondFromKB } from "@/lib/ai/resilience"
 
 const schema = z.object({
   title: z.string().min(3),
@@ -55,6 +56,30 @@ export async function POST(req: NextRequest) {
       kbContext,
       companyContext,
     ].filter(Boolean).join("\n\n")
+
+    // Resilience check — dacă Claude e down, oferim ce avem din KB
+    const resilience = await getResilienceStatus()
+    if (resilience.level === "KB_ONLY" || resilience.level === "OFFLINE") {
+      const kbResponse = await respondFromKB(
+        `fișă de post ${data.title} ${data.structureType}`,
+        "HR_COUNSELOR",
+        { language: "ro" }
+      )
+      if (kbResponse && kbResponse.confidence > 0) {
+        return NextResponse.json({
+          purpose: `Fișă de post pentru ${data.title} (generare temporar indisponibilă — informații din baza de cunoștințe)`,
+          responsibilities: kbResponse.content,
+          requirements: "Detaliile complete vor fi disponibile la reluarea sistemului de generare.",
+          degradedMode: true,
+          resilienceLevel: resilience.level,
+        })
+      }
+      return NextResponse.json({
+        message: "Generarea AI este temporar indisponibilă. Reîncercați în câteva minute.",
+        degradedMode: true,
+        resilienceLevel: resilience.level,
+      }, { status: 503 })
+    }
 
     const isFromUpload = !!data.rawText
     const sourceText = isFromUpload

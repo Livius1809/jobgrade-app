@@ -8,6 +8,7 @@ import { getPageGuide } from "@/lib/flying-wheels/page-guide"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
 import { checkPromptInjection } from "@/lib/security/prompt-injection-filter"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
+import { getResilienceStatus, respondFromKB } from "@/lib/ai/resilience"
 import { getCulturalCalibrationSection } from "@/lib/agents/cultural-calibration-ro"
 import { calibrateCommunication } from "@/lib/comms/calibrate"
 import { analyzeLinguisticProfile } from "@/lib/kb/linguistic-profile"
@@ -87,6 +88,45 @@ export async function POST(req: NextRequest) {
         response: profanityCheck.suggestedResponse,
         delegatedTo: "fw_self",
         profanityDetected: true,
+      })
+    }
+
+    // ── 0f. Resilience check — dacă Claude e down, servim din KB ──
+    const resilience = await getResilienceStatus()
+
+    if (resilience.level === "KB_ONLY" || resilience.level === "OFFLINE") {
+      // Servim din cunoașterea acumulată — voce identică, zero hallucination
+      const kbResponse = await respondFromKB(message.trim(), "SOA", { language: "ro" })
+
+      // Salvăm în thread pentru continuitate
+      let threadForKB: any = null
+      if (threadId) {
+        threadForKB = await p.conversationThread.findFirst({ where: { id: threadId, userId } })
+      }
+      if (!threadForKB) {
+        threadForKB = await p.conversationThread.create({
+          data: { tenantId, userId, agentRole: "FLYING_WHEELS", threadType: "ASSISTANT", pageContext: currentPage || null },
+        })
+      }
+
+      await p.conversationMessage.create({
+        data: { threadId: threadForKB.id, role: "USER", content: message.trim() },
+      })
+      await p.conversationMessage.create({
+        data: {
+          threadId: threadForKB.id,
+          role: "ASSISTANT",
+          content: kbResponse?.content || "Sistemul este temporar indisponibil.",
+          metadata: JSON.stringify({ degradedMode: true, kbSource: kbResponse?.source, confidence: kbResponse?.confidence }),
+        },
+      })
+
+      return NextResponse.json({
+        response: kbResponse?.content || "Sistemul este temporar indisponibil.",
+        threadId: threadForKB.id,
+        delegatedTo: "kb_fallback",
+        degradedMode: true,
+        resilienceLevel: resilience.level,
       })
     }
 
