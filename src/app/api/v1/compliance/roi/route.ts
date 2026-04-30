@@ -1,16 +1,19 @@
 /**
  * /api/v1/compliance/roi
  *
- * Verificare ROI (Regulament Ordine Interioara) — conformitate cu Codul Muncii Art.241-246.
+ * Verificare ROI (Regulament Ordine Interioara) — conformitate cu Codul Muncii Art.241-246
+ * + verificare clauze ilegale de confidentialitate salariu (Directiva EU 2023/970 Art.7).
  *
- * POST — Upload ROI (PDF/DOCX) + analiza AI → checklist conformitate
+ * POST — Analiza AI a textului ROI:
+ *   - JSON body { roiText } → verificare tintita clauza confidentialitate salariu
+ *   - FormData { file }    → analiza completa checklist (legacy)
  * GET  — Ultima analiza salvata
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { getTenantData, setTenantData } from "@/lib/tenant-storage"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, AI_MODEL } from "@/lib/ai/client"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -109,42 +112,71 @@ const ROI_CHECKLIST = [
   },
 ]
 
-export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user?.tenantId) {
-    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
+// ─────────────────────────────────────────────────────────────────
+// Verificare tintita: clauza confidentialitate salariu (Feature 2)
+// ─────────────────────────────────────────────────────────────────
+async function checkSalaryConfidentialityClause(roiText: string) {
+  const response = await anthropic.messages.create({
+    model: AI_MODEL,
+    max_tokens: 1500,
+    messages: [{
+      role: "user",
+      content: `Esti un expert in dreptul muncii din Romania si legislatie europeana.
+
+Analizeaza urmatorul text din Regulamentul de Ordine Interioara (ROI) si identifica daca exista o clauza de confidentialitate a salariului (interzicerea angajatilor de a discuta/divulga salariul).
+
+Conform Directivei EU 2023/970, Art.7 (transparenta salariala), angajatorii NU mai au voie sa impuna confidentialitatea remuneratiei. Orice clauza care interzice angajatilor sa discute salariul sau care prevede sanctiuni pentru divulgarea salariului este ILEGALA.
+
+Textul ROI de analizat:
+---
+${roiText}
+---
+
+Raspunde STRICT in format JSON (fara alte comentarii):
+{
+  "hasViolation": true/false,
+  "violatingClause": "textul exact al clauzei ilegale (daca exista) sau null",
+  "explanation": "explicatie clara in romana de ce este/nu este o incalcare",
+  "suggestedReplacement": "text de inlocuire sugerat (daca hasViolation=true) sau null",
+  "otherIssues": ["alte probleme de conformitate gasite in text (daca exista)"]
+}`,
+    }],
+  })
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) return JSON.parse(jsonMatch[0])
+  } catch {
+    // fallback daca parsarea JSON esueaza
   }
 
-  const formData = await req.formData()
-  const file = formData.get("file") as File | null
-
-  if (!file) {
-    // Fara upload — returneaza doar checklist-ul gol (completare manuala)
-    const results = ROI_CHECKLIST.map(item => ({
-      ...item,
-      found: false,
-      aiComment: null,
-      manualCheck: null,
-    }))
-    return NextResponse.json({ checklist: results, analyzed: false })
+  return {
+    hasViolation: false,
+    violatingClause: null,
+    explanation: "Nu s-a putut analiza textul. Verificati manual.",
+    suggestedReplacement: null,
+    otherIssues: [],
   }
+}
 
-  // Extragem text din document
+// ─────────────────────────────────────────────────────────────────
+// Analiza completa ROI cu upload fisier (legacy)
+// ─────────────────────────────────────────────────────────────────
+async function analyzeFullROI(file: File, tenantId: string, userId: string) {
   const buffer = Buffer.from(await file.arrayBuffer())
   const base64 = buffer.toString("base64")
   const mimeType = file.type || "application/pdf"
 
-  // Analiza AI a ROI-ului
-  const client = new Anthropic()
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+  const response = await anthropic.messages.create({
+    model: AI_MODEL,
     max_tokens: 2000,
     messages: [{
       role: "user",
       content: [
         {
           type: "document",
-          source: { type: "base64", media_type: mimeType as any, data: base64 },
+          source: { type: "base64", media_type: mimeType as "application/pdf", data: base64 },
         },
         {
           type: "text",
@@ -168,13 +200,13 @@ Raspunde STRICT in format JSON (fara alte comentarii):
   })
 
   const text = response.content[0].type === "text" ? response.content[0].text : "{}"
-  let parsed: any = {}
+  let parsed: Record<string, unknown> = {}
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
-  } catch {}
+  } catch { /* fallback la obiect gol */ }
 
-  const aiResults = parsed.results || {}
+  const aiResults = (parsed.results || {}) as Record<string, { found?: boolean; comment?: string }>
   const results = ROI_CHECKLIST.map(item => ({
     ...item,
     found: aiResults[item.id]?.found ?? false,
@@ -190,27 +222,94 @@ Raspunde STRICT in format JSON (fara alte comentarii):
     fileName: file.name,
   }
 
-  // Salvam in SystemConfig via tenant-storage
-  await setTenantData(session.user.tenantId, "ROI_ANALYSIS", analysis)
+  // Salvam analiza completa in tenant storage
+  await setTenantData(tenantId, "ROI_ANALYSIS", analysis)
 
-  return NextResponse.json({ ...analysis, analyzed: true })
+  return { ...analysis, analyzed: true }
 }
 
-export async function GET(req: NextRequest) {
+// POST — Doua moduri de utilizare:
+//   1. JSON { roiText } → verificare tintita clauza confidentialitate salariu
+//   2. FormData { file } → analiza completa checklist ROI
+export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
+  }
+
+  const contentType = req.headers.get("content-type") || ""
+
+  // Mod 1: JSON body — verificare tintita clauza confidentialitate
+  if (contentType.includes("application/json")) {
+    const body = await req.json()
+    const { roiText } = body
+
+    if (!roiText || typeof roiText !== "string" || roiText.trim().length < 50) {
+      return NextResponse.json(
+        { error: "roiText obligatoriu (minim 50 caractere)" },
+        { status: 400 }
+      )
+    }
+
+    const result = await checkSalaryConfidentialityClause(roiText)
+
+    // Salvam rezultatul verificarii tintite
+    await setTenantData(session.user.tenantId, "ROI_SALARY_CHECK", {
+      ...result,
+      checkedAt: new Date().toISOString(),
+      textLength: roiText.length,
+    })
+
+    return NextResponse.json(result)
+  }
+
+  // Mod 2: FormData — analiza completa ROI (legacy, upload fisier)
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData()
+    const file = formData.get("file") as File | null
+
+    if (!file) {
+      // Fara upload — returneaza doar checklist-ul gol (completare manuala)
+      const results = ROI_CHECKLIST.map(item => ({
+        ...item,
+        found: false,
+        aiComment: null,
+        manualCheck: null,
+      }))
+      return NextResponse.json({ checklist: results, analyzed: false })
+    }
+
+    const analysis = await analyzeFullROI(file, session.user.tenantId, session.user.id)
+    return NextResponse.json(analysis)
+  }
+
+  return NextResponse.json(
+    { error: "Content-Type invalid. Folositi application/json sau multipart/form-data." },
+    { status: 400 }
+  )
+}
+
+// GET — Ultima analiza salvata (checklist complet sau verificare tintita)
+export async function GET() {
   const session = await auth()
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
   }
 
   const roiAnalysis = await getTenantData(session.user.tenantId, "ROI_ANALYSIS")
+  const salaryCheck = await getTenantData(session.user.tenantId, "ROI_SALARY_CHECK")
 
-  if (!roiAnalysis) {
+  if (!roiAnalysis && !salaryCheck) {
     // Returneaza checklist gol
     return NextResponse.json({
       checklist: ROI_CHECKLIST.map(item => ({ ...item, found: false, aiComment: null, manualCheck: null })),
       analyzed: false,
+      salaryCheck: null,
     })
   }
 
-  return NextResponse.json({ ...roiAnalysis, analyzed: true })
+  return NextResponse.json({
+    ...(roiAnalysis ? { ...roiAnalysis as object, analyzed: true } : { analyzed: false }),
+    salaryCheck: salaryCheck || null,
+  })
 }

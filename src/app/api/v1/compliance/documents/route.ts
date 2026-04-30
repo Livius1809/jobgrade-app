@@ -1,232 +1,180 @@
 /**
  * /api/v1/compliance/documents
  *
- * Configurator documente interne — bife per tip + upload.
- * Tipuri: ROI, CCM, politici interne, certificari.
- * Stocare metadata in CompanyProfile.aiAnalysis.documents
- * Fisierele se stocheaza via Vercel Blob (sau fallback base64 in DB).
+ * Upload documente interne de conformitate (C2): politici interne, certificari, CCM, ROI.
+ * Stocare continut text in SystemConfig ca COMPLIANCE_DOC_{type}_{slug}.
  *
- * GET  — Lista tipuri documente + status (uploadat/neuploadat)
- * POST — Upload document per tip
- * DELETE — Sterge document per tip
+ * POST   — Upload/creare document intern (JSON body)
+ * GET    — Lista toate documentele per tenant, grupate pe tip
+ * DELETE — Sterge document dupa cheie
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { getTenantData, setTenantData } from "@/lib/tenant-storage"
+import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 30
 
-interface DocumentType {
-  id: string
-  label: string
-  description: string
-  card: "C2" | "C3" | "C4"
-  required: boolean
+// Tipuri de documente de conformitate
+type ComplianceDocType = "POLICY" | "CERTIFICATION" | "CCM" | "ROI"
+
+interface ComplianceDocMeta {
+  title: string
+  documentType: ComplianceDocType
+  content: string
+  validFrom: string | null
+  validUntil: string | null
+  createdAt: string
+  updatedAt: string
+  createdBy: string
+  key: string // cheia SystemConfig
 }
 
-interface DocumentRecord {
-  typeId: string
-  fileName: string
-  fileSize: number
-  mimeType: string
-  uploadedAt: string
-  uploadedBy: string
+// Slugificare titlu pentru cheie unica
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60)
 }
 
-const DOCUMENT_TYPES: DocumentType[] = [
-  // C2 — Conformitate
-  {
-    id: "roi",
-    label: "Regulament de Ordine Interioara (ROI)",
-    description: "Document obligatoriu conform Codului Muncii Art.241-246. Poate fi verificat automat in sectiunea dedicata.",
-    card: "C2",
-    required: true,
-  },
-  {
-    id: "ccm",
-    label: "Contract Colectiv de Munca (CCM)",
-    description: "Daca exista — verificam conformitatea cu legislatia muncii in vigoare.",
-    card: "C2",
-    required: false,
-  },
-  {
-    id: "politica_salarizare",
-    label: "Politica de salarizare",
-    description: "Reguli si criterii de stabilire a salariilor, bonusurilor, beneficiilor.",
-    card: "C2",
-    required: false,
-  },
-  {
-    id: "politica_nediscriminare",
-    label: "Politica de nediscriminare si egalitate de sanse",
-    description: "Conform L.202/2002 si OG 137/2000.",
-    card: "C2",
-    required: false,
-  },
-  {
-    id: "certificari",
-    label: "Certificari si acreditari (ISO, OHSAS etc)",
-    description: "Documente de certificare existente ale organizatiei.",
-    card: "C2",
-    required: false,
-  },
-
-  // C3 — Competitivitate
-  {
-    id: "proceduri_lucru",
-    label: "Proceduri de lucru (SOP)",
-    description: "Proceduri operationale standard per departament sau proces.",
-    card: "C3",
-    required: false,
-  },
-  {
-    id: "politica_recrutare",
-    label: "Politica de recrutare",
-    description: "Procesul de recrutare, criterii de selectie, etape.",
-    card: "C3",
-    required: false,
-  },
-  {
-    id: "politica_formare",
-    label: "Politica de formare si dezvoltare",
-    description: "Planuri de training, bugete de dezvoltare, criterii de acces.",
-    card: "C3",
-    required: false,
-  },
-  {
-    id: "regulamente_dept",
-    label: "Regulamente interne departamente",
-    description: "Reguli specifice per departament, norme de operare.",
-    card: "C3",
-    required: false,
-  },
-  {
-    id: "manual_angajator",
-    label: "Manual angajator (onboarding)",
-    description: "Ghidul angajatorului: procese, responsabilitati, proceduri.",
-    card: "C3",
-    required: false,
-  },
-  {
-    id: "manual_angajat",
-    label: "Manual angajat (onboarding)",
-    description: "Ghidul noului angajat: ce trebuie sa stie, drepturi, obligatii, cultura.",
-    card: "C3",
-    required: false,
-  },
-  {
-    id: "cod_etic",
-    label: "Cod etic / Cod de conduita",
-    description: "Valorile, principiile si comportamentele asteptate. Suma manualelor angajator + angajat.",
-    card: "C3",
-    required: false,
-  },
-]
-
-async function getDocuments(tenantId: string): Promise<DocumentRecord[]> {
-  return await getTenantData<DocumentRecord[]>(tenantId, "DOCUMENTS") || []
+// Prefix cheie pentru documentele de conformitate
+function docKeyPrefix(tenantId: string): string {
+  return `TENANT_${tenantId}_COMPLIANCE_DOC_`
 }
 
-async function saveDocuments(tenantId: string, docs: DocumentRecord[]): Promise<void> {
-  await setTenantData(tenantId, "DOCUMENTS", docs)
+function docKey(tenantId: string, docType: ComplianceDocType, slug: string): string {
+  return `${docKeyPrefix(tenantId)}${docType}_${slug}`
 }
 
-// GET — Lista tipuri + status
-export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user?.tenantId) {
-    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
-  }
-
-  const uploaded = await getDocuments(session.user.tenantId)
-  const uploadedMap = new Map(uploaded.map(d => [d.typeId, d]))
-
-  const result = DOCUMENT_TYPES.map(dt => ({
-    ...dt,
-    uploaded: uploadedMap.has(dt.id),
-    document: uploadedMap.get(dt.id) || null,
-  }))
-
-  const c2Docs = result.filter(d => d.card === "C2")
-  const c3Docs = result.filter(d => d.card === "C3")
-
-  return NextResponse.json({
-    types: result,
-    c2: c2Docs,
-    c3: c3Docs,
-    stats: {
-      total: result.length,
-      uploaded: uploaded.length,
-      c2Uploaded: c2Docs.filter(d => d.uploaded).length,
-      c3Uploaded: c3Docs.filter(d => d.uploaded).length,
-    },
-  })
-}
-
-// POST — Upload document
+// POST — Creare/actualizare document intern
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
   }
 
-  const formData = await req.formData()
-  const typeId = formData.get("typeId") as string
-  const file = formData.get("file") as File | null
+  const body = await req.json()
+  const { title, documentType, content, validFrom, validUntil } = body
 
-  if (!typeId) {
-    return NextResponse.json({ error: "typeId obligatoriu" }, { status: 400 })
+  // Validari
+  if (!title || !documentType || !content) {
+    return NextResponse.json(
+      { error: "Campuri obligatorii: title, documentType, content" },
+      { status: 400 }
+    )
   }
 
-  const docType = DOCUMENT_TYPES.find(dt => dt.id === typeId)
-  if (!docType) {
-    return NextResponse.json({ error: "Tip document invalid" }, { status: 400 })
+  const allowedTypes: ComplianceDocType[] = ["POLICY", "CERTIFICATION", "CCM", "ROI"]
+  if (!allowedTypes.includes(documentType)) {
+    return NextResponse.json(
+      { error: `documentType invalid. Valori acceptate: ${allowedTypes.join(", ")}` },
+      { status: 400 }
+    )
   }
 
-  const docs = await getDocuments(session.user.tenantId)
-
-  if (file) {
-    // Inlocuieste daca exista deja
-    const idx = docs.findIndex(d => d.typeId === typeId)
-    const record: DocumentRecord = {
-      typeId,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type || "application/octet-stream",
-      uploadedAt: new Date().toISOString(),
-      uploadedBy: session.user.id,
-    }
-
-    if (idx >= 0) {
-      docs[idx] = record
-    } else {
-      docs.push(record)
-    }
-
-    await saveDocuments(session.user.tenantId, docs)
-    return NextResponse.json({ ok: true, document: record })
+  const slug = slugify(title)
+  if (!slug) {
+    return NextResponse.json({ error: "Titlu invalid (nu produce slug valid)" }, { status: 400 })
   }
 
-  // Fara fisier — doar marcheaza ca "are document" (confirmare manuala)
-  const idx = docs.findIndex(d => d.typeId === typeId)
-  const record: DocumentRecord = {
-    typeId,
-    fileName: "(confirmat manual)",
-    fileSize: 0,
-    mimeType: "",
-    uploadedAt: new Date().toISOString(),
-    uploadedBy: session.user.id,
-  }
-  if (idx >= 0) docs[idx] = record
-  else docs.push(record)
-  await saveDocuments(session.user.tenantId, docs)
+  const key = docKey(session.user.tenantId, documentType, slug)
 
-  return NextResponse.json({ ok: true, document: record })
+  const now = new Date().toISOString()
+  const meta: ComplianceDocMeta = {
+    title,
+    documentType,
+    content,
+    validFrom: validFrom || null,
+    validUntil: validUntil || null,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: session.user.id,
+    key,
+  }
+
+  // Upsert — daca exista deja, actualizeaza (pastreaza createdAt original)
+  const existing = await prisma.systemConfig.findUnique({ where: { key } })
+  if (existing) {
+    const existingMeta = JSON.parse(existing.value) as ComplianceDocMeta
+    meta.createdAt = existingMeta.createdAt // pastreaza data crearii
+  }
+
+  await prisma.systemConfig.upsert({
+    where: { key },
+    update: { value: JSON.stringify(meta) },
+    create: { key, value: JSON.stringify(meta) },
+  })
+
+  return NextResponse.json({
+    ok: true,
+    document: {
+      key,
+      title: meta.title,
+      documentType: meta.documentType,
+      validFrom: meta.validFrom,
+      validUntil: meta.validUntil,
+      createdAt: meta.createdAt,
+      updatedAt: meta.updatedAt,
+    },
+  })
 }
 
-// DELETE — Sterge document
+// GET — Lista toate documentele de conformitate per tenant, grupate pe tip
+export async function GET() {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 })
+  }
+
+  const prefix = docKeyPrefix(session.user.tenantId)
+
+  // Cautam toate cheile care incep cu prefixul de documente conformitate
+  const configs = await prisma.systemConfig.findMany({
+    where: { key: { startsWith: prefix } },
+    orderBy: { key: "asc" },
+  })
+
+  const documents: ComplianceDocMeta[] = configs.map(c => {
+    try {
+      return JSON.parse(c.value) as ComplianceDocMeta
+    } catch {
+      return null
+    }
+  }).filter(Boolean) as ComplianceDocMeta[]
+
+  // Grupare pe documentType
+  const grouped: Record<ComplianceDocType, ComplianceDocMeta[]> = {
+    POLICY: [],
+    CERTIFICATION: [],
+    CCM: [],
+    ROI: [],
+  }
+
+  for (const doc of documents) {
+    if (grouped[doc.documentType]) {
+      grouped[doc.documentType].push({
+        ...doc,
+        content: doc.content.slice(0, 200) + (doc.content.length > 200 ? "..." : ""), // trunchiere continut in lista
+      })
+    }
+  }
+
+  return NextResponse.json({
+    documents,
+    grouped,
+    stats: {
+      total: documents.length,
+      POLICY: grouped.POLICY.length,
+      CERTIFICATION: grouped.CERTIFICATION.length,
+      CCM: grouped.CCM.length,
+      ROI: grouped.ROI.length,
+    },
+  })
+}
+
+// DELETE — Sterge document dupa cheie
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.tenantId) {
@@ -234,14 +182,24 @@ export async function DELETE(req: NextRequest) {
   }
 
   const url = new URL(req.url)
-  const typeId = url.searchParams.get("typeId")
-  if (!typeId) {
-    return NextResponse.json({ error: "typeId obligatoriu" }, { status: 400 })
+  const key = url.searchParams.get("key")
+
+  if (!key) {
+    return NextResponse.json({ error: "Parametru 'key' obligatoriu" }, { status: 400 })
   }
 
-  const docs = await getDocuments(session.user.tenantId)
-  const filtered = docs.filter(d => d.typeId !== typeId)
-  await saveDocuments(session.user.tenantId, filtered)
+  // Verificare securitate: cheia apartine tenant-ului curent
+  const prefix = docKeyPrefix(session.user.tenantId)
+  if (!key.startsWith(prefix)) {
+    return NextResponse.json({ error: "Acces interzis la acest document" }, { status: 403 })
+  }
 
-  return NextResponse.json({ ok: true })
+  const existing = await prisma.systemConfig.findUnique({ where: { key } })
+  if (!existing) {
+    return NextResponse.json({ error: "Document negasit" }, { status: 404 })
+  }
+
+  await prisma.systemConfig.delete({ where: { key } })
+
+  return NextResponse.json({ ok: true, deletedKey: key })
 }
