@@ -80,6 +80,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    authorized({ request, auth }) {
+      // Public paths — allow without auth
+      const { pathname } = request.nextUrl
+      const publicPaths = ["/", "/sandbox", "/login", "/register", "/forgot-password", "/reset-password", "/activate", "/welcome", "/termeni", "/privacy", "/gdpr", "/cookies", "/transparenta-ai", "/b2b", "/media-books", "/personal", "/demo"]
+      const publicPrefixes = ["/b2b/", "/api/", "/_next/", "/media-books/", "/personal/", "/demo/"]
+      if (publicPaths.includes(pathname)) return true
+      if (publicPrefixes.some(p => pathname.startsWith(p))) return true
+      if (pathname.includes(".")) return true
+      // Protected — require auth
+      return !!auth
+    },
     async jwt({ token, user }) {
       if (user) {
         token.tenantId = (user as any).tenantId
