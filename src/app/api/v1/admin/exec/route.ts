@@ -165,6 +165,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, operation, rows: result })
       }
 
+      case "write-query": {
+        // data: { sql: "ALTER TABLE ..." } — DOAR Owner/admin
+        const writeSql = (data.sql || "").trim()
+        if (!writeSql) return NextResponse.json({ error: "sql obligatoriu" }, { status: 400 })
+        const writeResult = await p.$executeRawUnsafe(writeSql)
+        return NextResponse.json({ ok: true, operation, affected: writeResult })
+      }
+
       case "cancel-stale-tasks": {
         // Anulează toate taskurile stagnante (BLOCKED, REVIEW_PENDING, ACCEPTED, ASSIGNED)
         const reason = data.reason || "Reset procedural"
