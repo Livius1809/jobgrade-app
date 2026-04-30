@@ -1315,7 +1315,7 @@ async function OwnerTasksSection() {
       take: 10,
     })
 
-    const active = tasks.filter(t => t.status !== "COMPLETED")
+    const active = tasks.filter(t => !["COMPLETED", "CANCELLED"].includes(t.status))
     const completed = tasks.filter(t => t.status === "COMPLETED")
 
     if (tasks.length === 0) return null

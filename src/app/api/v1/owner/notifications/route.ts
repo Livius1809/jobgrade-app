@@ -59,8 +59,15 @@ export async function GET() {
     }
   }
 
+  // Filtrăm notificările safety-net (auto-run cicluri evoluție) — irelevante pentru Owner
+  const filtered = notifications.filter((n: any) => {
+    if (n.type === "REPORT_GENERATED" && n.title?.includes("Safety net")) return false
+    if (n.body?.includes("nu a rulat ciclul")) return false
+    return true
+  })
+
   // Atașăm lanțul pe fiecare notificare
-  const enriched = notifications.map((n: any) => {
+  const enriched = filtered.map((n: any) => {
     const role = n.sourceRole || extractSourceRole(n.title, n.body)
     return {
       ...n,
