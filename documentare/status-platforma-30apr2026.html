@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobGrade — Status Platformă 30.04.2026</title>
+<style>
+  @page { margin: 15mm 18mm; size: A4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; line-height: 1.5; color: #1a1a1a; }
+
+  .header { background: #4F46E5; color: white; padding: 20px 24px; margin-bottom: 16px; border-radius: 8px; }
+  .header h1 { font-size: 20px; margin-bottom: 2px; }
+  .header p { font-size: 11px; opacity: 0.85; }
+  .header .date { float: right; font-size: 12px; font-weight: 600; margin-top: -20px; }
+
+  h2 { font-size: 14px; color: #4F46E5; border-bottom: 2px solid #4F46E5; padding-bottom: 3px; margin: 16px 0 8px; }
+  h3 { font-size: 12px; color: #374151; margin: 12px 0 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10.5px; }
+  th { background: #F3F4F6; color: #374151; text-align: left; padding: 5px 8px; font-weight: 600; border: 1px solid #D1D5DB; }
+  td { padding: 4px 8px; border: 1px solid #E5E7EB; vertical-align: top; }
+  tr:nth-child(even) { background: #FAFAFA; }
+
+  .pass { color: #059669; font-weight: 600; }
+  .fail { color: #DC2626; font-weight: 600; }
+  .warn { color: #D97706; font-weight: 600; }
+  .info { color: #6B7280; }
+
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 9px; font-weight: 600; }
+  .badge-green { background: #D1FAE5; color: #065F46; }
+  .badge-yellow { background: #FEF3C7; color: #92400E; }
+  .badge-red { background: #FEE2E2; color: #991B1B; }
+  .badge-blue { background: #DBEAFE; color: #1E40AF; }
+  .badge-gray { background: #F3F4F6; color: #374151; }
+
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .summary-card { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 6px; padding: 10px 12px; text-align: center; }
+  .summary-card .value { font-size: 22px; font-weight: 700; color: #4F46E5; }
+  .summary-card .label { font-size: 9px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .bar { display: inline-block; height: 10px; border-radius: 5px; vertical-align: middle; }
+  .bar-fill { background: #4F46E5; }
+  .bar-empty { background: #E5E7EB; }
+
+  .section { margin-bottom: 14px; }
+  .note { font-size: 10px; color: #6B7280; font-style: italic; margin-top: 4px; }
+  .pagebreak { page-break-before: always; }
+
+  .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #E5E7EB; font-size: 9px; color: #9CA3AF; text-align: center; }
+
+  .km-row { display: flex; align-items: center; margin-bottom: 3px; font-size: 10.5px; }
+  .km-label { width: 100px; font-weight: 600; }
+  .km-bar { flex: 1; height: 14px; background: #E5E7EB; border-radius: 7px; overflow: hidden; margin: 0 8px; }
+  .km-bar-fill { height: 100%; background: #4F46E5; border-radius: 7px; }
+  .km-value { width: 90px; text-align: right; font-size: 10px; }
+  .km-pct { width: 40px; text-align: right; font-weight: 600; }
+
+  @media print {
+    .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge, .summary-card, .km-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>JobGrade — Status Platformei</h1>
+  <p>Psihobusiness Consulting SRL | Document intern de lucru</p>
+  <div class="date">30 aprilie 2026</div>
+</div>
+
+<!-- REZUMAT EXECUTIV -->
+<h2>Rezumat executiv</h2>
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">91%</div>
+    <div class="label">Full-check API</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">6.461</div>
+    <div class="label">KB Entries</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">73</div>
+    <div class="label">Agenti activi</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">$0.20/6h</div>
+    <div class="label">Cost operational</div>
+  </div>
+</div>
+
+<!-- ORGANISM HEALTH -->
+<h2>1. Organism Health</h2>
+<table>
+  <tr><th>Verificare</th><th>Status</th><th>Detalii</th></tr>
+  <tr><td>Organism health global</td><td><span class="badge badge-yellow">ATENTIE</span></td><td>11 verde / 3 galben / 0 rosu din 14 verificari</td></tr>
+  <tr><td>Full-check API (22 endpoint-uri)</td><td><span class="badge badge-green">91%</span></td><td>20 PASS / 0 FAIL / 2 WARN</td></tr>
+  <tr><td>Heartbeat</td><td><span class="badge badge-green">ALIVE</span></td><td>DB, Redis, Claude — toate up</td></tr>
+  <tr><td>Cron executor (task-uri)</td><td><span class="pass">VERDE</span></td><td>Ruleaza la fiecare 2 ore</td></tr>
+  <tr><td>Maintenance cron</td><td><span class="pass">VERDE</span></td><td>Ruleaza la fiecare 1 ora</td></tr>
+  <tr><td>Proactive loop (manageri)</td><td><span class="pass">VERDE</span></td><td>Ultimul ciclu: 0.2h</td></tr>
+  <tr><td>Learning engine</td><td><span class="pass">VERDE</span></td><td>1.759 artefacte, 69 noi/24h</td></tr>
+  <tr><td>Agenti</td><td><span class="pass">VERDE</span></td><td>73 agenti, 6.461 KB entries</td></tr>
+  <tr><td>Cost estimat</td><td><span class="pass">VERDE</span></td><td>~$0.20 / 6 ore (~$0.80/zi)</td></tr>
+  <tr><td>Task-uri (7 zile)</td><td><span class="pass">VERDE</span></td><td>292 procesate, 0 blocate, ratio 100%</td></tr>
+  <tr><td>Anomalii operationale</td><td><span class="warn">GALBEN</span></td><td>3 anomalii (0 critice, 2 high)</td></tr>
+  <tr><td>Review queue</td><td><span class="warn">GALBEN</span></td><td>26 asteapta review</td></tr>
+  <tr><td>KB validare</td><td><span class="warn">GALBEN</span></td><td>16% validate din total (290/1.759)</td></tr>
+</table>
+
+<!-- AI DE CONTINUITATE -->
+<h2>2. AI de Continuitate — Knowledge Meter</h2>
+<p class="note">Maturitate: AVANSAT (79%) | Autonomie KB: 35% | Dependenta Claude: 65% | Embedding: 47%</p>
+<br>
+
+<div class="km-row"><span class="km-label">MANAGEMENT</span><div class="km-bar"><div class="km-bar-fill" style="width:100%"></div></div><span class="km-value">1.003 entries</span><span class="km-pct">100%</span></div>
+<div class="km-row"><span class="km-label">C3 Competitiv.</span><div class="km-bar"><div class="km-bar-fill" style="width:97%"></div></div><span class="km-value">876 entries</span><span class="km-pct">97%</span></div>
+<div class="km-row"><span class="km-label">C4 Dezvoltare</span><div class="km-bar"><div class="km-bar-fill" style="width:96%"></div></div><span class="km-value">766 entries</span><span class="km-pct">96%</span></div>
+<div class="km-row"><span class="km-label">QUALITY</span><div class="km-bar"><div class="km-bar-fill" style="width:96%"></div></div><span class="km-value">289 entries</span><span class="km-pct">96%</span></div>
+<div class="km-row"><span class="km-label">MARKETING</span><div class="km-bar"><div class="km-bar-fill" style="width:85%"></div></div><span class="km-value">522 entries</span><span class="km-pct">85%</span></div>
+<div class="km-row"><span class="km-label">PRODUCT</span><div class="km-bar"><div class="km-bar-fill" style="width:83%"></div></div><span class="km-value">333 entries</span><span class="km-pct">83%</span></div>
+<div class="km-row"><span class="km-label">CLIENT</span><div class="km-bar"><div class="km-bar-fill" style="width:75%"></div></div><span class="km-value">451 entries</span><span class="km-pct">75%</span></div>
+<div class="km-row"><span class="km-label">INFRA</span><div class="km-bar"><div class="km-bar-fill" style="width:68%"></div></div><span class="km-value">591 entries</span><span class="km-pct">68%</span></div>
+<div class="km-row"><span class="km-label">DATA</span><div class="km-bar"><div class="km-bar-fill" style="width:100%"></div></div><span class="km-value">359 entries</span><span class="km-pct">100%</span></div>
+<div class="km-row"><span class="km-label">C1 Organizare</span><div class="km-bar"><div class="km-bar-fill" style="width:53%"></div></div><span class="km-value">636 entries</span><span class="km-pct">53%</span></div>
+<div class="km-row"><span class="km-label">C2 Conform.</span><div class="km-bar"><div class="km-bar-fill" style="width:42%"></div></div><span class="km-value">419 entries</span><span class="km-pct">42%</span></div>
+<div class="km-row"><span class="km-label">B2C</span><div class="km-bar"><div class="km-bar-fill" style="width:22%"></div></div><span class="km-value">109 entries</span><span class="km-pct">22%</span></div>
+
+<!-- FUNCTIONALITATI TEHNICE -->
+<div class="pagebreak"></div>
+
+<div class="header">
+  <h1>JobGrade — Status Platformei (cont.)</h1>
+  <p>Functionalitati tehnice si blockers</p>
+  <div class="date">30 aprilie 2026</div>
+</div>
+
+<h2>3. Functionalitati tehnice — per card</h2>
+<table>
+  <tr><th>Card</th><th>Endpoint-uri</th><th>Status</th><th>Observatii</th></tr>
+  <tr><td><strong>C1 Organizare</strong></td><td>Jobs CRUD, AI fisa post, sesiuni evaluare, JE process, export JSON/PDF</td><td><span class="pass">Functional</span></td><td>AI fisa post: fix JSON parsing livrat 30.04</td></tr>
+  <tr><td><strong>C2 Conformitate</strong></td><td>Grade salariale, calendar obligatii, ROI, audit contract, simulari salariu/grila</td><td><span class="pass">Functional</span></td><td>Pay gap necesita date salariale reale</td></tr>
+  <tr><td><strong>C3 Competitivitate</strong></td><td>Benchmark, KPI AI, sociograma completa, pachete compensatii, compensare variabila, harta procese, manual calitate</td><td><span class="pass">Functional</span></td><td>Manual calitate: fix AI parsing livrat 30.04</td></tr>
+  <tr><td><strong>C4 Dezvoltare</strong></td><td>Audit cultural, 3C coerenta, ROI cultura, plan interventie, simulator HU-AI, puls monitorizare</td><td><span class="pass">Functional</span></td><td>Toate endpoint-urile OK</td></tr>
+  <tr><td><strong>Billing</strong></td><td>Checkout Stripe, portal management, webhook, log activitate</td><td><span class="warn">Partial</span></td><td>Stripe live key OK, price IDs noi LIPSESC</td></tr>
+  <tr><td><strong>Chat FW</strong></td><td>Flying Wheels chat, guide journal</td><td><span class="warn">Fixat</span></td><td>Fix threadType livrat 30.04</td></tr>
+  <tr><td><strong>Rapoarte</strong></td><td>Employee reports, owner report, payroll</td><td><span class="pass">Functional</span></td><td></td></tr>
+  <tr><td><strong>Matching</strong></td><td>B2B ↔ B2C, fit cultural, agent schimbare</td><td><span class="pass">Functional</span></td><td>0 candidati B2C (normal — B2C nelansat)</td></tr>
+  <tr><td><strong>Acces</strong></td><td>Matrice acces, roluri, resurse</td><td><span class="pass">Functional</span></td><td>21 resurse disponibile</td></tr>
+  <tr><td><strong>Onboarding</strong></td><td>Wizard pagina</td><td><span class="pass">Exista</span></td><td>Netestat cu client real</td></tr>
+  <tr><td><strong>Landing B2B</strong></td><td>/b2b/je, /b2b/abonamente, /b2b/pay-gap</td><td><span class="pass">Exista</span></td><td></td></tr>
+  <tr><td><strong>Legal</strong></td><td>/termeni, /privacy</td><td><span class="pass">Complet</span></td><td>/confidentialitate lipseste (minor)</td></tr>
+  <tr><td><strong>Email</strong></td><td>7 template-uri: invite, sesiune, reminder, reset, outreach, follow-up, oferta</td><td><span class="pass">Functional</span></td><td>+ knowledge debt follow-up (NOU 30.04)</td></tr>
+</table>
+
+<!-- TOGGLE STRUCTURE TYPE -->
+<h2>4. Toggle tip organizatie — HUMAN / AI / MIXED</h2>
+<table>
+  <tr><th>Test</th><th>Status</th><th>Detalii</th></tr>
+  <tr><td>Creare post HUMAN</td><td><span class="pass">PASS</span></td><td>Post creat cu structureType=HUMAN</td></tr>
+  <tr><td>Toggle HUMAN → MIXED</td><td><span class="pass">PASS</span></td><td>PATCH functional</td></tr>
+  <tr><td>Toggle MIXED → AI</td><td><span class="pass">PASS</span></td><td>PATCH functional</td></tr>
+  <tr><td>Toggle AI → HUMAN (revert)</td><td><span class="pass">PASS</span></td><td>Revert functional</td></tr>
+  <tr><td>AI Act compliance trigger</td><td><span class="pass">PASS</span></td><td>7 obligatii. AI Act se activeaza automat la posturi AI/MIXED</td></tr>
+  <tr><td>AI fisa post (AI/MIXED)</td><td><span class="warn">WARN</span></td><td>Eroare parsare JSON — fix livrat 30.04, de reverificat</td></tr>
+</table>
+
+<!-- IMPLEMENTARI NOI 30.04 -->
+<h2>5. Implementari noi — sesiunea 30.04.2026</h2>
+<table>
+  <tr><th>#</th><th>Feature</th><th>Descriere</th><th>Status</th></tr>
+  <tr><td>1</td><td><strong>Autotest JG_itself complet</strong></td><td>71 teste, 13 faze, C1→C4 + toggle + billing + matching + sociograma</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>2</td><td><strong>Fix AI JSON parsing</strong></td><td>Sanitizer robust + retry pe fisa post si manual calitate</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>3</td><td><strong>Fix FW chat + GET job</strong></td><td>threadType corect + endpoint GET /jobs/{id} adaugat</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>4</td><td><strong>PIE full-check intern</strong></td><td>22 verificari, escalare QLA→COA, cron la 6h</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>5</td><td><strong>KB-first pipeline</strong></td><td>Buffer intermediar activ: KB verifica mereu inainte de Claude. Salvare cunoastere noua automat.</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>6</td><td><strong>AI de Continuitate</strong></td><td>4 niveluri degradare: NOMINAL → DEGRADED → KB_ONLY → OFFLINE</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>7</td><td><strong>Knowledge Meter</strong></td><td>Contor cunoastere per card/agent/tip, 60+ agenti pe 13 categorii</td><td><span class="badge badge-green">PROD</span></td></tr>
+  <tr><td>8</td><td><strong>Knowledge Debt</strong></td><td>Follow-up email "V-am ramas dator..." cand Claude revine</td><td><span class="badge badge-green">PROD</span></td></tr>
+</table>
+
+<!-- BLOCKERS -->
+<div class="pagebreak"></div>
+
+<div class="header">
+  <h1>JobGrade — Blockers si Checklist</h1>
+  <p>Ce trebuie rezolvat inainte de primul client</p>
+  <div class="date">30 aprilie 2026</div>
+</div>
+
+<h2>6. BLOCKERS — primul client B2B</h2>
+<table>
+  <tr><th>#</th><th>Blocker</th><th>Severitate</th><th>Efort estimat</th><th>Responsabil</th></tr>
+  <tr><td>1</td><td><strong>Stripe price IDs noi neconfigurate</strong><br><span class="info">6 pachete credite + 2 abonamente — env vars goale pe Vercel</span></td><td><span class="badge badge-red">CRITIC</span></td><td>30 min</td><td>Owner (Dashboard Stripe)</td></tr>
+  <tr><td>2</td><td><strong>AI fisa post — verificare fix pe prod</strong><br><span class="info">Fix JSON sanitizer + retry livrat 30.04 — de confirmat ca functioneaza</span></td><td><span class="badge badge-red">CRITIC</span></td><td>15 min (test)</td><td>Claude</td></tr>
+  <tr><td>3</td><td><strong>Date JG_itself demo, nu reale</strong><br><span class="info">5 posturi demo, 0 departamente, grade necalibrate — contul org. trebuie populat real</span></td><td><span class="badge badge-yellow">MARE</span></td><td>2 ore</td><td>Owner + Claude</td></tr>
+  <tr><td>4</td><td><strong>0 departamente pe JG_itself</strong><br><span class="info">Seed-ul initial nu a creat departamente — necesare pt organigrama</span></td><td><span class="badge badge-yellow">MARE</span></td><td>30 min</td><td>Claude</td></tr>
+  <tr><td>5</td><td><strong>FW chat — verificare fix pe prod</strong><br><span class="info">Fix threadType ASSISTANT livrat 30.04 — de confirmat</span></td><td><span class="badge badge-yellow">MARE</span></td><td>15 min (test)</td><td>Claude</td></tr>
+  <tr><td>6</td><td><strong>FAQ legal pentru client</strong><br><span class="info">Pagina cu intrebari frecvente + raspunsuri despre serviciu, GDPR, date</span></td><td><span class="badge badge-yellow">MARE</span></td><td>2 ore</td><td>Owner (continut) + Claude (pagina)</td></tr>
+</table>
+
+<h2>7. NICE-TO-HAVE (nu blocheaza primul client)</h2>
+<table>
+  <tr><th>#</th><th>Feature</th><th>Efort</th><th>Status</th></tr>
+  <tr><td>1</td><td>/confidentialitate ca pagina separata</td><td>30 min</td><td>Exista /privacy, lipseste alias</td></tr>
+  <tr><td>2</td><td>Media Books (42 tasks ASSIGNED)</td><td>Organismul lucreaza autonom</td><td>In progres</td></tr>
+  <tr><td>3</td><td>Matching B2B ↔ B2C functional</td><td>—</td><td>Vine cu lansare B2C</td></tr>
+  <tr><td>4</td><td>Manual calitate generat pentru JG_itself</td><td>1 ora</td><td>Endpoint OK, de rulat</td></tr>
+  <tr><td>5</td><td>Teste Stripe end-to-end (plata reala)</td><td>2 ore</td><td>Dupa configurare price IDs</td></tr>
+  <tr><td>6</td><td>Onboarding wizard testat cu client real</td><td>1 ora</td><td>Pagina exista, netestat</td></tr>
+</table>
+
+<!-- PRICING -->
+<h2>8. Referinta pricing (din DB prod)</h2>
+<table>
+  <tr><th>Element</th><th>Pret</th><th>Nota</th></tr>
+  <tr><td><strong>Abonament lunar (CAPEX)</strong></td><td>399 RON/luna</td><td>Include infra + 135 min chat gratuit</td></tr>
+  <tr><td><strong>Abonament anual</strong></td><td>3.990 RON/an</td><td>Echivalent ~332 RON/luna</td></tr>
+  <tr><td><strong>1 credit</strong></td><td>8 RON</td><td>Tot ce consuma AI</td></tr>
+  <tr><td><strong>Break-even CAPEX</strong></td><td>5 clienti</td><td></td></tr>
+  <tr><td colspan="3" style="background:#F3F4F6; font-weight:600;">Credite per serviciu</td></tr>
+  <tr><td>Anunt recrutare</td><td>4 credite (32 RON)</td><td></td></tr>
+  <tr><td>Fisa KPI</td><td>3 credite (24 RON)</td><td></td></tr>
+  <tr><td>MVV extract</td><td>2 credite (16 RON)</td><td></td></tr>
+  <tr><td>Analiza evaluare</td><td>4 credite (32 RON)</td><td></td></tr>
+  <tr><td>Grade salariale</td><td>5 credite (40 RON)</td><td></td></tr>
+  <tr><td>Simulare</td><td>3 credite (24 RON)</td><td></td></tr>
+  <tr><td>Pay gap raport</td><td>3 credite (24 RON)</td><td></td></tr>
+  <tr><td>Export PDF/Excel</td><td>5 credite (40 RON)</td><td></td></tr>
+  <tr><td>Chat consultant HR</td><td>3 credite/minut</td><td>60 min/luna gratuit</td></tr>
+</table>
+
+<!-- COSTURI OPERATIONALE -->
+<h2>9. Costuri operationale lunare (OPEX estimat)</h2>
+<table>
+  <tr><th>Serviciu</th><th>Cost lunar</th><th>Nota</th></tr>
+  <tr><td>Claude API (Anthropic)</td><td>~$25 (~125 RON)</td><td>$0.80/zi optimizat de la $48/zi</td></tr>
+  <tr><td>Neon DB (PostgreSQL)</td><td>$0 (free tier)</td><td>Launch plan Frankfurt</td></tr>
+  <tr><td>Vercel (hosting)</td><td>$0 (free tier)</td><td>Hobby plan, domeniu propriu</td></tr>
+  <tr><td>Upstash Redis</td><td>$0 (free tier)</td><td>Rate limiting</td></tr>
+  <tr><td>Resend (email)</td><td>$0 (free tier)</td><td>100 emails/zi gratuit</td></tr>
+  <tr><td>Voyage AI (embeddings)</td><td>~$5 (~25 RON)</td><td>Per KB growth</td></tr>
+  <tr><td>Domeniu jobgrade.ro</td><td>~10 RON/luna</td><td>~120 RON/an</td></tr>
+  <tr><td><strong>TOTAL OPEX</strong></td><td><strong>~160 RON/luna</strong></td><td>Cu 0 clienti. Creste liniar.</td></tr>
+</table>
+
+<!-- SESIUNE -->
+<h2>10. Livrari sesiune 30.04.2026</h2>
+<p style="margin-bottom:6px;">8 commits | ~2.500 linii noi | 0 erori | Toate pe prod</p>
+<table>
+  <tr><th>Ora</th><th>Ce s-a livrat</th></tr>
+  <tr><td>11:28</td><td>Autotest JG_itself complet — 71 teste, 13 faze (570 secunde)</td></tr>
+  <tr><td>11:45</td><td>Fix AI JSON parsing + FW chat threadType + GET /jobs/{id}</td></tr>
+  <tr><td>12:00</td><td>PIE full-check intern — 22 verificari, escalare automata QLA→COA</td></tr>
+  <tr><td>12:10</td><td>AI de Continuitate — KB-only fallback (4 niveluri degradare)</td></tr>
+  <tr><td>12:20</td><td>KB-first pipeline — buffer intermediar activ (nu fallback pasiv)</td></tr>
+  <tr><td>12:30</td><td>Knowledge Meter — contor cunoastere, 60+ agenti pe 13 categorii</td></tr>
+  <tr><td>12:45</td><td>Mapare completa agenti (zero OTHER)</td></tr>
+  <tr><td>13:00</td><td>Knowledge Debt — follow-up email la revenire Claude</td></tr>
+</table>
+
+<div class="footer">
+  <p>Psihobusiness Consulting SRL | CIF RO15790994 | JobGrade.ro</p>
+  <p>Document generat automat — 30.04.2026 | Confidential</p>
+</div>
+
+</body>
+</html>
