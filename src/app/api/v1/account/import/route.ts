@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { decryptPackage, importPortabilityPackage } from "@/lib/company-profiler/portability"
 
 export const dynamic = "force-dynamic"

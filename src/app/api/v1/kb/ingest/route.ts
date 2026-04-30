@@ -22,7 +22,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { ingestDocument } from "@/lib/kb/ingest-document"
 
 export const dynamic = "force-dynamic"

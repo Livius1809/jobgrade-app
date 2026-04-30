@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { getTenantData, setTenantData } from "@/lib/tenant-storage"
 import { CO_DIMENSIONS, CO_SCALE_LABELS, scoreRespondent, aggregateResults, type COResult } from "@/lib/climate/questionnaire"
 

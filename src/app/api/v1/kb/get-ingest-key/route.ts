@@ -3,7 +3,7 @@
  * Verifică sesiunea prin cookie direct (auth() nu funcționează pe unele rute Vercel).
  */
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 
 export const dynamic = "force-dynamic"
 

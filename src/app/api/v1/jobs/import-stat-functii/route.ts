@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { validateUpload } from "@/lib/security/upload-validator"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 

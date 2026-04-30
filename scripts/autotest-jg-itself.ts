@@ -15,7 +15,7 @@ const API = process.env.API_BASE || "https://jobgrade.ro"
 const KEY = process.env.INTERNAL_API_KEY || "94486c2998cdccae76cbce90168ff8d0072c97b42e7bf407b4445e03adfad688"
 
 let SESSION_COOKIE = ""
-let TENANT_ID = ""
+let TENANT_ID = "cmolbwrlr000004jplchaxsy8" // JG_itself tenant
 
 function log(phase: string, msg: string) {
   console.log(`  [${phase}] ${msg}`)
@@ -115,24 +115,33 @@ async function testC1() {
 
   // F1: Generare fișă post AI
   const { data: aiJob } = await apiPost("/api/v1/ai/job-description", { title: "Consultant HR Senior", structureType: "HUMAN" })
-  log("C1-F1", `AI fișă post: ${aiJob?.purpose ? "OK — " + aiJob.purpose.slice(0, 50) : "EROARE"}`)
+  log("C1-F1", `AI fișă post: ${aiJob?.purpose ? "OK — " + aiJob.purpose.slice(0, 50) : aiJob?.message || "EROARE"}`)
 
   // F3: Creare sesiune evaluare
   const { data: jobs2 } = await apiGet("/api/v1/jobs")
   const activeJobs = (jobs2?.jobs || []).filter((j: any) => j.status === "ACTIVE")
   if (activeJobs.length >= 2) {
-    const { ok, data: session } = await apiPost("/api/v1/sessions", {
-      name: "AutoTest JG_itself",
-      jobIds: activeJobs.slice(0, 5).map((j: any) => j.id),
-      evaluationType: "AI_GENERATED",
-    })
-    log("C1-F3", `Sesiune evaluare: ${ok ? "OK — " + session?.id : "EROARE"}`)
+    // Verificăm dacă există deja o sesiune
+    const { data: existingSessions } = await apiGet("/api/v1/sessions")
+    const hasSession = (existingSessions?.sessions || existingSessions || []).length > 0
 
-    if (ok && session?.id) {
-      // Pornește evaluarea AI
-      const { ok: evalOk, data: evalData } = await apiPost(`/api/v1/evaluate/recalculate`, { sessionId: session.id })
-      log("C1-F3", `Evaluare AI: ${evalOk ? "OK" : evalData?.message || "EROARE"}`)
-      await sleep(3000) // Așteaptă procesare
+    if (!hasSession) {
+      const { ok, data: session } = await apiPost("/api/v1/sessions", {
+        name: "AutoTest JG_itself",
+        jobIds: activeJobs.slice(0, 5).map((j: any) => j.id),
+        participantIds: [],
+        evaluationType: "AI_GENERATED",
+      })
+      log("C1-F3", `Sesiune evaluare: ${ok ? "OK — " + (session?.id || session?.sessionId) : session?.message || "EROARE"}`)
+
+      const sessionId = session?.id || session?.sessionId
+      if (ok && sessionId) {
+        const { ok: evalOk, data: evalData } = await apiPost("/api/v1/evaluate/recalculate", { sessionId })
+        log("C1-F3", `Evaluare AI: ${evalOk ? "OK" : evalData?.message || "EROARE"}`)
+        await sleep(5000)
+      }
+    } else {
+      log("C1-F3", "Sesiune existentă — skip creare")
     }
   }
 

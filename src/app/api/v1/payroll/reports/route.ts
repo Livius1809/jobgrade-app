@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { generatePayGapReport } from "@/lib/payroll/pay-gap-report"
 import { generateSalaryJustification } from "@/lib/payroll/salary-justification"

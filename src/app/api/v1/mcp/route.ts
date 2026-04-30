@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { executeMCPTool, getToolManifest, MCP_TOOLS } from "@/lib/mcp/server"
 
 export const dynamic = "force-dynamic"

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { routeQuestion, type FWAgentTarget } from "@/lib/flying-wheels/fw-router"
 import { getPageGuide } from "@/lib/flying-wheels/page-guide"

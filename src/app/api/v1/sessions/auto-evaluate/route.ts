@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { autoEvaluateSession } from "@/lib/agents/job-auto-evaluator"
 
 export const dynamic = "force-dynamic"

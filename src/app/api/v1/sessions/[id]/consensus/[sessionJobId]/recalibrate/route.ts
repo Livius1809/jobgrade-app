@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { deductCredits, hasCredits, CREDIT_COSTS } from "@/lib/credits"
 import { UserRole } from "@/generated/prisma"

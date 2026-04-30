@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security/prompt-injection-filter"

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { checkBirthReadiness, birthNewBusiness, type BirthConfig } from "@/lib/engines/business-birth"
 
 export const dynamic = "force-dynamic"

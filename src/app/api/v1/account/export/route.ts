@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { buildPortabilityPackage, encryptPackage } from "@/lib/company-profiler/portability"
 
 export const dynamic = "force-dynamic"

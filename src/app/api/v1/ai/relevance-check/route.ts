@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import Anthropic from "@anthropic-ai/sdk"
 
 export async function POST(req: NextRequest) {

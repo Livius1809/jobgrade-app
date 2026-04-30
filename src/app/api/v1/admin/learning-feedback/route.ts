@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { recordLessonLearned, recordBulkLesson } from "@/lib/agents/learning-loop"
 import type { LessonType } from "@/lib/agents/learning-loop"
 
