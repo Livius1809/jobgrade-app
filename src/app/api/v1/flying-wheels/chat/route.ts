@@ -9,6 +9,7 @@ import { buildClientContext, formatContextForPrompt } from "@/lib/context/client
 import { checkPromptInjection } from "@/lib/security/prompt-injection-filter"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
 import { getResilienceStatus, respondFromKB, kbFirstPipeline } from "@/lib/ai/resilience"
+import { saveKnowledgeDebt } from "@/lib/ai/knowledge-debt"
 import { getCulturalCalibrationSection } from "@/lib/agents/cultural-calibration-ro"
 import { calibrateCommunication } from "@/lib/comms/calibrate"
 import { analyzeLinguisticProfile } from "@/lib/kb/linguistic-profile"
@@ -159,12 +160,23 @@ export async function POST(req: NextRequest) {
           metadata: JSON.stringify({ fromKB: true, degradedMode: true, resilienceLevel: resilience.level }) },
       })
 
+      // Salvăm datoria — când Claude revine, trimitem email cu răspunsul complet
+      const debtId = await saveKnowledgeDebt({
+        tenantId,
+        userId,
+        question: message.trim(),
+        context: `Pagina: ${currentPage || "/"}, Agent: FW chat`,
+        partialAnswer: kbFallback?.content || "",
+        confidence: kbFallback?.confidence || 0,
+      }).catch(() => "")
+
       return NextResponse.json({
         response: fallbackContent,
         threadId: threadForFB.id,
         delegatedTo: "kb_fallback",
         fromKB: true,
         resilienceLevel: resilience.level,
+        debtId: debtId || undefined,
       })
     }
 

@@ -269,7 +269,39 @@ export async function GET(request: NextRequest) {
     results.ingestion = { processedJobs, processedChunks }
   }, 60000) // 60s timeout (ingestia poate fi lenta)
 
-  // 10. FULL-CHECK PLATFORMĂ (la fiecare 6h — QLA automat)
+  // 10. KNOWLEDGE DEBT RECOVERY — procesare datorii când Claude revine
+  await withTimeout("knowledgeDebt", async () => {
+    // Verificăm dacă Claude e disponibil
+    const { getResilienceStatus } = await import("@/lib/ai/resilience")
+    const status = await getResilienceStatus()
+
+    if (status.level === "NOMINAL" || status.level === "DEGRADED") {
+      // Claude e up — verificăm dacă avem datorii de procesat
+      const debts = await prisma.systemConfig.findMany({
+        where: { key: { startsWith: "KNOWLEDGE_DEBT_" } },
+        take: 5, // max 5 per ciclu (control cost)
+      })
+
+      const hasUnresolved = debts.some(d => {
+        try { return !JSON.parse(d.value).resolvedAt } catch { return false }
+      })
+
+      if (hasUnresolved) {
+        const { processKnowledgeDebts } = await import("@/lib/ai/knowledge-debt")
+        const debtResults = await processKnowledgeDebts()
+        results.knowledgeDebt = debtResults
+        if (debtResults.emailed > 0) {
+          console.log(`[maintenance] Knowledge debt: ${debtResults.processed} procesate, ${debtResults.emailed} emailuri trimise`)
+        }
+      } else {
+        results.knowledgeDebt = { skipped: true, reason: "no unresolved debts" }
+      }
+    } else {
+      results.knowledgeDebt = { skipped: true, reason: `Claude ${status.level}` }
+    }
+  })
+
+  // 11. FULL-CHECK PLATFORMĂ (la fiecare 6h — QLA automat)
   await withTimeout("fullCheck", async () => {
     const lastCheck = await prisma.systemConfig.findUnique({ where: { key: "FULL_CHECK_LAST_RUN" } })
     const lastCheckAge = lastCheck ? Date.now() - new Date(JSON.parse(lastCheck.value).timestamp).getTime() : Infinity
