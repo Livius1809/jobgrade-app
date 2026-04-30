@@ -8,6 +8,7 @@ import { getLearningStats } from "@/lib/agents/learning-pipeline"
 import LayerCardInteractive from "./LayerCardInteractive"
 import OrganismPulse from "./OrganismPulse"
 import OwnerInbox from "@/components/owner/OwnerInbox"
+import OwnerServicePipelines from "@/components/owner/OwnerServicePipelines"
 import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
 import DecisionButtons from "./DecisionButtons"
 import PilotToggle from "@/components/owner/PilotToggle"
@@ -835,6 +836,15 @@ export default async function OwnerDashboard() {
               <ReportLink href="/owner/reports/agents" title="Evoluție agenți" description="Maturitate, KB hit" icon="📊" />
               <ReportLink href="/owner/reports/daily" title="Raport zilnic" description="Performanță, cicluri" icon="📅" />
             </div>
+
+            {/* ═══ PIPELINE SERVICII C1-C4 (ce vede clientul = ce vede Owner) ═══ */}
+            <div id="servicii" className="bg-gradient-to-br from-indigo-50 via-violet-50 to-rose-50 rounded-2xl border border-indigo-100" style={{ padding: "28px" }}>
+              <h2 className="text-lg font-bold text-slate-900">Servicii B2B — progres per card</h2>
+              <div style={{ height: "4px" }} />
+              <p className="text-xs text-slate-500">Aceeași vizualizare pe care o vede clientul pe portal. Prototip raport client.</p>
+            </div>
+
+            <OwnerServicePipelines />
 
             {/* ═══ II. SITUAȚIE EXTERNĂ ═══ */}
             <div id="externa" className="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl border border-violet-100" style={{ padding: "28px" }}>
