@@ -61,7 +61,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
         ? `${data.kpiCount} KPI definiți, ${data.jobsWithKpi}/${data.jobCount} posturi acoperite`
         : "Definește KPI-uri per post — baza pentru evaluare și pachete variabile",
     actionLabel: f1Done ? "Gestionează KPI" : "Configurează KPI",
-    actionUrl: "/settings",
+    actionUrl: "/jobs",
     missingInputs: f1Locked ? ["C1 + C2 completate"] : undefined,
   })
 
@@ -80,7 +80,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
         ? `${data.hasBenchmarkData ? "Benchmark disponibil" : "Benchmark lipsă"}, ${data.hasVariableComp ? "variabil configurat" : "variabil neonfigurat"}`
         : "Configurează pachete salariale și compară cu piața",
     actionLabel: "Pachete + benchmark",
-    actionUrl: "/benchmark",
+    actionUrl: "/compensation/variable",
     missingInputs: f2Locked ? ["Grilă salarială (C2)"] : undefined,
   })
 
@@ -122,7 +122,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
         ? `${data.teamsWithSociogram}/${data.teamCount} echipe cu sociogramă`
         : "Aplică sociograma pe echipe pentru a genera profilul de dinamică",
     actionLabel: f4Done ? "Vezi echipe" : "Profilare echipe",
-    actionUrl: "/sociogram",
+    actionUrl: "/team-reports",
     missingInputs: f4Locked ? ["Evaluare personal (F3) începută"] : undefined,
   })
 
@@ -137,7 +137,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
       ? "Matching activ — candidați disponibili"
       : "Activează matching-ul cu platforma B2C",
     actionLabel: "Matching",
-    actionUrl: "/settings",
+    actionUrl: "/matching",
     missingInputs: f5Locked ? ["Evaluare personal completă (F3)"] : undefined,
   })
 
@@ -155,7 +155,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
         ? `${data.processMapCount} procese definite — continuă maparea`
         : "Modelează procesele organizației — baza pentru manual calitate",
     actionLabel: f6Done ? "Vezi procese" : "Mapează procese",
-    actionUrl: "/settings",
+    actionUrl: "/processes",
   })
 
   // F7: Manual calitate
@@ -173,7 +173,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
         ? `${data.sopCount} proceduri definite`
         : "Generează manual calitate din procesele mapate",
     actionLabel: f7Done ? "Vezi manual" : "Generează manual",
-    actionUrl: "/settings",
+    actionUrl: "/processes/quality-manual",
     missingInputs: f7Locked ? ["Hartă procese (F6) începută"] : undefined,
   })
 
@@ -188,7 +188,7 @@ export function computeC3Pipeline(data: C3Data): { phases: PipelinePhase[]; over
       ? "Simulări disponibile din datele acumulate — mai multe date = mai multe opțiuni"
       : "Completează cel puțin o fază (F1-F7) pentru a activa simulările",
     actionLabel: "Simulează",
-    actionUrl: "/settings",
+    actionUrl: "/simulations",
     missingInputs: hasData ? undefined : ["Date din cel puțin o fază (F1-F7)"],
   })
 

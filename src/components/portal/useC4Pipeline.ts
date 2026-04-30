@@ -68,7 +68,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
       ? "Audit cultural complet — calibrat pe cultura românească"
       : "Analizează cultura organizațională pe 7 dimensiuni",
     actionLabel: f2Done ? "Vezi audit" : "Pornește audit",
-    actionUrl: "/settings",
+    actionUrl: "/culture/audit",
     missingInputs: f2Locked ? ["MVV (misiune, viziune, valori) definite"] : undefined,
   })
 
@@ -84,7 +84,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
       ? "Raport 3C disponibil — gap-uri identificate per dimensiune"
       : "Analizează distanța între declarat (MVV, politici) și realitate (climat, date HR)",
     actionLabel: f3Done ? "Vezi raport 3C" : "Generează 3C",
-    actionUrl: "/settings",
+    actionUrl: "/culture/3c-report",
     missingInputs: f3Locked ? ["Climat (F1) + audit cultural (F2) completate"] : undefined,
   })
 
@@ -99,7 +99,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
       ? "ROI calculat — costul de a NU schimba, în lei"
       : "Calculează impactul financiar al gap-urilor culturale",
     actionLabel: data.hasROICulture ? "Vezi ROI" : "Calculează ROI",
-    actionUrl: "/settings",
+    actionUrl: "/culture/roi",
     missingInputs: f4Locked ? ["Raport 3C (F3)"] : undefined,
   })
 
@@ -114,7 +114,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
       ? "Plan de intervenție activ cu timeline, KPI și responsabili"
       : "Generează plan de transformare pe mai multe niveluri organizaționale",
     actionLabel: data.hasInterventionPlan ? "Vezi plan" : "Creează plan",
-    actionUrl: "/settings",
+    actionUrl: "/culture/intervention-plan",
     missingInputs: f5Locked
       ? [!f3Done ? "Raport 3C (F3)" : "", !data.hasStrategicObjectives ? "Obiective strategice CA" : ""].filter(Boolean)
       : undefined,
@@ -131,7 +131,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
       ? "Simulări disponibile — explorează scenarii"
       : "Simulează impactul schimbărilor pe cultura și structura organizației",
     actionLabel: "Simulează",
-    actionUrl: "/settings",
+    actionUrl: "/culture/simulator",
     missingInputs: f6Locked ? ["Raport 3C (F3)"] : undefined,
   })
 
@@ -146,7 +146,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
       ? `${data.pulseCount} măsurători puls — monitorizare activă`
       : "Activează monitorizarea periodică după completarea planului",
     actionLabel: f7HasData ? "Vezi evoluție" : "Activează monitorizare",
-    actionUrl: "/settings",
+    actionUrl: "/culture/monitoring",
     missingInputs: !f3Done ? ["Raport 3C (F3) completat"] : undefined,
   })
 

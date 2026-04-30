@@ -125,7 +125,7 @@ export function computeC2Pipeline(data: C2Data): { phases: PipelinePhase[]; over
         ? `${data.uploadedDocsCount} documente încărcate${data.hasROI ? ", ROI verificat" : ""}${data.hasCCM ? ", CCM verificat" : ""}`
         : "Încarcă ROI, CCM și politicile interne pentru audit",
     actionLabel: "Audit documente",
-    actionUrl: "/compliance/equity",
+    actionUrl: "/compliance/documents",
   })
 
   // Overall progress
