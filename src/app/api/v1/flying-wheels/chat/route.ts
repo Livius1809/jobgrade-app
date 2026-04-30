@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           tenantId,
           userId,
           agentRole: "FLYING_WHEELS",
-          threadType: "FLYING_WHEELS",
+          threadType: "ASSISTANT",
           pageContext: currentPage || null,
         },
         include: { messages: [] as any },

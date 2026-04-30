@@ -18,6 +18,36 @@ const schema = z.object({
   aiAnalyzed: z.boolean().optional(),
 })
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ message: "Neautorizat." }, { status: 401 })
+    }
+
+    const { id } = await params
+
+    const job = await prisma.job.findFirst({
+      where: { id, tenantId: session.user.tenantId },
+      include: {
+        department: { select: { id: true, name: true } },
+      },
+    })
+
+    if (!job) {
+      return NextResponse.json({ message: "Nu a fost găsit." }, { status: 404 })
+    }
+
+    return NextResponse.json(job)
+  } catch (error) {
+    console.error("[JOBS GET]", error)
+    return NextResponse.json({ message: "Eroare internă." }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

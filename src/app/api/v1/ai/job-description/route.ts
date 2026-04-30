@@ -3,6 +3,7 @@ import { z } from "zod"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { buildKBContext } from "@/lib/kb/inject"
+import { parseAIJson } from "@/lib/ai/sanitize-json"
 
 const schema = z.object({
   title: z.string().min(3),
@@ -152,12 +153,23 @@ Nu adăuga text în afara JSON-ului.`
       ? response.content[0].text.trim()
       : ""
 
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      return NextResponse.json({ message: "Eroare la parsarea răspunsului AI." }, { status: 500 })
+    let parsed = parseAIJson(raw)
+
+    // Retry o singură dată dacă parsarea a eșuat
+    if (!parsed) {
+      const retryResponse = await anthropic.messages.create({
+        model: AI_MODEL,
+        max_tokens: 1500,
+        system: systemPrompt + "\n\nATENȚIE: Răspunsul anterior nu a fost JSON valid. Returnează STRICT JSON valid, fără text în afara JSON-ului, fără markdown code blocks.",
+        messages: [{ role: "user", content: prompt }],
+      })
+      const retryRaw = retryResponse.content[0].type === "text" ? retryResponse.content[0].text.trim() : ""
+      parsed = parseAIJson(retryRaw)
     }
 
-    const parsed = JSON.parse(jsonMatch[0])
+    if (!parsed) {
+      return NextResponse.json({ message: "Eroare la parsarea răspunsului AI." }, { status: 500 })
+    }
 
     // Sugestie cod COR automat pe baza titlului
     try {

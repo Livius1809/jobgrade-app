@@ -13,6 +13,7 @@ import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { z } from "zod"
+import { parseAIJson } from "@/lib/ai/sanitize-json"
 
 export const dynamic = "force-dynamic"
 
@@ -201,12 +202,22 @@ Raspunde STRICT in acest format JSON:
     const textBlock = response.content.find((b) => b.type === "text")
     const rawText = textBlock?.text ?? "{}"
 
-    // Parsam raspunsul JSON
-    let manualData: Partial<QualityManual>
-    try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-      manualData = JSON.parse(jsonMatch?.[0] ?? "{}")
-    } catch {
+    // Parsam raspunsul JSON cu sanitizare robustă
+    let manualData: Partial<QualityManual> | null = parseAIJson(rawText)
+
+    // Retry dacă parsarea a eșuat
+    if (!manualData) {
+      const retryResponse = await anthropic.messages.create({
+        model: AI_MODEL,
+        max_tokens: 8000,
+        messages: [{ role: "user", content: userPrompt + "\n\nATENȚIE: Returnează STRICT JSON valid, fără markdown code blocks, fără text suplimentar." }],
+        system: systemPrompt,
+      })
+      const retryRaw = retryResponse.content.find((b) => b.type === "text")?.text ?? ""
+      manualData = parseAIJson(retryRaw)
+    }
+
+    if (!manualData) {
       return NextResponse.json(
         { error: "Eroare la parsarea raspunsului AI. Incercati din nou." },
         { status: 502 },
