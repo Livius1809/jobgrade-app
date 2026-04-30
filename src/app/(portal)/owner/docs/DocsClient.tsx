@@ -815,12 +815,12 @@ export default function DocsClient({ ingestKey }: { ingestKey: string }) {
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-foreground">{doc.title}</h3>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  {doc.chunks} sectiuni · {doc.agentCount} agenti · {new Date(doc.createdAt).toLocaleDateString("ro-RO")}
+                  {doc.chunks} sectiuni · {doc.agentCount} consultanti · {new Date(doc.createdAt).toLocaleDateString("ro-RO")}
                 </p>
-                {doc.tags.length > 0 && (
-                  <div className="flex gap-1 mt-1.5">
-                    {doc.tags.slice(0, 4).map(tag => (
-                      <span key={tag} className="text-[10px] bg-indigo/5 text-indigo/70 px-2 py-0.5 rounded">{tag}</span>
+                {doc.agents && doc.agents.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {doc.agents.map(agent => (
+                      <span key={agent} className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">{agent}</span>
                     ))}
                   </div>
                 )}

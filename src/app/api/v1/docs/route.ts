@@ -116,47 +116,60 @@ export async function GET(req: NextRequest) {
   try {
     const p = prisma as any
 
-    // Găsește toate documentele unice din KB
-    const docs = await p.kBEntry.findMany({
-      where: {
-        tags: { has: "document-library" },
-        status: "PERMANENT",
-      },
-      select: {
-        content: true,
-        tags: true,
-        agentRole: true,
-        createdAt: true,
-        confidence: true,
-      },
+    // Găsește toate documentele unice din KB (text paste + ingestie)
+    const docMap = new Map<string, { title: string; agents: Set<string>; chunks: number; createdAt: string; tags: string[]; sourceType?: string }>()
+
+    // 1. Documente din text paste (tag: document-library)
+    const textDocs = await p.kBEntry.findMany({
+      where: { tags: { has: "document-library" }, status: "PERMANENT" },
+      select: { content: true, tags: true, agentRole: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     })
 
-    // Grupează pe titlu
-    const docMap = new Map<string, { title: string; agents: Set<string>; chunks: number; createdAt: string; tags: string[] }>()
-
-    for (const doc of docs) {
+    for (const doc of textDocs) {
       const titleMatch = doc.content.match(/\[Doc: ([^\]]+)\]/)
       const title = titleMatch ? titleMatch[1].replace(/ \(\d+\/\d+\)/, "") : "Fără titlu"
-
       if (!docMap.has(title)) {
-        docMap.set(title, {
-          title,
-          agents: new Set(),
-          chunks: 0,
-          createdAt: doc.createdAt?.toISOString?.() || new Date().toISOString(),
-          tags: doc.tags.filter((t: string) => t !== "document-library"),
-        })
+        docMap.set(title, { title, agents: new Set(), chunks: 0, createdAt: doc.createdAt?.toISOString?.() || new Date().toISOString(), tags: doc.tags.filter((t: string) => t !== "document-library") })
       }
-
       const entry = docMap.get(title)!
       entry.agents.add(doc.agentRole)
       entry.chunks++
     }
 
+    // 2. Documente din ingestie (joburi completate)
+    const ingestConfigs = await p.systemConfig.findMany({
+      where: { key: { startsWith: "INGEST_JOB_" } },
+    })
+
+    for (const cfg of ingestConfigs) {
+      try {
+        const job = JSON.parse(cfg.value)
+        if (job.status !== "COMPLETED") continue
+        const title = job.sourceTitle
+        if (docMap.has(title)) continue // deja adăugat
+
+        // Găsește agenții infuzați din KB entries ale acestui job
+        const entries = await p.kBEntry.findMany({
+          where: { tags: { hasSome: [`ingest:${job.id}`] }, status: "PERMANENT" },
+          select: { agentRole: true },
+        })
+
+        const agents = new Set(entries.map((e: any) => e.agentRole))
+        docMap.set(title, {
+          title,
+          agents,
+          chunks: entries.length,
+          createdAt: job.createdAt || new Date().toISOString(),
+          tags: [job.sourceType || "carte", `${job.sourceAuthor || ""}`].filter(Boolean),
+          sourceType: job.sourceType,
+        })
+      } catch {}
+    }
+
     const documents = [...docMap.values()].map(d => ({
       ...d,
-      agents: [...d.agents],
+      agents: [...d.agents].sort(),
       agentCount: d.agents.size,
     }))
 
