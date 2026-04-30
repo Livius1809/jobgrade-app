@@ -173,8 +173,14 @@ export function calcLayerCredits(layer: number, positions: number, employees: nu
 }
 
 /**
- * Calculează credite DELTA (doar diferența față de ce e deja evaluat).
- * Folosit la adăugare incrementală.
+ * Calculează credite DELTA (diferența față de ce e deja evaluat).
+ *
+ * La CREȘTERE: returnează credite necesare pentru diferența nouă.
+ * La SCĂDERE: returnează credite recuperabile (conversia în credite a ceea ce nu mai e folosit).
+ *
+ * Fiscal RO (art. 134 Cod Fiscal): serviciile prestate sunt venituri definitive.
+ * Creditele consumate = irecuperabile. Creditele neconsumate = rămân ale clientului.
+ * Conversia diferenței abonament → credite = bonus/serviciu suplimentar, nu stornare.
  */
 export function calcDeltaCredits(
   card: number,
@@ -182,15 +188,77 @@ export function calcDeltaCredits(
   oldPositions: number,
   newEmployees: number,
   oldEmployees: number
-): { items: CreditItem[]; total: number } {
-  const deltaPos = Math.max(0, newPositions - oldPositions)
-  const deltaEmp = Math.max(0, newEmployees - oldEmployees)
+): {
+  items: CreditItem[]
+  total: number
+  direction: "UPGRADE" | "DOWNGRADE" | "UNCHANGED"
+} {
+  const deltaPos = newPositions - oldPositions
+  const deltaEmp = newEmployees - oldEmployees
 
   if (deltaPos === 0 && deltaEmp === 0) {
-    return { items: [], total: 0 }
+    return { items: [], total: 0, direction: "UNCHANGED" }
   }
 
-  return calcCardCredits(card, deltaPos, deltaEmp)
+  if (deltaPos >= 0 && deltaEmp >= 0) {
+    // CREȘTERE — credite noi necesare
+    const calc = calcCardCredits(card, Math.max(0, deltaPos), Math.max(0, deltaEmp))
+    return { ...calc, direction: "UPGRADE" }
+  }
+
+  // SCĂDERE — calculăm ce s-ar recupera (informativ, nu ramburs)
+  const shrinkPos = Math.abs(Math.min(0, deltaPos))
+  const shrinkEmp = Math.abs(Math.min(0, deltaEmp))
+  const calc = calcCardCredits(card, shrinkPos, shrinkEmp)
+
+  // Creditele "recuperate" sunt informative — serviciile deja prestate nu se rambursează
+  // Dar diferența de abonament se poate converti în credite (decizie Owner 30.04.2026)
+  return {
+    items: calc.items.map(i => ({ ...i, label: `[Recuperabil] ${i.label}`, credits: -i.credits })),
+    total: -calc.total,
+    direction: "DOWNGRADE",
+  }
+}
+
+/**
+ * Calculează conversia diferenței de abonament în credite la downgrade.
+ *
+ * Fiscal RO: NU e stornare. Venitul abonamentului curent rămâne integral.
+ * Creditele oferite = bonus/serviciu suplimentar = cost operațional intern.
+ *
+ * Ex: Business (599) → Essentials (299) = 300 RON diferență
+ *     La tarif Business (6.50 RON/credit) = 46 credite bonus
+ */
+export function calcDowngradeConversion(
+  currentTier: SubscriptionTier,
+  newTier: SubscriptionTier,
+  annual: boolean = false
+): {
+  priceDifference: number
+  creditsConverted: number
+  creditRate: number
+  explanation: string
+} {
+  const currentPrice = subscriptionPrice(currentTier, annual)
+  const newPrice = subscriptionPrice(newTier, annual)
+  const diff = currentPrice - newPrice
+
+  if (diff <= 0) {
+    return { priceDifference: 0, creditsConverted: 0, creditRate: 0, explanation: "Nu este downgrade" }
+  }
+
+  // Conversia se face la tariful tier-ului CURENT (mai avantajos pentru client)
+  const rate = pricePerCredit(currentTier)
+  const credits = Math.floor(diff / rate)
+
+  const period = annual ? "an" : "lună"
+
+  return {
+    priceDifference: diff,
+    creditsConverted: credits,
+    creditRate: rate,
+    explanation: `Diferența de ${diff} RON/${period} (${TIERS[currentTier].label} → ${TIERS[newTier].label}) se convertește în ${credits} credite la tariful ${rate} RON/credit.`,
+  }
 }
 
 /**
