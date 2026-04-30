@@ -64,14 +64,18 @@ export async function POST(req: NextRequest) {
     const tenantId = (session.user as any).tenantId
     const isB2C = currentPage?.startsWith("/personal") ?? false
 
-    // Budget check
-    const budgetCheck = checkBudget(tenantId || userId, isB2C ? "B2C" : "B2B", 0.015)
-    if (!budgetCheck.allowed) {
-      return NextResponse.json({
-        response: getBudgetExceededResponse("ro"),
-        delegatedTo: "fw_self",
-        blocked: true,
-      })
+    // Budget check — Owner/SUPER_ADMIN nu sunt blocați (au nevoie de acces permanent)
+    const userRole = (session.user as any).role
+    const isOwner = userRole === "OWNER" || userRole === "SUPER_ADMIN"
+    if (!isOwner) {
+      const budgetCheck = checkBudget(tenantId || userId, isB2C ? "B2C" : "B2B", 0.015)
+      if (!budgetCheck.allowed) {
+        return NextResponse.json({
+          response: getBudgetExceededResponse("ro"),
+          delegatedTo: "fw_self",
+          blocked: true,
+        })
+      }
     }
 
     // ── 0e. Detectare limbaj licențios ──
