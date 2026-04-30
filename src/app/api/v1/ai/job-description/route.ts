@@ -4,7 +4,7 @@ import { authOrKey as auth } from "@/lib/auth-or-key"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { buildKBContext } from "@/lib/kb/inject"
 import { parseAIJson } from "@/lib/ai/sanitize-json"
-import { getResilienceStatus, respondFromKB } from "@/lib/ai/resilience"
+import { getResilienceStatus, respondFromKB, kbFirstPipeline } from "@/lib/ai/resilience"
 
 const schema = z.object({
   title: z.string().min(3),
@@ -56,30 +56,6 @@ export async function POST(req: NextRequest) {
       kbContext,
       companyContext,
     ].filter(Boolean).join("\n\n")
-
-    // Resilience check — dacă Claude e down, oferim ce avem din KB
-    const resilience = await getResilienceStatus()
-    if (resilience.level === "KB_ONLY" || resilience.level === "OFFLINE") {
-      const kbResponse = await respondFromKB(
-        `fișă de post ${data.title} ${data.structureType}`,
-        "HR_COUNSELOR",
-        { language: "ro" }
-      )
-      if (kbResponse && kbResponse.confidence > 0) {
-        return NextResponse.json({
-          purpose: `Fișă de post pentru ${data.title} (generare temporar indisponibilă — informații din baza de cunoștințe)`,
-          responsibilities: kbResponse.content,
-          requirements: "Detaliile complete vor fi disponibile la reluarea sistemului de generare.",
-          degradedMode: true,
-          resilienceLevel: resilience.level,
-        })
-      }
-      return NextResponse.json({
-        message: "Generarea AI este temporar indisponibilă. Reîncercați în câteva minute.",
-        degradedMode: true,
-        resilienceLevel: resilience.level,
-      }, { status: 503 })
-    }
 
     const isFromUpload = !!data.rawText
     const sourceText = isFromUpload
@@ -167,31 +143,56 @@ IMPORTANT:
 
 Nu adăuga text în afara JSON-ului.`
 
-    const response = await anthropic.messages.create({
-      model: AI_MODEL,
-      max_tokens: 1500,
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }],
+    // KB-first: verificăm dacă avem deja cunoaștere pentru acest tip de post
+    const kbQuery = `fișă de post ${data.title} ${data.structureType} criterii evaluare responsabilități cerințe`
+    const pipelineResult = await kbFirstPipeline({
+      agentRole: "HR_COUNSELOR",
+      query: kbQuery,
+      aiCall: async () => {
+        const response = await anthropic.messages.create({
+          model: AI_MODEL,
+          max_tokens: 1500,
+          system: systemPrompt,
+          messages: [{ role: "user", content: prompt }],
+        })
+        const raw = response.content[0].type === "text"
+          ? response.content[0].text.trim()
+          : ""
+        let result = parseAIJson(raw)
+        // Retry o singură dată dacă parsarea a eșuat
+        if (!result) {
+          const retryResponse = await anthropic.messages.create({
+            model: AI_MODEL,
+            max_tokens: 1500,
+            system: systemPrompt + "\n\nATENȚIE: Returnează STRICT JSON valid, fără text în afara JSON-ului, fără markdown code blocks.",
+            messages: [{ role: "user", content: prompt }],
+          })
+          const retryRaw = retryResponse.content[0].type === "text" ? retryResponse.content[0].text.trim() : ""
+          result = parseAIJson(retryRaw)
+        }
+        if (!result) throw new Error("JSON parsing eșuat după retry")
+        return result
+      },
+      extractKnowledge: (parsed) => {
+        // Salvăm esența fișei de post în KB pentru viitoare generări similare
+        if (!parsed?.purpose) return null
+        return `Fișă de post: ${data.title} (${data.structureType}). Scop: ${parsed.purpose}. Responsabilități: ${(parsed.responsibilities || "").slice(0, 300)}. Criterii: ${JSON.stringify(parsed.criteriaMapping || {}).slice(0, 400)}`
+      },
     })
 
-    const raw = response.content[0].type === "text"
-      ? response.content[0].text.trim()
-      : ""
-
-    let parsed = parseAIJson(raw)
-
-    // Retry o singură dată dacă parsarea a eșuat
-    if (!parsed) {
-      const retryResponse = await anthropic.messages.create({
-        model: AI_MODEL,
-        max_tokens: 1500,
-        system: systemPrompt + "\n\nATENȚIE: Răspunsul anterior nu a fost JSON valid. Returnează STRICT JSON valid, fără text în afara JSON-ului, fără markdown code blocks.",
-        messages: [{ role: "user", content: prompt }],
+    // Dacă KB a servit răspunsul
+    if (pipelineResult.fromKB && pipelineResult.kbResponse) {
+      return NextResponse.json({
+        purpose: `Informații pentru postul ${data.title} (din baza de cunoștințe)`,
+        responsibilities: pipelineResult.kbResponse.content,
+        requirements: "",
+        fromKB: true,
+        confidence: pipelineResult.kbResponse.confidence,
       })
-      const retryRaw = retryResponse.content[0].type === "text" ? retryResponse.content[0].text.trim() : ""
-      parsed = parseAIJson(retryRaw)
     }
 
+    // Claude a răspuns
+    const parsed = pipelineResult.aiResponse
     if (!parsed) {
       return NextResponse.json({ message: "Eroare la parsarea răspunsului AI." }, { status: 500 })
     }

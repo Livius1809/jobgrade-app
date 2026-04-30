@@ -8,7 +8,7 @@ import { getPageGuide } from "@/lib/flying-wheels/page-guide"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
 import { checkPromptInjection } from "@/lib/security/prompt-injection-filter"
 import { checkBudget, recordAPIUsage, getBudgetExceededResponse } from "@/lib/ai/budget-cap"
-import { getResilienceStatus, respondFromKB } from "@/lib/ai/resilience"
+import { getResilienceStatus, respondFromKB, kbFirstPipeline } from "@/lib/ai/resilience"
 import { getCulturalCalibrationSection } from "@/lib/agents/cultural-calibration-ro"
 import { calibrateCommunication } from "@/lib/comms/calibrate"
 import { analyzeLinguisticProfile } from "@/lib/kb/linguistic-profile"
@@ -91,14 +91,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ── 0f. Resilience check — dacă Claude e down, servim din KB ──
-    const resilience = await getResilienceStatus()
+    // ── 0f. KB-first — verificăm cunoașterea acumulată ÎNAINTE de Claude ──
+    const kbCheck = await respondFromKB(message.trim(), "SOA", { language: "ro" })
 
-    if (resilience.level === "KB_ONLY" || resilience.level === "OFFLINE") {
-      // Servim din cunoașterea acumulată — voce identică, zero hallucination
-      const kbResponse = await respondFromKB(message.trim(), "SOA", { language: "ro" })
-
-      // Salvăm în thread pentru continuitate
+    if (kbCheck && kbCheck.confidence >= 0.80) {
+      // KB știe răspunsul → servim direct, zero Claude, zero cost
       let threadForKB: any = null
       if (threadId) {
         threadForKB = await p.conversationThread.findFirst({ where: { id: threadId, userId } })
@@ -116,21 +113,62 @@ export async function POST(req: NextRequest) {
         data: {
           threadId: threadForKB.id,
           role: "ASSISTANT",
-          content: kbResponse?.content || "Sistemul este temporar indisponibil.",
-          metadata: JSON.stringify({ degradedMode: true, kbSource: kbResponse?.source, confidence: kbResponse?.confidence }),
+          content: kbCheck.content,
+          metadata: JSON.stringify({ fromKB: true, kbSource: kbCheck.source, confidence: kbCheck.confidence }),
         },
       })
 
+      await p.interactionLog.create({
+        data: {
+          tenantId, userId, eventType: "FW_CHAT",
+          pageRoute: currentPage || null, entityType: "flying_wheels",
+          entityId: threadForKB.id, detail: "served:kb_first",
+        },
+      }).catch(() => {})
+
       return NextResponse.json({
-        response: kbResponse?.content || "Sistemul este temporar indisponibil.",
+        response: kbCheck.content,
         threadId: threadForKB.id,
+        delegatedTo: "kb_first",
+        fromKB: true,
+        confidence: kbCheck.confidence,
+      })
+    }
+
+    // KB nu știe suficient → continuăm cu Claude (care va alimenta KB-ul)
+    // Dacă Claude e complet down, verificăm cu prag mai scăzut
+    const resilience = await getResilienceStatus()
+    if (resilience.level === "KB_ONLY" || resilience.level === "OFFLINE") {
+      // Claude down — servim din KB cu prag mai permisiv
+      const kbFallback = kbCheck || await respondFromKB(message.trim(), "SOA", { language: "ro" })
+      const fallbackContent = kbFallback?.content
+        || "Momentan nu pot oferi un răspuns complet. Sistemul se va relua în scurt timp."
+
+      let threadForFB: any = null
+      if (threadId) {
+        threadForFB = await p.conversationThread.findFirst({ where: { id: threadId, userId } })
+      }
+      if (!threadForFB) {
+        threadForFB = await p.conversationThread.create({
+          data: { tenantId, userId, agentRole: "FLYING_WHEELS", threadType: "ASSISTANT", pageContext: currentPage || null },
+        })
+      }
+      await p.conversationMessage.create({ data: { threadId: threadForFB.id, role: "USER", content: message.trim() } })
+      await p.conversationMessage.create({
+        data: { threadId: threadForFB.id, role: "ASSISTANT", content: fallbackContent,
+          metadata: JSON.stringify({ fromKB: true, degradedMode: true, resilienceLevel: resilience.level }) },
+      })
+
+      return NextResponse.json({
+        response: fallbackContent,
+        threadId: threadForFB.id,
         delegatedTo: "kb_fallback",
-        degradedMode: true,
+        fromKB: true,
         resilienceLevel: resilience.level,
       })
     }
 
-    // ── 1. Route question ──
+    // ── 1. Route question (Claude disponibil, KB nu avea răspuns suficient) ──
     const routing = routeQuestion(message.trim(), currentPage ?? "/", isB2C)
 
     // ── 2. Get/create thread ──

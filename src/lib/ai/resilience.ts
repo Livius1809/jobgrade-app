@@ -1,14 +1,21 @@
 /**
- * resilience.ts — Stratul de reziliență AI al organismului
+ * resilience.ts — AI de Continuitate
  *
- * Când Claude e down, organismul continuă din cunoașterea acumulată (KB).
- * Structura E operă Claude → devine un AI distilat care asigură continuitatea.
+ * KB-ul este un BUFFER INTERMEDIAR ACTIV între Claude și JobGrade.
+ * Nu un fallback pasiv, ci STRATUL PRINCIPAL de cunoaștere.
  *
- * 4 niveluri de degradare:
- * 1. NOMINAL    — Claude funcționează normal
- * 2. DEGRADED   — Claude lent, comutăm pe Haiku
- * 3. KB_ONLY    — Claude down, servim din KB (voce identică, zero hallucination)
- * 4. OFFLINE    — Nici KB nu funcționează, doar date statice
+ * Flux KB-first:
+ *   Client → KB (am răspuns bun?) → DA → servesc direct (zero Claude, zero cost)
+ *                                 → NU → apel Claude → răspuns + SALVARE în KB
+ *
+ * Cu cât organismul maturizează, cu atât mai puțin depinde de Claude:
+ *   Luna 1:  90% Claude, 10% KB
+ *   Luna 6:  50-50
+ *   Luna 12: 20% Claude, 80% KB
+ *   Maturitate: KB știe aproape tot, Claude doar pentru situații inedite
+ *
+ * Când Claude e down → KB preia complet. Voce identică (e operă Claude).
+ * Când Claude e up → KB servește ce știe, Claude completează ce e nou.
  */
 
 import { prisma } from "@/lib/prisma"
@@ -35,7 +42,20 @@ export interface KBResponse {
   confidence: number
   source: "KB_DIRECT" | "KB_CROSS_AGENT" | "KB_TEMPLATE"
   entries: Array<{ id: string; agentRole: string; similarity: number }>
-  degradedMode: true
+  fromKB: true
+}
+
+export interface AICallResult<T> {
+  /** Răspunsul a venit din KB (true) sau din Claude (false) */
+  fromKB: boolean
+  /** Răspunsul Claude original (doar dacă fromKB=false) */
+  aiResponse?: T
+  /** Răspunsul din KB (doar dacă fromKB=true) */
+  kbResponse?: KBResponse
+  /** Nivelul de reziliență la momentul apelului */
+  level: ResilienceLevel
+  /** Cunoașterea nouă a fost salvată în KB (doar dacă fromKB=false) */
+  savedToKB?: boolean
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -44,12 +64,8 @@ export interface KBResponse {
 
 let cachedStatus: ResilienceStatus | null = null
 let lastProbeTime = 0
-const PROBE_INTERVAL_MS = 60_000 // re-probe la fiecare 60s
+const PROBE_INTERVAL_MS = 60_000
 
-/**
- * Verifică starea Claude API — cached 60s.
- * NU face apel AI real — doar un messages.create minimal.
- */
 export async function getResilienceStatus(): Promise<ResilienceStatus> {
   const now = Date.now()
   if (cachedStatus && now - lastProbeTime < PROBE_INTERVAL_MS) {
@@ -61,7 +77,7 @@ export async function getResilienceStatus(): Promise<ResilienceStatus> {
   let kbAvailable = false
   let kbEntryCount = 0
 
-  // Probe Claude — mesaj minimal
+  // Probe Claude
   try {
     const Anthropic = (await import("@anthropic-ai/sdk")).default
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -73,14 +89,8 @@ export async function getResilienceStatus(): Promise<ResilienceStatus> {
     })
     claudeLatencyMs = Date.now() - t0
     claudeAvailable = true
-  } catch (e: any) {
+  } catch {
     claudeLatencyMs = null
-    // Clasificare eroare
-    const msg = e.message || ""
-    if (msg.includes("rate_limit") || msg.includes("overloaded")) {
-      // API overloaded — dar nu complet down
-      claudeAvailable = false
-    }
   }
 
   // Probe KB
@@ -91,35 +101,29 @@ export async function getResilienceStatus(): Promise<ResilienceStatus> {
     kbAvailable = false
   }
 
-  // Determinare nivel
   let level: ResilienceLevel
   let reason: string
   if (claudeAvailable && claudeLatencyMs !== null && claudeLatencyMs < 10000) {
     level = "NOMINAL"
-    reason = `Claude OK (${claudeLatencyMs}ms)`
+    reason = `Claude OK (${claudeLatencyMs}ms), KB: ${kbEntryCount} entries`
   } else if (claudeAvailable && claudeLatencyMs !== null) {
     level = "DEGRADED"
-    reason = `Claude lent (${claudeLatencyMs}ms) — folosim Haiku`
+    reason = `Claude lent (${claudeLatencyMs}ms), KB: ${kbEntryCount} entries`
   } else if (kbAvailable) {
     level = "KB_ONLY"
-    reason = `Claude indisponibil — servim din KB (${kbEntryCount} entries)`
+    reason = `Claude indisponibil — KB activ (${kbEntryCount} entries)`
   } else {
     level = "OFFLINE"
     reason = "Claude și KB indisponibile"
   }
 
   cachedStatus = {
-    level,
-    claudeAvailable,
-    claudeLatencyMs,
-    kbAvailable,
-    kbEntryCount,
-    lastProbeAt: new Date().toISOString(),
-    reason,
+    level, claudeAvailable, claudeLatencyMs,
+    kbAvailable, kbEntryCount,
+    lastProbeAt: new Date().toISOString(), reason,
   }
   lastProbeTime = now
 
-  // Persistăm starea în SystemConfig
   try {
     await prisma.systemConfig.upsert({
       where: { key: "AI_RESILIENCE_STATUS" },
@@ -131,40 +135,22 @@ export async function getResilienceStatus(): Promise<ResilienceStatus> {
   return cachedStatus
 }
 
-/**
- * Forțează re-probe (ignoră cache). Util după un incident.
- */
 export function invalidateProbe() {
   lastProbeTime = 0
   cachedStatus = null
 }
 
 // ═══════════════════════════════════════════════════════════════
-// KB RESPONDER — servește răspuns din cunoașterea acumulată
+// KB SEARCH — cunoașterea acumulată
 // ═══════════════════════════════════════════════════════════════
 
-const SIMILARITY_THRESHOLD = 0.75 // prag pentru răspuns direct
-const HIGH_CONFIDENCE_THRESHOLD = 0.85 // prag pentru răspuns fără disclaimer
+const KB_SERVE_THRESHOLD = 0.80   // servim direct din KB
+const KB_ENRICH_THRESHOLD = 0.65  // KB are ceva dar incomplet → Claude completează
 
-/**
- * Generează un răspuns din KB fără apel AI.
- * Folosit când Claude e down (nivel KB_ONLY).
- *
- * Strategia:
- * 1. Search semantic per agent role
- * 2. Dacă scor > 0.85 → răspuns direct (voce identică cu Claude)
- * 3. Dacă scor 0.75-0.85 → răspuns cu notă de precauție
- * 4. Dacă scor < 0.75 → search cross-agent
- * 5. Dacă tot nu → mesaj onest "revenim"
- */
 export async function respondFromKB(
   query: string,
   agentRole: string,
-  options?: {
-    language?: "ro" | "en"
-    maxEntries?: number
-    includeDisclaimer?: boolean
-  }
+  options?: { language?: "ro" | "en"; maxEntries?: number }
 ): Promise<KBResponse | null> {
   const lang = options?.language || "ro"
   const maxEntries = options?.maxEntries || 3
@@ -173,82 +159,50 @@ export async function respondFromKB(
   let entries: KBSearchResult[] = []
   try {
     entries = await searchKB(agentRole, query, maxEntries)
-  } catch {
-    // KB search eșuat — try cross-agent
-  }
+  } catch {}
 
-  // 2. Verificare prag
   const bestScore = entries[0]?.similarity || 0
 
-  if (bestScore >= SIMILARITY_THRESHOLD && entries.length > 0) {
-    // Construiește răspuns din KB entries
-    const content = buildKBResponseText(entries, bestScore >= HIGH_CONFIDENCE_THRESHOLD, lang)
-
+  if (bestScore >= KB_SERVE_THRESHOLD && entries.length > 0) {
     return {
-      content,
+      content: buildKBResponseText(entries, bestScore >= 0.90, lang),
       confidence: bestScore,
       source: "KB_DIRECT",
-      entries: entries.map(e => ({
-        id: e.id,
-        agentRole: e.agentRole,
-        similarity: e.similarity || 0,
-      })),
-      degradedMode: true,
+      entries: entries.map(e => ({ id: e.id, agentRole: e.agentRole, similarity: e.similarity || 0 })),
+      fromKB: true,
     }
   }
 
-  // 3. Cross-agent search
+  // 2. Cross-agent search
   try {
-    const crossEntries = await searchKBCrossAgent(query, maxEntries, SIMILARITY_THRESHOLD)
+    const crossEntries = await searchKBCrossAgent(query, maxEntries, KB_SERVE_THRESHOLD)
     if (crossEntries.length > 0) {
-      const content = buildKBResponseText(crossEntries, false, lang)
       return {
-        content,
+        content: buildKBResponseText(crossEntries, false, lang),
         confidence: crossEntries[0].similarity || 0,
         source: "KB_CROSS_AGENT",
-        entries: crossEntries.map(e => ({
-          id: e.id,
-          agentRole: e.agentRole,
-          similarity: e.similarity || 0,
-        })),
-        degradedMode: true,
+        entries: crossEntries.map(e => ({ id: e.id, agentRole: e.agentRole, similarity: e.similarity || 0 })),
+        fromKB: true,
       }
     }
   } catch {}
 
-  // 4. Nimic relevant — mesaj onest
-  return {
-    content: lang === "ro"
-      ? "Momentan nu pot oferi un răspuns complet la această întrebare. Sistemul nostru de asistență se va relua în scurt timp și vei primi un răspuns detaliat."
-      : "I cannot provide a complete answer right now. Our assistance system will resume shortly and you will receive a detailed response.",
-    confidence: 0,
-    source: "KB_TEMPLATE",
-    entries: [],
-    degradedMode: true,
-  }
+  // 3. Nimic suficient de relevant
+  return null
 }
 
-/**
- * Construiește text de răspuns din KB entries.
- * Vocea rămâne identică — KB-ul conține răspunsuri generate tot de Claude.
- */
 function buildKBResponseText(
   entries: KBSearchResult[],
   highConfidence: boolean,
   lang: "ro" | "en"
 ): string {
-  // Combinăm conținutul celor mai relevante entries
   const mainContent = entries
     .slice(0, 3)
     .map(e => e.content.trim())
     .join("\n\n")
 
-  if (highConfidence) {
-    // Răspuns direct, fără disclaimer
-    return mainContent
-  }
+  if (highConfidence) return mainContent
 
-  // Cu notă discretă
   const note = lang === "ro"
     ? "\n\n_Aceste informații sunt bazate pe experiența acumulată. Pentru detalii suplimentare, sistemul complet va fi disponibil în scurt timp._"
     : "\n\n_This information is based on accumulated experience. For additional details, the full system will be available shortly._"
@@ -257,72 +211,153 @@ function buildKBResponseText(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// AI CLIENT WRAPPER — interceptare cu fallback automat
+// KB-FIRST PIPELINE — stratul principal
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Wrapper peste apelul Claude care gestionează automat fallback-ul.
+ * Pipeline KB-first — buffer intermediar activ.
  *
- * Utilizare (înlocuiește direct anthropic.messages.create):
+ * 1. ÎNTREABĂ KB → dacă știe (>0.80) → servește direct, zero Claude
+ * 2. KB nu știe → ÎNTREABĂ CLAUDE → răspuns
+ * 3. SALVEAZĂ în KB → data viitoare se servește din KB
+ * 4. Claude DOWN → servește ce are KB (orice scor > 0.65)
  *
- *   const result = await resilientAICall({
- *     agentRole: "HR_COUNSELOR",
- *     query: userMessage,
- *     aiCall: () => anthropic.messages.create({ ... }),
- *   })
- *
- *   if (result.fromKB) {
- *     // Răspuns din KB — nu alimenta learning funnel
- *     return result.kbResponse.content
- *   } else {
- *     // Răspuns normal de la Claude
- *     return result.aiResponse
- *   }
+ * @param agentRole - rolul agentului care procesează
+ * @param query - întrebarea / contextul
+ * @param aiCall - funcția care apelează Claude (se execută DOAR dacă KB nu știe)
+ * @param extractKnowledge - extrage cunoașterea din răspunsul Claude pt salvare în KB
  */
-export async function resilientAICall<T>(params: {
+export async function kbFirstPipeline<T>(params: {
   agentRole: string
   query: string
   aiCall: () => Promise<T>
+  extractKnowledge?: (aiResponse: T) => string | null
   language?: "ro" | "en"
-}): Promise<
-  | { fromKB: false; aiResponse: T; level: ResilienceLevel }
-  | { fromKB: true; kbResponse: KBResponse; level: ResilienceLevel }
-> {
+}): Promise<AICallResult<T>> {
   const status = await getResilienceStatus()
 
-  // NOMINAL sau DEGRADED → apelăm Claude
-  if (status.level === "NOMINAL" || status.level === "DEGRADED") {
-    try {
-      const aiResponse = await params.aiCall()
-      return { fromKB: false, aiResponse, level: status.level }
-    } catch (e: any) {
-      // Claude a eșuat la runtime — fallback KB
-      invalidateProbe()
-      console.warn(`[RESILIENCE] Claude call failed, falling back to KB: ${e.message?.slice(0, 80)}`)
-    }
-  }
-
-  // KB_ONLY sau fallback după eroare
+  // ══ PAS 1: Întreabă KB ══
   const kbResponse = await respondFromKB(params.query, params.agentRole, {
     language: params.language || "ro",
   })
 
-  if (kbResponse) {
-    return { fromKB: true, kbResponse, level: "KB_ONLY" }
+  if (kbResponse && kbResponse.confidence >= KB_SERVE_THRESHOLD) {
+    // KB știe → servim direct, zero Claude, zero cost
+    return {
+      fromKB: true,
+      kbResponse,
+      level: status.level,
+    }
   }
 
-  // OFFLINE — nimic nu merge
+  // ══ PAS 2: KB nu știe suficient → Întreabă Claude ══
+  if (status.level === "NOMINAL" || status.level === "DEGRADED") {
+    try {
+      const aiResponse = await params.aiCall()
+
+      // ══ PAS 3: Salvează cunoașterea nouă în KB ══
+      let savedToKB = false
+      if (params.extractKnowledge) {
+        try {
+          const knowledge = params.extractKnowledge(aiResponse)
+          if (knowledge && knowledge.length >= 30) {
+            await saveToKB(params.agentRole, params.query, knowledge)
+            savedToKB = true
+          }
+        } catch {} // fire-and-forget
+      }
+
+      return {
+        fromKB: false,
+        aiResponse,
+        level: status.level,
+        savedToKB,
+      }
+    } catch (e: any) {
+      // Claude a eșuat la runtime → fallback KB
+      invalidateProbe()
+      console.warn(`[KB-FIRST] Claude failed, serving from KB: ${e.message?.slice(0, 80)}`)
+    }
+  }
+
+  // ══ PAS 4: Claude down → servește ce are KB (prag mai scăzut) ══
+  if (kbResponse && kbResponse.confidence >= KB_ENRICH_THRESHOLD) {
+    return {
+      fromKB: true,
+      kbResponse,
+      level: status.level === "KB_ONLY" ? "KB_ONLY" : "DEGRADED",
+    }
+  }
+
+  // Nici KB nu are nimic relevant
+  const fallbackMsg = params.language === "en"
+    ? "I cannot provide a complete answer right now. Please try again shortly."
+    : "Momentan nu pot oferi un răspuns complet. Reîncercați în scurt timp."
+
   return {
     fromKB: true,
     kbResponse: {
-      content: params.language === "en"
-        ? "The system is temporarily unavailable. Please try again later."
-        : "Sistemul este temporar indisponibil. Reîncercați mai târziu.",
+      content: fallbackMsg,
       confidence: 0,
       source: "KB_TEMPLATE",
       entries: [],
-      degradedMode: true,
+      fromKB: true,
     },
-    level: "OFFLINE",
+    level: status.level === "KB_ONLY" || status.level === "OFFLINE" ? status.level : "KB_ONLY",
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// KB WRITE — salvare cunoaștere nouă de la Claude
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Salvează cunoaștere nouă în KB.
+ * Verifică duplicat înainte de salvare.
+ * Folosește learning funnel existent pentru distilare.
+ */
+async function saveToKB(
+  agentRole: string,
+  query: string,
+  knowledge: string
+): Promise<void> {
+  // Verificare duplicat — search semantic pe ce tocmai am generat
+  try {
+    const existing = await searchKB(agentRole, knowledge, 1)
+    if (existing.length > 0 && (existing[0].similarity || 0) >= 0.92) {
+      // Deja avem ceva foarte similar → nu duplicăm
+      return
+    }
+  } catch {}
+
+  // Salvăm ca KBBuffer → learning funnel-ul îl va valida și promova la PERMANENT
+  try {
+    await prisma.kBBuffer.create({
+      data: {
+        agentRole,
+        rawContent: knowledge.slice(0, 2000),
+        sessionRef: `kb-first:${new Date().toISOString()}`,
+        status: "PENDING",
+      },
+    })
+  } catch {}
+
+  // Fire-and-forget: alimentăm learning funnel
+  try {
+    const { learnFrom } = await import("@/lib/learning-hooks")
+    await learnFrom(
+      agentRole,
+      "CONVERSATION",
+      query.slice(0, 500),
+      knowledge.slice(0, 1500),
+      { source: "kb-first-pipeline" }
+    )
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BACKWARD COMPAT — păstrăm resilientAICall ca alias
+// ═══════════════════════════════════════════════════════════════
+
+/** @deprecated Folosește kbFirstPipeline în loc */
+export const resilientAICall = kbFirstPipeline
