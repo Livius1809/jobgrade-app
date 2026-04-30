@@ -205,16 +205,19 @@ Raspunde STRICT in acest format JSON:
     // Parsam raspunsul JSON cu sanitizare robustă
     let manualData: Partial<QualityManual> | null = parseAIJson(rawText)
 
-    // Retry dacă parsarea a eșuat
-    if (!manualData) {
+    // Retry dacă parsarea a eșuat SAU dacă sections e gol (fallback pierde arrays)
+    if (!manualData || !Array.isArray(manualData.sections) || manualData.sections.length === 0) {
       const retryResponse = await anthropic.messages.create({
         model: AI_MODEL,
         max_tokens: 8000,
-        messages: [{ role: "user", content: userPrompt + "\n\nATENȚIE: Returnează STRICT JSON valid, fără markdown code blocks, fără text suplimentar." }],
+        messages: [{ role: "user", content: userPrompt + `\n\nATENȚIE CRITICĂ: Răspunsul anterior ${!manualData ? "nu a fost JSON valid" : "a avut sections gol"}. Returnează STRICT JSON valid cu cel puțin 3 secțiuni în câmpul "sections". Fără markdown code blocks, fără text în afara JSON-ului. Prima linie trebuie să fie "{".` }],
         system: systemPrompt,
       })
       const retryRaw = retryResponse.content.find((b) => b.type === "text")?.text ?? ""
-      manualData = parseAIJson(retryRaw)
+      const retryData = parseAIJson<Partial<QualityManual>>(retryRaw)
+      if (retryData && Array.isArray(retryData.sections) && retryData.sections.length > 0) {
+        manualData = retryData
+      }
     }
 
     if (!manualData) {

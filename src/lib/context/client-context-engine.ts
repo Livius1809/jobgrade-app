@@ -79,6 +79,20 @@ export async function buildClientContext(
 ): Promise<ClientContext> {
   const p = prisma as any
 
+  // Guard: userId="system" (internal key auth) — skip user lookup
+  if (userId === "system") {
+    return {
+      identity: { userId: "system", tenantId, firstName: "System", lastName: "", role: "SUPER_ADMIN" },
+      company: { name: "System", values: [] },
+      recentActivity: { pagesVisited: [], featuresUsed: [], lastActive: null, totalInteractions: 0 },
+      conversationHistory: { recentQuestions: [], topicsDiscussed: [], lastConversation: null },
+      memory: { preferences: [], painPoints: [], opportunities: [], style: null, context: [] },
+      evaluationContext: { sessionsParticipated: 0, evaluationsSubmitted: 0, lastSessionDate: null },
+      blindSpots: [],
+      currentPage: null,
+    }
+  }
+
   // Run all queries in parallel
   const [
     user,
