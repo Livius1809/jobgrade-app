@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { getTenantData } from "@/lib/tenant-storage"
 import { z } from "zod"

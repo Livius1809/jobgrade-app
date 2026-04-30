@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { anthropic, AI_MODEL } from "@/lib/ai/client"
 import { getTenantData, setTenantData } from "@/lib/tenant-storage"

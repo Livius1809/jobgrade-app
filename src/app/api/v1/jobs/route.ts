@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { authOrKey } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { JobStatus, JobStructureType } from "@/generated/prisma"
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
+    const session = await authOrKey(req)
     if (!session) {
       return NextResponse.json({ message: "Neautorizat." }, { status: 401 })
     }
@@ -41,7 +41,7 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
+    const session = await authOrKey(req)
     if (!session) {
       return NextResponse.json({ message: "Neautorizat." }, { status: 401 })
     }

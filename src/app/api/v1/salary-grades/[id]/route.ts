@@ -2,7 +2,7 @@
  * PATCH /api/v1/salary-grades/[id] — Actualizare grad salarial
  */
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"

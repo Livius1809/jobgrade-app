@@ -3,7 +3,7 @@
  * POST /api/v1/salary-grades — Creează grade salariale (wizard sau bulk)
  */
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
