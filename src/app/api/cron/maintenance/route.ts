@@ -269,6 +269,32 @@ export async function GET(request: NextRequest) {
     results.ingestion = { processedJobs, processedChunks }
   }, 60000) // 60s timeout (ingestia poate fi lenta)
 
+  // 10. FULL-CHECK PLATFORMĂ (la fiecare 6h — QLA automat)
+  await withTimeout("fullCheck", async () => {
+    const lastCheck = await prisma.systemConfig.findUnique({ where: { key: "FULL_CHECK_LAST_RUN" } })
+    const lastCheckAge = lastCheck ? Date.now() - new Date(JSON.parse(lastCheck.value).timestamp).getTime() : Infinity
+    const SIX_HOURS = 6 * 3600000
+
+    if (lastCheckAge >= SIX_HOURS) {
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || "https://jobgrade.ro"
+      const res = await fetch(`${baseUrl}/api/v1/health/full-check`, {
+        method: "POST",
+        headers: { "x-internal-key": process.env.INTERNAL_API_KEY || "" },
+      })
+      const data = await res.json().catch(() => ({}))
+      results.fullCheck = {
+        totalChecks: data.totalChecks,
+        passed: data.passed,
+        failed: data.failed,
+        coverage: data.coverage,
+        escalated: data.escalated,
+      }
+      console.log(`[maintenance] Full-check: ${data.passed}/${data.totalChecks} pass, ${data.failed} fail${data.escalated ? " — ESCALAT" : ""}`)
+    } else {
+      results.fullCheck = { skipped: true, nextInMs: SIX_HOURS - lastCheckAge }
+    }
+  })
+
   // Salvam timestamp
   try {
     await prisma.systemConfig.upsert({
