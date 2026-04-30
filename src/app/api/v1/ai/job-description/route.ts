@@ -7,7 +7,8 @@ import { buildKBContext } from "@/lib/kb/inject"
 const schema = z.object({
   title: z.string().min(3),
   department: z.string().optional(),
-  rawText: z.string().optional(), // text extras din PDF/Word upload
+  rawText: z.string().optional(),
+  structureType: z.enum(["HUMAN", "AI", "MIXED"]).default("HUMAN"),
 })
 
 export async function POST(req: NextRequest) {
@@ -40,9 +41,16 @@ export async function POST(req: NextRequest) {
       } catch {}
     }
 
+    const structureContext = data.structureType === "AI"
+      ? `NATURA POSTULUI: AI (agent automat). Fișa de post devine AGENT CARD: funcții automate, inputuri/outputuri, SLA, erori acceptabile, nivel autonomie, fallback la om. NU include cerințe de studii/experiență umană. Include: AI Act Art.14 supraveghere umană, responsabilitate operator.`
+      : data.structureType === "MIXED"
+      ? `NATURA POSTULUI: MIXT (om + AI). Fișa de post e HIBRIDĂ: ce face omul, ce face AI-ul, interfața dintre ei (handoff), cine supervizează pe cine, % automatizare estimat. Include obligații AI Act pe componenta AI + legislația muncii pe componenta umană. Cost: salariu + taxe + licență AI + compute + integrare.`
+      : ""
+
     const systemPrompt = [
       "Ești expert în HR din România, specializat în redactarea fișelor de post și evaluarea posturilor.",
       "Fișa de post trebuie să conțină informație structurată pe 6 criterii de evaluare, chiar dacă o prezinți cursiv.",
+      structureContext,
       kbContext,
       companyContext,
     ].filter(Boolean).join("\n\n")

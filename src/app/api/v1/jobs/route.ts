@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { JobStatus } from "@/generated/prisma"
+import { JobStatus, JobStructureType } from "@/generated/prisma"
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,6 +34,7 @@ const schema = z.object({
   responsibilities: z.string().optional(),
   requirements: z.string().optional(),
   status: z.nativeEnum(JobStatus).default(JobStatus.DRAFT),
+  structureType: z.nativeEnum(JobStructureType).default(JobStructureType.HUMAN),
   aiAnalysis: z.any().optional(),
   aiAnalyzed: z.boolean().optional(),
 })
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
         responsibilities: data.responsibilities || null,
         requirements: data.requirements || null,
         status: data.status,
+        structureType: data.structureType,
         aiAnalysis: data.aiAnalysis || undefined,
         aiAnalyzed: data.aiAnalyzed || false,
       },

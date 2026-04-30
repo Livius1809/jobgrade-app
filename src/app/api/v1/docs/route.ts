@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
           select: { agentRole: true },
         })
 
-        const agents = new Set(entries.map((e: any) => e.agentRole))
+        const agents = new Set<string>(entries.map((e: any) => e.agentRole))
         docMap.set(title, {
           title,
           agents,

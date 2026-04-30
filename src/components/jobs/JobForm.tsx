@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { JobStatus } from "@/generated/prisma"
+import { JobStatus, JobStructureType } from "@/generated/prisma"
 
 // Sufixe/cuvinte cu gen explicit în titluri de post (RO)
 const GENDERED_PATTERNS = [
@@ -45,6 +45,7 @@ const schema = z.object({
   responsibilities: z.string().optional(),
   requirements: z.string().optional(),
   status: z.nativeEnum(JobStatus),
+  structureType: z.nativeEnum(JobStructureType).optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -98,6 +99,7 @@ export default function JobForm({
     resolver: zodResolver(schema),
     defaultValues: {
       status: JobStatus.DRAFT,
+      structureType: JobStructureType.HUMAN,
       ...defaultValues,
     },
   })
@@ -150,10 +152,11 @@ export default function JobForm({
     setError("")
 
     try {
+      const structType = watch("structureType")
       const res = await fetch("/api/v1/ai/job-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title, structureType: structType }),
       })
 
       const json = await res.json()
@@ -258,18 +261,49 @@ export default function JobForm({
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Status
-          </label>
-          <select
-            {...register("status")}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="DRAFT">Ciornă</option>
-            <option value="ACTIVE">Activ</option>
-            <option value="ARCHIVED">Arhivat</option>
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              {...register("status")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="DRAFT">Ciornă</option>
+              <option value="ACTIVE">Activ</option>
+              <option value="ARCHIVED">Arhivat</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Natura postului
+            </label>
+            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              {([
+                { value: "HUMAN", label: "Uman", color: "blue" },
+                { value: "AI", label: "AI", color: "purple" },
+                { value: "MIXED", label: "Mixt", color: "emerald" },
+              ] as const).map(opt => (
+                <label key={opt.value} className={`flex-1 text-center py-2 text-sm font-medium cursor-pointer transition-colors ${
+                  watch("structureType") === opt.value
+                    ? opt.color === "blue" ? "bg-blue-600 text-white"
+                      : opt.color === "purple" ? "bg-purple-600 text-white"
+                      : "bg-emerald-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}>
+                  <input type="radio" value={opt.value} {...register("structureType")} className="hidden" />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-[10px] text-gray-400">
+              {watch("structureType") === "HUMAN" ? "Post ocupat exclusiv de om"
+                : watch("structureType") === "AI" ? "Post ocupat de agent AI"
+                : "Post partajat om + AI"}
+            </p>
+          </div>
         </div>
       </div>
 

@@ -252,9 +252,10 @@ model Job {
   description      String?   @db.Text
   responsibilities String?   @db.Text
   requirements     String?   @db.Text
-  status           JobStatus @default(DRAFT)
-  isActive         Boolean   @default(true)
-  aiAnalyzed       Boolean   @default(false)
+  status           JobStatus        @default(DRAFT)
+  structureType    JobStructureType @default(HUMAN)
+  isActive         Boolean          @default(true)
+  aiAnalyzed       Boolean          @default(false)
   aiAnalysis       Json?
   createdBy        String    @default("")
   createdAt        DateTime  @default(now())
@@ -1161,6 +1162,12 @@ enum JobStatus {
   DRAFT
   ACTIVE
   ARCHIVED
+}
+
+enum JobStructureType {
+  HUMAN   // Post uman clasic
+  AI      // Post AI (agent)
+  MIXED   // Post mixt (om + AI)
 }
 
 enum SessionStatus {

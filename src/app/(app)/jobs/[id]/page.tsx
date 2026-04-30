@@ -80,6 +80,7 @@ export default async function EditJobPage({
           responsibilities: job.responsibilities ?? "",
           requirements: job.requirements ?? "",
           status: job.status,
+          structureType: (job as any).structureType ?? "HUMAN",
         }}
         jobId={job.id}
         existingAiAnalysis={job.aiAnalysis}

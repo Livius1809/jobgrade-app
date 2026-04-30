@@ -242,23 +242,24 @@ model Department {
 // ─────────────────────────────────────────
 
 model Job {
-  id               String    @id @default(cuid())
+  id               String           @id @default(cuid())
   tenantId         String
   departmentId     String?
   representativeId String?
   title            String
   code             String?
-  purpose          String?   @db.Text
-  description      String?   @db.Text
-  responsibilities String?   @db.Text
-  requirements     String?   @db.Text
-  status           JobStatus @default(DRAFT)
-  isActive         Boolean   @default(true)
-  aiAnalyzed       Boolean   @default(false)
+  purpose          String?          @db.Text
+  description      String?          @db.Text
+  responsibilities String?          @db.Text
+  requirements     String?          @db.Text
+  status           JobStatus        @default(DRAFT)
+  structureType    JobStructureType @default(HUMAN)
+  isActive         Boolean          @default(true)
+  aiAnalyzed       Boolean          @default(false)
   aiAnalysis       Json?
-  createdBy        String    @default("")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdBy        String           @default("")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   department     Department? @relation(fields: [departmentId], references: [id])
@@ -1161,6 +1162,12 @@ enum JobStatus {
   DRAFT
   ACTIVE
   ARCHIVED
+}
+
+enum JobStructureType {
+  HUMAN // Post uman clasic
+  AI // Post AI (agent)
+  MIXED // Post mixt (om + AI)
 }
 
 enum SessionStatus {
@@ -2598,7 +2605,7 @@ model AgentTask {
   title       String // rezumat scurt
   description String            @db.Text // detalii complete
   taskType    AgentTaskType
-  priority    AgentTaskPriority @default(MEDIUM)
+  priority    AgentTaskPriority @default(NECESAR)
 
   // Context
   objectiveId String? // legat de un OrganizationalObjective
@@ -2658,10 +2665,16 @@ enum AgentTaskType {
 }
 
 enum AgentTaskPriority {
-  CRITICAL // deadline <2h
-  HIGH // deadline <8h
-  MEDIUM // deadline <24h
-  LOW // deadline >24h sau fără deadline
+  IMPORTANT_URGENT // 1. Important și urgent — trebuie rezolvat ACUM
+  URGENT // 2. Urgent — presiune de timp, dar nu neapărat strategic
+  IMPORTANT // 3. Important — impact mare, dar fără presiune imediată
+  NECESAR // 4. Necesar — trebuie făcut, dar poate aștepta
+
+  // Legacy mapping (backwards compat — nu se mai folosesc la creare)
+  CRITICAL // → IMPORTANT_URGENT
+  HIGH // → URGENT
+  MEDIUM // → IMPORTANT
+  LOW // → NECESAR
 }
 
 enum AgentTaskStatus {
@@ -3896,4 +3909,80 @@ model AlignmentLog {
   @@index([agentRole, createdAt])
   @@index([level, result])
   @@map("alignment_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUPORT CLIENT — Ticketing + Rezolvare + Învățare
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model SupportTicket {
+  id        String @id @default(cuid())
+  tenantId  String // clientul B2B
+  createdBy String // userId care a creat ticketul
+
+  // Semnalare client (text brut, neinterpretat)
+  subject     String // titlu scurt
+  description String @db.Text // descrierea problemei
+
+  // Rafinare FW (după interogare suplimentară)
+  refinedDescription String? @db.Text // versiunea rafinată
+  affectedFlow       String? // fluxul afectat (vanzare/utilizare/plata/onboarding)
+
+  // Rutare
+  routedToAgent String? // agentul identificat cu atribuțiile potrivite
+  routedToDept  String? // departamentul
+  routedByCSA   Boolean @default(false) // CSA a făcut rutarea
+
+  // Rezolvare
+  status           SupportTicketStatus @default(NEW)
+  priority         AgentTaskPriority   @default(NECESAR)
+  resolutionTaskId String? // task-ul intern creat pentru rezolvare
+  resolution       String?             @db.Text // rezolvarea internă
+
+  // Răspuns client
+  clientResponse String?   @db.Text // răspunsul formulat pentru client (calibrat L2)
+  respondedAt    DateTime?
+  respondedBy    String? // agentul care a formulat răspunsul
+
+  // Satisfacție client
+  clientRating   Int? // 1-5
+  clientFeedback String?
+
+  // Învățare
+  distilled          Boolean @default(false) // s-a extras învățare?
+  learningArtifactId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([status, priority])
+  @@index([routedToAgent, status])
+  @@map("support_tickets")
+}
+
+enum SupportTicketStatus {
+  NEW // client tocmai a trimis
+  REFINING // FW rafinează cu clientul
+  ROUTED // CSA a rutat la agentul potrivit
+  IN_PROGRESS // se lucrează la rezolvare
+  RESOLVED // rezolvat intern, răspuns în curs
+  RESPONDED // răspuns trimis clientului
+  CLOSED // client a confirmat sau timeout
+  ESCALATED // escalat la nivel superior / Owner
+}
+
+// Partiție L2: secrete de serviciu (NU ajung la client-facing/profiler)
+model TradeSecret {
+  id          String   @id @default(cuid())
+  category    String // pricing-internal, algorithm, scoring-formula, strategy
+  content     String   @db.Text
+  accessLevel String   @default("INTERNAL_ONLY") // INTERNAL_ONLY | MANAGEMENT | OWNER
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([accessLevel])
+  @@map("trade_secrets")
 }

@@ -259,6 +259,7 @@ exports.Prisma.JobScalarFieldEnum = {
   responsibilities: 'responsibilities',
   requirements: 'requirements',
   status: 'status',
+  structureType: 'structureType',
   isActive: 'isActive',
   aiAnalyzed: 'aiAnalyzed',
   aiAnalysis: 'aiAnalysis',
@@ -1818,6 +1819,42 @@ exports.Prisma.AlignmentLogScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.SupportTicketScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  createdBy: 'createdBy',
+  subject: 'subject',
+  description: 'description',
+  refinedDescription: 'refinedDescription',
+  affectedFlow: 'affectedFlow',
+  routedToAgent: 'routedToAgent',
+  routedToDept: 'routedToDept',
+  routedByCSA: 'routedByCSA',
+  status: 'status',
+  priority: 'priority',
+  resolutionTaskId: 'resolutionTaskId',
+  resolution: 'resolution',
+  clientResponse: 'clientResponse',
+  respondedAt: 'respondedAt',
+  respondedBy: 'respondedBy',
+  clientRating: 'clientRating',
+  clientFeedback: 'clientFeedback',
+  distilled: 'distilled',
+  learningArtifactId: 'learningArtifactId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.TradeSecretScalarFieldEnum = {
+  id: 'id',
+  category: 'category',
+  content: 'content',
+  accessLevel: 'accessLevel',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1919,6 +1956,12 @@ exports.JobStatus = exports.$Enums.JobStatus = {
   DRAFT: 'DRAFT',
   ACTIVE: 'ACTIVE',
   ARCHIVED: 'ARCHIVED'
+};
+
+exports.JobStructureType = exports.$Enums.JobStructureType = {
+  HUMAN: 'HUMAN',
+  AI: 'AI',
+  MIXED: 'MIXED'
 };
 
 exports.SessionStatus = exports.$Enums.SessionStatus = {
@@ -2454,6 +2497,10 @@ exports.AgentTaskType = exports.$Enums.AgentTaskType = {
 };
 
 exports.AgentTaskPriority = exports.$Enums.AgentTaskPriority = {
+  IMPORTANT_URGENT: 'IMPORTANT_URGENT',
+  URGENT: 'URGENT',
+  IMPORTANT: 'IMPORTANT',
+  NECESAR: 'NECESAR',
   CRITICAL: 'CRITICAL',
   HIGH: 'HIGH',
   MEDIUM: 'MEDIUM',
@@ -2668,6 +2715,17 @@ exports.B2CJournalStatus = exports.$Enums.B2CJournalStatus = {
   SKIPPED: 'SKIPPED'
 };
 
+exports.SupportTicketStatus = exports.$Enums.SupportTicketStatus = {
+  NEW: 'NEW',
+  REFINING: 'REFINING',
+  ROUTED: 'ROUTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  RESPONDED: 'RESPONDED',
+  CLOSED: 'CLOSED',
+  ESCALATED: 'ESCALATED'
+};
+
 exports.Prisma.ModelName = {
   Tenant: 'Tenant',
   User: 'User',
@@ -2782,7 +2840,9 @@ exports.Prisma.ModelName = {
   ExecutionTelemetry: 'ExecutionTelemetry',
   LearningArtifact: 'LearningArtifact',
   AgentBudget: 'AgentBudget',
-  AlignmentLog: 'AlignmentLog'
+  AlignmentLog: 'AlignmentLog',
+  SupportTicket: 'SupportTicket',
+  TradeSecret: 'TradeSecret'
 };
 
 /**
