@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
-import { stripe, CREDIT_PACKAGES, SUBSCRIPTION } from "@/lib/stripe"
+import { stripe, CREDIT_PACKAGES, SUBSCRIPTIONS } from "@/lib/stripe"
 import { getAppUrl } from "@/lib/get-app-url"
-import { calculateServicePrice, LAYER_NAMES } from "@/lib/pricing"
+import { calculateServicePrice, LAYER_NAMES, detectTier, type SubscriptionTier } from "@/lib/pricing"
 
 const schema = z.object({
   type: z.enum(["credits", "subscription", "service"]),
@@ -78,14 +78,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ── Subscription checkout ──
+    // ── Subscription checkout (3 tier-uri) ──
     if (data.type === "subscription") {
+      // Detectăm tier-ul din poziții/angajați sau explicit din body
+      const tier: SubscriptionTier = (data as any).tier || detectTier(data.positions || 0, data.employees || 0)
+      const sub = SUBSCRIPTIONS[tier]
+
       const priceId = data.billing === "annual"
-        ? SUBSCRIPTION.annualPriceId
-        : SUBSCRIPTION.monthlyPriceId
+        ? sub.annualPriceId
+        : sub.monthlyPriceId
 
       if (!priceId) {
-        return NextResponse.json({ message: "Prețul abonamentului nu este configurat în Stripe." }, { status: 400 })
+        return NextResponse.json({ message: `Prețul abonamentului ${sub.label} nu este configurat în Stripe.` }, { status: 400 })
       }
 
       const checkoutSession = await stripe.checkout.sessions.create({
@@ -93,9 +97,9 @@ export async function POST(req: NextRequest) {
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "subscription",
-        success_url: `${APP_URL}/settings/billing?success=subscription`,
+        success_url: `${APP_URL}/settings/billing?success=subscription&tier=${tier}`,
         cancel_url: `${APP_URL}/settings/billing?canceled=1`,
-        metadata: { tenantId, type: "subscription", billing: data.billing || "monthly" },
+        metadata: { tenantId, type: "subscription", tier, billing: data.billing || "monthly" },
       })
 
       return NextResponse.json({ url: checkoutSession.url })
