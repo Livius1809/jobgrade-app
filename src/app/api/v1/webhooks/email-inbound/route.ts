@@ -181,12 +181,41 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // Resend trimite eventuri de tip "email.received" pentru inbound
-    const email: InboundEmail = body.data || body
+    // Resend webhook: body.type === "email.received", body.data contine metadata
+    // Body-ul emailului NU vine direct — trebuie citit prin API
+    const eventType = body.type
+    if (eventType && eventType !== "email.received") {
+      return NextResponse.json({ status: "ignored", reason: `event: ${eventType}` })
+    }
 
-    const fromEmail = email.from?.replace(/.*</, "").replace(/>.*/, "").trim().toLowerCase()
-    const emailText = email.text || ""
-    const subject = email.subject || "(fără subiect)"
+    const eventData = body.data || body
+    const emailId = eventData.email_id || eventData.id
+
+    let fromEmail = ""
+    let emailText = ""
+    let subject = ""
+
+    if (emailId && process.env.RESEND_API_KEY) {
+      // Citește conținutul complet prin API-ul Resend
+      try {
+        const emailRes = await fetch(`https://api.resend.com/emails/${emailId}`, {
+          headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+        })
+        if (emailRes.ok) {
+          const emailData = await emailRes.json()
+          fromEmail = (emailData.from || "").replace(/.*</, "").replace(/>.*/, "").trim().toLowerCase()
+          emailText = emailData.text || emailData.html?.replace(/<[^>]+>/g, " ") || ""
+          subject = emailData.subject || "(fără subiect)"
+        }
+      } catch {}
+    }
+
+    // Fallback: date direct din webhook (dacă Resend le include)
+    if (!fromEmail) {
+      fromEmail = (eventData.from || "").replace(/.*</, "").replace(/>.*/, "").trim().toLowerCase()
+      emailText = eventData.text || ""
+      subject = eventData.subject || "(fără subiect)"
+    }
 
     if (!fromEmail || !emailText.trim()) {
       return NextResponse.json({ status: "ignored", reason: "empty" })
