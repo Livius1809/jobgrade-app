@@ -264,6 +264,7 @@ export async function extractKnowledgeFromChunk(
 ): Promise<IngestedEntry[]> {
   const client = new Anthropic()
 
+  const startTime = Date.now()
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
@@ -276,6 +277,24 @@ FRAGMENT ${chunkIndex + 1}/${totalChunks}:
 ${chunk}`,
     }],
   })
+
+  // Logăm apelul în telemetry (vizibil în dashboard Owner)
+  try {
+    const { logExecutionTelemetry } = await import("@/lib/agents/execution-telemetry")
+    const tokensIn = response.usage?.input_tokens || 0
+    const tokensOut = response.usage?.output_tokens || 0
+    await logExecutionTelemetry({
+      agentRole: "OWNER_INGEST",
+      taskType: "KB_INGEST",
+      modelUsed: "claude-sonnet-4-20250514",
+      tokensInput: tokensIn,
+      tokensOutput: tokensOut,
+      estimatedCostUSD: (tokensIn * 0.003 + tokensOut * 0.015) / 1000,
+      kbHit: false,
+      thresholdPassed: true,
+      durationMs: Date.now() - startTime,
+    })
+  } catch {}
 
   const text = response.content[0].type === "text" ? response.content[0].text : ""
 

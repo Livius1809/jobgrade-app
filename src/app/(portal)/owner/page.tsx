@@ -1181,6 +1181,8 @@ async function ClaudeCallsBreakdownSection() {
     // Cold start / KB
     "SELF_INTERVIEW": "Cold start KB",
     "cold-start": "Cold start KB",
+    // Ingestie documente Owner (PDF/text)
+    "KB_INGEST": "Ingestie documente (Owner)",
   }
 
   const categories: Record<string, { calls: number; cost: number; tokensIn: number; tokensOut: number; agents: Set<string>; models: Set<string> }> = {}
@@ -1227,6 +1229,7 @@ async function ClaudeCallsBreakdownSection() {
     "Chat client-facing": "bg-teal-400",
     "Alignment check": "bg-violet-400",
     "Cold start KB": "bg-blue-400",
+    "Ingestie documente (Owner)": "bg-rose-400",
     "Altele": "bg-slate-400",
   }
 
