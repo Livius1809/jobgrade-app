@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: `Prețul abonamentului ${sub.label} nu este configurat în Stripe.` }, { status: 400 })
       }
 
-      // Monthly = subscription (recurring), Annual = payment (one-off)
+      // Monthly = subscription (recurring), Annual = payment (one-off, reînnoire manuală)
       const isRecurring = data.billing !== "annual"
       const checkoutSession = await stripe.checkout.sessions.create({
         customer: customerId,
