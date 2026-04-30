@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import PortalClientSection from "@/components/portal/PortalClientSection"
 import PortalC1Pipeline from "@/components/portal/PortalC1Pipeline"
+import PortalC2Pipeline from "@/components/portal/PortalC2Pipeline"
 import { needsRoleOnboarding } from "@/lib/onboarding-check"
 import { getUserPermissions } from "@/lib/permissions"
 
@@ -34,8 +35,15 @@ async function getClientStage(tenantId: string): Promise<{
   latestSessionStatus: string | null
   evaluatedJobCount: number
   rankedJobCount: number
+  // C2 pipeline
+  employeeCount: number
+  salaryGradeCount: number
+  hasPayGapReport: boolean
+  payGapYear: number | null
+  hasJointAssessment: boolean
+  complianceDocs: any[]
 }> {
-  const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits, jobsWithDesc, departmentCount, latestSession, evaluatedJobs] = await Promise.all([
+  const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits, jobsWithDesc, departmentCount, latestSession, evaluatedJobs, employeeCount, salaryGradeCount, latestPayGap, resolvedJPA, complianceDocs] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId }, select: { cui: true, industry: true, caenName: true, address: true, mission: true, vision: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }),
@@ -48,6 +56,12 @@ async function getClientStage(tenantId: string): Promise<{
     prisma.department.count({ where: { tenantId, isActive: true } }).catch(() => 0),
     prisma.evaluationSession.findFirst({ where: { tenantId }, orderBy: { createdAt: "desc" as const }, select: { status: true } }).catch(() => null),
     prisma.jobResult.count({ where: { session: { tenantId } } }).catch(() => 0),
+    // C2 pipeline data
+    (prisma as any).employeeSalaryRecord?.count({ where: { tenantId } }).catch(() => 0),
+    prisma.salaryGrade.count({ where: { tenantId } }).catch(() => 0),
+    prisma.payGapReport.findFirst({ where: { tenantId }, orderBy: { reportYear: "desc" as const }, select: { reportYear: true } }).catch(() => null),
+    (prisma as any).jointPayAssessment?.findFirst({ where: { tenantId, status: "RESOLVED" } }).catch(() => null),
+    (prisma as any).systemConfig?.findMany({ where: { key: { startsWith: `TENANT_${tenantId}_COMPLIANCE_DOC_` } } }).catch(() => []),
   ])
 
   let stage: ClientStage = "NEW"
@@ -75,7 +89,14 @@ async function getClientStage(tenantId: string): Promise<{
     departmentCount,
     latestSessionStatus: (latestSession as any)?.status || null,
     evaluatedJobCount: evaluatedJobs,
-    rankedJobCount: evaluatedJobs, // ranked = evaluated în modelul actual
+    rankedJobCount: evaluatedJobs,
+    // C2 pipeline
+    employeeCount: Number(employeeCount || 0),
+    salaryGradeCount: Number(salaryGradeCount || 0),
+    hasPayGapReport: !!latestPayGap,
+    payGapYear: (latestPayGap as any)?.reportYear || null,
+    hasJointAssessment: !!resolvedJPA,
+    complianceDocs: (complianceDocs as any[]) || [],
   }
 }
 
@@ -213,6 +234,27 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           evaluatedJobCount={client.evaluatedJobCount}
           rankedJobCount={client.rankedJobCount}
           isValidated={client.isValidated}
+        />
+      )}
+
+      {/* ═══ Pipeline C2 — Conformitate ═══ */}
+      {purchasedLayer >= 2 && (
+        <PortalC2Pipeline
+          c1Complete={client.isValidated || client.evaluatedJobCount > 0}
+          jobCount={client.jobCount}
+          hasSalaryData={client.employeeCount > 0}
+          employeeCount={client.employeeCount}
+          hasSalaryGrades={client.salaryGradeCount > 0}
+          salaryGradeCount={client.salaryGradeCount}
+          hasPayGapReport={client.hasPayGapReport}
+          payGapYear={client.payGapYear}
+          hasJointAssessment={client.hasJointAssessment}
+          complianceEventsTotal={7}
+          complianceOverdue={0}
+          complianceCompleted={0}
+          uploadedDocsCount={client.complianceDocs.length}
+          hasROI={client.complianceDocs.some((d: any) => d.key?.includes("_ROI_"))}
+          hasCCM={client.complianceDocs.some((d: any) => d.key?.includes("_CCM_"))}
         />
       )}
 
