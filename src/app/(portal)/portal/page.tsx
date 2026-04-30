@@ -5,6 +5,7 @@ import Link from "next/link"
 import PortalClientSection from "@/components/portal/PortalClientSection"
 import PortalC1Pipeline from "@/components/portal/PortalC1Pipeline"
 import PortalC2Pipeline from "@/components/portal/PortalC2Pipeline"
+import PortalC3Pipeline from "@/components/portal/PortalC3Pipeline"
 import { needsRoleOnboarding } from "@/lib/onboarding-check"
 import { getUserPermissions } from "@/lib/permissions"
 
@@ -42,8 +43,14 @@ async function getClientStage(tenantId: string): Promise<{
   payGapYear: number | null
   hasJointAssessment: boolean
   complianceDocs: any[]
+  // C3 pipeline
+  kpiCount: number
+  jobsWithKpi: number
+  benchmarkCount: number
+  sociogramCount: number
+  teamCount: number
 }> {
-  const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits, jobsWithDesc, departmentCount, latestSession, evaluatedJobs, employeeCount, salaryGradeCount, latestPayGap, resolvedJPA, complianceDocs] = await Promise.all([
+  const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits, jobsWithDesc, departmentCount, latestSession, evaluatedJobs, employeeCount, salaryGradeCount, latestPayGap, resolvedJPA, complianceDocs, kpiCount, jobsWithKpi, benchmarkCount, sociogramCount, teamCount] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId }, select: { cui: true, industry: true, caenName: true, address: true, mission: true, vision: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }),
@@ -62,6 +69,12 @@ async function getClientStage(tenantId: string): Promise<{
     prisma.payGapReport.findFirst({ where: { tenantId }, orderBy: { reportYear: "desc" as const }, select: { reportYear: true } }).catch(() => null),
     (prisma as any).jointPayAssessment?.findFirst({ where: { tenantId, status: "RESOLVED" } }).catch(() => null),
     (prisma as any).systemConfig?.findMany({ where: { key: { startsWith: `TENANT_${tenantId}_COMPLIANCE_DOC_` } } }).catch(() => []),
+    // C3 pipeline data
+    prisma.kpiDefinition.count({ where: { tenantId } }).catch(() => 0),
+    prisma.kpiDefinition.groupBy({ by: ["jobId"], where: { tenantId } }).then((g: any[]) => g.length).catch(() => 0),
+    (prisma as any).salaryBenchmark?.count({ where: { country: "RO" } }).catch(() => 0),
+    (prisma as any).sociogramSession?.count({ where: { tenantId } }).catch(() => 0),
+    prisma.department.count({ where: { tenantId, isActive: true } }).catch(() => 0),
   ])
 
   let stage: ClientStage = "NEW"
@@ -97,6 +110,12 @@ async function getClientStage(tenantId: string): Promise<{
     payGapYear: (latestPayGap as any)?.reportYear || null,
     hasJointAssessment: !!resolvedJPA,
     complianceDocs: (complianceDocs as any[]) || [],
+    // C3 pipeline
+    kpiCount: Number(kpiCount || 0),
+    jobsWithKpi: Number(jobsWithKpi || 0),
+    benchmarkCount: Number(benchmarkCount || 0),
+    sociogramCount: Number(sociogramCount || 0),
+    teamCount: Number(teamCount || 0),
   }
 }
 
@@ -255,6 +274,29 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           uploadedDocsCount={client.complianceDocs.length}
           hasROI={client.complianceDocs.some((d: any) => d.key?.includes("_ROI_"))}
           hasCCM={client.complianceDocs.some((d: any) => d.key?.includes("_CCM_"))}
+        />
+      )}
+
+      {/* ═══ Pipeline C3 — Competitivitate ═══ */}
+      {purchasedLayer >= 3 && (
+        <PortalC3Pipeline
+          c1c2Complete={client.isValidated || (client.evaluatedJobCount > 0 && client.salaryGradeCount > 0)}
+          jobCount={client.jobCount}
+          hasSalaryGrades={client.salaryGradeCount > 0}
+          kpiCount={client.kpiCount}
+          jobsWithKpi={client.jobsWithKpi}
+          hasBenchmarkData={client.benchmarkCount > 0}
+          hasVariableComp={false}
+          evaluatedEmployees={0}
+          totalEmployees={client.employeeCount}
+          hasPsychometricResults={false}
+          hasSociogram={client.sociogramCount > 0}
+          teamCount={client.teamCount}
+          teamsWithSociogram={client.sociogramCount}
+          hasMatchingActive={false}
+          processMapCount={0}
+          hasQualityManual={false}
+          sopCount={0}
         />
       )}
 
