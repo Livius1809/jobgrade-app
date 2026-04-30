@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import PortalClientSection from "@/components/portal/PortalClientSection"
+import PortalC1Pipeline from "@/components/portal/PortalC1Pipeline"
 import { needsRoleOnboarding } from "@/lib/onboarding-check"
 import { getUserPermissions } from "@/lib/permissions"
 
@@ -27,8 +28,14 @@ async function getClientStage(tenantId: string): Promise<{
   hasPayroll: boolean
   isValidated: boolean
   creditBalance: number
+  // C1 pipeline
+  jobsWithDescription: number
+  departmentCount: number
+  latestSessionStatus: string | null
+  evaluatedJobCount: number
+  rankedJobCount: number
 }> {
-  const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits] = await Promise.all([
+  const [tenant, profile, jobCount, sessionCount, payrollCount, validatedSession, credits, jobsWithDesc, departmentCount, latestSession, evaluatedJobs] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
     prisma.companyProfile.findUnique({ where: { tenantId }, select: { cui: true, industry: true, caenName: true, address: true, mission: true, vision: true } }),
     prisma.job.count({ where: { tenantId, status: "ACTIVE" } }),
@@ -36,6 +43,11 @@ async function getClientStage(tenantId: string): Promise<{
     (prisma as any).payrollEntry.count({ where: { tenantId } }).catch(() => 0),
     prisma.evaluationSession.findFirst({ where: { tenantId, status: "VALIDATED" as any } }).catch(() => null),
     (prisma as any).creditTransaction?.aggregate({ where: { tenantId }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+    // C1 pipeline data
+    prisma.job.count({ where: { tenantId, status: "ACTIVE", purpose: { not: null } } }).catch(() => 0),
+    prisma.department.count({ where: { tenantId, isActive: true } }).catch(() => 0),
+    prisma.evaluationSession.findFirst({ where: { tenantId }, orderBy: { createdAt: "desc" as const }, select: { status: true } }).catch(() => null),
+    prisma.jobResult.count({ where: { session: { tenantId } } }).catch(() => 0),
   ])
 
   let stage: ClientStage = "NEW"
@@ -58,6 +70,12 @@ async function getClientStage(tenantId: string): Promise<{
     hasPayroll: payrollCount > 0,
     isValidated: !!validatedSession,
     creditBalance: Number(credits?._sum?.amount || 0),
+    // C1 pipeline
+    jobsWithDescription: jobsWithDesc,
+    departmentCount,
+    latestSessionStatus: (latestSession as any)?.status || null,
+    evaluatedJobCount: evaluatedJobs,
+    rankedJobCount: evaluatedJobs, // ranked = evaluated în modelul actual
   }
 }
 
@@ -181,6 +199,21 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
             <p className="text-xs text-emerald-600">{creditsAmount ? `+${Number(creditsAmount).toLocaleString("ro-RO")} credite disponibile.` : "Creditele sunt disponibile în cont."}</p>
           </div>
         </div>
+      )}
+
+      {/* ═══ Pipeline C1 — Organizare internă ═══ */}
+      {purchasedLayer > 0 && (
+        <PortalC1Pipeline
+          jobCount={client.jobCount}
+          jobsWithDescription={client.jobsWithDescription}
+          statFunctiiExists={client.departmentCount >= 2}
+          departmentCount={client.departmentCount}
+          sessionCount={client.sessionCount}
+          sessionStatus={client.latestSessionStatus}
+          evaluatedJobCount={client.evaluatedJobCount}
+          rankedJobCount={client.rankedJobCount}
+          isValidated={client.isValidated}
+        />
       )}
 
       {/* ═══ Toate secțiunile client (state partajat pentru panouri laterale) ═══ */}
