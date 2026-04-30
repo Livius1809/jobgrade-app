@@ -42,7 +42,7 @@ const THRESHOLDS = {
     activityWindowD: 7,
   },
   TACTICAL: {
-    cycleWindowH: 24,
+    cycleWindowH: 48,
     activityWindowD: 7,
   },
   OPERATIONAL: {

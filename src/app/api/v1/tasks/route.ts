@@ -378,7 +378,7 @@ export async function PATCH(req: NextRequest) {
       },
     },
     cancel: {
-      from: ["ASSIGNED", "ACCEPTED", "IN_PROGRESS"],
+      from: ["ASSIGNED", "ACCEPTED", "IN_PROGRESS", "BLOCKED"],
       data: { status: "CANCELLED" },
     },
     review: {
