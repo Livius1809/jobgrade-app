@@ -19,17 +19,42 @@ export const stripe = new Proxy({} as Stripe, {
   },
 })
 
-// ── Abonament (subscription lunar/anual) ──
-export const SUBSCRIPTION = {
-  id: "subscription",
-  label: "Abonament JobGrade",
-  description: "Acces portal, dashboard cu diagnostic, MVV draft, profil sectorial, consultant HR familiarizare (135 min/lună)",
-  monthlyPriceId: process.env.STRIPE_PRICE_SUBSCRIPTION_MONTHLY || "",
-  annualPriceId: process.env.STRIPE_PRICE_SUBSCRIPTION_ANNUAL || "",
-  monthlyPrice: 399,     // RON/lună
-  annualPrice: 3_990,    // RON/an (17% discount)
-  currency: "RON",
-}
+// ── Abonamente per tier ──
+export const SUBSCRIPTIONS = {
+  ESSENTIALS: {
+    id: "essentials",
+    label: "Essentials",
+    description: "Firmă mică (1-50 ang.) — 1 operator, 90 min chat gratuit, suport standard",
+    monthlyPriceId: process.env.STRIPE_PRICE_ESSENTIALS_MONTHLY || "",
+    annualPriceId: process.env.STRIPE_PRICE_ESSENTIALS_ANNUAL || "",
+    monthlyPrice: 299,
+    annualPrice: 2_990,
+    currency: "RON",
+  },
+  BUSINESS: {
+    id: "business",
+    label: "Business",
+    description: "Firmă medie (51-200 ang.) — 3 operatori, 150 min chat gratuit, suport prioritar",
+    monthlyPriceId: process.env.STRIPE_PRICE_BUSINESS_MONTHLY || "",
+    annualPriceId: process.env.STRIPE_PRICE_BUSINESS_ANNUAL || "",
+    monthlyPrice: 599,
+    annualPrice: 5_990,
+    currency: "RON",
+  },
+  ENTERPRISE: {
+    id: "enterprise",
+    label: "Enterprise",
+    description: "Firmă mare (200+ ang.) — 5+ operatori, 250 min chat gratuit, account manager dedicat",
+    monthlyPriceId: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY || "",
+    annualPriceId: process.env.STRIPE_PRICE_ENTERPRISE_ANNUAL || "",
+    monthlyPrice: 999,
+    annualPrice: 9_990,
+    currency: "RON",
+  },
+} as const
+
+// Backward compat — referință la tier default
+export const SUBSCRIPTION = SUBSCRIPTIONS.ESSENTIALS
 
 // ── Pachete credite (one-time payment) ──
 export interface CreditPackage {
