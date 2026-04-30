@@ -17,26 +17,105 @@ export const dynamic = "force-dynamic"
 
 // Mapare agenți → card de business (C1-C4) + cross-business
 const AGENT_CARD_MAP: Record<string, string> = {
-  // C1 — Organizare
+  // C1 — Organizare (fișe post, evaluare, ierarhizare)
   HR_COUNSELOR: "C1", JE_ENGINE: "C1", MEDIATOR: "C1",
-  // C2 — Conformitate
+  DOAS: "C1",       // Director Operațiuni — structură organizațională
+  DOA: "C1",        // Director Organizare — organigrame, stat funcții
+  PSE: "C1",        // Psiholog Evaluare — baterii psihometrice
+  PPA: "C1",        // Psiholog Psihometrician — instrumente profilare
+
+  // C2 — Conformitate (grilă salarială, pay gap, legislație)
   CJA: "C2", LEGAL: "C2",
-  // C3 — Competitivitate
+  CAA: "C2",        // Compliance & Audit Agent
+  DPO: "C2",        // Data Protection Officer
+  RPA_FIN: "C2",    // Raportare Financiară — conformitate fiscală
+  COAFin: "C2",     // Cost Optimization — buget/conformitate
+  CCO: "C2",        // Chief Compliance Officer
+
+  // C3 — Competitivitate (KPI, benchmark, sociogramă, procese)
   CIA: "C3", CCIA: "C3", PMA: "C3", DMA: "C3",
-  // C4 — Dezvoltare
+  BDA: "C3",        // Business Development Agent
+  RDA: "C3",        // Research & Development Agent
+  SCA: "C3",        // Supply Chain Agent — procese
+  PCM: "C3",        // Process Continuous Improvement
+  PCA: "C3",        // Process Control Agent
+  BCA: "C3",        // Business Continuity Agent
+  FPA: "C3",        // Financial Planning Agent
+
+  // C4 — Dezvoltare (cultură, 3C, ROI, intervenții)
   COCSA: "C4", PSYCHOLINGUIST: "C4", SAFETY_MONITOR: "C4",
+  ACEA: "C4",       // Adaptive Culture Evolution Agent
+  EVOLUTION_ENGINE: "C4", // Motor evoluție
+  ACA: "C4",        // Agent Calibrare Adaptivă
+  SOC: "C4",        // Sociolog Organizațional
+  GDA: "C4",        // Growth & Development Agent
+  NSA: "C4",        // Neuro-Science Agent
+
   // Management / Cross-business
   COG: "MANAGEMENT", COA: "MANAGEMENT", CFO: "MANAGEMENT",
+  PPMO: "MANAGEMENT",  // Project Portfolio Management
+  STA: "MANAGEMENT",   // Strategic Agent
+  OWNER: "MANAGEMENT", // Owner direct
+  "COG|PMA": "MANAGEMENT",
+
   // Marketing & Vânzări
   MKA: "MARKETING", CMA: "MARKETING", CWA: "MARKETING",
+  SMMA: "MARKETING",   // Social Media Marketing Agent
+  CSEO: "MARKETING",   // SEO Agent
+  EMAS: "MARKETING",   // Email Marketing Agent
+  DMM: "MARKETING",    // Digital Marketing Manager
+  MGA: "MARKETING",    // Marketing Growth Agent
+  PMP_B2B: "MARKETING", // Product Marketing B2B
+  "SOA|CWA": "MARKETING",
+
   // Client-facing
   SOA: "CLIENT", CSSA: "CLIENT", CSA: "CLIENT",
+  CSM: "CLIENT",       // Customer Success Manager
+  "Support Lead": "CLIENT",
+  "CDIA|CSA": "CLIENT",
+  "CSA|CDIA": "CLIENT",
+  "CSA|COG": "CLIENT",
+
   // B2C
   CALAUZA: "B2C", PROFILER: "B2C", CAREER_COUNSELOR: "B2C",
-  // Suport
+  DVB2C: "B2C",       // Development B2C
+  PMP_B2C: "B2C",     // Product Marketing B2C
+  SEBC: "B2C",        // Service Excellence B2C
+
+  // Produs & Dezvoltare
+  EMA: "PRODUCT",     // Engineering Manager Agent
+  DVB2B: "PRODUCT",   // Development B2B
+  DTE: "PRODUCT",     // Dev Team Engineering
+  REVOPS: "PRODUCT",  // Revenue Operations
+  "Technical Writer": "PRODUCT",
+  PMRA: "PRODUCT",    // Product Manager Release Agent
+  DEA: "PRODUCT",     // Developer Experience Agent
+
+  // Quality Assurance
   QLA: "QUALITY", SQA: "QUALITY", QAA: "QUALITY",
-  // Infrastructură
+
+  // Infrastructură & Securitate
   TDA: "INFRA", SA: "INFRA", SVHA: "INFRA", COSO: "INFRA",
+  DPA: "INFRA",       // DevOps / Platform Agent
+  ISA: "INFRA",       // Information Security Agent
+  MOA: "INFRA",       // Monitoring & Alerting
+  IRA: "INFRA",       // Incident Response Agent
+  // MDA apare și ca Maintenance Dev Agent — mapat la DATA (prioritar)
+  FDA: "INFRA",       // Full-stack Dev Agent
+  "DevOps/Ops": "INFRA",
+  "DATA_ARCHITECT": "INFRA",
+  "BDA|TDA": "INFRA",
+  "CFO|DDA": "INFRA",
+
+  // Data & Analytics
+  CDIA: "DATA",       // Chief Data & Intelligence Agent
+  DDA: "DATA",        // Data & Decisions Agent
+  MAA: "DATA",        // Machine Analytics Agent
+  PTA: "DATA",        // Predictive & Trends Agent
+  MDA: "DATA",        // Market Data Agent (alias — context decide)
+
+  // System
+  SYSTEM: "SYSTEM",
 }
 
 // Acoperire target per card (câte entries = 100%)
@@ -49,10 +128,12 @@ const COVERAGE_TARGETS: Record<string, number> = {
   MARKETING: 400,
   CLIENT: 600,
   B2C: 500,
+  PRODUCT: 400,
   QUALITY: 300,
-  INFRA: 200,
-  METHODOLOGY: 1000,
-  LEGISLATION: 800,
+  INFRA: 300,
+  DATA: 300,
+  SYSTEM: 100,
+  OTHER: 200,
 }
 
 export async function GET() {
@@ -221,16 +302,19 @@ export async function GET() {
 
     // Legendă
     legend: {
-      C1: "Organizare internă (fișe post, evaluare, ierarhizare)",
-      C2: "Conformitate (grilă salarială, pay gap, legislație)",
-      C3: "Competitivitate (KPI, benchmark, sociogramă, procese)",
-      C4: "Dezvoltare (cultură, 3C, ROI, intervenții)",
-      MANAGEMENT: "Strategie și coordonare organism",
-      MARKETING: "Marketing, comunicare, website",
-      CLIENT: "Interacțiune directă cu clientul",
-      B2C: "Dezvoltare personală (călăuze, profiler)",
-      QUALITY: "Testare, asigurare calitate",
-      INFRA: "Infrastructură, securitate, monitorizare",
+      C1: "Organizare internă (fișe post, evaluare, ierarhizare, psihometrie)",
+      C2: "Conformitate (grilă salarială, pay gap, legislație, audit, DPO)",
+      C3: "Competitivitate (KPI, benchmark, sociogramă, procese, business dev)",
+      C4: "Dezvoltare (cultură, 3C, ROI, intervenții, neuro, evoluție)",
+      MANAGEMENT: "Strategie, coordonare organism, portfolio, owner",
+      MARKETING: "Marketing digital, SEO, email, social media, growth",
+      CLIENT: "Interacțiune directă cu clientul (sales, success, support)",
+      B2C: "Dezvoltare personală (călăuze, profiler, carieră)",
+      PRODUCT: "Produs și dezvoltare (engineering, releases, DevExp)",
+      QUALITY: "Testare, asigurare calitate, quality gates",
+      INFRA: "Infrastructură, securitate, monitoring, incident response",
+      DATA: "Date și analiză (intelligence, predictive, market data)",
+      SYSTEM: "Procese interne sistem (cron, migrări, seeds)",
       maturityLevels: "EMBRIONAR → INCEPUT → INTERMEDIAR → AVANSAT → AUTONOM",
     },
   })
