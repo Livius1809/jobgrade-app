@@ -18,7 +18,7 @@ export default async function AgentsReportPage() {
 
   let pipeline = { total: 0, totalWeek: 0, completed: 0, completedWeek: 0, yesterdayTotal: 0, yesterdayCompleted: 0, prevWeekTotal: 0, prevWeekCompleted: 0, cumulativeTotal: 0, cumulativeCompleted: 0, inProgress: 0, postponed: 0, escalated: 0, claudeCalls: 0, claudeCallsYesterday: 0, claudeCallsWeek: 0, costToday: 0, costWeek: 0, byDept: [] as any[] }
   let diagnosis = { onTime: 0, postponed: 0, ownerDependent: 0, reasons: [] as any[] }
-  let learning = { total: 0, prevTotal: 0, totalKB: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromSeed: 0, fromExternal: 0 }
+  let learning = { total: 0, prevTotal: 0, totalKB: 0, fromInternal: 0, fromClients: 0, fromClaude: 0, fromSeed: 0, fromExternal: 0, todayKB: 0, yesterdayKB: 0 }
   let objectives = [] as any[]
   let agents = [] as any[]
 
@@ -109,7 +109,7 @@ export default async function AgentsReportPage() {
       // Task-uri cu termen depășit — exclude COMPLETED, FAILED, CANCELLED
       p.agentTask.findMany({
         where: { deadlineAt: { lt: now }, status: { notIn: ["COMPLETED", "FAILED", "CANCELLED"] } },
-        select: { title: true, assignedTo: true, assignedBy: true, deadlineAt: true, status: true, blockerDescription: true },
+        select: { title: true, assignedTo: true, assignedBy: true, deadlineAt: true, status: true, blockerDescription: true, blockerType: true, failureReason: true, result: true, tags: true },
         orderBy: { deadlineAt: "asc" },
         take: 30,
       }).catch(() => []),
@@ -159,15 +159,27 @@ export default async function AgentsReportPage() {
         deadline: t.deadlineAt ? new Date(t.deadlineAt).toLocaleDateString("ro-RO") : "—",
         dependsOn: t.blockerAgentRole === "OWNER" ? "conducere" : t.blockerAgentRole || "—",
       })),
-      overdue: filteredOverdue.map((t: any) => ({
-        task: t.title?.slice(0, 60),
-        agent: t.assignedTo,
-        assignedBy: t.assignedBy === "OWNER" ? "conducere" : t.assignedBy,
-        deadline: new Date(t.deadlineAt).toLocaleDateString("ro-RO"),
-        daysOverdue: Math.ceil((now.getTime() - new Date(t.deadlineAt).getTime()) / (24 * 60 * 60 * 1000)),
-        status: t.status === "BLOCKED" ? "amânat" : t.status === "ASSIGNED" ? "alocat" : t.status === "IN_PROGRESS" ? "în lucru" : t.status,
-        reason: cleanText(t.blockerDescription?.slice(0, 60) || "—"),
-      })),
+      overdue: filteredOverdue.map((t: any) => {
+        const days = Math.ceil((now.getTime() - new Date(t.deadlineAt).getTime()) / (24 * 60 * 60 * 1000))
+        // Cauza depășirii: blocker > failure > status contextual
+        const cause = t.blockerDescription
+          ? cleanText(t.blockerDescription.slice(0, 120))
+          : t.blockerType === "WAITING_INPUT" ? "Așteaptă date de intrare"
+          : t.blockerType === "WAITING_DEPENDENCY" ? "Depinde de alt task"
+          : t.status === "BLOCKED" ? "Blocat — cauză nespecificată"
+          : t.status === "ASSIGNED" ? "Neacceptat de agent — posibil ignorat"
+          : t.status === "IN_PROGRESS" ? `În lucru de ${days} zile peste termen`
+          : "Cauză neidentificată"
+        return {
+          task: t.title?.slice(0, 80),
+          agent: t.assignedTo,
+          assignedBy: t.assignedBy === "OWNER" ? "conducere" : t.assignedBy,
+          deadline: new Date(t.deadlineAt).toLocaleDateString("ro-RO"),
+          daysOverdue: days,
+          status: t.status === "BLOCKED" ? "amânat" : t.status === "ASSIGNED" ? "alocat" : t.status === "IN_PROGRESS" ? "în lucru" : t.status,
+          cause,
+        }
+      }),
       ownerBlocked: filteredOwnerBlocked.map((t: any) => ({
         task: t.title?.slice(0, 60),
         agent: t.assignedTo,
@@ -212,6 +224,14 @@ export default async function AgentsReportPage() {
     // Claude = seeduire (SELF_INTERVIEW din KB) + execuții (POST_EXECUTION din learning_artifacts)
     const fromClaude = fromSeed + Number(laRow.from_execution || 0) + Number(laRow.from_extrapolation || 0)
 
+    // KB zilnic (azi + ieri)
+    const today = new Date(); today.setHours(0,0,0,0)
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1)
+    const [kbToday, kbYesterday] = await Promise.all([
+      p.kBEntry.count({ where: { createdAt: { gte: today } } }).catch(() => 0),
+      p.kBEntry.count({ where: { createdAt: { gte: yesterday, lt: today } } }).catch(() => 0),
+    ])
+
     learning = {
       total: totalThisWeek,
       prevTotal: Number(kbPrevWeek || 0) + Number(laPrevWeek || 0),
@@ -221,6 +241,8 @@ export default async function AgentsReportPage() {
       fromClaude,
       fromSeed,
       fromExternal: Math.max(0, totalThisWeek - fromInternal - fromClients - fromClaude - fromSeed),
+      todayKB: kbToday,
+      yesterdayKB: kbYesterday,
     }
 
     // ═══ OBIECTIVE ═══
@@ -482,10 +504,11 @@ export default async function AgentsReportPage() {
             <div className="space-y-2">
               {(diagnosis as any).overdue.map((r: any, i: number) => (
                 <div key={i} className="flex items-start gap-3 text-xs border-b border-red-100 pb-2">
-                  <span className="text-red-600 font-bold shrink-0 w-6 text-center">+{r.daysOverdue}z</span>
-                  <span className="text-red-500 font-medium shrink-0">{r.agent}</span>
+                  <span className="text-red-600 font-bold shrink-0 w-8 text-center">+{r.daysOverdue}z</span>
+                  <span className="text-red-500 font-medium shrink-0 w-16">{r.agent}</span>
                   <div className="flex-1">
-                    <p className="text-slate-700">{r.task}</p>
+                    <p className="text-slate-700 font-medium">{r.task}</p>
+                    <p className="text-red-600/70 mt-0.5">Cauza: {r.cause}</p>
                     <p className="text-slate-400 mt-0.5">Termen: {r.deadline} · Alocat de: {r.assignedBy} · Status: {r.status}</p>
                   </div>
                 </div>
@@ -556,13 +579,39 @@ export default async function AgentsReportPage() {
 
       {/* ═══ ÎNVĂȚARE ═══ */}
       <section>
-        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Învățare organism · KB total: {learning.totalKB.toLocaleString()} entries</h2>
-        <div className="grid grid-cols-5 gap-3">
-          <SC label="Învățat săptămâna asta" value={learning.total}
-            subtitle={learningGrowth > 0 ? `+${learningGrowth}% vs. anterioară` : learningGrowth < 0 ? `${learningGrowth}%` : "—"}
-            accent={learningGrowth > 0 ? "emerald" : learningGrowth < 0 ? "red" : undefined} />
+        <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Învățare organism</h2>
+
+        {/* Pipeline învățare: 3 perioade */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <p className="text-[10px] text-slate-400 uppercase font-bold">Azi</p>
+            <p className="text-2xl font-bold text-slate-900 mt-1">{learning.todayKB}</p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {learning.todayKB > learning.yesterdayKB ? <span className="text-emerald-600">+{learning.todayKB - learning.yesterdayKB} vs ieri</span>
+                : learning.todayKB < learning.yesterdayKB ? <span className="text-red-500">{learning.todayKB - learning.yesterdayKB} vs ieri</span>
+                : <span>= vs ieri</span>}
+            </p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <p className="text-[10px] text-slate-400 uppercase font-bold">7 zile</p>
+            <p className="text-2xl font-bold text-slate-900 mt-1">{learning.total}</p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {learningGrowth > 0 ? <span className="text-emerald-600">+{learningGrowth}% vs anterioară</span>
+                : learningGrowth < 0 ? <span className="text-red-500">{learningGrowth}% vs anterioară</span>
+                : <span>= vs anterioară</span>}
+            </p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <p className="text-[10px] text-slate-400 uppercase font-bold">Cumulat</p>
+            <p className="text-2xl font-bold text-slate-900 mt-1">{learning.totalKB.toLocaleString()}</p>
+            <p className="text-[10px] text-slate-400 mt-1">entries total</p>
+          </div>
+        </div>
+
+        {/* Surse */}
+        <div className="grid grid-cols-4 gap-3">
           <SC label="Structura internă" value={`${pctInternal}%`} subtitle={`${learning.fromInternal} entries`} accent="indigo" />
-          <SC label="Clienți" value={`${pctClients}%`} subtitle={`${learning.fromClients} entries`} accent="violet" />
+          <SC label="Interacțiuni" value={`${pctClients}%`} subtitle={`${learning.fromClients} entries`} accent="violet" />
           <SC label="Claude (incl. seeduire)" value={`${pctClaude}%`} subtitle={`${learning.fromClaude} entries`} accent="amber" />
           <SC label="Surse externe" value={`${pctExternal}%`} subtitle={`${learning.fromExternal} entries`} accent="slate" />
         </div>
@@ -574,7 +623,7 @@ export default async function AgentsReportPage() {
         </div>
         <div className="flex gap-4 mt-2 text-[10px] text-slate-400">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-indigo-500" /> Intern</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-violet-500" /> Clienți</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-violet-500" /> Interacțiuni</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" /> Claude (incl. seeduire)</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-400" /> Extern</span>
         </div>
@@ -586,7 +635,7 @@ export default async function AgentsReportPage() {
         <div className="grid grid-cols-3 gap-4">
           <DC label="Autonomie" desc="Rezolvare fără escalare" value={100 - escalationRate} target={80} unit="%" />
           <DC label="Dependență Claude" desc="% învățare de la Claude" value={pctClaude} target={30} inverted unit="%" />
-          <DC label="Experiență clienți" desc="Învățare din interacțiuni reale" value={pctClients} target={40} unit="%" />
+          <DC label="Experiență interacțiuni" desc="Învățare din conversații reale" value={pctClients} target={40} unit="%" />
         </div>
       </section>
 
