@@ -215,6 +215,86 @@ export const PAGE_GUIDES: PageGuide[] = [
       "statistici per pagina si categorie, rata de satisfactie si " +
       "recomandari automate bazate pe frecventa intrebarilor.",
   },
+  // ── Pagini publice B2B ──
+  {
+    pattern: /^\/b2b\/sandbox/,
+    title: "Diagnostic organizațional gratuit",
+    shortGuide:
+      "Introduceți datele companiei și primiți un diagnostic de bază: " +
+      "structura organizațională, obligații legale, benchmark sectorial. " +
+      "Totul gratuit, fără cont.",
+    detailedGuide:
+      "Sandbox-ul vă permite să experimentați platforma JobGrade pe datele " +
+      "companiei dumneavoastră, fără a crea un cont. Diagnosticul include: " +
+      "analiza structurii organizaționale, calendarul obligațiilor legale " +
+      "aplicabile (funcție de dimensiune), benchmark sectorial, și un scor " +
+      "de structură. Pentru rapoarte complete (pay gap, evaluare AI, simulări), " +
+      "puteți crea un cont gratuit — datele se păstrează automat.",
+    layer: 0,
+  },
+  {
+    pattern: /^\/b2b\/abonamente/,
+    title: "Pachete și prețuri",
+    shortGuide:
+      "Trei abonamente adaptate dimensiunii organizației: Essentials (1-50 ang.), " +
+      "Business (51-200 ang.), Enterprise (200+ ang.). Calculatorul interactiv " +
+      "vă arată costul exact pe situația dumneavoastră.",
+    detailedGuide:
+      "JobGrade funcționează cu abonament + credite. Abonamentul include accesul " +
+      "la portal, găzduirea datelor, suport și consultanță HR. Serviciile se " +
+      "plătesc cu credite — fiecare serviciu are un cost transparent. Cu cât " +
+      "abonamentul e mai mare, cu atât prețul per credit scade. Creditele nu " +
+      "expiră niciodată. Puteți schimba abonamentul oricând. Calculatorul " +
+      "interactiv vă arată costul exact: selectați numărul de posturi și " +
+      "angajați, alegeți serviciile dorite, și vedeți totalul în timp real. " +
+      "Prețurile afișate sunt reale și se aplică la activarea contului.",
+    layer: 0,
+  },
+  {
+    pattern: /^\/b2b\/je/,
+    title: "Evaluarea și ierarhizarea posturilor",
+    shortGuide:
+      "Serviciul principal JobGrade: evaluare pe 6 criterii standardizate, " +
+      "ierarhizare obiectivă, grilă salarială conformă cu Directiva EU 2023/970.",
+    detailedGuide:
+      "Evaluarea posturilor se face pe 6 criterii: Cunoștințe (Knowledge), " +
+      "Comunicare (Communications), Rezolvare Probleme (Problem Solving), " +
+      "Luarea Deciziilor (Decision Making), Impact Afaceri (Business Impact), " +
+      "Condiții de Muncă (Working Conditions). Fiecare post primește un scor " +
+      "care determină clasa salarială. Procesul poate fi: complet AI (automat), " +
+      "comisie asistată de AI, sau cu consultant HR acreditat.",
+    layer: 0,
+  },
+  {
+    pattern: /^\/b2b\/pay-gap/,
+    title: "Analiza pay gap",
+    shortGuide:
+      "Raport de conformitate cu Directiva EU 2023/970 privind transparența " +
+      "salarială. Analiza decalajului salarial pe gen, funcție, departament.",
+    detailedGuide:
+      "Analiza pay gap identifică diferențele salariale nejustificate între " +
+      "angajați cu muncă egală sau de valoare egală. Raportul include: " +
+      "gap pe salariu de bază, gap pe remunerație totală, distribuție pe " +
+      "quartile, și recomandări de remediere. Obligatoriu pentru companiile " +
+      "cu peste 50 de angajați (Directiva EU 2023/970, termen de transpunere " +
+      "în legislația națională).",
+    layer: 0,
+  },
+  {
+    pattern: /^\/b2b/,
+    title: "Servicii B2B JobGrade",
+    shortGuide:
+      "Platforma de evaluare posturi, structurare salarială și dezvoltare " +
+      "organizațională. Conformitate cu Directiva EU 2023/970.",
+    detailedGuide:
+      "JobGrade oferă 4 niveluri de servicii: C1 Organizare (evaluare posturi, " +
+      "fișe de post AI), C2 Conformitate (grilă salarială, pay gap, obligații " +
+      "legale), C3 Competitivitate (KPI, benchmark, procese), C4 Dezvoltare " +
+      "(cultură organizațională, plan intervenție, simulări). Fiecare nivel " +
+      "se construiește pe cel anterior. Puteți începe cu un diagnostic gratuit " +
+      "în sandbox-ul nostru.",
+    layer: 0,
+  },
 ]
 
 /**
