@@ -10,6 +10,7 @@ import { authOrKey as auth } from "@/lib/auth-or-key"
 import { analyzeTerritory } from "@/lib/crawl/territorial-analysis"
 import { analyzeResources } from "@/lib/crawl/resource-taxonomy"
 import { analyzeConsumption } from "@/lib/crawl/consumption-analysis"
+import { analyzeNeeds } from "@/lib/crawl/needs-analysis"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -43,9 +44,18 @@ export async function GET(req: NextRequest) {
     analysis.resources.entities
   )
 
+  // Analiză nevoi (Axa 3 — stadii dezvoltare × Maslow × spirală)
+  const needsAnalysis = analyzeNeeds(
+    analysis.resources.population.byAge,
+    analysis.resources.businesses,
+    analysis.resources.entities,
+    analysis.resources.population.total
+  )
+
   return NextResponse.json({
     ...analysis,
     resourceTaxonomy: resourceAnalysis,
     consumption: consumptionAnalysis,
+    needsDetailed: needsAnalysis,
   })
 }
