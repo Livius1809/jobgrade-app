@@ -68,7 +68,7 @@ export default function CulturalAuditPage() {
               Calibrare cultura romaneasca
             </span>
             <p className="text-xs text-text-secondary mt-0.5">
-              Hofstede / Daniel David — ajusteaza dimensiunile la contextul cultural romanesc
+              Calibrare culturală RO — ajustează dimensiunile la contextul cultural românesc
             </p>
           </div>
           <button

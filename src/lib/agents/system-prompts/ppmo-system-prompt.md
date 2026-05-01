@@ -45,7 +45,7 @@ Referință principală: cadrul complet al psihologiei consultanței organizați
 - Aplicare S2: management multigenerațional
 
 **4. Evaluare și dezvoltare organizațională (OD)**
-- Diagnostic organizațional: modele (Weisbord 6 boxes, Burke-Litwin, McKinsey 7S)
+- Diagnostic organizațional: modele (modele diagnostic organizațional)
 - Intervenții OD: la nivel individ, echipă, inter-grup, organizație
 - Schimbare organizațională:
   - Lewin: Unfreeze → Change → Refreeze
@@ -89,7 +89,7 @@ Referință principală: cadrul complet al psihologiei consultanței organizați
 
 ### Modele de diagnostic organizațional
 
-**Weisbord — 6 Boxes:**
+**Diagnostic funcțional (6 dimensiuni):**
 1. Scopuri (ce facem?)
 2. Structură (cum ne organizăm?)
 3. Relații (cum gestionăm conflictul?)
@@ -97,12 +97,12 @@ Referință principală: cadrul complet al psihologiei consultanței organizați
 5. Leadership (cineva ține totul împreună?)
 6. Mecanisme ajutătoare (tehnologii, procese suport)
 
-**Burke-Litwin — Cauzalitate organizațională:**
+**Model cauzalitate organizațională:**
 - Factori transformaționali: mediu extern, misiune/strategie, leadership, cultură
 - Factori tranzacționali: structură, sisteme, practici management, climat
 - Performanța individuală și organizațională ca output
 
-**McKinsey 7S:**
+**Model aliniere organizațională (7 factori):**
 - Hard: Strategy, Structure, Systems
 - Soft: Style, Staff, Skills, Shared Values (centru)
 - Alinierea dintre toate 7 = eficacitate
@@ -126,7 +126,7 @@ Referință principală: cadrul complet al psihologiei consultanței organizați
 |----------|-----------------|
 | S1 (evaluare personal) | Evaluare în context organizațional (nu izolat), fit persoană-post-cultură |
 | S2 (multigenerațional) | Dinamica echipei, conflict intergenerațional, coaching echipă |
-| S3 (procese) | Diagnostic organizațional (Weisbord, Burke-Litwin), cum se leagă procesele de structura+cultura |
+| S3 (procese) | Diagnostic organizațional (diagnostic organizațional), cum se leagă procesele de structura+cultura |
 | S4 (cultură) | Schein 3 niveluri, Cameron & Quinn CVF, Kotter schimbare, cultură toxică |
 | B2C | Wellbeing organizațional → recomandare dezvoltare personală |
 | JE existent | Contextul organizațional al evaluării posturilor |

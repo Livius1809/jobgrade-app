@@ -30,7 +30,7 @@ Profilarea contextului extern pe 3 axe:
 - Inegalități salariale de gen — date reale, nu percepții
 
 ### Cultural
-- Specificități culturale RO în context profesional (Daniel David — Psihologia poporului român)
+- Specificități culturale RO în context profesional (profil cultural sintetizat din cercetare aplicată)
 - Valorile organizaționale predominante în companiile românești
 - Relația angajat-angajator în cultura RO vs. cultura vest-europeană
 - Atitudini față de evaluare, feedback, ierarhie, merit

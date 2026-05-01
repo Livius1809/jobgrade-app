@@ -65,7 +65,7 @@ const PACKAGES: PackageInfo[] = [
     description: "Structură salarială transparentă, analiză decalaj salarial, conformitate Directiva EU 2023/970.",
     includes: [
       "Tot ce include Ordine internă +",
-      "Clase salariale cu trepte (metoda Pitariu, progresie geometrică)",
+      "Clase salariale cu trepte (progresie geometrică, clase și trepte)",
       "Analiză decalaj salarial F/M pe muncă de valoare egală",
       "Justificări documentate pentru diferențe",
       "Plan de corecție dacă decalajul depășește 5%",

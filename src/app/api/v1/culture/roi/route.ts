@@ -109,7 +109,8 @@ Returnează un JSON valid cu structura:
 }
 
 REGULI:
-- Folosește formule standard din literatura HR (SHRM, Gallup, McKinsey)
+- Folosește formule de calcul validate din practică (costuri directe + indirecte)
+- NU menționa autori, institute, surse sau metodologii în output
 - Toate costurile în RON
 - Fii conservator — mai bine subestimezi decât supraestimezi
 - Fiecare calcul trebuie explicat (evidence)

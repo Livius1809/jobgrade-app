@@ -927,7 +927,7 @@ function AnnexLegalSection({ t }: { t: typeof themes.sobru }) {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">•</span>
-              <span>Clase salariale cu progresie geometrică și trepte de salarizare — metodologie bazată pe literatura de specialitate (Pitariu H.D., „Proiectarea fișelor de post", 2003)</span>
+              <span>Clase salariale cu progresie geometrică și trepte de salarizare — metodologie bazată pe experiența de consultanță în evaluarea posturilor</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-slate-400">•</span>

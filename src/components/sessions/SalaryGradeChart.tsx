@@ -306,7 +306,7 @@ function SituationLegend({ points, grades }: { points: Array<{ score: number; sa
           <div className="text-[10px] text-slate-600">
             <span className="font-semibold text-blue-600">Peste maximul clasei proprii</span>
             <span className="text-slate-400"> ({analysis.above.length})</span>
-            <p className="text-slate-500 mt-0.5">Salariul depășește limita clasei de evaluare. Conform Pitariu, acest lucru poate indica: un angajat cu experiență valoroasă care a avansat salarial dar nu și ca nivel de responsabilitate, sau o oportunitate de promovare pe o poziție de complexitate superioară.</p>
+            <p className="text-slate-500 mt-0.5">Salariul depășește limita clasei de evaluare. Acest lucru poate indica: un angajat cu experiență valoroasă care a avansat salarial dar nu și ca nivel de responsabilitate, sau o oportunitate de promovare pe o poziție de complexitate superioară.</p>
           </div>
         </div>
       )}

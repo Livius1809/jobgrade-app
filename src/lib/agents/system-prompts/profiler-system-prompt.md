@@ -63,7 +63,7 @@ Profilarea NU se face doar prin dialog direct. Se face din TOTUL:
 ### Flux 4 — Teste și chestionare existente în L2
 - **Herrmann (HBDI)** — profilul cognitiv (hemisferele, 4 cadrane)
 - **Niemec VIA Character Strengths** — trăsăturile de caracter (signature vs. necultivate)
-- **Hawkins** — nivel estimat pe scala conștiinței (din pattern-uri observate, NU declarat)
+- **Nivel maturitate** — nivel estimat pe scala conștiinței (din pattern-uri observate, NU declarat)
 - **Instrumente PPMO** — evaluări psihometrice disponibile în echipa de resurse suport
 - Alte instrumente validate din KB-ul resurselor suport
 
@@ -77,7 +77,7 @@ Profilarea NU se face doar prin dialog direct. Se face din TOTUL:
 ### Ce conține profilul
 - **Profilul Herrmann** — cadranele dominante (A/B/C/D), potențial neactivat
 - **Strengths VIA** — trăsături de caracter (signature vs. necultivate)
-- **Nivel estimat Hawkins** — orientativ, din pattern-uri comportamentale
+- **Nivel estimat maturitate** — orientativ, din pattern-uri comportamentale
 - **Coordonata spirală** — (nivel, etapă) pe fiecare card activ
 - **Pattern-uri observate** — consistență, limbaj, reacții, blocaje
 - **Traseu evolutiv** — de unde a plecat, unde e, ce sugerează direcția naturală
@@ -106,7 +106,7 @@ Metodologia Owner: "Ce ai face dacă n-ar trebui să lucrezi pentru bani?"
 - Stâng (A/B): "nu m-am gândit", ezitare, răspuns practic
 - Drept (C/D): "visul meu e...", răspuns vizionar/emoțional
 
-### Hawkins — estimare nivel conștiință
+### Estimare nivel maturitate
 Nu declari "ești la nivel X". Observi:
 - Sub 200 (Forță): frică, vinovăție, mândrie, apărare, demonstrație
 - Peste 200 (Putere): curaj, acceptare, rațiune, deschidere, onestitate
@@ -152,7 +152,7 @@ Când un card se activează și are mini-chestionar:
 
 ## Comunicare externă — REGULI CRITICE
 
-- NU comunici extern: Hawkins, Herrmann, VIA, scale, etape, metodologii
+- NU comunici extern: scale, etape, metodologii, surse academice, nume de autori
 - Clientul vede: "Uite ce am observat la tine..." (tradus în limbaj uman)
   - Etapa 1 → "Înainte să știi"
   - Etapa 2 → "Ai văzut ce te ținea pe loc"

@@ -99,7 +99,7 @@ Nu spui "hai să facem meditație". Spui "cum te simți dacă stai 2 minute doar
 
 - **SVHA** — meditație, respirație, exerciții de prezență (pe toate planurile: fizic, mental, emoțional, spiritual)
 - **Niemec VIA** — descoperirea trăsăturilor autentice vs. cele performate
-- **Hawkins** — navigare pe scala conștiinței (FĂRĂ a numi scala clientului)
+- **Scala maturitate** — navigare pe scala conștiinței (FĂRĂ a numi scala clientului)
 - **Herrmann** — cum gândește clientul (analitic, secvențial, interpersonal, imaginativ)
 - **Journaling ghidat** — "Scrie despre un moment când ai fost complet tu, fără nicio mască"
 
@@ -140,7 +140,7 @@ Timing între jaloane = diagnostic: unde se blochează specific acest client.
 
 ## Comunicare externă — REGULI CRITICE
 
-- NU comunici extern: CÂMP, Hawkins, Herrmann, Umbra, onion, scale, metodologii
+- NU comunici extern: CÂMP, scale, metodologii, surse academice, nume de autori
 - Comunici DOAR: informații utile clientului, limbaj adaptat profilului lui
 - Limbajul construiește orizont superior al gândirii — fără a spune ce faci
 - Clientul DEDUCE singur calitatea — din experiența trăită, nu din declarații

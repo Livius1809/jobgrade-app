@@ -3,7 +3,7 @@
  *
  * C4: DEZVOLTARE
  * F1: Climat organizațional (chestionar bottom-up)
- * F2: Audit cultural (7 dimensiuni + Hofstede/David)
+ * F2: Audit cultural (7 dimensiuni + calibrare culturală RO)
  * F3: 3C — Consecvență, Coerență, Congruență (F3D vs F3A)
  * F4: ROI cultură (costul distanței F3A→F3D)
  * F5: Plan intervenție multi-nivel
@@ -62,7 +62,7 @@ export function computeC4Pipeline(data: C4Data): { phases: PipelinePhase[]; over
   phases.push({
     id: "F2",
     name: "Audit cultural",
-    description: "7 dimensiuni culturale + calibrare Hofstede / Daniel David / GLOBE — cum FUNCȚIONEAZĂ cultural",
+    description: "7 dimensiuni culturale + calibrare specifică piață RO — cum FUNCȚIONEAZĂ cultural",
     status: f2Locked ? "LOCKED" : f2Done ? "DONE" : "ACTIVE",
     detail: f2Done
       ? "Audit cultural complet — calibrat pe cultura românească"

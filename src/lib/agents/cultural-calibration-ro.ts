@@ -1,8 +1,8 @@
 /**
  * cultural-calibration-ro.ts — Calibrare culturală România
  *
- * Bazat pe "Psihologia poporului român" (Daniel David, 2015)
- * și cercetarea de psihologie culturală aplicată.
+ * Profil cultural sintetizat din experiența de consultanță
+ * și cercetarea aplicată pe piața românească.
  *
  * Infuzat în Layer 2 (Resurse Suport) pentru ca TOATE interacțiunile
  * cu piața românească să fie cultural calibrate:
@@ -12,12 +12,15 @@
  *
  * PRINCIPIU: Nu exploatăm vulnerabilitățile culturale — le înțelegem
  * pentru a comunica AUTENTIC și EFICIENT, în spiritul BINELUI.
+ *
+ * IMPORTANT: NU se menționează extern autori, scale, surse academice.
+ * Cunoașterea e integrată — clientul primește sinteza, nu bibliografia.
  */
 
-// ── Profilul cognitiv-emoțional al românului (Daniel David) ─────────────────
+// ── Profilul cultural al pieței românești ─────────────────
 
 export const ROMANIAN_PSYCHOLOGY = {
-  source: "Psihologia poporului român — Daniel David (2015), cercetare empirică",
+  source: "sinteză consultanță aplicată — piața românească",
 
   // ── Dimensiuni culturale ──────────────────────────────────────────────────
 
@@ -28,7 +31,7 @@ export const ROMANIAN_PSYCHOLOGY = {
     },
 
     distantaPutere: {
-      finding: "Distanță mare față de putere (Hofstede ~90) — respectul pentru autoritate e înrădăcinat, dar coexistă cu neîncrederea în instituții",
+      finding: "Distanță mare față de putere (nivel foarte ridicat) — respectul pentru autoritate e înrădăcinat, dar coexistă cu neîncrederea în instituții",
       implication: "Comunicăm cu autoritate expertă (nu instituțională). Validarea vine din competență, nu din titlu. Expertul e respectat, birocratul e suspectat.",
     },
 
@@ -38,12 +41,12 @@ export const ROMANIAN_PSYCHOLOGY = {
     },
 
     masculinitate: {
-      finding: "Scor moderat spre masculin (~42) — competiția e prezentă dar moderată de valorile relaționale. Succesul se măsoară și prin relații, nu doar prin bani.",
+      finding: "Scor moderat spre masculin (moderat) — competiția e prezentă dar moderată de valorile relaționale. Succesul se măsoară și prin relații, nu doar prin bani.",
       implication: "Nu vindem doar ROI — vindem și relația, încrederea, echitatea. 'Nu doar numere corecte — oameni tratați corect.'",
     },
 
     orientareTermenLung: {
-      finding: "Orientare predominant pe termen scurt (~52) — pragmatism, rezultate imediate, scepticism față de planuri pe 10 ani",
+      finding: "Orientare predominant pe termen scurt (moderat) — pragmatism, rezultate imediate, scepticism față de planuri pe 10 ani",
       implication: "Comunicăm beneficii imediate + deadline-uri concrete. 'Rezultate în 24h', 'Conformitate din prima zi', nu 'viziune pe 5 ani'.",
     },
   },

@@ -46,7 +46,7 @@ interface AuditResult {
 
 /**
  * POST — Audit cultural AI pe 7 dimensiuni
- * Opțional: calibrare pe specificul cultural românesc (Hofstede + Daniel David)
+ * Opțional: calibrare pe specificul cultural românesc
  */
 export async function POST(req: NextRequest) {
   try {
@@ -131,25 +131,27 @@ ${climateState ? `Date climat disponibile: ${JSON.stringify(climateState).slice(
 
 ## CALIBRARE CULTURALĂ ROMÂNEASCĂ (OBLIGATORIE)
 
-Aplică aceste filtre de calibrare pe fiecare dimensiune:
+Aplică aceste filtre de calibrare pe fiecare dimensiune, bazate pe specificul cultural local:
 
-### Hofstede — Dimensiuni culturale România:
-- **Power Distance (PDI): 90** — distanță foarte mare față de autoritate; ierarhie pronunțată
-- **Individualism (IDV): 30** — societate colectivistă; grupul primează
-- **Masculinity (MAS): 42** — moderată spre feminină; echilibru competiție/cooperare
-- **Uncertainty Avoidance (UAI): 90** — evitare foarte mare a incertitudinii; proceduri, reguli
-- **Long Term Orientation (LTO): 52** — moderată; pragmatism dar și tradiție
-- **Indulgence (IVR): 20** — societate restrictivă; controlul impulsurilor
+### Indicatori culturali piață românească:
+- **Gradul de ierarhizare:** foarte ridicat — ierarhie pronunțată, distanță mare față de autoritate
+- **Orientarea spre grup vs individ:** colectivistă — grupul și relațiile primează
+- **Echilibrul competiție-cooperare:** moderat spre cooperare
+- **Toleranța la ambiguitate:** scăzută — nevoie puternică de proceduri, reguli, claritate
+- **Orientarea pe termen lung:** moderată — pragmatism combinat cu tradiție
+- **Controlul impulsurilor:** ridicat — societate structurată, așteptări sociale puternice
 
-### Daniel David — Profilul cognitiv românesc:
-- Tendința spre fatalism și externalizarea responsabilității
-- Discrepanță între valorile declarate și comportamentul real
-- Rezistență pasivă la schimbare (nu activă)
-- Creativitate individuală ridicată, dar conformism social
+### Specificul comportamental în organizațiile din România:
+- Tendința spre externalizarea responsabilității și așteptarea deciziilor de sus
+- Discrepanță între valorile declarate și comportamentul real în organizație
+- Rezistență la schimbare predominant pasivă (nu activă)
+- Creativitate individuală ridicată dar conformism în grup
 - Relații informale puternice care compensează structurile formale slabe
-- „Descurcăreț" — adaptare situațională, nu strategică
+- Adaptare situațională — flexibilitate reactivă, nu planificare proactivă
 
-Pentru fiecare dimensiune, adaugă o notă de calibrare care explică CUM specificul cultural românesc influențează scorul și interpretarea.`
+Pentru fiecare dimensiune, adaugă o notă de calibrare care explică CUM specificul cultural românesc influențează scorul și interpretarea.
+
+IMPORTANT: NU menționa autori, scale, metodologii sau surse academice în output. Prezintă concluziile ca observații proprii de consultanță, nu ca referințe bibliografice.`
       : ""
 
     const prompt = `Ești expert în audit cultural organizațional. Analizează cultura organizației pe 7 dimensiuni fundamentale.
