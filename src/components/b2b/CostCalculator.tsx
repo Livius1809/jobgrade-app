@@ -66,6 +66,100 @@ const CARD_SERVICES: Record<number, { name: string; color: string; services: Ser
   },
 }
 
+// Pachete disponibile (ordonate descrescător pe discount)
+const PACKAGES = [
+  { name: "Enterprise", credits: 15000, price: 82500, perCredit: 5.50 },
+  { name: "Professional", credits: 5000, price: 30000, perCredit: 6.00 },
+  { name: "Business", credits: 1500, price: 9750, perCredit: 6.50 },
+  { name: "Start", credits: 500, price: 3500, perCredit: 7.00 },
+  { name: "Mini", credits: 250, price: 1875, perCredit: 7.50 },
+  { name: "Micro", credits: 100, price: 800, perCredit: 8.00 },
+]
+
+interface PackageRecommendation {
+  packages: Array<{ name: string; credits: number; price: number; perCredit: number }>
+  totalCredits: number
+  totalPrice: number
+  surplus: number // credite rămase disponibile
+  savingsVsUnitary: number // economie vs preț unitar 8 RON
+}
+
+/**
+ * Găsește combinația optimă de pachete care ACOPERĂ COMPLET creditele necesare
+ * la cel mai mic preț total. Greedy: pachete mari întâi (discount mai mare).
+ * Garantie: totalCredits >= neededCredits (mereu acoperitor).
+ */
+function recommendPackages(neededCredits: number): PackageRecommendation {
+  if (neededCredits <= 0) {
+    return { packages: [], totalCredits: 0, totalPrice: 0, surplus: 0, savingsVsUnitary: 0 }
+  }
+
+  // Strategie: pentru fiecare pachet de start posibil, calculăm costul total
+  // și alegem varianta cea mai ieftină care acoperă integral necesarul
+  let bestCombo: PackageRecommendation["packages"] = []
+  let bestPrice = Infinity
+
+  // Încercăm combinații greedy pornind de la fiecare nivel de pachet
+  for (let startIdx = 0; startIdx < PACKAGES.length; startIdx++) {
+    const combo: PackageRecommendation["packages"] = []
+    let remaining = neededCredits
+
+    for (let i = startIdx; i < PACKAGES.length; i++) {
+      const pkg = PACKAGES[i]
+      // Câte pachete de acest tip încap
+      const count = Math.floor(remaining / pkg.credits)
+      for (let c = 0; c < count; c++) {
+        combo.push(pkg)
+        remaining -= pkg.credits
+      }
+    }
+
+    // Dacă mai rămân credite neacoperite, adaugă cel mai mic pachet care acoperă
+    if (remaining > 0) {
+      // Caută cel mai mic pachet care acoperă restul
+      for (let i = PACKAGES.length - 1; i >= 0; i--) {
+        if (PACKAGES[i].credits >= remaining) {
+          combo.push(PACKAGES[i])
+          remaining -= PACKAGES[i].credits
+          break
+        }
+      }
+      // Dacă nimic nu acoperă (nu ar trebui), adaugă Micro-uri
+      while (remaining > 0) {
+        const micro = PACKAGES[PACKAGES.length - 1]
+        combo.push(micro)
+        remaining -= micro.credits
+      }
+    }
+
+    const comboPrice = combo.reduce((s, p) => s + p.price, 0)
+    if (comboPrice < bestPrice) {
+      bestPrice = comboPrice
+      bestCombo = combo
+    }
+  }
+
+  const totalCredits = bestCombo.reduce((s, p) => s + p.credits, 0)
+  const totalPrice = bestCombo.reduce((s, p) => s + p.price, 0)
+  const surplus = totalCredits - neededCredits
+  const unitaryPrice = neededCredits * 8
+  const savingsVsUnitary = Math.max(0, unitaryPrice - totalPrice)
+
+  // Grupăm pachetele identice (ex: 2× Mini)
+  const grouped: PackageRecommendation["packages"] = []
+  for (const pkg of bestCombo) {
+    const existing = grouped.find(g => g.name === pkg.name)
+    if (existing) {
+      existing.credits += pkg.credits
+      existing.price += pkg.price
+    } else {
+      grouped.push({ ...pkg })
+    }
+  }
+
+  return { packages: grouped, totalCredits, totalPrice, surplus, savingsVsUnitary }
+}
+
 export function CostCalculator() {
   const [positions, setPositions] = useState(10)
   const [employees, setEmployees] = useState(30)
@@ -116,7 +210,11 @@ export function CostCalculator() {
   }
 
   const totalServiciiRON = Math.round(totalCredits * tierConfig.creditPrice)
-  const totalInregistrare = totalServiciiRON + tierConfig.monthlyPrice
+
+  // Recomandare pachete optimale
+  const recommendation = recommendPackages(totalCredits)
+
+  const totalInregistrare = recommendation.totalPrice + tierConfig.monthlyPrice
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -230,6 +328,41 @@ export function CostCalculator() {
           })}
         </div>
 
+        {/* Recomandare pachete optimale */}
+        {totalCredits > 0 && recommendation.packages.length > 0 && (
+          <div className="px-6 pb-4">
+            <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
+              <p className="text-xs font-semibold text-emerald-800 mb-2">
+                Varianta cea mai avantajoasă pentru {totalCredits.toLocaleString("ro-RO")} credite necesare:
+              </p>
+              <div className="space-y-1.5">
+                {recommendation.packages.map((pkg, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-emerald-700">
+                      Pachet <span className="font-semibold">{pkg.name}</span> ({pkg.credits.toLocaleString("ro-RO")} credite)
+                    </span>
+                    <span className="font-semibold text-emerald-800">{pkg.price.toLocaleString("ro-RO")} RON</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 pt-2 border-t border-emerald-200 flex items-center justify-between text-xs">
+                <span className="text-emerald-700">
+                  Total: {recommendation.totalCredits.toLocaleString("ro-RO")} credite
+                  {recommendation.surplus > 0 && (
+                    <span className="text-emerald-500"> ({recommendation.surplus} credite rămân disponibile)</span>
+                  )}
+                </span>
+                <span className="font-bold text-emerald-800">{recommendation.totalPrice.toLocaleString("ro-RO")} RON</span>
+              </div>
+              {recommendation.savingsVsUnitary > 0 && (
+                <p className="mt-1.5 text-[10px] text-emerald-600">
+                  Economisiți {recommendation.savingsVsUnitary.toLocaleString("ro-RO")} RON față de achiziția la preț unitar
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Total — banda albastră */}
         <div className="bg-indigo-600 text-white p-5 text-center">
           <p className="text-xs opacity-80 mb-1">Total de plătit la înregistrare</p>
@@ -237,7 +370,7 @@ export function CostCalculator() {
             {totalInregistrare.toLocaleString("ro-RO")} RON
           </p>
           <p className="text-xs opacity-70 mt-1.5">
-            {tierConfig.monthlyPrice} RON abonament {tierConfig.label} + {totalServiciiRON.toLocaleString("ro-RO")} RON servicii
+            {tierConfig.monthlyPrice} RON abonament {tierConfig.label} + {recommendation.totalPrice.toLocaleString("ro-RO")} RON credite
           </p>
           <p className="text-[10px] opacity-60 mt-2">
             Prețurile sunt reale. La modificări ulterioare plătiți doar diferența.
