@@ -37,12 +37,14 @@ export default function AbonamentePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-violet-50/30" />
         <div className="relative max-w-4xl mx-auto px-6 py-16 md:py-24 text-center">
           <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            Prețuri transparente.{" "}
-            <span className="text-indigo-600">Plătești cât folosești.</span>
+            Prețuri transparente.
           </h1>
+          <p className="text-2xl md:text-4xl font-extrabold text-indigo-600 mt-1 tracking-tight">
+            Plătești cât folosești.
+          </p>
           <p className="mt-5 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Trei abonamente adaptate dimensiunii organizației. Serviciile se plătesc cu credite —
-            cu cât abonamentul e mai mare, cu atât prețul per credit e mai mic.
+            Trei variante de abonament adaptate necesităților de dezvoltare a organizației tale.
+            Serviciile se plătesc cu credite.
           </p>
           <p className="mt-3 text-sm text-slate-500">
             Creditele nu expiră. Poți schimba abonamentul oricând. Fără surprize.
@@ -170,7 +172,7 @@ export default function AbonamentePage() {
           </p>
 
           <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <CreditPack name="Micro" credits={100} price={800} perCredit="8,00" />
+            <CreditPack name="Micro" credits={100} price={800} perCredit="8,00" showPrice />
             <CreditPack name="Mini" credits={250} price={1875} perCredit="7,50" discount="6%" />
             <CreditPack name="Start" credits={500} price={3500} perCredit="7,00" discount="12%" />
             <CreditPack name="Business" credits={1500} price={9750} perCredit="6,50" discount="19%" popular />
@@ -196,9 +198,6 @@ export default function AbonamentePage() {
                 <tr className="bg-slate-100">
                   <th className="text-left py-3 px-4 text-slate-600 font-semibold">Serviciu</th>
                   <th className="text-center py-3 px-4 text-slate-600 font-semibold">Credite</th>
-                  <th className="text-center py-3 px-4 text-slate-600 font-semibold">Essentials</th>
-                  <th className="text-center py-3 px-4 text-slate-600 font-semibold">Business</th>
-                  <th className="text-center py-3 px-4 text-slate-600 font-semibold">Enterprise</th>
                 </tr>
               </thead>
               <tbody className="text-xs">
@@ -229,7 +228,7 @@ export default function AbonamentePage() {
             <FaqItem q="Creditele expiră?" a="Nu. Creditele rămân în cont fără limită de timp. Ați plătit pentru ele, sunt ale dumneavoastră." />
             <FaqItem q="Pot schimba abonamentul?" a="Da, oricând. Upgrade instant. Downgrade de luna viitoare — diferența se convertește în credite." />
             <FaqItem q="Ce se întâmplă dacă rămân fără credite?" a="Puteți achiziționa oricând un pachet suplimentar. Serviciile existente rămân funcționale, doar nu puteți lansa altele noi." />
-            <FaqItem q="Pot pune contul pe pauză?" a="Da. Pauza e gratuită, datele se păstrează 24 luni, creditele rămân intacte. Reactivare instant." />
+{/* Pauză — de discutat termenii exact (retenție date 30 zile vs 24 luni) */}
             <FaqItem q="Dacă adaug posturi noi, plătesc de la zero?" a="Nu. Plătiți doar pentru diferența nouă. Evaluările existente se păstrează intact." />
             <FaqItem q="Cum se alege abonamentul potrivit?" a="Automat, funcție de numărul de angajați și posturi. Calculatorul de mai sus vă arată exact." />
           </div>
@@ -336,17 +335,25 @@ function IncludedCard({ icon, title, text }: { icon: string; title: string; text
   )
 }
 
-function CreditPack({ name, credits, price, perCredit, discount, popular }: {
-  name: string; credits: number; price: number; perCredit: string; discount?: string; popular?: boolean
+function CreditPack({ name, credits, price, perCredit, discount, popular, showPrice }: {
+  name: string; credits: number; price: number; perCredit: string; discount?: string; popular?: boolean; showPrice?: boolean
 }) {
   return (
     <div className={`rounded-xl border p-4 text-center bg-white ${popular ? "border-indigo-300 ring-1 ring-indigo-100" : "border-slate-200"}`}>
       <p className="text-xs font-bold text-slate-800">{name}</p>
       <p className="text-lg font-extrabold text-slate-900 mt-1">{credits.toLocaleString("ro-RO")}</p>
       <p className="text-[10px] text-slate-400">credite</p>
-      <p className="text-sm font-bold text-slate-700 mt-2">{price.toLocaleString("ro-RO")} RON</p>
-      <p className="text-[10px] text-slate-500">{perCredit} RON/cr</p>
-      {discount && <p className="text-[10px] text-emerald-600 mt-1">-{discount}</p>}
+      {showPrice ? (
+        <>
+          <p className="text-sm font-bold text-slate-700 mt-2">{price.toLocaleString("ro-RO")} RON</p>
+          <p className="text-[10px] text-slate-500">{perCredit} RON/credit</p>
+        </>
+      ) : (
+        <div className="mt-2">
+          {discount && <p className="text-sm font-bold text-emerald-600">-{discount}</p>}
+          <p className="text-[10px] text-slate-500">{perCredit} RON/credit</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -359,9 +366,6 @@ function ServiceRow({ name, credits, note }: { name: string; credits: number; no
         {note && <span className="text-[10px] text-slate-400 ml-1">({note})</span>}
       </td>
       <td className="py-2.5 px-4 text-center font-semibold text-slate-800">{credits}</td>
-      <td className="py-2.5 px-4 text-center text-slate-600">{(credits * 8).toLocaleString("ro-RO")} RON</td>
-      <td className="py-2.5 px-4 text-center text-slate-600">{(credits * 6.5).toLocaleString("ro-RO")} RON</td>
-      <td className="py-2.5 px-4 text-center text-slate-600">{(credits * 5.5).toLocaleString("ro-RO")} RON</td>
     </tr>
   )
 }

@@ -313,7 +313,7 @@ export function CostCalculator() {
                                 {service.included && <span className="text-[9px] text-emerald-600 ml-1">inclus</span>}
                               </span>
                               <span className={`text-xs ${isOn ? "text-slate-600" : "text-slate-300"}`}>
-                                {cost} cr ({Math.round(cost * tierConfig.creditPrice)} RON)
+                                {cost} credite
                               </span>
                             </div>
                             <p className="text-[10px] text-slate-400 leading-tight">{service.description}</p>
