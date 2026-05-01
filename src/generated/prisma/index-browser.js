@@ -1855,6 +1855,84 @@ exports.Prisma.TradeSecretScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.CrawlSourceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  displayName: 'displayName',
+  url: 'url',
+  type: 'type',
+  schedule: 'schedule',
+  enabled: 'enabled',
+  territory: 'territory',
+  lastCrawlAt: 'lastCrawlAt',
+  lastSuccessAt: 'lastSuccessAt',
+  lastError: 'lastError',
+  totalCrawls: 'totalCrawls',
+  totalRecords: 'totalRecords',
+  config: 'config',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CrawlResultScalarFieldEnum = {
+  id: 'id',
+  sourceId: 'sourceId',
+  crawledAt: 'crawledAt',
+  status: 'status',
+  recordsFound: 'recordsFound',
+  recordsNew: 'recordsNew',
+  recordsUpdated: 'recordsUpdated',
+  durationMs: 'durationMs',
+  error: 'error',
+  metadata: 'metadata'
+};
+
+exports.Prisma.TerritorialDataScalarFieldEnum = {
+  id: 'id',
+  territory: 'territory',
+  category: 'category',
+  subcategory: 'subcategory',
+  key: 'key',
+  value: 'value',
+  numericValue: 'numericValue',
+  unit: 'unit',
+  source: 'source',
+  sourceUrl: 'sourceUrl',
+  periodYear: 'periodYear',
+  periodMonth: 'periodMonth',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  radius: 'radius',
+  confidence: 'confidence',
+  crawledAt: 'crawledAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LocalEntityScalarFieldEnum = {
+  id: 'id',
+  territory: 'territory',
+  type: 'type',
+  name: 'name',
+  description: 'description',
+  category: 'category',
+  subcategory: 'subcategory',
+  address: 'address',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  phone: 'phone',
+  email: 'email',
+  website: 'website',
+  employees: 'employees',
+  revenue: 'revenue',
+  source: 'source',
+  sourceId: 'sourceId',
+  isActive: 'isActive',
+  isCrowdsourced: 'isCrowdsourced',
+  metadata: 'metadata',
+  crawledAt: 'crawledAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2842,7 +2920,11 @@ exports.Prisma.ModelName = {
   AgentBudget: 'AgentBudget',
   AlignmentLog: 'AlignmentLog',
   SupportTicket: 'SupportTicket',
-  TradeSecret: 'TradeSecret'
+  TradeSecret: 'TradeSecret',
+  CrawlSource: 'CrawlSource',
+  CrawlResult: 'CrawlResult',
+  TerritorialData: 'TerritorialData',
+  LocalEntity: 'LocalEntity'
 };
 
 /**

@@ -3986,3 +3986,110 @@ model TradeSecret {
   @@index([accessLevel])
   @@map("trade_secrets")
 }
+
+// ─────────────────────────────────────────
+// CRAWLING ENGINE — Shared Infrastructure
+// ─────────────────────────────────────────
+
+/// Sursă de date externe (INS, topfirme, primărie, etc.)
+model CrawlSource {
+  id              String   @id @default(cuid())
+  name            String   @unique // ex: "INS_TEMPO", "TOPFIRME", "PRIMARIE_MEDGIDIA"
+  displayName     String   // ex: "INS TEMPO Online"
+  url             String   // URL bază
+  type            String   // API | HTML_SCRAPER | RSS | PDF
+  schedule        String   // cron expression: "0 6 * * *" = zilnic la 6
+  enabled         Boolean  @default(true)
+  territory       String?  // localitate/județ/național — null = toate
+  lastCrawlAt     DateTime?
+  lastSuccessAt   DateTime?
+  lastError       String?  @db.Text
+  totalCrawls     Int      @default(0)
+  totalRecords    Int      @default(0)
+  config          Json?    // configurare specifică per sursă (headers, selectors, etc.)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  results CrawlResult[]
+
+  @@map("crawl_sources")
+}
+
+/// Rezultatul unei sesiuni de crawling
+model CrawlResult {
+  id            String   @id @default(cuid())
+  sourceId      String
+  crawledAt     DateTime @default(now())
+  status        String   // SUCCESS | PARTIAL | FAILED
+  recordsFound  Int      @default(0)
+  recordsNew    Int      @default(0)
+  recordsUpdated Int     @default(0)
+  durationMs    Int      @default(0)
+  error         String?  @db.Text
+  metadata      Json?    // statistici suplimentare per crawl
+
+  source CrawlSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, crawledAt])
+  @@map("crawl_results")
+}
+
+/// Date teritoriale normalizate (output crawling — consumate de agenți)
+model TerritorialData {
+  id            String   @id @default(cuid())
+  territory     String   // cod SIRUTA sau "MEDGIDIA", "JUD_CONSTANTA", etc.
+  category      String   // POPULATION | BUSINESS | INFRASTRUCTURE | EDUCATION | HEALTH | LABOR | ECONOMY
+  subcategory   String?  // per categorie: AGE_GROUPS, CAEN_DISTRIBUTION, SCHOOLS, etc.
+  key           String   // identificator unic per dată: "pop_20_29", "firms_total", etc.
+  value         String   @db.Text // valoare (număr, JSON, text)
+  numericValue  Float?   // valoare numerică (pentru comparații/sort)
+  unit          String?  // "persoane", "firme", "RON", "%"
+  source        String   // CrawlSource.name
+  sourceUrl     String?  // URL exact de unde vine
+  periodYear    Int?     // anul la care se referă datele
+  periodMonth   Int?     // luna (opțional)
+  latitude      Float?   // GPS
+  longitude     Float?   // GPS
+  radius        Float?   // raza de relevanță (km)
+  confidence    Float    @default(1.0) // 1.0 = sursă oficială, 0.5 = estimat
+  crawledAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([territory, category, key, periodYear])
+  @@index([territory, category])
+  @@index([category, subcategory])
+  @@index([territory])
+  @@map("territorial_data")
+}
+
+/// Entitate locală (firmă, instituție, serviciu) — GPS-mapped
+model LocalEntity {
+  id            String   @id @default(cuid())
+  territory     String   // MEDGIDIA, etc.
+  type          String   // BUSINESS | SCHOOL | HOSPITAL | PHARMACY | SERVICE | PERSON
+  name          String
+  description   String?  @db.Text
+  category      String?  // CAEN, tip serviciu, etc.
+  subcategory   String?
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  phone         String?
+  email         String?
+  website       String?
+  employees     Int?
+  revenue       Float?   // cifră afaceri RON
+  source        String   // crawl source sau "CROWDSOURCED"
+  sourceId      String?  // CUI, cod unic, etc.
+  isActive      Boolean  @default(true)
+  isCrowdsourced Boolean @default(false) // true = participant s-a înregistrat singur
+  metadata      Json?    // date suplimentare specifice tipului
+  crawledAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([territory, type, sourceId])
+  @@index([territory, type])
+  @@index([territory, latitude, longitude])
+  @@index([type, category])
+  @@map("local_entities")
+}
