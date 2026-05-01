@@ -22,6 +22,16 @@ export function CostCalculator() {
   const [employees, setEmployees] = useState(30)
   const [selectedCards, setSelectedCards] = useState<number[]>([1])
 
+  // Poziții nu pot depăși angajații
+  const handlePositions = (val: number) => {
+    const capped = Math.min(val, employees)
+    setPositions(capped)
+  }
+  const handleEmployees = (val: number) => {
+    setEmployees(val)
+    if (positions > val) setPositions(val)
+  }
+
   const tier = detectTier(positions, employees)
   const tierConfig = TIERS[tier]
 
@@ -67,9 +77,9 @@ export function CostCalculator() {
               <input
                 type="range"
                 min={1}
-                max={200}
+                max={Math.min(200, employees)}
                 value={positions}
-                onChange={(e) => setPositions(parseInt(e.target.value))}
+                onChange={(e) => handlePositions(parseInt(e.target.value))}
                 className="w-full accent-indigo-600"
               />
               <div className="flex justify-between mt-1">
@@ -89,7 +99,7 @@ export function CostCalculator() {
                 min={1}
                 max={500}
                 value={employees}
-                onChange={(e) => setEmployees(parseInt(e.target.value))}
+                onChange={(e) => handleEmployees(parseInt(e.target.value))}
                 className="w-full accent-violet-600"
               />
               <div className="flex justify-between mt-1">

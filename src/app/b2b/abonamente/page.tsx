@@ -147,7 +147,7 @@ export default function AbonamentePage() {
             Calculator de costuri
           </h2>
           <p className="text-center text-lg font-semibold text-slate-800 mb-2">
-            Cât m-ar costa dacă aș alege să fac...
+            Cât m-ar costa dacă...
           </p>
           <p className="text-center text-xs text-emerald-600 font-medium mb-8">
             Prețurile afișate sunt reale și se aplică la activarea contului
