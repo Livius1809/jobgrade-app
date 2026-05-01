@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import GhidulPublic from "@/components/chat/GhidulPublic"
 
 export const metadata = {
   title: "Întrebări frecvente — JobGrade",
@@ -189,6 +190,8 @@ export default function FaqPage() {
           </div>
         </div>
       </footer>
+
+      <GhidulPublic />
     </div>
   )
 }

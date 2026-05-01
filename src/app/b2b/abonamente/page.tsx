@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { CostCalculator } from "@/components/b2b/CostCalculator"
 import { CREDIT_COSTS } from "@/lib/credits"
-import GhidulPublic from "@/components/chat/GhidulPublic"
+// GhidulPublic vine din layout B2B comun
 
 export const metadata = {
   title: "Pachete și prețuri — JobGrade",
@@ -252,9 +252,6 @@ export default function AbonamentePage() {
           </Link>
         </div>
       </section>
-
-      {/* ── Ghid contextual ── */}
-      <GhidulPublic />
 
       {/* ── Footer ────────────────────────────────────────────── */}
       <footer className="bg-slate-900 text-slate-400 border-t border-slate-800 py-8">

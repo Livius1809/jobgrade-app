@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ChatWidgetLoader } from "@/components/chat/ChatWidgetLoader"
+import GhidulPublic from "@/components/chat/GhidulPublic"
 import { ScrollReveal } from "@/components/home/ScrollReveal"
 import { ServiceNode } from "@/components/home/ServiceNode"
 import { PersistentLabels } from "@/components/home/PersistentLabels"
@@ -533,7 +533,7 @@ export default function HomePage() {
       </footer>
 
       {/* Agent host: SOA — ghid de vânzări pe pagina principală */}
-      <ChatWidgetLoader />
+      <GhidulPublic />
     </div>
   )
 }

@@ -215,6 +215,34 @@ export const PAGE_GUIDES: PageGuide[] = [
       "statistici per pagina si categorie, rata de satisfactie si " +
       "recomandari automate bazate pe frecventa intrebarilor.",
   },
+  // ── Homepage ──
+  {
+    pattern: /^\/$/,
+    title: "JobGrade",
+    shortGuide:
+      "Servicii de consultanță în proiectarea, evaluarea și funcționarea " +
+      "structurilor organizaționale. Diagnostic gratuit disponibil.",
+    detailedGuide:
+      "JobGrade oferă servicii de consultanță organizațională: evaluarea " +
+      "posturilor, structurare salarială, conformitate cu Directiva EU 2023/970, " +
+      "dezvoltare organizațională. Puteți încerca un diagnostic gratuit pe " +
+      "datele companiei dumneavoastră, fără cont și fără obligații.",
+    layer: 0,
+  },
+  // ── FAQ ──
+  {
+    pattern: /^\/faq/,
+    title: "Întrebări frecvente",
+    shortGuide:
+      "Răspunsuri la întrebările frecvente despre platformă, protecția datelor, " +
+      "conformitate și servicii.",
+    detailedGuide:
+      "Pagina de întrebări frecvente acoperă 4 categorii: despre platformă " +
+      "(ce face, cum funcționează creditele), protecția datelor (GDPR, stocare, " +
+      "drepturi), conformitate (Directiva EU, AI Act), și servicii (facturare, " +
+      "contract, personal acreditat).",
+    layer: 0,
+  },
   // ── Pagini publice B2B ──
   {
     pattern: /^\/b2b\/sandbox/,
