@@ -293,15 +293,8 @@ function TierCard({
         <h3 className="text-xl font-bold text-slate-900 mt-1">{name}</h3>
       </div>
       <div className="mt-4">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-extrabold text-slate-900">{monthlyPrice}</span>
-          <span className="text-sm text-slate-500">RON/lună</span>
-        </div>
-        <p className="text-xs text-slate-400 mt-0.5">sau {annualPrice.toLocaleString("ro-RO")} RON/an</p>
-      </div>
-      <div className="mt-3 flex items-center gap-2">
         <span className="text-sm font-bold text-indigo-600">{creditPrice} RON/credit</span>
-        {discount && <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">-{discount}</span>}
+        {discount && <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded ml-2">-{discount}</span>}
       </div>
       <ul className="mt-5 space-y-2">
         {features.map((f) => (
