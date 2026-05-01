@@ -50,11 +50,24 @@
 - AI de Continuitate: KB = buffer intermediar activ, nu fallback
 - Dependența Claude scade cantitativ dar CREȘTE calitativ
 
-## Blockers pentru primul client (P3)
-1. Stripe price IDs — 6 env vars (1h, Owner)
-2. Sandbox public cu ghidaj SOA (2-3 zile, Claude)
-3. Calculator UI per card (1 zi, Claude)
+## Blockers pentru primul client (P3) — actualizat
+1. ~~Stripe price IDs~~ — REZOLVAT (12 price IDs test mode pe Vercel)
+2. **Sandbox public** — /b2b/sandbox LIVE dar fără dashboard vizual (chat-only). PRIORITATE #1 sesiune viitoare. Trebuie: organigramă vizuală, calendar obligații, scor structură, benchmark — toate live pe măsură ce clientul introduce date.
+3. Calculator UI per card (1 zi, Claude) — pricing.ts gata, UI de refactorizat
 4. Pagina prețuri 3 tier-uri (1 zi, Claude + L2)
+
+## Decizii Stripe
+- Monthly = recurring subscription
+- Annual = one-off (reînnoire manuală, decizie Owner)
+- Credite = one-off
+- Test mode activ (sk_test), live mode pregătit (sk_live în .env local)
+- 12 price IDs configurate pe Vercel prod
+- Checkout funcțional: Essentials ✅, Business ✅, Credite ✅
+
+## Middleware
+- authorized callback în auth.ts — public paths whitelist
+- /b2b/* confirmat public (sandbox funcționează la /b2b/sandbox)
+- Next-Auth v5 generează middleware automat — nu șterge, configurează prin authorized
 
 ## Cont JG_itself
 - Email: demo@jobgrade.ro / Demo2026!
