@@ -12,7 +12,7 @@ const FAQ_SECTIONS = [
     items: [
       {
         q: "Ce face JobGrade?",
-        a: "JobGrade este o platformă de evaluare și ierarhizare a posturilor dintr-o organizație. Analizează fișele de post, calculează clase salariale, identifică decalaje salariale și ajută la conformitatea cu Directiva EU 2023/970 privind transparența salarială.",
+        a: "JobGrade oferă servicii de consultanță în aspecte ce țin de proiectarea, evaluarea și funcționarea structurilor din companii, în raport cu stabilirea și realizarea obiectivelor lor de afaceri. De asemenea, oferă resurse suport persoanelor pentru asumarea adecvată a rolurilor pe care și le doresc.",
       },
       {
         q: "Pentru ce tip de organizații este potrivit?",
@@ -49,11 +49,11 @@ const FAQ_SECTIONS = [
       },
       {
         q: "Unde sunt stocate datele?",
-        a: "Toate datele sunt stocate în Uniunea Europeană (Frankfurt, Germania), pe infrastructură certificată. Utilizăm furnizori conformi GDPR: Neon (bază de date), Vercel (găzduire), Resend (email).",
+        a: "Toate datele sunt stocate în Uniunea Europeană, pe infrastructură certificată. Utilizăm exclusiv furnizori conformi GDPR.",
       },
       {
         q: "Folosiți inteligență artificială? Ce se întâmplă cu datele noastre?",
-        a: "Da, utilizăm AI pentru generarea fișelor de post, evaluări și rapoarte. Furnizorul AI (Anthropic) procesează datele exclusiv pentru generarea răspunsului solicitat, fără a le reține, fără a le folosi pentru antrenament, și fără a le partaja cu terți. Am realizat o evaluare de impact (TIA) conform cerințelor Schrems II. Detalii complete în Politica de confidențialitate.",
+        a: "Da, utilizăm AI pentru generarea fișelor de post, evaluări și rapoarte. Datele sunt procesate exclusiv pentru generarea răspunsului solicitat, fără a fi reținute, fără a fi folosite pentru antrenament și fără a fi partajate cu terți. Am realizat o evaluare de impact conform cerințelor aplicabile. Detalii complete în Politica de confidențialitate.",
       },
       {
         q: "Cât timp păstrați datele?",
@@ -78,11 +78,11 @@ const FAQ_SECTIONS = [
       },
       {
         q: "Cum ne ajută JobGrade cu conformitatea?",
-        a: "Platforma evaluează posturile pe criterii obiective (6 dimensiuni standardizate), construiește clase salariale transparente, identifică decalaje salariale nejustificate și generează rapoartele necesare pentru conformitate. Calendarul de obligații legale vă arată ce termene aveți de respectat.",
+        a: "Platforma evaluează posturile pe criterii obiective conform legislației (cunoștințe și competențe, responsabilitate, efort și condiții de muncă), construiește clase salariale transparente, identifică decalaje salariale nejustificate și generează rapoartele necesare pentru conformitate. Calendarul de obligații legale vă arată ce termene aveți de respectat.",
       },
       {
         q: "Evaluarea este obiectivă?",
-        a: "Evaluarea se face pe 6 criterii standardizate: cunoștințe necesare, complexitatea comunicării, rezolvarea problemelor, luarea deciziilor, impactul asupra afacerii și condițiile de muncă. Se evaluează postul (cerințele poziției), nu persoana care îl ocupă. Procesul poate fi complet asistat de AI sau cu participarea unei comisii de evaluare.",
+        a: "Evaluarea se face pe 4 criterii conform legislației europene: cunoștințe și competențe, responsabilitate, efort și condiții de muncă. Se evaluează postul (cerințele poziției), nu persoana care îl ocupă. Procesul poate fi complet asistat de AI sau cu participarea unei comisii de evaluare.",
       },
       {
         q: "Platforma respectă AI Act?",
