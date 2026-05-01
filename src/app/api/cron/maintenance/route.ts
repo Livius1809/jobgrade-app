@@ -301,7 +301,24 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  // 11. FULL-CHECK PLATFORMĂ (la fiecare 6h — QLA automat)
+  // 11. CRAWLING — colectare date externe (sursele due conform schedule)
+  await withTimeout("crawling", async () => {
+    const { crawlAllDue } = await import("@/lib/crawl/engine")
+    const reports = await crawlAllDue()
+    const successful = reports.filter(r => r.status === "SUCCESS")
+    const totalNew = reports.reduce((s, r) => s + r.recordsNew, 0)
+    results.crawling = {
+      crawled: reports.length,
+      successful: successful.length,
+      totalNew,
+      sources: reports.map(r => `${r.sourceName}:${r.status}(${r.recordsNew})`),
+    }
+    if (reports.length > 0) {
+      console.log(`[maintenance] Crawling: ${successful.length}/${reports.length} success, ${totalNew} new records`)
+    }
+  }, 60000) // 60s timeout pentru crawling
+
+  // 12. FULL-CHECK PLATFORMĂ (la fiecare 6h — QLA automat)
   await withTimeout("fullCheck", async () => {
     const lastCheck = await prisma.systemConfig.findUnique({ where: { key: "FULL_CHECK_LAST_RUN" } })
     const lastCheckAge = lastCheck ? Date.now() - new Date(JSON.parse(lastCheck.value).timestamp).getTime() : Infinity

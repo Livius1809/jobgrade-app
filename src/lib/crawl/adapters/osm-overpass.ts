@@ -10,12 +10,12 @@
 
 import type { CrawlAdapter, CrawlOutput } from "../engine"
 
-// Bounding box Medgidia (aproximativ)
+// Bounding box Medgidia (extins — acoperă tot municipiul)
 const MEDGIDIA_BBOX = {
-  south: 44.22,
-  west: 28.24,
-  north: 44.27,
-  east: 28.30,
+  south: 44.20,
+  west: 28.22,
+  north: 44.28,
+  east: 28.32,
 }
 
 // Tipuri de POI de interes
@@ -55,7 +55,7 @@ const adapter: CrawlAdapter = {
       return `node["${k}"="${v}"](${south},${west},${north},${east});`
     }).join("\n")
 
-    const query = `[out:json][timeout:30];(\n${tagFilters}\n);out body;`
+    const query = `[out:json][timeout:60];(\n${tagFilters}\n);out body;`
 
     try {
       const res = await fetch(OVERPASS_URL, {
