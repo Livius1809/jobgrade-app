@@ -48,6 +48,66 @@ export interface OrchestratorResult {
   errors: string[]
 }
 
+/**
+ * Promovare artefacte care îndeplinesc criteriile de validare.
+ * Artefacte cu appliedCount >= 3 și effectivenessScore >= 0.6
+ * trec de la validated: false → validated: true.
+ * Fără asta, KB-ul rămâne la 14% validate.
+ */
+async function promoteValidatedArtifacts(): Promise<number> {
+  const candidates = await prisma.learningArtifact.findMany({
+    where: {
+      validated: false,
+      appliedCount: { gte: 3 },
+      effectivenessScore: { gte: 0.6 },
+    },
+    take: 100,
+  })
+
+  let promoted = 0
+  for (const artifact of candidates) {
+    await prisma.learningArtifact.update({
+      where: { id: artifact.id },
+      data: { validated: true },
+    })
+    promoted++
+  }
+  return promoted
+}
+
+/**
+ * Auto-approve review queue vechi de 3+ zile.
+ * Managerii ar trebui să review-uiască, dar dacă nu o fac,
+ * nu blocăm fluxul la infinit.
+ */
+async function autoApproveStaleReviews(): Promise<number> {
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 3600000)
+
+  const stale = await prisma.agentTask.findMany({
+    where: {
+      status: "REVIEW_PENDING" as any,
+      completedAt: { lt: threeDaysAgo },
+    },
+    take: 20,
+  })
+
+  let approved = 0
+  for (const task of stale) {
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: {
+        status: "COMPLETED",
+        reviewedBy: "SYSTEM_AUTO",
+        reviewedAt: new Date(),
+        resultQuality: 70, // calitate medie — nu a fost review-uit manual
+        tags: { push: "auto-approved-stale" },
+      },
+    })
+    approved++
+  }
+  return approved
+}
+
 export async function runLearningOrchestrator(): Promise<OrchestratorResult> {
   const start = Date.now()
   const errors: string[] = []
@@ -72,6 +132,24 @@ export async function runLearningOrchestrator(): Promise<OrchestratorResult> {
     propagated = await propagateDepartmentLearning()
   } catch (e: any) {
     errors.push(`propagate: ${e.message?.slice(0, 80)}`)
+  }
+
+  // ═══ FAZA 1B: Promovare artefacte validate (appliedCount >= 3) ═══
+  let promoted = 0
+  try {
+    promoted = await promoteValidatedArtifacts()
+    if (promoted > 0) console.log(`[learning-orchestrator] Promoted ${promoted} artifacts to validated`)
+  } catch (e: any) {
+    errors.push(`promote-validation: ${e.message?.slice(0, 80)}`)
+  }
+
+  // ═══ FAZA 1C: Auto-approve review queue stale (3+ zile) ═══
+  let autoApproved = 0
+  try {
+    autoApproved = await autoApproveStaleReviews()
+    if (autoApproved > 0) console.log(`[learning-orchestrator] Auto-approved ${autoApproved} stale reviews`)
+  } catch (e: any) {
+    errors.push(`auto-approve-reviews: ${e.message?.slice(0, 80)}`)
   }
 
   // ═══ FAZA 2: EVERY CYCLE — BUCLA F4: feedback propagare ═══

@@ -210,8 +210,8 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
     })
   }
 
-  // Auto-remediere: REVIEW_PENDING > 5 zile → auto-approve
-  const old5d = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+  // Auto-remediere: REVIEW_PENDING > 3 zile → auto-approve
+  const old5d = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
   const staleReviews = await prisma.agentTask.updateMany({
     where: { status: "REVIEW_PENDING" as any, completedAt: { lt: old5d } },
     data: { status: "COMPLETED" },
@@ -241,8 +241,8 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
     if (cancelledLateral.count > 0) autoRemediations += cancelledLateral.count
   }
 
-  // Self-healing: ACCEPTED > 5 zile fara progres → revert la ASSIGNED
-  const old5dAccepted = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+  // Self-healing: ACCEPTED > 3 zile fara progres → revert la ASSIGNED
+  const old5dAccepted = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
   const staleAccepted = await prisma.agentTask.updateMany({
     where: { status: "ACCEPTED", acceptedAt: { lt: old5dAccepted } },
     data: { status: "ASSIGNED", acceptedAt: null },
@@ -252,8 +252,8 @@ export async function runOperationalEngine(): Promise<OperationalHealthReport> {
   // Self-healing: task-uri cu acelasi titlu CANCELLED 3+ ori → blacklist (nu mai crea)
   // Acesta e deja implementat ca circuit breaker in task-executor.ts
 
-  // Auto-remediere: ASSIGNED > 14 zile → CANCELLED
-  const old14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+  // Auto-remediere: ASSIGNED > 7 zile → CANCELLED
+  const old14d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const zombieTasks = await prisma.agentTask.updateMany({
     where: { status: "ASSIGNED", createdAt: { lt: old14d } },
     data: { status: "CANCELLED" },
