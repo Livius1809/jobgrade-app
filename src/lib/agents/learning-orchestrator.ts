@@ -55,13 +55,21 @@ export interface OrchestratorResult {
  * Fără asta, KB-ul rămâne la 14% validate.
  */
 async function promoteValidatedArtifacts(): Promise<number> {
+  // Praguri relaxate: appliedCount >= 1 (a fost folosit cel puțin o dată)
+  // + effectivenessScore >= 0.5 (minim acceptabil)
+  // SAU artefacte mai vechi de 3 zile cu orice effectivenessScore > 0
+  // (dacă a supraviețuit 3 zile fără a fi respins, e probabil valid)
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 3600000)
+
   const candidates = await prisma.learningArtifact.findMany({
     where: {
       validated: false,
-      appliedCount: { gte: 3 },
-      effectivenessScore: { gte: 0.6 },
+      OR: [
+        { appliedCount: { gte: 1 }, effectivenessScore: { gte: 0.5 } },
+        { createdAt: { lt: threeDaysAgo }, effectivenessScore: { gt: 0 } },
+      ],
     },
-    take: 100,
+    take: 200,
   })
 
   let promoted = 0
