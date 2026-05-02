@@ -100,17 +100,14 @@ export default function GhidulPublic() {
 
   return (
     <>
-      {/* Buton float */}
+      {/* Buton float — avatar Rareș */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white transition-transform hover:scale-110"
-          style={{ background: "var(--indigo)" }}
-          title="Ghidul JobGrade"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg overflow-hidden transition-transform hover:scale-110 ring-2 ring-white"
+          title="Rareș — Ghidul JobGrade"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+          <img src="/guide/C2_B2B.png" alt="Rareș" className="w-full h-full object-cover" />
         </button>
       )}
 
@@ -120,11 +117,14 @@ export default function GhidulPublic() {
           className="fixed bottom-6 right-6 z-50 flex flex-col overflow-hidden rounded-xl shadow-2xl border border-gray-200"
           style={{ width: 360, height: 480 }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3" style={{ background: "var(--indigo)" }}>
-            <div>
-              <p className="text-white text-sm font-semibold">Ghidul JobGrade</p>
-              <p className="text-indigo-200 text-xs">Vă ajut să înțelegeți serviciile noastre</p>
+          {/* Header — Rareș */}
+          <div className="flex items-center justify-between px-3 py-2.5" style={{ background: "var(--indigo)" }}>
+            <div className="flex items-center gap-2.5">
+              <img src="/guide/C2_B2B.png" alt="Rareș" className="w-9 h-9 rounded-full object-cover ring-2 ring-white/30" />
+              <div>
+                <p className="text-white text-sm font-semibold">Rareș</p>
+                <p className="text-indigo-200 text-[10px]">Ghidul JobGrade</p>
+              </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -137,8 +137,11 @@ export default function GhidulPublic() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto bg-white p-3 space-y-2.5">
             {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-1.5`}>
+                {msg.role !== "user" && (
+                  <img src="/guide/C2_B2B.png" alt="Rareș" className="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-1" />
+                )}
+                <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                   msg.role === "user"
                     ? "text-gray-800"
                     : msg.role === "guide"
