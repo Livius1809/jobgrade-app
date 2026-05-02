@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
-import { stripe, CREDIT_PACKAGES, SUBSCRIPTIONS } from "@/lib/stripe"
+import { getStripe, detectStripeMode, getSubscriptionPriceId, getCreditPriceId, findCreditPackage, CREDIT_PACKAGES, SUBSCRIPTIONS, type StripeMode } from "@/lib/stripe"
 import { getAppUrl } from "@/lib/get-app-url"
 import { calculateServicePrice, LAYER_NAMES, detectTier, type SubscriptionTier } from "@/lib/pricing"
 
@@ -10,11 +10,14 @@ const schema = z.object({
   type: z.enum(["credits", "subscription", "service"]),
   packageId: z.string().optional(),
   billing: z.enum(["monthly", "annual"]).optional(),
+  renewal: z.enum(["auto", "manual"]).optional(), // reînnoire automată sau manuală
+  tier: z.string().optional(), // ESSENTIALS, BUSINESS, ENTERPRISE
   layer: z.number().min(1).max(4).optional(),
-  positions: z.number().min(1).optional(), // validated contextually below
-  employees: z.number().min(1).optional(), // validated contextually below
+  positions: z.number().min(1).optional(),
+  employees: z.number().min(1).optional(),
   annual: z.boolean().optional(),
   creditPackageId: z.string().optional(),
+  sandbox: z.boolean().optional(), // forțează test mode
 })
 
 export async function POST(req: NextRequest) {
@@ -55,6 +58,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Determinare mod Stripe (test/live) ──
+    const stripeMode: StripeMode = detectStripeMode({
+      isSandbox: data.sandbox,
+      isPilot: false,
+      tenantId,
+    })
+    const stripeClient = getStripe(stripeMode)
+
     // Get or create Stripe customer
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -66,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     let customerId = tenant.stripeCustomerId
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await stripeClient.customers.create({
         name: tenant.name,
         email: session.user.email ?? undefined,
         metadata: { tenantId },
@@ -80,31 +91,37 @@ export async function POST(req: NextRequest) {
 
     // ── Subscription checkout (3 tier-uri) ──
     if (data.type === "subscription") {
-      // Detectăm tier-ul din poziții/angajați sau explicit din body
-      const tier: SubscriptionTier = (data as any).tier || detectTier(data.positions || 0, data.employees || 0)
-      const sub = SUBSCRIPTIONS[tier]
+      const tier: SubscriptionTier = (data.tier as SubscriptionTier) || detectTier(data.positions || 0, data.employees || 0)
+      const billing = data.billing || "monthly"
+      const renewal = data.renewal || "auto"
 
-      const priceId = data.billing === "annual"
-        ? sub.annualPriceId
-        : sub.monthlyPriceId
+      const priceId = getSubscriptionPriceId(tier, billing, stripeMode)
 
       if (!priceId) {
-        return NextResponse.json({ message: `Prețul abonamentului ${sub.label} nu este configurat în Stripe.` }, { status: 400 })
+        return NextResponse.json({ message: `Prețul abonamentului ${tier} (${billing}) nu este configurat.` }, { status: 400 })
       }
 
-      // Monthly = subscription (recurring), Annual = payment (one-off, reînnoire manuală)
-      const isRecurring = data.billing !== "annual"
-      const checkoutSession = await stripe.checkout.sessions.create({
+      // Determinare mod checkout:
+      // - Monthly + reînnoire automată → subscription (recurring)
+      // - Monthly + reînnoire manuală → payment (one-off)
+      // - Annual + reînnoire automată → subscription (yearly recurring)
+      // - Annual + reînnoire manuală → payment (one-off)
+      const isRecurring = renewal === "auto"
+
+      const checkoutSession = await stripeClient.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: isRecurring ? "subscription" : "payment",
         success_url: `${APP_URL}/settings/billing?success=subscription&tier=${tier}`,
         cancel_url: `${APP_URL}/settings/billing?canceled=1`,
-        metadata: { tenantId, type: "subscription", tier, billing: data.billing || "monthly" },
+        metadata: {
+          tenantId, type: "subscription", tier, billing, renewal,
+          stripeMode,
+        },
       })
 
-      return NextResponse.json({ url: checkoutSession.url })
+      return NextResponse.json({ url: checkoutSession.url, mode: stripeMode })
     }
 
     // ── Service package checkout ──
@@ -172,7 +189,7 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      const checkoutSession = await stripe.checkout.sessions.create({
+      const checkoutSession = await stripeClient.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
         line_items: lineItems,
@@ -195,57 +212,45 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Credits checkout ──
-    const pkg = CREDIT_PACKAGES.find((p) => p.id === data.packageId)
+    const pkg = findCreditPackage(data.packageId || "")
     if (!pkg) {
       return NextResponse.json({ message: "Pachet invalid." }, { status: 400 })
     }
 
-    // If Stripe price ID configured → use it
-    if (pkg.priceId) {
-      const checkoutSession = await stripe.checkout.sessions.create({
+    const creditPriceId = getCreditPriceId(pkg.id, stripeMode)
+
+    if (creditPriceId) {
+      const checkoutSession = await stripeClient.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
-        line_items: [{ price: pkg.priceId, quantity: 1 }],
+        line_items: [{ price: creditPriceId, quantity: 1 }],
         mode: "payment",
         success_url: `${APP_URL}/portal?success=credits&amount=${pkg.credits}`,
         cancel_url: `${APP_URL}/portal?canceled=1`,
-        metadata: {
-          tenantId,
-          type: "credits",
-          packageId: pkg.id,
-          credits: String(pkg.credits),
-        },
+        metadata: { tenantId, type: "credits", packageId: pkg.id, credits: String(pkg.credits), stripeMode },
       })
-      return NextResponse.json({ url: checkoutSession.url })
+      return NextResponse.json({ url: checkoutSession.url, mode: stripeMode })
     }
 
-    // Fallback: create price on-the-fly (test mode)
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // Fallback: create price on-the-fly
+    const checkoutSession = await stripeClient.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [{
         price_data: {
           currency: "ron",
-          product_data: {
-            name: `${pkg.label} — ${pkg.credits} credite`,
-            description: pkg.description,
-          },
-          unit_amount: pkg.price * 100, // Stripe uses bani (cents)
+          product_data: { name: `${pkg.label} — ${pkg.credits} credite`, description: pkg.description },
+          unit_amount: pkg.price * 100,
         },
         quantity: 1,
       }],
       mode: "payment",
       success_url: `${APP_URL}/portal?success=credits&amount=${pkg.credits}`,
       cancel_url: `${APP_URL}/portal?canceled=1`,
-      metadata: {
-        tenantId,
-        type: "credits",
-        packageId: pkg.id,
-        credits: String(pkg.credits),
-      },
+      metadata: { tenantId, type: "credits", packageId: pkg.id, credits: String(pkg.credits), stripeMode },
     })
 
-    return NextResponse.json({ url: checkoutSession.url })
+    return NextResponse.json({ url: checkoutSession.url, mode: stripeMode })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: "Date invalide.", errors: error.issues }, { status: 400 })
