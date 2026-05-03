@@ -295,7 +295,15 @@ async function loadAdapter(name: string): Promise<CrawlAdapter | null> {
       case "PRIMARIE_MEDGIDIA": return (await import("./adapters/primarie-medgidia")).default
       case "AJOFM_CONSTANTA": return (await import("./adapters/ajofm")).default
       case "OSM_OVERPASS": return (await import("./adapters/osm-overpass")).default
-      default: return null
+      // Adaptoare noi
+      case "ONRC_FIRME": return (await import("./adapters/onrc-firme")).default
+      case "CULTURA_PATRIMONIU": return (await import("./adapters/cultura-patrimoniu")).default
+      default:
+        // Adaptoare generice (primărie orice UAT)
+        if (name.startsWith("PRIMARIE_")) {
+          return (await import("./adapters/primarie-generic")).default
+        }
+        return null
     }
   } catch {
     return null
