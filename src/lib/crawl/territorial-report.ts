@@ -14,6 +14,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { analyzeTerritory } from "./territorial-analysis"
+import { calculateTerritorialBalance } from "./territorial-balance"
 import {
   SECTOR_TAXONOMY,
   getAllNichesFlat,
@@ -150,14 +151,21 @@ export async function generateTerritorialReport(territory: string): Promise<Terr
   // ═══ RESURSE ═══
   const resources = calculateResourceScores(territorialData, entities)
 
-  // ═══ CONSUM ═══
-  const consumption = calculateConsumption(entities, popTotal)
+  // ═══ CONSUM + BALANȚĂ (din date reale crawlate) ═══
+  const balance = await calculateTerritorialBalance(territory)
+  const consumption = balance.consumption.map(c => ({
+    category: c.category,
+    localPct: c.localPct,
+    importPct: c.importPct,
+    localizable: c.localizable,
+    gap: c.gap,
+  }))
 
   // ═══ NIVEL MEDIU TRANSFORMARE ═══
   const avgTransformLevel = calculateAvgTransformLevel(entities, territorialData)
 
   // ═══ BALANȚĂ TERITORIALĂ ═══
-  const territorialBalance = estimateTerritorialBalance(consumption, entities, analysis)
+  const territorialBalance = balance.balancePct
 
   // ═══ SCOR VITALITATE ═══
   const resourceAvg = (resources.natural.score + resources.cultural.score + resources.human.score + resources.infrastructure.score) / 4
