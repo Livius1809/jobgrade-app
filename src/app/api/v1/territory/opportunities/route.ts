@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/territory/opportunities?territory=MEDGIDIA&sector=TURISM
+ * GET /api/v1/territory/opportunities?territory=MEDGIDIA&sector=TURISM&deep=true
  *
  * Returnează oportunități evaluate complet: economic + L3 (legal) + L1 (etic).
  * Parametri:
@@ -7,6 +7,8 @@
  *   sector (opțional) — filtrare per sector
  *   status (opțional) — APROBATA | CONDITIONATA | toate (default)
  *   includeRejected (opțional) — include și respinsele (default: false)
+ *   deep (opțional) — analiză subtilă Claude pe top 5 (default: false)
+ *   synergies (opțional) — detectare sinergii cross-sector via Claude (default: false)
  */
 
 export const dynamic = "force-dynamic"
@@ -22,6 +24,12 @@ import {
   evaluateAllOpportunities,
   type EvaluatedOpportunity,
 } from "@/lib/crawl/opportunity-filters"
+import {
+  analyzeTopOpportunitiesWithClaude,
+  analyzeTerritorialSynergies,
+  type TerritoryContext,
+  type ClaudeOpportunityAnalysis,
+} from "@/lib/crawl/claude-opportunity-analysis"
 
 export async function GET(req: NextRequest) {
   const territory = req.nextUrl.searchParams.get("territory")
@@ -32,6 +40,8 @@ export async function GET(req: NextRequest) {
   const sectorFilter = req.nextUrl.searchParams.get("sector")
   const statusFilter = req.nextUrl.searchParams.get("status")
   const includeRejected = req.nextUrl.searchParams.get("includeRejected") === "true"
+  const deepAnalysis = req.nextUrl.searchParams.get("deep") === "true"
+  const detectSynergies = req.nextUrl.searchParams.get("synergies") === "true"
 
   // Citim date teritoriale din DB pentru scoring contextual
   const [territorialData, localEntities] = await Promise.all([
@@ -158,9 +168,83 @@ export async function GET(req: NextRequest) {
     })),
   }
 
+  // ═══ ANALIZĂ CLAUDE (opțional — deep=true / synergies=true) ═══
+  let claudeAnalyses: Record<string, ClaudeOpportunityAnalysis> | undefined
+  let synergyClusters: Awaited<ReturnType<typeof analyzeTerritorialSynergies>> | undefined
+
+  if (deepAnalysis || detectSynergies) {
+    // Construim context teritorial din datele crawlate
+    const ethnicData = territorialData
+      .filter(d => d.subcategory === "ETHNICITY")
+      .map(d => `${d.key}: ${d.numericValue}`)
+
+    const infraData = territorialData
+      .filter(d => d.category === "INFRASTRUCTURE")
+      .slice(0, 10)
+      .map(d => d.key.replace(/_/g, " "))
+
+    const topSectors = territorialData
+      .filter(d => d.subcategory === "SECTORS")
+      .slice(0, 5)
+      .map(d => d.key)
+
+    const knownGaps = evaluated
+      .filter(e => e.status === "APROBATA")
+      .slice(0, 5)
+      .map(e => e.nicheName)
+
+    const context: TerritoryContext = {
+      territory,
+      population: popTotal,
+      ethnicGroups: ethnicData.length > 0 ? ethnicData : undefined,
+      topBusinessSectors: topSectors.length > 0 ? topSectors : undefined,
+      infrastructure: infraData.length > 0 ? infraData : undefined,
+      knownGaps: knownGaps.length > 0 ? knownGaps : undefined,
+    }
+
+    if (deepAnalysis) {
+      const analyses = await analyzeTopOpportunitiesWithClaude(evaluated, context, 5)
+      claudeAnalyses = Object.fromEntries(analyses)
+
+      // Ajustăm scorurile finale cu evaluarea Claude
+      for (const opp of evaluated) {
+        const claudeResult = analyses.get(opp.nicheId)
+        if (claudeResult) {
+          opp.ethical = claudeResult.ethical
+          opp.finalScore = claudeResult.adjustedFinalScore
+        }
+      }
+
+      // Re-sortăm după scorurile ajustate
+      evaluated.sort((a, b) => {
+        const statusOrder = { APROBATA: 0, CONDITIONATA: 1, RESPINSA_ETIC: 2, RESPINSA_LEGAL: 3 }
+        const statusDiff = (statusOrder[a.status] || 9) - (statusOrder[b.status] || 9)
+        if (statusDiff !== 0) return statusDiff
+        return b.finalScore - a.finalScore
+      })
+
+      // Recalculăm summary cu scoruri ajustate
+      summary.topOpportunities = evaluated.slice(0, 10).map(e => ({
+        niche: e.nicheName,
+        sector: e.sectorName,
+        finalScore: e.finalScore,
+        ethicalScore: e.ethical?.overallScore,
+        status: e.status,
+        propagation: e.ethical?.propagationMechanism?.substring(0, 100),
+      }))
+    }
+
+    if (detectSynergies) {
+      synergyClusters = await analyzeTerritorialSynergies(evaluated, context)
+    }
+  }
+
   return NextResponse.json({
     summary,
     sectors,
+    ...(claudeAnalyses && { claudeAnalyses }),
+    ...(synergyClusters && { synergies: synergyClusters }),
+    analysisMode: deepAnalysis ? "deep (Claude L1+L3)" : "static",
     timestamp: new Date().toISOString(),
   })
 }
