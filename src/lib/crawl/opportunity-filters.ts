@@ -367,7 +367,668 @@ const ETHICAL_PROFILES: Record<string, Partial<L1EthicalAssessment>> = {
     propagationMechanism: "O comunitate energetică funcțională → vecinii văd beneficiul → creează a lor → județul devine independent energetic → model național. Propagare virală a autonomiei.",
   },
 
-  // Exemple de nișe cu scoruri etice mai scăzute (atenție)
+  // ═══ TURISM — restul nișelor ═══
+
+  "TURISM_MEDICAL": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 8,
+      environmentalCare: 5,
+      autonomyCreation: 7,       // pacientul alege, dar depinde de specialist
+      selfPropagation: 6,        // pacientul vindecat povestește, dar nu e viral
+      transparency: 7,           // calitatea trebuie demonstrabilă
+      knowledgeContribution: 6,
+      equity: 5,                 // accesibil doar celor care pot călători
+    },
+    positiveFactors: [
+      "Aduce servicii medicale în zone sub-deservite",
+      "Creează locuri de muncă pentru specialiști",
+      "Combinație sănătate + turism = recuperare completă",
+    ],
+    negativeFactors: [
+      "Risc de prioritizare turiști vs. localnici",
+    ],
+    ethicalConditions: [
+      "Localnicii au acces egal la serviciile medicale, nu doar turiștii",
+      "Calitate medicală certificată, nu turism low-cost pe sănătate",
+    ],
+    propagationMechanism: "Pacient vindecat → recomandă → mai mulți vin → clinica crește → angajează mai mulți specialiști → localnicii beneficiază de specialiști rezidenți. Sănătate importată devine sănătate locală.",
+  },
+
+  "TURISM_RURAL": {
+    dimensions: {
+      communityWellbeing: 9,
+      humanDignity: 8,
+      environmentalCare: 8,      // turismul rural protejează peisajul
+      autonomyCreation: 9,       // fermierul diversifică, nu depinde de o singură cultură
+      selfPropagation: 8,        // turist fermecat → povestește → alții vin
+      transparency: 9,           // totul se vede — ferma, animalele, procesul
+      knowledgeContribution: 8,  // educă urban despre rural
+      equity: 8,                 // prețuri accesibile, experiență autentică
+    },
+    positiveFactors: [
+      "Fixează populația rurală — alternativă la migrația urbană",
+      "Conservă peisajul tradițional care altfel s-ar pierde",
+      "Educă generația urbană despre originea alimentelor",
+    ],
+    ethicalConditions: [
+      "Autenticitate — nu fermă de carton pentru turiști",
+      "Fermierul primește valoarea, nu intermediarul",
+    ],
+    propagationMechanism: "Fermier diversifică → venit suplimentar → rămâne pe teren → peisajul se conservă → mai atractiv → mai mulți turiști → mai mulți fermieri diversifică. Satul renaște.",
+  },
+
+  "TURISM_EDUCATIONAL": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 9,
+      environmentalCare: 6,
+      autonomyCreation: 9,       // educația = autonomie prin definiție
+      selfPropagation: 9,        // cel educat educă pe alții
+      transparency: 8,
+      knowledgeContribution: 10, // esența educației
+      equity: 7,
+    },
+    positiveFactors: [
+      "Combină vacanța cu formarea — eficiență maximă",
+      "Creează ambasadori culturali (tineri care se întorc)",
+    ],
+    propagationMechanism: "Tânăr participă → învață → aplică acasă → povestește → alți tineri vin → comunitatea devine hub educațional. Cunoașterea se propagă exponențial.",
+  },
+
+  "TURISM_EVENTOS": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,
+      environmentalCare: 5,      // evenimente mari = amprentă semnificativă
+      autonomyCreation: 6,
+      selfPropagation: 8,        // festivalul reușit devine tradiție
+      transparency: 7,
+      knowledgeContribution: 6,
+      equity: 6,                 // prețul biletelor poate exclude
+    },
+    positiveFactors: [
+      "Pune teritoriul pe hartă (brand awareness)",
+      "Concentrează venituri în perioade scurte",
+    ],
+    negativeFactors: [
+      "Impact ecologic la evenimente mari",
+      "Beneficiul e sezonier, nu permanent",
+    ],
+    ethicalConditions: [
+      "Comunitatea locală beneficiază, nu doar organizatorii externi",
+      "Impact ecologic compensat activ",
+    ],
+    propagationMechanism: "Festival reușit → vizibilitate → turiști revin și în afara festivalului → economie locală permanentă. Evenimentul e catalizator, nu scop.",
+  },
+
+  // ═══ AGRICULTURĂ — restul nișelor ═══
+
+  "AGRI_CULTURA_MARE": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,
+      environmentalCare: 5,      // monocultura poate degrada solul
+      autonomyCreation: 5,       // fermierul depinde de piețe globale
+      selfPropagation: 5,        // nu se auto-propagă dacă exportă brut
+      transparency: 6,
+      knowledgeContribution: 5,
+      equity: 6,
+    },
+    negativeFactors: [
+      "Monocultura degradează solul pe termen lung",
+      "Export brut = pierdere valoare adăugată",
+      "Dependență de prețurile internaționale",
+    ],
+    ethicalConditions: [
+      "Rotația culturilor obligatorie (sustenabilitate sol)",
+      "Cel puțin o parte din producție trebuie procesată LOCAL",
+    ],
+    propagationMechanism: "Condițional: dacă fermierul procesează local → valoare reținută → angajați locali → consum local crește → mai mulți fermieri procesează. Dacă exportă brut → zero propagare.",
+  },
+
+  "AGRI_PROCESARE_PRIMARA": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 7,
+      environmentalCare: 6,
+      autonomyCreation: 8,       // teritoriul reține valoare
+      selfPropagation: 8,        // procesare locală = locuri de muncă = consum local
+      transparency: 7,
+      knowledgeContribution: 6,
+      equity: 7,
+    },
+    positiveFactors: [
+      "Ridică nivelul de transformare de la 1 la 2",
+      "Creează locuri de muncă în procesare",
+      "Reține valoare în teritoriu (făină vs. grâu)",
+    ],
+    propagationMechanism: "Moară locală → făină locală → brutărie locală → pâine locală → bani rămân în comunitate → comunitatea crește → cerere mai mare → mai multă procesare. Lanțul valoric se auto-extinde.",
+  },
+
+  "AGRI_PROCESARE_SECUNDARA": {
+    dimensions: {
+      communityWellbeing: 9,
+      humanDignity: 8,
+      environmentalCare: 6,
+      autonomyCreation: 9,
+      selfPropagation: 9,        // produs finit = brand = identitate
+      transparency: 8,
+      knowledgeContribution: 7,
+      equity: 7,
+    },
+    positiveFactors: [
+      "Produs finit cu identitate — teritoriul devine brand",
+      "Multiplică valoarea materiei prime de 3-10x",
+      "Locuri de muncă diversificate (producție + ambalare + logistică)",
+    ],
+    propagationMechanism: "Pâine cu specific local → turiștii o descoperă → cerere online → export → brandul crește → mai mulți producători se alătură → cluster alimentar local. De la grâu la brand în 4 pași.",
+  },
+
+  "AGRI_NISA_PREMIUM": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 8,
+      environmentalCare: 8,      // culturi de nișă = mai puțin intensiv
+      autonomyCreation: 8,       // piață de nișă = mai puțin dependent de global
+      selfPropagation: 7,
+      transparency: 8,
+      knowledgeContribution: 7,
+      equity: 5,                 // produs premium = nu pentru toți
+    },
+    propagationMechanism: "Producător de nișă reușește → alții din zonă copiază → cluster de nișă → brand regional → turism specializat vine → spirala creativă.",
+  },
+
+  "AGRI_ZOOTEHNIE": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 6,           // bunăstare animală e critică
+      environmentalCare: 5,      // depinde de scară și practici
+      autonomyCreation: 7,
+      selfPropagation: 6,
+      transparency: 6,
+      knowledgeContribution: 5,
+      equity: 7,
+    },
+    negativeFactors: [
+      "Bunăstarea animală trebuie monitorizată",
+      "Impact ecologic la scară mare",
+    ],
+    ethicalConditions: [
+      "Standarde de bunăstare animală respectate riguros",
+      "Preferință pentru creștere extensivă, nu industrială",
+      "Trasabilitate completă fermă → consumator",
+    ],
+    propagationMechanism: "Fermier responsabil → produs de calitate → consumator apreciază → plătește corect → fermierul investește în bunăstare animală → calitate și mai bună. Ciclul virtuos al calității.",
+  },
+
+  // ═══ SĂNĂTATE — restul nișelor ═══
+
+  "SAN_PRIMARA": {
+    dimensions: {
+      communityWellbeing: 10,
+      humanDignity: 10,
+      environmentalCare: 5,
+      autonomyCreation: 8,       // sănătatea permite autonomia
+      selfPropagation: 9,        // om sănătos = familie sănătoasă = comunitate
+      transparency: 8,
+      knowledgeContribution: 8,  // educație sanitară preventivă
+      equity: 9,                 // medicul de familie = acces universal
+    },
+    positiveFactors: [
+      "Fundament — fără medicină primară, nimic altceva nu funcționează",
+      "Prevenție = mai ieftin decât tratamentul",
+      "Fixează populație (au motiv să rămână dacă au medic)",
+    ],
+    propagationMechanism: "Medic de familie prezent → prevenție → mai puțini bolnavi → comunitate mai productivă → atrage alți profesioniști → servicii mai bune → comunitate mai atractivă. Sănătatea atrage sănătate.",
+  },
+
+  "SAN_SPECIALITATI": {
+    dimensions: {
+      communityWellbeing: 9,
+      humanDignity: 9,
+      environmentalCare: 5,
+      autonomyCreation: 8,
+      selfPropagation: 7,
+      transparency: 7,
+      knowledgeContribution: 7,
+      equity: 6,                 // accesul la specialiști e inegal
+    },
+    ethicalConditions: [
+      "Priorități medicale, nu comerciale",
+      "Acces și pentru pacienți fără asigurare (urgențe)",
+    ],
+    propagationMechanism: "Specialist disponibil local → zero naveta → economie de timp → productivitate → comunitatea crește → atrage alți specialiști. Concentrare profesională.",
+  },
+
+  "SAN_RECUPERARE": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 9,
+      environmentalCare: 6,      // balneologie = legătură cu natura
+      autonomyCreation: 9,       // recuperarea = redobândirea autonomiei
+      selfPropagation: 7,
+      transparency: 7,
+      knowledgeContribution: 7,
+      equity: 6,
+    },
+    propagationMechanism: "Pacient recuperat → revine la muncă → produce → consumă local → economia crește → fonduri pentru mai multă recuperare. Capacitatea de muncă restaurată generează valoare.",
+  },
+
+  "SAN_TELEMEDICINA": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 7,
+      environmentalCare: 7,      // zero deplasare = zero emisii
+      autonomyCreation: 8,       // acces de oriunde
+      selfPropagation: 8,        // model replicabil instant în alte zone
+      transparency: 7,
+      knowledgeContribution: 7,
+      equity: 8,                 // democratizează accesul la specialist
+    },
+    positiveFactors: [
+      "Rezolvă distanța — specialistul e la un click",
+      "Model scalabil exponențial",
+      "Reduce presiunea pe spitalele urbane",
+    ],
+    propagationMechanism: "Un cabinet virtual funcțional → pacienții din alte sate aud → adoptă → platforma crește → mai mulți medici se alătură → acoperire națională din inițiativă locală.",
+  },
+
+  "SAN_VARSTNICI": {
+    dimensions: {
+      communityWellbeing: 10,
+      humanDignity: 10,          // demnitatea vârstnicilor = măsura civilizației
+      environmentalCare: 5,
+      autonomyCreation: 8,       // autonomie maximă posibilă la domiciliu
+      selfPropagation: 8,        // model funcțional → alte comunități copiază
+      transparency: 8,
+      knowledgeContribution: 7,  // vârstnicii transmit cunoaștere dacă sunt activi
+      equity: 9,
+    },
+    positiveFactors: [
+      "Vârstnicii activi = resurse (cunoaștere, experiență, stabilitate)",
+      "Reduce presiunea pe spitale (prevenție la domiciliu)",
+      "Solidaritate intergenerațională",
+    ],
+    propagationMechanism: "Vârstnic îngrijit cu demnitate → rămâne activ → transmite cunoaștere tinerilor → tinerii apreciază comunitatea → rămân → îngrijesc la rândul lor. Ciclul intergenerațional.",
+  },
+
+  "SAN_LABORATOR": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 7,
+      environmentalCare: 4,      // deșeuri medicale
+      autonomyCreation: 7,
+      selfPropagation: 6,
+      transparency: 9,           // rezultate măsurabile obiectiv
+      knowledgeContribution: 7,
+      equity: 7,
+    },
+    propagationMechanism: "Laborator local → diagnostic rapid → tratament la timp → mai puțini bolnavi grav → comunitate mai sănătoasă → atrage mai mulți profesioniști. Diagnosticul previne escaladarea.",
+  },
+
+  // ═══ EDUCAȚIE — restul nișelor ═══
+
+  "EDU_RECONVERSIE": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 9,           // a doua șansă = demnitate restaurată
+      environmentalCare: 5,
+      autonomyCreation: 10,      // competență nouă = libertate
+      selfPropagation: 8,
+      transparency: 8,
+      knowledgeContribution: 9,
+      equity: 8,
+    },
+    propagationMechanism: "Adult reconvertit → lucrează în domeniu nou → crește productivitatea → angajator mulțumit → finanțează mai multă reconversie → mai mulți adulți se reconvertesc. Piața muncii se auto-vindecă.",
+  },
+
+  "EDU_ANTREPRENORIAT": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 9,
+      environmentalCare: 5,
+      autonomyCreation: 10,      // antreprenoriatul = autonomie maximă
+      selfPropagation: 10,       // antreprenor format → creează locuri de muncă → formează alți antreprenori
+      transparency: 7,
+      knowledgeContribution: 9,
+      equity: 6,                 // nu toți au resurse pentru antreprenoriat
+    },
+    positiveFactors: [
+      "Creează locuri de muncă (multiplicator economic)",
+      "Punte directă spre Card 5 B2C",
+      "Antreprenorul local rezolvă probleme locale",
+    ],
+    propagationMechanism: "Antreprenor format → creează business → angajează → angajații învață → unii devin antreprenori → creează alte business-uri → ecosistem antreprenorial viu. Propagare exponențială.",
+  },
+
+  "EDU_LIMBA": {
+    dimensions: {
+      communityWellbeing: 6,
+      humanDignity: 7,
+      environmentalCare: 5,
+      autonomyCreation: 8,       // limba = acces la piața globală
+      selfPropagation: 7,
+      transparency: 8,
+      knowledgeContribution: 8,
+      equity: 7,
+    },
+    propagationMechanism: "Comunitate bilingvă → acces la piață internațională → remote work → venituri fără migrație → comunitatea prosperă fără să se golească.",
+  },
+
+  "EDU_TIMPURIE": {
+    dimensions: {
+      communityWellbeing: 10,
+      humanDignity: 10,
+      environmentalCare: 5,
+      autonomyCreation: 8,       // fundament pentru autonomia viitoare
+      selfPropagation: 10,       // copil educat = adult competent = părinte care educă
+      transparency: 8,
+      knowledgeContribution: 10,
+      equity: 9,                 // acces universal necesar
+    },
+    positiveFactors: [
+      "Investiția cu cel mai mare ROI social (studii econometrice)",
+      "Permite părinților să lucreze → economie locală crește",
+      "Previne abandonul școlar pe termen lung",
+    ],
+    propagationMechanism: "Copil educat de mic → performanță școlară → competent profesional → părinte responsabil → copiii lui educați de mic. Ciclul intergenerațional al educației — cel mai puternic mecanism de propagare a Binelui.",
+  },
+
+  "EDU_DIGITAL_AVANSATA": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,
+      environmentalCare: 6,      // digital = mai puțin transport
+      autonomyCreation: 9,       // competențe digitale = libertate de locație
+      selfPropagation: 8,
+      transparency: 7,
+      knowledgeContribution: 9,
+      equity: 5,                 // necesită bază digitală prealabilă
+    },
+    propagationMechanism: "Specialist digital format local → lucrează remote → venit urban în zonă rurală → consumă local → alții văd că merge → se formează și ei → hub digital local. Reclădirea economiei de la tastatură.",
+  },
+
+  // ═══ PRODUCȚIE — restul nișelor ═══
+
+  "PROD_ALIMENTARA": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 7,
+      environmentalCare: 6,
+      autonomyCreation: 8,       // procesare locală = independență alimentară
+      selfPropagation: 8,
+      transparency: 7,
+      knowledgeContribution: 6,
+      equity: 8,                 // alimentele sunt pentru toți
+    },
+    propagationMechanism: "Producție locală → produse accesibile → sănătate mai bună → productivitate → economie crește → cerere crește → producție crește. Auto-alimentare circulară.",
+  },
+
+  "PROD_CONSTRUCTII": {
+    dimensions: {
+      communityWellbeing: 6,
+      humanDignity: 6,
+      environmentalCare: 4,      // construcțiile au impact semnificativ
+      autonomyCreation: 6,
+      selfPropagation: 5,
+      transparency: 6,
+      knowledgeContribution: 5,
+      equity: 6,
+    },
+    ethicalConditions: [
+      "Materiale sustenabile preferate (nu doar cele mai ieftine)",
+      "Respectarea normelor de mediu, nu doar minim legal",
+    ],
+    propagationMechanism: "Materiale locale → cost transport mic → construcții mai ieftine → mai mulți își permit locuință → comunitate stabilă. Pragmatic, nu spectaculos.",
+  },
+
+  "PROD_TEXTILE": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,           // atenție la condițiile de muncă
+      environmentalCare: 5,      // textilele pot polua
+      autonomyCreation: 7,
+      selfPropagation: 6,
+      transparency: 6,
+      knowledgeContribution: 6,
+      equity: 6,
+    },
+    ethicalConditions: [
+      "Condiții de muncă decente — nu atelier de sudoare",
+      "Salariu decent, nu doar minim pe economie",
+    ],
+    propagationMechanism: "Brand local de textile → identitate → turism → cerere → mai mulți meșteri → cluster textil. Dar DOAR dacă condițiile de muncă sunt exemplare.",
+  },
+
+  "PROD_LEMN": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 8,           // meșteșugul e onorat
+      environmentalCare: 6,      // lemn certificat FSC necesar
+      autonomyCreation: 8,
+      selfPropagation: 7,
+      transparency: 7,
+      knowledgeContribution: 7,  // transmitere meșteșug
+      equity: 6,
+    },
+    ethicalConditions: [
+      "Lemn din surse certificate (FSC/PEFC), nu tăieri ilegale",
+      "Replantare activă, nu doar exploatare",
+    ],
+    propagationMechanism: "Mobilă cu design local → identitate → brand → export → venituri → replantare → pădure sănătoasă → materie primă pe termen lung. Sustenabilitate prin design.",
+  },
+
+  "PROD_ARTIZANAT": {
+    dimensions: {
+      communityWellbeing: 9,
+      humanDignity: 10,          // meșteșugul e cea mai demnă muncă
+      environmentalCare: 8,      // producție la scară mică = impact mic
+      autonomyCreation: 9,       // meșteșugarul e liber profesionist prin excelență
+      selfPropagation: 9,        // meșteșugul se transmite maestru → ucenic
+      transparency: 9,           // vezi cum se face, cine face
+      knowledgeContribution: 10, // conservare patrimoniu viu
+      equity: 7,
+    },
+    positiveFactors: [
+      "Salvează meșteșuguri în pericol de dispariție",
+      "Fiecare obiect are poveste și identitate",
+      "Turism + artizanat = combinație naturală",
+    ],
+    propagationMechanism: "Meșteșugar bătrân → transmite ucenicului → ucenicul modernizează (online, design) → piață mai mare → mai mulți tineri vor să învețe → meșteșugul trăiește. Transfer intergenerațional vital.",
+  },
+
+  // ═══ SERVICII — restul nișelor ═══
+
+  "SERV_LOGISTICA": {
+    dimensions: {
+      communityWellbeing: 6,
+      humanDignity: 6,
+      environmentalCare: 4,      // transport = emisii
+      autonomyCreation: 6,
+      selfPropagation: 5,
+      transparency: 6,
+      knowledgeContribution: 4,
+      equity: 6,
+    },
+    ethicalConditions: [
+      "Vehicule cu emisii reduse preferate",
+      "Condiții de muncă decente pentru șoferi/curieri",
+    ],
+    propagationMechanism: "Logistică eficientă → producătorii locali pot livra → piață mai mare → mai mulți producători → mai multă logistică necesară. Infrastructura deblochează producția.",
+  },
+
+  "SERV_IT_REMOTE": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 8,
+      environmentalCare: 8,      // zero naveta, zero birou fizic
+      autonomyCreation: 9,       // lucrezi de oriunde
+      selfPropagation: 8,
+      transparency: 7,
+      knowledgeContribution: 8,
+      equity: 5,                 // necesită educație digitală prealabilă
+    },
+    positiveFactors: [
+      "Venituri urbane fără migrație — fix ce trebuie zonelor rurale",
+      "Scalabil fără capital fizic",
+      "Creează comunitate digitală locală",
+    ],
+    propagationMechanism: "IT-ist remote → venit bun → consumă local → ceilalți văd că merge → se formează → mai mulți IT-iști → coworking → hub tech local. Digital nomad involuntar care fixează comunitatea.",
+  },
+
+  "SERV_REPARATII": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,
+      environmentalCare: 8,      // reparăm, nu aruncăm — economie circulară
+      autonomyCreation: 7,
+      selfPropagation: 6,
+      transparency: 8,           // vezi ce s-a reparat, cât a costat
+      knowledgeContribution: 6,
+      equity: 8,                 // accesibil tuturor
+    },
+    positiveFactors: [
+      "Economie circulară — prelungește viața produselor",
+      "Reduce naveta la oraș pentru reparații simple",
+    ],
+    propagationMechanism: "Meșter local competent → oamenii nu mai aruncă → economie → meșterul formează ucenic → două ateliere → zona devine self-sufficient pe reparații. Autonomie prin competență.",
+  },
+
+  "SERV_ECOMMERCE": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,
+      environmentalCare: 5,      // livrări = emisii, dar reduce deplasări individuale
+      autonomyCreation: 8,       // producătorul ajunge direct la client
+      selfPropagation: 8,        // platformă funcțională → mai mulți producători vin
+      transparency: 8,
+      knowledgeContribution: 6,
+      equity: 7,
+    },
+    propagationMechanism: "Platformă locală → 5 producători listați → clienții descoperă → cerere → 20 producători → diversitate → clienți mai mulți → efect de rețea. Piața locală digitalizată.",
+  },
+
+  // ═══ ENERGIE — restul nișelor ═══
+
+  "ENRG_SOLAR": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 7,
+      environmentalCare: 10,
+      autonomyCreation: 9,       // energie proprie = independență
+      selfPropagation: 8,        // prosumator reușit → vecinul face la fel
+      transparency: 8,
+      knowledgeContribution: 7,
+      equity: 6,                 // investiție inițială mare
+    },
+    propagationMechanism: "O casă cu panouri → factura scade → vecinul observă → investește și el → comunitatea devine prosumator → se formează comunitate energetică → model pentru alte comunități.",
+  },
+
+  "ENRG_EOLIAN": {
+    dimensions: {
+      communityWellbeing: 6,
+      humanDignity: 6,
+      environmentalCare: 8,
+      autonomyCreation: 4,       // parcurile mari = investitori externi, nu locali
+      selfPropagation: 5,
+      transparency: 5,           // beneficiul e la investitor, nu la comunitate
+      knowledgeContribution: 5,
+      equity: 4,                 // comunitatea suportă impactul vizual, investitorul ia profitul
+    },
+    negativeFactors: [
+      "Beneficiul economic rareori rămâne în comunitate",
+      "Impact vizual și sonor semnificativ",
+    ],
+    ethicalConditions: [
+      "Comunitatea trebuie să fie co-investitor sau beneficiar direct",
+      "Compensații reale, nu doar taxe locale minime",
+    ],
+    propagationMechanism: "Condițional: dacă comunitatea e co-proprietar → venituri locale → investiție în alte proiecte verzi → independență energetică. Dacă investitor extern → zero propagare locală.",
+  },
+
+  "ENRG_BIOMASA": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 7,
+      environmentalCare: 7,      // valorifică deșeuri, dar arderea are emisii
+      autonomyCreation: 8,       // resursa e locală
+      selfPropagation: 7,
+      transparency: 7,
+      knowledgeContribution: 6,
+      equity: 7,
+    },
+    propagationMechanism: "Deșeu agricol → energie → cost zero materie primă → energie ieftină locală → fermierul primește bani pe paie → cultivă mai mult → mai multă biomasă. Ciclul deșeului care devine resursă.",
+  },
+
+  "ENRG_EFICIENTA": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 7,
+      environmentalCare: 9,
+      autonomyCreation: 8,       // consum mai mic = dependență mai mică
+      selfPropagation: 8,
+      transparency: 8,           // economiile sunt măsurabile
+      knowledgeContribution: 7,
+      equity: 6,                 // investiția e costisitoare
+    },
+    propagationMechanism: "Casă reabilitată → factura scade 50% → vecinul vede → reabilitează → cartierul întreg economisește → fonduri pentru alte investiții. Eficiența e contagioasă când se vede pe factură.",
+  },
+
+  // ═══ IMOBILIAR ═══
+
+  "IMOB_REZIDENTIAL": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 8,           // locuința = drept fundamental
+      environmentalCare: 4,      // construcția nouă consumă resurse
+      autonomyCreation: 8,       // proprietar = stabilitate
+      selfPropagation: 6,
+      transparency: 6,
+      knowledgeContribution: 4,
+      equity: 5,                 // accesibil doar celor cu finanțare
+    },
+    ethicalConditions: [
+      "Locuințe accesibile, nu doar premium",
+      "Standarde energetice ridicate (NZEB)",
+    ],
+    propagationMechanism: "Locuințe noi → familii se stabilesc → copii în școli → cerere servicii → economie locală → mai multe locuințe necesare. Locuința fixează populația.",
+  },
+
+  "IMOB_COMERCIAL": {
+    dimensions: {
+      communityWellbeing: 6,
+      humanDignity: 6,
+      environmentalCare: 4,
+      autonomyCreation: 6,
+      selfPropagation: 5,
+      transparency: 6,
+      knowledgeContribution: 4,
+      equity: 5,
+    },
+    propagationMechanism: "Spațiu comercial disponibil → antreprenor local deschide → angajează → servicii noi → alți antreprenori vin. Spațiul fizic deblochează antreprenoriatul.",
+  },
+
+  "IMOB_REABILITARE": {
+    dimensions: {
+      communityWellbeing: 9,
+      humanDignity: 8,
+      environmentalCare: 8,      // reabilitare > construcție nouă
+      autonomyCreation: 7,
+      selfPropagation: 8,        // zonă reabilitată → atrage investiții → alte zone se reabilitează
+      transparency: 7,
+      knowledgeContribution: 7,  // conservare patrimoniu construit
+      equity: 7,
+    },
+    positiveFactors: [
+      "Salvează patrimoniu în loc să-l demoleze",
+      "Efect de contagiune — o stradă reabilitată ridică tot cartierul",
+      "Mai sustenabil decât construcție nouă",
+    ],
+    propagationMechanism: "O clădire reabilitată → zona devine atractivă → valoarea crește → proprietarii vecini investesc → întreg cartierul se transformă → turism urban → economie locală. Efectul domino al frumuseții.",
+  },
+
+  // ═══ Nișe cu scoruri etice mai scăzute (atenție) ═══
 
   "TURISM_INDUSTRIAL": {
     dimensions: {
