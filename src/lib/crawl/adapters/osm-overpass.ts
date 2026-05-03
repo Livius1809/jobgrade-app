@@ -36,6 +36,13 @@ const POI_QUERIES = [
   { osmTag: "shop=convenience", type: "SHOP", category: "Magazin alimentar" },
   { osmTag: "amenity=post_office", type: "POST_OFFICE", category: "Oficiu poștal" },
   { osmTag: "amenity=place_of_worship", type: "WORSHIP", category: "Lăcaș de cult" },
+  // Detaliere lăcașe de cult per religie (OSM tag: religion=*)
+  { osmTag: "amenity=monastery", type: "MONASTERY", category: "Mănăstire" },
+  // Locuri naturale cu semnificație spirituală
+  { osmTag: "natural=spring", type: "SPRING", category: "Izvor natural" },
+  { osmTag: "amenity=spa", type: "SPA", category: "Spa/balnear" },
+  { osmTag: "leisure=nature_reserve", type: "NATURE_RESERVE", category: "Rezervație naturală" },
+  { osmTag: "historic=wayside_shrine", type: "SHRINE", category: "Troiță/capelă" },
 ]
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter"

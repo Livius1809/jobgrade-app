@@ -1028,6 +1028,67 @@ const ETHICAL_PROFILES: Record<string, Partial<L1EthicalAssessment>> = {
     propagationMechanism: "O clădire reabilitată → zona devine atractivă → valoarea crește → proprietarii vecini investesc → întreg cartierul se transformă → turism urban → economie locală. Efectul domino al frumuseții.",
   },
 
+  // ═══ TURISM RELIGIOS + SPIRITUAL ═══
+
+  "TURISM_RELIGIOS": {
+    dimensions: {
+      communityWellbeing: 8,
+      humanDignity: 9,           // respectul pentru credință e sacru
+      environmentalCare: 7,      // mănăstirile de obicei protejează natura din jur
+      autonomyCreation: 7,       // credința e alegere personală
+      selfPropagation: 8,        // pelerinul povestește → alții vin → comunitatea monahală prosperă
+      transparency: 8,           // locurile sacre sunt deschise
+      knowledgeContribution: 9,  // istorie, arhitectură, teologie, valori
+      equity: 8,                 // acces universal — credința nu discriminează
+    },
+    positiveFactors: [
+      "Conservă patrimoniu sacru (mănăstiri, biserici, moschei)",
+      "Aduce venituri comunităților monahale care altfel nu au surse",
+      "Dobrogea = unic în RO: ortodoxie + islam + alte confesiuni în aceeași zonă",
+      "Conectează omul cu valorile profunde — dincolo de consum",
+    ],
+    ethicalConditions: [
+      "Respectul pentru sacralitatea locului — turiștii nu sunt clienți, sunt oaspeți",
+      "Veniturile rămân în comunitatea religioasă, nu la intermediari",
+      "Zero comercializare a credinței — nu vindem binecuvântări",
+      "Turismul interconfesional promovează toleranță, nu competiție între confesiuni",
+    ],
+    propagationMechanism: "Pelerin experimentează sacralitate → se întoarce transformat → povestește cu autenticitate → alții vin → comunitatea monahală investește în conservare → patrimoniul se salvează → mai mulți vin. Spirala sacrului care se protejează prin partajare.",
+  },
+
+  "TURISM_SPIRITUAL": {
+    dimensions: {
+      communityWellbeing: 7,
+      humanDignity: 8,
+      environmentalCare: 9,      // locurile sacre din natură trebuie protejate
+      autonomyCreation: 8,       // căutarea spirituală e act de autonomie
+      selfPropagation: 8,        // omul reconectat → relații mai bune → comunitate mai bună
+      transparency: 6,           // ATENȚIE: zona cea mai vulnerabilă la șarlatanie
+      knowledgeContribution: 7,
+      equity: 7,
+    },
+    positiveFactors: [
+      "Răspunde nevoii de transcendență (nucleul Maslow corectat)",
+      "Reconectare cu natura — vindecător prin sine",
+      "Tradiții vindecătoare românești autentice (fitoterapie, apiterapie, ape minerale)",
+      "Punte directă spre Card 1 B2C (nucleul ființei)",
+    ],
+    negativeFactors: [
+      "RISC MAJOR: zona cea mai vulnerabilă la pseudo-vindecători și manipulare",
+      "Oameni vulnerabili (bolnavi, disperați) sunt țintă pentru escroci",
+      "Confuzia între „spiritual" și „magic" atrage practicieni necalificați",
+    ],
+    ethicalConditions: [
+      "OBLIGATORIU: separare strictă între atestat/neatestat — izvoare cu analize chimice vs. „energii" fără dovezi",
+      "Zero promisiuni de vindecare — informare, nu manipulare",
+      "Practici tradiționale doar de la practicieni cu traseu verificabil",
+      "Protecție explicită pentru persoane vulnerabile (bolnavi, doliu, depresie)",
+      "SafetyMonitor activ — la orice semn de manipulare, intervenție imediată",
+      "Transparență totală: ce e atestat științific vs. ce e tradiție vs. ce e credință personală",
+    ],
+    propagationMechanism: "CONDIȚIONAL: Dacă e autentic → om reconectat → relații mai sănătoase → comunitate mai echilibrată → locul sacru atrage oameni de calitate → zona se ridică. Dacă e fals → exploatare → suferință → reputația zonei se distruge → spirală descendentă. FILTRUL ONESTITĂȚII e CRITIC aici.",
+  },
+
   // ═══ Nișe cu scoruri etice mai scăzute (atenție) ═══
 
   "TURISM_INDUSTRIAL": {

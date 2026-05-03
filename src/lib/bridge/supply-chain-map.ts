@@ -144,9 +144,10 @@ const SECTOR_CAEN_MAP: Record<string, { supply: string[]; intermediary: string[]
     demand: ["1071", "1082", "5610", "4711", "4721"],  // panificație, restaurante, supermarketuri
   },
   TURISM: {
-    supply: ["5510", "5520", "5530", "5590", "9102", "9103"],  // hoteluri, muzee
+    supply: ["5510", "5520", "5530", "5590", "9102", "9103", "9104", "9311"],  // hoteluri, muzee, grădini botanice, sport
     intermediary: ["7911", "7912", "7990", "4939", "7721"],  // agenții turism, transport pasageri
     demand: [],  // cererea vine din exterior — nu are CAEN specific
+    // Turism religios/spiritual: supply include lăcașe de cult (non-CAEN, detectate din OSM: WORSHIP, MONASTERY, SHRINE, SPRING)
   },
   SANATATE: {
     supply: ["8621", "8622", "8623", "8690"],  // cabinete, laboratoare

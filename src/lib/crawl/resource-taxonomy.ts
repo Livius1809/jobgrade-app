@@ -163,6 +163,22 @@ export const RESOURCE_CATEGORIES: ResourceCategory[] = [
       { id: "ID_POVESTE", name: "Narativ și poveste locală", examples: ["turism narativ", "ghidaje tematice", "experiențe imersive"], detectFrom: ["legenda", "poveste", "istorie locala"] },
     ],
   },
+  {
+    id: "SPIRITUAL", origin: "CULTURA",
+    name: "Resurse spirituale și sacre",
+    description: "Lăcașe de cult, locuri sacre, izvoare vindecătoare, tradiții spirituale — nevoia de transcendență",
+    subcategories: [
+      { id: "SPIR_LACAS_CULT", name: "Lăcașe de cult", examples: ["biserici", "mănăstiri", "moschei", "sinagogi", "capele"], detectFrom: ["biserica", "manastire", "moschee", "sinagoga", "capela", "schit", "lacas de cult", "catedrala"] },
+      { id: "SPIR_LOC_ENERGETIC", name: "Locuri cu energii speciale", examples: ["zone tellurice", "vortexuri energetice", "vârfuri cu proprietăți speciale", "zone de meditație naturale", "munți sacri"], detectFrom: ["energetic", "vortex", "telluric", "sacru", "meditatie", "munte sacru", "bucegi", "ceahlau", "retezat"] },
+      { id: "SPIR_LOC_SACRU", name: "Locuri sacre atestate de tradiție", examples: ["peșteri sacre (Sf. Andrei)", "stânci/pietre sacre", "păduri sacre", "arbori seculari venerați"], detectFrom: ["sacru", "sfant", "pestera", "piatra sacra", "arbore secular", "padure sacra"] },
+      { id: "SPIR_APE_VINDECATOARE", name: "Ape cu proprietăți vindecătoare", examples: ["izvoare minerale cu compoziție chimică atestată", "ape termale naturale", "nămoluri terapeutice", "ape sulfuroase", "ape alcaline"], detectFrom: ["izvor mineral", "apa termala", "namol terapeutic", "sulfuros", "alcalin", "bicarbonat", "termal"] },
+      { id: "SPIR_LOCURI_PUTERE", name: "Locuri de putere/energie a pământului", examples: ["puncte pe linii ley", "zone cu anomalii geomagnetice", "locuri unde oamenii simt o stare specială"], detectFrom: ["putere", "energie pamant", "geomagnetic", "anomalie", "vortex"] },
+      { id: "SPIR_FENOMENE_GEO", name: "Fenomene geologice neobișnuite", examples: ["vulcani noroioși (Buzău)", "trovanți (Costești)", "peșteri cu cristale", "stânci cu forme naturale unice", "cascade speciale", "formațiuni calcaroase", "sfinxul Bucegi"], detectFrom: ["vulcani noroiosi", "trovanti", "pestera cristale", "formatie geologica", "sfinx", "cascada", "canion", "chei", "stanci"] },
+      { id: "SPIR_TRADITII", name: "Tradiții spirituale locale", examples: ["practici vindecătoare tradiționale", "fitoterapie", "apiterapie", "ritual"], detectFrom: ["fitoterapie", "apiterapie", "vindecator", "leac", "ritual", "traditie spirituala"] },
+      { id: "SPIR_RETRAGERE", name: "Spații de retragere/contemplare", examples: ["locuri izolate pentru meditație", "naturi neatinse", "tăcere"], detectFrom: ["retragere", "retreat", "meditatie", "contemplare", "tacere", "liniste"] },
+      { id: "SPIR_INTERCONF", name: "Diversitate confesională", examples: ["turism interconfesional", "dialog inter-religios", "coexistență pacifică"], detectFrom: ["interconfesional", "inter-religios", "coexistenta", "toleranta", "dialog"] },
+    ],
+  },
 
   // ════════════ RODUL INDIVIDULUI ════════════
   {

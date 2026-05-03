@@ -128,6 +128,29 @@ export const SECTOR_TAXONOMY: Sector[] = [
         references: ["Finlanda (edu-tourism)", "Japonia (cultural exchange)"],
       },
       {
+        id: "TURISM_RELIGIOS",
+        name: "Turism religios",
+        description: "Pelerinaje, mănăstiri, lăcașe de cult, rute spirituale — experiență de credință",
+        references: ["Camino de Santiago (ES)", "Muntele Athos (GR)", "Mănăstirile din Bucovina (RO)"],
+        subNiches: [
+          { id: "TURISM_REL_PELERINAJ", name: "Pelerinaje", description: "Trasee sacre, hramuri, procesiuni, sărbători religioase" },
+          { id: "TURISM_REL_MANASTIRI", name: "Mănăstiri și lăcașe", description: "Vizitare, cazare monahală, retrageri spirituale" },
+          { id: "TURISM_REL_INTERFAITH", name: "Turism interconfesional", description: "Experiențe multi-religioase — moschei, biserici, sinagogi în aceeași zonă (ex: Dobrogea)" },
+        ],
+      },
+      {
+        id: "TURISM_SPIRITUAL",
+        name: "Turism spiritual și vindecător",
+        description: "Locuri cu proprietăți vindecătoare, energii sacre, retrageri contemplative — dincolo de religia organizată",
+        references: ["Sedona (US)", "Glastonbury (UK)", "Rishikesh (IN)", "Peștera Sfântului Andrei (RO)"],
+        subNiches: [
+          { id: "TURISM_SPIR_IZVOARE", name: "Izvoare tămăduitoare", description: "Izvoare cu proprietăți vindecătoare atestate de tradiție și/sau analize chimice" },
+          { id: "TURISM_SPIR_ENERGETICE", name: "Locuri energetice", description: "Zone cu energii tellurice, vortexuri, locuri de meditație naturale" },
+          { id: "TURISM_SPIR_RETRAGERI", name: "Retrageri contemplative", description: "Retreat-uri de meditație, tăcere, yoga, reconectare cu natura" },
+          { id: "TURISM_SPIR_VINDECATOARE", name: "Practici vindecătoare tradiționale", description: "Fitoterapie, apiterapie, practici tradiționale locale de vindecare" },
+        ],
+      },
+      {
         id: "TURISM_INDUSTRIAL",
         name: "Turism industrial",
         description: "Vizitare situri industriale active sau dezafectate — curiozitate, istorie",
