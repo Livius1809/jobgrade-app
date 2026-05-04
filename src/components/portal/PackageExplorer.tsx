@@ -144,8 +144,14 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badg
   coral: { bg: "bg-orange-50", border: "border-orange-400", text: "text-orange-700", badge: "bg-orange-100 text-orange-700", btn: "bg-orange-600 hover:bg-orange-700" },
 }
 
-// 1 credit = 8 RON (standard, fără discount)
-const CREDIT_VALUE_RON = 8
+// Preț/credit diferențiat per abonament (sincronizat cu /b2b/abonamente)
+// Essentials (299): 8.00 | Business (599): 6.50 | Enterprise (999): 5.50
+const TIER_CREDIT_PRICES: Record<string, number> = {
+  ESSENTIALS: 8.00,
+  BUSINESS: 6.50,
+  ENTERPRISE: 5.50,
+}
+const CREDIT_VALUE_RON = 8 // fallback standard
 
 // Credite per unitate per layer (estimare — de calibrat cu COG)
 // BAZA: credite per poziție
@@ -581,8 +587,16 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
               }
               const serviciiDiff = Math.max(0, serviciiRON - prorataCredit)
 
-              const abonamentLunar = 399
-              const abonamentAnual = 3990
+              // Abonament per tier (detectat din nr angajați)
+              const tierForSize = emp <= 50 ? "ESSENTIALS" : emp <= 200 ? "BUSINESS" : "ENTERPRISE"
+              const tierPrices: Record<string, { monthly: number; annual: number; name: string; creditPrice: number }> = {
+                ESSENTIALS: { monthly: 299, annual: 2990, name: "Essentials", creditPrice: 8.00 },
+                BUSINESS: { monthly: 599, annual: 5990, name: "Business", creditPrice: 6.50 },
+                ENTERPRISE: { monthly: 999, annual: 9990, name: "Enterprise", creditPrice: 5.50 },
+              }
+              const activeTierInfo = tierPrices[tierForSize]
+              const abonamentLunar = activeTierInfo.monthly
+              const abonamentAnual = activeTierInfo.annual
               const abonamentRON = isUpgrade ? 0 : (annual ? abonamentAnual : abonamentLunar)
               const crediteRON = selectedCreditPkg?.price || 0
               const totalRON = serviciiDiff + abonamentRON + crediteRON
@@ -622,7 +636,7 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                       {/* Abonament cu toggle */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-600">Abonament</span>
+                          <span className="text-xs text-slate-600">Abonament {activeTierInfo.name}</span>
                           <button
                             onClick={() => setAnnual(!annual)}
                             className="flex items-center bg-white rounded-full border border-slate-200 text-[10px] overflow-hidden"
