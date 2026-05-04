@@ -12,12 +12,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import ROCCO_SEED_ENTRIES from "@/lib/kb/seeds/rocco-creativitate-ei"
 import PSEC_SEED_ENTRIES from "@/lib/kb/seeds/psiho-socio-economist"
+import SSED_SEED_ENTRIES from "@/lib/kb/seeds/specialist-stiinte-educatie"
+import JDM_SEED_ENTRIES from "@/lib/kb/seeds/jurist-dreptul-muncii"
+import AET_SEED_ENTRIES from "@/lib/kb/seeds/analist-economic-teritorial"
+import SDO_SEED_ENTRIES from "@/lib/kb/seeds/specialist-dezvoltare-organizationala"
 
 export const dynamic = "force-dynamic"
 
 const AVAILABLE_BOOKS: Record<string, typeof ROCCO_SEED_ENTRIES> = {
   "rocco-creativitate-ei": ROCCO_SEED_ENTRIES,
   "psiho-socio-economist": PSEC_SEED_ENTRIES,
+  "specialist-stiinte-educatie": SSED_SEED_ENTRIES,
+  "jurist-dreptul-muncii": JDM_SEED_ENTRIES,
+  "analist-economic-teritorial": AET_SEED_ENTRIES,
+  "specialist-dezvoltare-organizationala": SDO_SEED_ENTRIES,
 }
 
 function verifyInternalAuth(req: NextRequest): boolean {
