@@ -101,7 +101,7 @@ Evaluează toate cele ${criteria.length} criterii. Justificarea trebuie să fie 
   const client = new Anthropic()
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 1000,
+    max_tokens: 2000,
     messages: [{ role: "user", content: prompt }],
   })
 
