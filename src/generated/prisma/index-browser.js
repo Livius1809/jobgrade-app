@@ -1839,6 +1839,7 @@ exports.Prisma.SupportTicketScalarFieldEnum = {
   respondedBy: 'respondedBy',
   clientRating: 'clientRating',
   clientFeedback: 'clientFeedback',
+  attachments: 'attachments',
   distilled: 'distilled',
   learningArtifactId: 'learningArtifactId',
   createdAt: 'createdAt',
@@ -1931,6 +1932,132 @@ exports.Prisma.LocalEntityScalarFieldEnum = {
   metadata: 'metadata',
   crawledAt: 'crawledAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.BridgeParticipantScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  alias: 'alias',
+  email: 'email',
+  phone: 'phone',
+  ageRange: 'ageRange',
+  gender: 'gender',
+  status: 'status',
+  hierarchy: 'hierarchy',
+  workplace: 'workplace',
+  maritalStatus: 'maritalStatus',
+  hasChildren: 'hasChildren',
+  childrenAges: 'childrenAges',
+  territory: 'territory',
+  address: 'address',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  searchRadius: 'searchRadius',
+  profileCompleteness: 'profileCompleteness',
+  lastActiveAt: 'lastActiveAt'
+};
+
+exports.Prisma.BridgeNeedScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  participantId: 'participantId',
+  sectorId: 'sectorId',
+  nicheId: 'nicheId',
+  category: 'category',
+  description: 'description',
+  urgency: 'urgency',
+  frequency: 'frequency',
+  budget: 'budget',
+  preferLocal: 'preferLocal',
+  acceptOnline: 'acceptOnline',
+  maxDistanceKm: 'maxDistanceKm',
+  isActive: 'isActive',
+  isSatisfied: 'isSatisfied',
+  territory: 'territory'
+};
+
+exports.Prisma.BridgeOfferScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  participantId: 'participantId',
+  sectorId: 'sectorId',
+  nicheId: 'nicheId',
+  category: 'category',
+  description: 'description',
+  priceRange: 'priceRange',
+  priceUnit: 'priceUnit',
+  availableFrom: 'availableFrom',
+  deliveryType: 'deliveryType',
+  coverageKm: 'coverageKm',
+  isOnline: 'isOnline',
+  experienceYears: 'experienceYears',
+  certifications: 'certifications',
+  qualityScore: 'qualityScore',
+  isActive: 'isActive',
+  capacity: 'capacity',
+  territory: 'territory'
+};
+
+exports.Prisma.BridgeConnectionScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  clientId: 'clientId',
+  providerId: 'providerId',
+  needId: 'needId',
+  offerId: 'offerId',
+  matchScore: 'matchScore',
+  distanceKm: 'distanceKm',
+  matchReason: 'matchReason',
+  status: 'status',
+  proposedAt: 'proposedAt',
+  viewedAt: 'viewedAt',
+  acceptedAt: 'acceptedAt',
+  completedAt: 'completedAt',
+  rejectedAt: 'rejectedAt',
+  rejectionReason: 'rejectionReason',
+  clientRating: 'clientRating',
+  clientComment: 'clientComment',
+  providerRating: 'providerRating',
+  providerComment: 'providerComment'
+};
+
+exports.Prisma.BridgeReportScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  participantId: 'participantId',
+  territory: 'territory',
+  needs: 'needs',
+  localProviders: 'localProviders',
+  gaps: 'gaps',
+  recommendations: 'recommendations',
+  opportunities: 'opportunities',
+  generatedBy: 'generatedBy',
+  version: 'version'
+};
+
+exports.Prisma.VitalSignsReportScalarFieldEnum = {
+  id: 'id',
+  reportDate: 'reportDate',
+  overallStatus: 'overallStatus',
+  passCount: 'passCount',
+  warnCount: 'warnCount',
+  failCount: 'failCount',
+  skipCount: 'skipCount',
+  fullReport: 'fullReport',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.VitalSignsCheckScalarFieldEnum = {
+  id: 'id',
+  reportId: 'reportId',
+  componentName: 'componentName',
+  status: 'status',
+  detail: 'detail',
+  metric: 'metric'
 };
 
 exports.Prisma.SortOrder = {
@@ -2804,6 +2931,40 @@ exports.SupportTicketStatus = exports.$Enums.SupportTicketStatus = {
   ESCALATED: 'ESCALATED'
 };
 
+exports.ParticipantStatus = exports.$Enums.ParticipantStatus = {
+  ANGAJAT: 'ANGAJAT',
+  LIBER_PROFESIONIST: 'LIBER_PROFESIONIST',
+  SOMER: 'SOMER',
+  PENSIONAR: 'PENSIONAR',
+  STUDENT: 'STUDENT',
+  ANTREPRENOR: 'ANTREPRENOR'
+};
+
+exports.NeedUrgency = exports.$Enums.NeedUrgency = {
+  CRITIC: 'CRITIC',
+  URGENT: 'URGENT',
+  NORMAL: 'NORMAL',
+  PLANIFICAT: 'PLANIFICAT'
+};
+
+exports.DeliveryType = exports.$Enums.DeliveryType = {
+  LOCAL: 'LOCAL',
+  DEPLASARE: 'DEPLASARE',
+  ONLINE: 'ONLINE',
+  LIVRARE: 'LIVRARE',
+  MIXT: 'MIXT'
+};
+
+exports.ConnectionStatus = exports.$Enums.ConnectionStatus = {
+  PROPOSED: 'PROPOSED',
+  VIEWED: 'VIEWED',
+  ACCEPTED: 'ACCEPTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED'
+};
+
 exports.Prisma.ModelName = {
   Tenant: 'Tenant',
   User: 'User',
@@ -2924,7 +3085,14 @@ exports.Prisma.ModelName = {
   CrawlSource: 'CrawlSource',
   CrawlResult: 'CrawlResult',
   TerritorialData: 'TerritorialData',
-  LocalEntity: 'LocalEntity'
+  LocalEntity: 'LocalEntity',
+  BridgeParticipant: 'BridgeParticipant',
+  BridgeNeed: 'BridgeNeed',
+  BridgeOffer: 'BridgeOffer',
+  BridgeConnection: 'BridgeConnection',
+  BridgeReport: 'BridgeReport',
+  VitalSignsReport: 'VitalSignsReport',
+  VitalSignsCheck: 'VitalSignsCheck'
 };
 
 /**

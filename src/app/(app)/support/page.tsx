@@ -13,6 +13,7 @@ interface Ticket {
   respondedAt: string | null
   clientRating: number | null
   clientFeedback: string | null
+  attachments: { name: string; url: string; size: number; type: string }[] | null
   createdAt: string
 }
 
@@ -72,6 +73,11 @@ export default function SupportPage() {
   const [activeTab, setActiveTab] = useState<TabFilter>("TOATE")
   const [ratingTicketId, setRatingTicketId] = useState<string | null>(null)
   const [ratings, setRatings] = useState<SatisfactionRatings>({ rezultat: 0, timpRaspuns: 0, comunicare: 0, comentariu: "" })
+  // Filtre avansate
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("TOATE")
+  // Atașamente
+  const [attachments, setAttachments] = useState<File[]>([])
 
   useEffect(() => { loadTickets() }, [])
 
@@ -156,12 +162,20 @@ export default function SupportPage() {
     setSubmitting(false)
   }
 
-  // Filtrare tickete dupa tab
+  // Filtrare tickete — tab + search + status
   const filteredTickets = tickets.filter(t => {
-    if (activeTab === "TOATE") return true
-    if (activeTab === "FEEDBACK") return t.subject.startsWith("[Feedback]") || t.affectedFlow === "feedback"
-    if (activeTab === "SOLICITARE") return t.subject.startsWith("[Solicitare]") || t.affectedFlow === "solicitare"
-    return !t.subject.startsWith("[Feedback]") && !t.subject.startsWith("[Solicitare]")
+    // Tab filter
+    if (activeTab === "FEEDBACK" && !(t.subject.startsWith("[Feedback]") || t.affectedFlow === "feedback")) return false
+    if (activeTab === "SOLICITARE" && !(t.subject.startsWith("[Solicitare]") || t.affectedFlow === "solicitare")) return false
+    if (activeTab === "SUPORT" && (t.subject.startsWith("[Feedback]") || t.affectedFlow === "feedback" || t.subject.startsWith("[Solicitare]") || t.affectedFlow === "solicitare")) return false
+    // Status filter
+    if (statusFilter !== "TOATE" && t.status !== statusFilter) return false
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      if (!t.subject.toLowerCase().includes(q) && !(t.clientFeedback || "").toLowerCase().includes(q) && !(t.affectedFlow || "").toLowerCase().includes(q)) return false
+    }
+    return true
   })
 
   const feedbackCount = tickets.filter(t => t.subject.startsWith("[Feedback]") || t.affectedFlow === "feedback").length
@@ -220,6 +234,23 @@ export default function SupportPage() {
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo/20 resize-y" />
             <p className="text-xs text-text-secondary/50 mt-1">{TYPE_CONFIG[ticketType].description}</p>
           </div>
+          {/* Atașamente */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Atasamente (optional)</label>
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.xlsx,.csv,.txt"
+              onChange={e => setAttachments(Array.from(e.target.files || []))}
+              className="w-full text-xs text-text-secondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-border file:text-xs file:font-medium file:bg-white file:text-foreground hover:file:bg-slate-50"
+            />
+            {attachments.length > 0 && (
+              <p className="text-[10px] text-text-secondary/60 mt-1">
+                {attachments.length} fisier{attachments.length > 1 ? "e" : ""} selectat{attachments.length > 1 ? "e" : ""}
+                ({Math.round(attachments.reduce((s, f) => s + f.size, 0) / 1024)} KB)
+              </p>
+            )}
+          </div>
           <button onClick={submitTicket} disabled={submitting || !subject.trim() || !description.trim()}
             className="bg-indigo text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-dark disabled:opacity-50 transition-colors">
             {submitting ? "Se trimite..." : "Trimite"}
@@ -242,6 +273,27 @@ export default function SupportPage() {
           </button>
         </div>
       )}
+
+      {/* Filtre avansate */}
+      <div className="flex gap-2 mb-3">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Cauta dupa subiect..."
+          className="flex-1 px-3 py-1.5 rounded-lg border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-indigo/20"
+        />
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="px-2 py-1.5 rounded-lg border border-border bg-background text-xs focus:outline-none"
+        >
+          <option value="TOATE">Toate statusurile</option>
+          {Object.entries(STATUS_LABELS).map(([key, val]) => (
+            <option key={key} value={key}>{val.label}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Tab-uri filtrare */}
       <div className="flex gap-1 mb-4 border-b border-border">
@@ -305,6 +357,20 @@ export default function SupportPage() {
                   {new Date(ticket.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   {ticket.affectedFlow && <span className="ml-2 text-text-secondary/50">· {ticket.affectedFlow}</span>}
                 </p>
+
+                {/* Atașamente */}
+                {ticket.attachments && ticket.attachments.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {ticket.attachments.map((att, i) => (
+                      <a key={i} href={att.url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-[10px] text-slate-600 hover:bg-slate-200">
+                        <span>{att.type.startsWith("image/") ? "🖼" : "📎"}</span>
+                        <span className="max-w-[120px] truncate">{att.name}</span>
+                        <span className="text-slate-400">({Math.round(att.size / 1024)}KB)</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 {/* Rezolutie in curs */}
                 {!hasResponse && ["ROUTED", "IN_PROGRESS"].includes(ticket.status) && ticket.resolution && (

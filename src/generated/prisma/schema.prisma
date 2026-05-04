@@ -3948,6 +3948,9 @@ model SupportTicket {
   clientRating   Int? // 1-5
   clientFeedback String?
 
+  // Atașamente (URL-uri Vercel Blob)
+  attachments Json? // [{ name, url, size, type }]
+
   // Învățare
   distilled          Boolean @default(false) // s-a extras învățare?
   learningArtifactId String?
@@ -4092,4 +4095,291 @@ model LocalEntity {
   @@index([territory, latitude, longitude])
   @@index([type, category])
   @@map("local_entities")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOTOR TERITORIAL — PUNȚI (Business #2)
+// ═══════════════════════════════════════════════════════════════
+
+/// Participant pe hartă — simultan cumpărător + furnizor
+model BridgeParticipant {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Identitate (pseudonim, ca în B2C)
+  alias String
+  email String  @unique
+  phone String?
+
+  // Demografie
+  ageRange String? // "20-29", "30-39" etc.
+  gender   String? // M/F/other
+
+  // Context profesional
+  status    ParticipantStatus @default(ANGAJAT)
+  hierarchy String? // EXECUTIE, MIDDLE, TOP
+  workplace String? // localitate loc de muncă (poate diferi de domiciliu)
+
+  // Sfera relațională
+  maritalStatus String?
+  hasChildren   Boolean @default(false)
+  childrenAges  String? // "3,7,12"
+
+  // Locație
+  territory    String // UAT domiciliu
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  searchRadius Float   @default(15) // km — raza de căutare implicită
+
+  // Scoring intern
+  profileCompleteness Float     @default(0) // 0-1
+  lastActiveAt        DateTime?
+
+  // Relații
+  needs                 BridgeNeed[]
+  offers                BridgeOffer[]
+  connectionsAsClient   BridgeConnection[] @relation("ConnectionClient")
+  connectionsAsProvider BridgeConnection[] @relation("ConnectionProvider")
+  reports               BridgeReport[]
+
+  @@index([territory])
+  @@index([territory, latitude, longitude])
+  @@map("bridge_participants")
+}
+
+enum ParticipantStatus {
+  ANGAJAT
+  LIBER_PROFESIONIST
+  SOMER
+  PENSIONAR
+  STUDENT
+  ANTREPRENOR
+}
+
+/// Ce are nevoie participantul (punct de cerere pe hartă)
+model BridgeNeed {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participantId String
+  participant   BridgeParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  // Categorizare (sector → nișă din taxonomie)
+  sectorId String // TURISM, SANATATE, EDUCATIE etc.
+  nicheId  String? // SAN_PRIMARA, EDU_FORMARE_PROF etc.
+  category String // categorie liberă (ex: "stomatologie", "formare IT")
+
+  // Detalii
+  description String? // ce anume are nevoie
+  urgency     NeedUrgency @default(NORMAL)
+  frequency   String? // "o dată", "lunar", "săptămânal"
+  budget      String? // "sub 100 RON", "100-500 RON", "nu contează"
+
+  // Preferințe
+  preferLocal   Boolean @default(true) // preferă furnizor local
+  acceptOnline  Boolean @default(false) // acceptă și online
+  maxDistanceKm Float? // distanță maximă acceptabilă
+
+  // Status
+  isActive    Boolean @default(true)
+  isSatisfied Boolean @default(false) // nevoia a fost acoperită
+
+  // Relații
+  connections BridgeConnection[]
+
+  // Virtual — territory vine din participant
+  territory String?
+
+  @@index([participantId])
+  @@index([sectorId, nicheId])
+  @@index([isActive, territory])
+  @@map("bridge_needs")
+}
+
+enum NeedUrgency {
+  CRITIC // trebuie acum
+  URGENT // în câteva zile
+  NORMAL // în câteva săptămâni
+  PLANIFICAT // pe viitor
+}
+
+/// Ce oferă participantul (punct de ofertă pe hartă)
+model BridgeOffer {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participantId String
+  participant   BridgeParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  // Categorizare
+  sectorId String
+  nicheId  String?
+  category String // ce oferă concret
+
+  // Detalii ofertă
+  description String? // descriere serviciu/produs
+  priceRange  String? // "50-100 RON", "negociabil", "gratuit"
+  priceUnit   String? // "pe oră", "pe ședință", "pe bucată"
+
+  // Disponibilitate
+  availableFrom String? // program ("L-V 9-17", "flexibil")
+  deliveryType  DeliveryType @default(LOCAL)
+  coverageKm    Float? // raza de acoperire (km)
+  isOnline      Boolean      @default(false) // oferă și online
+
+  // Calitate
+  experienceYears Int? // ani experiență
+  certifications  String? // certificări relevante
+  qualityScore    Float? // 0-5, din feedback clienți
+
+  // Status
+  isActive Boolean @default(true)
+  capacity String? // "max 5 clienți/săptămână"
+
+  // Relații
+  connections BridgeConnection[]
+
+  territory String?
+
+  @@index([participantId])
+  @@index([sectorId, nicheId])
+  @@index([isActive, deliveryType])
+  @@map("bridge_offers")
+}
+
+enum DeliveryType {
+  LOCAL // la sediul furnizorului
+  DEPLASARE // furnizorul vine la client
+  ONLINE // remote/digital
+  LIVRARE // produs livrat fizic
+  MIXT // combinație
+}
+
+/// Punte — conexiune concretă cerere↔ofertă
+model BridgeConnection {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Părți
+  clientId   String
+  client     BridgeParticipant @relation("ConnectionClient", fields: [clientId], references: [id])
+  providerId String
+  provider   BridgeParticipant @relation("ConnectionProvider", fields: [providerId], references: [id])
+
+  // Ce se conectează
+  needId  String
+  need    BridgeNeed  @relation(fields: [needId], references: [id])
+  offerId String
+  offer   BridgeOffer @relation(fields: [offerId], references: [id])
+
+  // Matching
+  matchScore  Float // 0-1, cât de bun e match-ul
+  distanceKm  Float? // distanța fizică între client și furnizor
+  matchReason String? // de ce a fost recomandat
+
+  // Status flux
+  status          ConnectionStatus @default(PROPOSED)
+  proposedAt      DateTime         @default(now())
+  viewedAt        DateTime? // clientul a văzut propunerea
+  acceptedAt      DateTime? // una din părți a acceptat
+  completedAt     DateTime? // tranzacția s-a finalizat
+  rejectedAt      DateTime?
+  rejectionReason String?
+
+  // Feedback (după completare)
+  clientRating    Int? // 1-5
+  clientComment   String?
+  providerRating  Int? // 1-5
+  providerComment String?
+
+  @@index([clientId, status])
+  @@index([providerId, status])
+  @@index([needId])
+  @@index([offerId])
+  @@index([status])
+  @@map("bridge_connections")
+}
+
+enum ConnectionStatus {
+  PROPOSED // motorul a propus match-ul
+  VIEWED // clientul a văzut
+  ACCEPTED // una din părți a acceptat
+  IN_PROGRESS // tranzacție în curs
+  COMPLETED // finalizat cu succes
+  REJECTED // refuzat
+  EXPIRED // expirat fără răspuns
+}
+
+/// Raport gratuit generat la onboarding
+model BridgeReport {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  participantId String
+  participant   BridgeParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  territory String
+
+  // Conținut raport (JSON structurat)
+  needs           Json // nevoi identificate din profil
+  localProviders  Json // furnizori locali existenți
+  gaps            Json // ce lipsește în zonă
+  recommendations Json // recomandări personalizate
+  opportunities   Json? // oportunități dacă e furnizor
+
+  // Metadata
+  generatedBy String @default("AI") // AI sau manual
+  version     Int    @default(1)
+
+  @@index([participantId])
+  @@index([territory])
+  @@map("bridge_reports")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VITAL SIGNS — Rapoarte sănătate organism (istoric)
+// ═══════════════════════════════════════════════════════════════
+
+model VitalSignsReport {
+  id         String   @id @default(cuid())
+  reportDate DateTime @default(now())
+
+  overallStatus String // CRITICAL, WARNING, HEALTHY
+
+  passCount Int @default(0)
+  warnCount Int @default(0)
+  failCount Int @default(0)
+  skipCount Int @default(0)
+
+  /// Raport complet (tests[], metrics, notes)
+  fullReport Json
+
+  createdAt DateTime @default(now())
+
+  checks VitalSignsCheck[]
+
+  @@index([reportDate])
+  @@index([overallStatus])
+  @@map("vital_signs_reports")
+}
+
+model VitalSignsCheck {
+  id       String @id @default(cuid())
+  reportId String
+
+  componentName String // ex: "Puls", "Respirație", "Conștiință"
+  status        String // PASS, WARN, FAIL, SKIP
+  detail        String
+  metric        Float?
+
+  report VitalSignsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([componentName])
+  @@map("vital_signs_checks")
 }

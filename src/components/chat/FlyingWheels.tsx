@@ -512,6 +512,52 @@ export default function FlyingWheels({
               Trimite
             </button>
           </div>
+
+          {/* Escalare la ticket */}
+          {messages.length >= 3 && (
+            <div style={{ padding: "0.25rem 0.75rem 0.5rem", borderTop: "1px solid #f3f4f6", textAlign: "center" }}>
+              <button
+                onClick={async () => {
+                  const chatSummary = messages
+                    .filter(m => m.role !== "guide")
+                    .slice(-6)
+                    .map(m => `[${m.role}] ${m.content}`)
+                    .join("\n")
+                  try {
+                    const res = await fetch("/api/v1/support/ticket", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        subject: `[Din chat] ${messages.find(m => m.role === "user")?.content?.slice(0, 60) || "Conversatie"}`,
+                        description: `Conversatie chat escalata:\n\n${chatSummary}`,
+                        ticketType: "SUPORT",
+                        source: "CHAT_FW",
+                      }),
+                    })
+                    if (res.ok) {
+                      setMessages(prev => [...prev, {
+                        role: "assistant" as const,
+                        content: "Am creat un ticket de suport din aceasta conversatie. Vei primi raspuns detaliat.",
+                        timestamp: new Date().toISOString(),
+                        consumesMinutes: false,
+                      }])
+                    }
+                  } catch {}
+                }}
+                style={{
+                  fontSize: "0.6875rem",
+                  color: "#7c3aed",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  padding: "0.25rem",
+                }}
+              >
+                Nu ai primit raspunsul dorit? Creeaza un ticket de suport
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

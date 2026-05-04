@@ -443,6 +443,27 @@ export async function GET(req: NextRequest) {
     },
   }).catch(() => {})
 
+  // Salvăm și în VitalSignsReport (istoric persistent)
+  await p.vitalSignsReport.create({
+    data: {
+      reportDate: now,
+      overallStatus: overallStatus.toUpperCase(),
+      passCount: ok,
+      warnCount: escalated,
+      failCount: errors,
+      skipCount: 0,
+      fullReport: { type: "self-check", timestamp: now.toISOString(), overallStatus, summary: { ok, repaired, escalated, errors }, checks },
+      checks: {
+        create: checks.map((c: CheckResult) => ({
+          componentName: c.name,
+          status: c.status.toUpperCase(),
+          detail: c.detail,
+          metric: null,
+        })),
+      },
+    },
+  }).catch(() => {})
+
   return NextResponse.json({
     status: overallStatus,
     timestamp: now.toISOString(),

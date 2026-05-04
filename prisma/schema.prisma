@@ -3948,13 +3948,16 @@ model SupportTicket {
   clientRating      Int?            // 1-5
   clientFeedback    String?
   
+  // Atașamente (URL-uri Vercel Blob)
+  attachments       Json?           // [{ name, url, size, type }]
+
   // Învățare
   distilled         Boolean         @default(false)  // s-a extras învățare?
   learningArtifactId String?
-  
+
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  
+
   @@index([tenantId, status])
   @@index([status, priority])
   @@index([routedToAgent, status])
@@ -4336,4 +4339,47 @@ model BridgeReport {
   @@index([participantId])
   @@index([territory])
   @@map("bridge_reports")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VITAL SIGNS — Rapoarte sănătate organism (istoric)
+// ═══════════════════════════════════════════════════════════════
+
+model VitalSignsReport {
+  id            String   @id @default(cuid())
+  reportDate    DateTime @default(now())
+
+  overallStatus String   // CRITICAL, WARNING, HEALTHY
+
+  passCount     Int      @default(0)
+  warnCount     Int      @default(0)
+  failCount     Int      @default(0)
+  skipCount     Int      @default(0)
+
+  /// Raport complet (tests[], metrics, notes)
+  fullReport    Json
+
+  createdAt     DateTime @default(now())
+
+  checks VitalSignsCheck[]
+
+  @@index([reportDate])
+  @@index([overallStatus])
+  @@map("vital_signs_reports")
+}
+
+model VitalSignsCheck {
+  id            String   @id @default(cuid())
+  reportId      String
+
+  componentName String   // ex: "Puls", "Respirație", "Conștiință"
+  status        String   // PASS, WARN, FAIL, SKIP
+  detail        String
+  metric        Float?
+
+  report VitalSignsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([componentName])
+  @@map("vital_signs_checks")
 }

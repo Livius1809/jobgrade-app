@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { createTicket, refineTicket, routeTicket } from "@/lib/support/ticket-engine"
+import { sendTicketCreatedEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -36,6 +37,12 @@ export async function POST(req: NextRequest) {
     ticketType: ticketType || "SUPORT",
     source: source || "DIRECT",
   })
+
+  // Email confirmare creare
+  const creator = await prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true } })
+  if (creator?.email) {
+    sendTicketCreatedEmail({ to: creator.email, subject: subject.trim(), ticketId }).catch(() => {})
+  }
 
   // 2. Rafinare automată FW
   const refinement = await refineTicket(ticketId)

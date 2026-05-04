@@ -559,3 +559,50 @@ export async function sendProposalEmail({
     html,
   })
 }
+
+// ── Ticket Support Emails ─────────────────────────────────────────
+
+export async function sendTicketCreatedEmail({ to, subject, ticketId }: { to: string; subject: string; ticketId: string }) {
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Solicitare primita: ${subject}`,
+    html: `
+<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
+<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+  <div style="background:#7C3AED;padding:20px 24px;color:#fff;font-size:18px;font-weight:700;">JobGrade — Suport</div>
+  <div style="padding:24px;">
+    <p style="color:#374151;font-size:14px;line-height:1.6;">Solicitarea ta <strong>"${subject}"</strong> a fost inregistrata.</p>
+    <p style="color:#6B7280;font-size:13px;">ID: ${ticketId}</p>
+    <p style="color:#6B7280;font-size:13px;">Vei primi raspuns in cel mai scurt timp. Poti urmari statusul din platforma.</p>
+    <a href="${APP_URL}/support" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#7C3AED;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Vezi in platforma</a>
+  </div>
+</div>
+</body></html>`,
+  }).catch(() => {})
+}
+
+export async function sendTicketRespondedEmail({ to, subject, response }: { to: string; subject: string; response: string }) {
+  const safeResponse = response.length > 500 ? response.slice(0, 500) + "..." : response
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Raspuns la: ${subject}`,
+    html: `
+<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F9FAFB;font-family:Arial,sans-serif;">
+<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+  <div style="background:#059669;padding:20px 24px;color:#fff;font-size:18px;font-weight:700;">JobGrade — Raspuns</div>
+  <div style="padding:24px;">
+    <p style="color:#374151;font-size:14px;font-weight:600;">${subject}</p>
+    <div style="margin:16px 0;padding:16px;background:#F0FDF4;border-radius:8px;border-left:4px solid #059669;">
+      <p style="color:#065F46;font-size:13px;line-height:1.6;white-space:pre-wrap;">${safeResponse}</p>
+    </div>
+    <p style="color:#6B7280;font-size:12px;">Ai primit ce aveai nevoie? Evalueaza raspunsul din platforma.</p>
+    <a href="${APP_URL}/support" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#059669;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Evalueaza raspunsul</a>
+  </div>
+</div>
+</body></html>`,
+  }).catch(() => {})
+}

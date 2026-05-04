@@ -380,3 +380,75 @@ export function renewalExplanation(config: BillingConfig): string {
     ? "Abonamentul expiră la finalul anului. Veți fi notificat cu 30 de zile înainte. Dacă nu reînnoiți, accesul devine read-only iar datele se păstrează 90 de zile."
     : "Abonamentul expiră la finalul lunii. Veți fi notificat cu 7 zile înainte. Dacă nu reînnoiți, accesul devine read-only iar datele se păstrează 90 de zile."
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ADD-ONS (SERVICII ADIȚIONALE PER CARD)
+// ═══════════════════════════════════════════════════════════════
+
+export interface AddonConfig {
+  id: string
+  label: string
+  card: number
+  /** Credite fixe (independent de dimensiune) */
+  fixedCredits: number
+  /** Credite per poziție */
+  perPosition: number
+  /** Credite per angajat */
+  perEmployee: number
+}
+
+export const ADDONS: AddonConfig[] = [
+  // C1
+  { id: "c1_fise_post", label: "Fișe de post generate AI", card: 1, fixedCredits: 0, perPosition: 8, perEmployee: 0 },
+  { id: "c1_organigrama", label: "Generare organigramă", card: 1, fixedCredits: 30, perPosition: 0, perEmployee: 0 },
+  // C2
+  { id: "c2_raport_angajat", label: "Raport per angajat", card: 2, fixedCredits: 0, perPosition: 0, perEmployee: 5 },
+  { id: "c2_benchmark_piata", label: "Benchmark salarial vs piață", card: 2, fixedCredits: 20, perPosition: 2, perEmployee: 0 },
+  // C3
+  { id: "c3_pachete_extinse", label: "Pachete salariale extinse", card: 3, fixedCredits: 15, perPosition: 3, perEmployee: 0 },
+  { id: "c3_eval_performanta", label: "Evaluare performanță per angajat", card: 3, fixedCredits: 0, perPosition: 0, perEmployee: 8 },
+  // C4
+  { id: "c4_recrutare", label: "Proiectare recrutare", card: 4, fixedCredits: 0, perPosition: 15, perEmployee: 0 },
+  { id: "c4_manual_angajat", label: "Manual angajat nou", card: 4, fixedCredits: 10, perPosition: 0, perEmployee: 2 },
+]
+
+export function calcAddonCredits(addon: AddonConfig, positions: number, employees: number): number {
+  return addon.fixedCredits + addon.perPosition * positions + addon.perEmployee * employees
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PACHETE CREDITE
+// ═══════════════════════════════════════════════════════════════
+
+export interface CreditPackage {
+  id: string
+  name: string
+  credits: number
+  basePrice: number
+  /** Discount volum (%) */
+  discount: number
+}
+
+export const CREDIT_PACKAGES: CreditPackage[] = [
+  { id: "credits_micro", name: "Micro", credits: 100, basePrice: 800, discount: 0 },
+  { id: "credits_mini", name: "Mini", credits: 250, basePrice: 1875, discount: 6 },
+  { id: "credits_start", name: "Start", credits: 500, basePrice: 3500, discount: 12 },
+  { id: "credits_business", name: "Business", credits: 1500, basePrice: 9750, discount: 19 },
+  { id: "credits_professional", name: "Professional", credits: 5000, basePrice: 30000, discount: 25 },
+  { id: "credits_enterprise", name: "Enterprise", credits: 15000, basePrice: 82500, discount: 31 },
+]
+
+/**
+ * Sugerează cel mai mic pachet de credite care acoperă necesarul.
+ * Ia în calcul soldul existent.
+ * Returnează null dacă necesarul e acoperit de sold.
+ */
+export function suggestCreditPackage(
+  neededCredits: number,
+  existingBalance: number = 0
+): CreditPackage | null {
+  const deficit = neededCredits - existingBalance
+  if (deficit <= 0) return null
+  return CREDIT_PACKAGES.find(p => p.credits >= deficit)
+    ?? CREDIT_PACKAGES[CREDIT_PACKAGES.length - 1]
+}

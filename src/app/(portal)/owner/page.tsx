@@ -854,10 +854,11 @@ export default async function OwnerDashboard() {
             </div>
 
             {/* Rapoarte externe — constrângeri mediu */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <ReportLink href="/owner/reports/business-plan" title="Business Plan" description="Obiective, strategie, termene" icon="📈" />
               <ReportLink href="/owner/reports/costs" title="Costuri operare" description="LLM, infra, per agent" icon="💰" />
               <ReportLink href="/owner/reports/evolution" title="Evoluție Owner" description="Aliniere, pattern-uri" icon="🪞" />
+              <ReportLink href="/owner/reports/support-analytics" title="Satisfactie clienti" description="Rating-uri, trend-uri, funnel" icon="📊" />
             </div>
 
             {/* ═══ III. DECIZII ═══ */}
