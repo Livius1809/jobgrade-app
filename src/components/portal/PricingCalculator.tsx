@@ -324,11 +324,13 @@ export default function PricingCalculator({
           {(Object.values(TIERS) as typeof TIERS[SubscriptionTier][]).map((tier) => {
             const isActive = detectedTier === tier.id
             const isCurrent = currentTier === tier.id
+            // Fiecare tier arată PROPRIUL preț
+            const tierBilling = billingPrice(tier.id, { period: billingPeriod, renewal: renewalType, annualDiscount: 17 })
             return (
               <div
                 key={tier.id}
                 className={`relative p-4 rounded-xl border-2 transition-all ${
-                  isActive ? "border-indigo-500 bg-indigo-50/50" : "border-slate-200"
+                  isActive ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-slate-200"
                 }`}
               >
                 {tier.id === "BUSINESS" && (
@@ -337,15 +339,26 @@ export default function PricingCalculator({
                 {isCurrent && (
                   <span className="absolute -top-2 left-3 px-2 py-0.5 bg-emerald-600 text-white text-[8px] font-bold uppercase rounded-full">Activ</span>
                 )}
+                {isActive && !isCurrent && pos > 0 && (
+                  <span className="absolute -top-2 left-3 px-2 py-0.5 bg-indigo-500 text-white text-[8px] font-bold uppercase rounded-full">Recomandat pentru dvs.</span>
+                )}
                 <h4 className="font-bold text-sm">{tier.label}</h4>
                 <p className="text-[10px] text-slate-500 mb-2">{tier.employeeRange}</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-extrabold">{billing.perMonth}</span>
+                  <span className="text-2xl font-extrabold">{tierBilling.perMonth}</span>
                   <span className="text-xs text-slate-400">RON/lună</span>
                 </div>
+                {tierBilling.savings > 0 && (
+                  <p className="text-[10px] text-emerald-600">Economisiți {tierBilling.savings} RON/an</p>
+                )}
                 <p className="text-[10px] text-slate-500 mt-1">
-                  Credit: <strong>{tier.creditPrice.toFixed(2)} RON</strong>
-                  {tier.creditDiscount !== "—" && <span className="text-emerald-600 ml-1">(-{tier.creditDiscount})</span>}
+                  {tier.id === "ESSENTIALS" ? (
+                    // Essentials: preț nominal
+                    <><strong>{tier.creditPrice.toFixed(2)} RON</strong>/credit</>
+                  ) : (
+                    // Business/Enterprise: doar discountul
+                    <>Credit: <span className="text-emerald-600 font-semibold">-{tier.creditDiscount}</span> față de prețul standard</>
+                  )}
                 </p>
                 <p className="text-[10px] text-slate-500">{tier.maxOperators} operator{tier.maxOperators > 1 ? "i" : ""} · {tier.freeChat} min chat/lună</p>
               </div>
