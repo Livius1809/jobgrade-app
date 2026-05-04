@@ -1076,10 +1076,10 @@ const ETHICAL_PROFILES: Record<string, Partial<L1EthicalAssessment>> = {
     negativeFactors: [
       "RISC MAJOR: zona cea mai vulnerabilă la pseudo-vindecători și manipulare",
       "Oameni vulnerabili (bolnavi, disperați) sunt țintă pentru escroci",
-      "Confuzia între „spiritual" și „magic" atrage practicieni necalificați",
+      "Confuzia intre 'spiritual' si 'magic' atrage practicieni necalificati",
     ],
     ethicalConditions: [
-      "OBLIGATORIU: separare strictă între atestat/neatestat — izvoare cu analize chimice vs. „energii" fără dovezi",
+      "OBLIGATORIU: separare stricta intre atestat/neatestat — izvoare cu analize chimice vs. 'energii' fara dovezi",
       "Zero promisiuni de vindecare — informare, nu manipulare",
       "Practici tradiționale doar de la practicieni cu traseu verificabil",
       "Protecție explicită pentru persoane vulnerabile (bolnavi, doliu, depresie)",

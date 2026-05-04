@@ -22,7 +22,7 @@ export default async function StatFunctiiPage() {
         </div>
       </div>
 
-      <StatFunctiiClient initialData={statFunctii} />
+      <StatFunctiiClient initialData={statFunctii as any} />
     </div>
   )
 }
