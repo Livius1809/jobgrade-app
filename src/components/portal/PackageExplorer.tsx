@@ -250,6 +250,9 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
   const [employees, setEmployees] = useState<string>(purchasedEmployees > 0 ? String(purchasedEmployees) : "")
   const [annual, setAnnual] = useState(false)
   const [selectedCredits, setSelectedCredits] = useState<string | null>(null)
+  const [upgradeScenario, setUpgradeScenario] = useState<"LAYER_UPGRADE" | "ADD_POSITIONS" | "ADD_EMPLOYEES" | "RENAME_POSITION">("LAYER_UPGRADE")
+  const [isUpgradePositionsOnly, setIsUpgradePositionsOnly] = useState(false)
+  const [isUpgradeEmployeesOnly, setIsUpgradeEmployeesOnly] = useState(false)
 
   const CREDIT_PKGS = [
     { id: "credits_micro", name: "Micro", credits: 100, price: 800 },
@@ -532,6 +535,9 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
             <p className={`text-[10px] font-bold uppercase tracking-wide mb-3 ${isUpgrade ? colors.text : "text-amber-700"}`}>
               {isUpgrade ? `Upgrade → ${selectedPkg.title}` : "Date intrare client"}
             </p>
+            {/* Câmpuri diferențiate per card:
+                C1 = doar poziții (salariații se folosesc intern dar nu se cer)
+                C2+ = ambele (salariații devin relevanți: pay gap, structura salarială) */}
             <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-2 flex-1">
                 <label className="text-xs text-slate-600">Poziții distincte</label>
@@ -541,25 +547,77 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                   max={500}
                   value={positions}
                   placeholder="–"
-                  onChange={(e) => !isUpgrade && setPositions(e.target.value)}
-                  readOnly={isUpgrade}
-                  className={`w-20 text-center text-sm font-bold border-2 rounded-lg px-2 py-1.5 ${isUpgrade ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-amber-300 bg-white focus:ring-2 focus:ring-amber-200"}`}
+                  onChange={(e) => setPositions(e.target.value)}
+                  readOnly={isUpgrade && !isUpgradePositionsOnly}
+                  className={`w-20 text-center text-sm font-bold border-2 rounded-lg px-2 py-1.5 ${isUpgrade && !isUpgradePositionsOnly ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-amber-300 bg-white focus:ring-2 focus:ring-amber-200"}`}
                 />
+                {isUpgrade && purchasedPositions > 0 && (
+                  <span className="text-[9px] text-slate-400">era: {purchasedPositions}</span>
+                )}
               </div>
-              <div className="flex items-center gap-2 flex-1">
-                <label className="text-xs text-slate-600">Nr. salariați</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={5000}
-                  value={employees}
-                  placeholder="–"
-                  onChange={(e) => !isUpgrade && setEmployees(e.target.value)}
-                  readOnly={isUpgrade}
-                  className={`w-20 text-center text-sm font-bold border-2 rounded-lg px-2 py-1.5 ${isUpgrade ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-amber-300 bg-white focus:ring-2 focus:ring-amber-200"}`}
-                />
-              </div>
+              {/* Nr salariați: vizibil doar de la C2 în sus */}
+              {selectedPkg.number >= 2 && (
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs text-slate-600">Nr. salariați</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5000}
+                    value={employees}
+                    placeholder="–"
+                    onChange={(e) => setEmployees(e.target.value)}
+                    readOnly={isUpgrade && !isUpgradeEmployeesOnly}
+                    className={`w-20 text-center text-sm font-bold border-2 rounded-lg px-2 py-1.5 ${isUpgrade && !isUpgradeEmployeesOnly ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-amber-300 bg-white focus:ring-2 focus:ring-amber-200"}`}
+                  />
+                  {isUpgrade && purchasedEmployees > 0 && (
+                    <span className="text-[9px] text-slate-400">era: {purchasedEmployees}</span>
+                  )}
+                </div>
+              )}
+              {selectedPkg.number === 1 && (
+                <p className="text-[9px] text-slate-400 flex-1 italic">Nr. salariați devine relevant la Conformitate (C2)</p>
+              )}
             </div>
+
+            {/* Scenarii upgrade diferențiate */}
+            {isUpgrade && (
+              <div className="mb-3 space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Tip modificare</p>
+                <div className="flex flex-wrap gap-2">
+                  <ScenarioButton
+                    active={upgradeScenario === "LAYER_UPGRADE"}
+                    label="Upgrade card"
+                    detail="Card superior, aceleași dimensiuni"
+                    onClick={() => setUpgradeScenario("LAYER_UPGRADE")}
+                  />
+                  <ScenarioButton
+                    active={upgradeScenario === "ADD_POSITIONS"}
+                    label="Adaug poziții"
+                    detail="Același card, mai multe posturi"
+                    onClick={() => { setUpgradeScenario("ADD_POSITIONS"); setIsUpgradePositionsOnly(true); setIsUpgradeEmployeesOnly(false) }}
+                  />
+                  {selectedPkg.number >= 2 && (
+                    <ScenarioButton
+                      active={upgradeScenario === "ADD_EMPLOYEES"}
+                      label="Adaug salariați"
+                      detail="Același card, mai mulți angajați"
+                      onClick={() => { setUpgradeScenario("ADD_EMPLOYEES"); setIsUpgradePositionsOnly(false); setIsUpgradeEmployeesOnly(true) }}
+                    />
+                  )}
+                  <ScenarioButton
+                    active={upgradeScenario === "RENAME_POSITION"}
+                    label="Redenumesc o poziție"
+                    detail="Schimb denumire + atribuții, fără cost suplimentar"
+                    onClick={() => setUpgradeScenario("RENAME_POSITION")}
+                  />
+                </div>
+                {upgradeScenario === "RENAME_POSITION" && (
+                  <p className="text-[9px] text-emerald-600 mt-1">
+                    Schimbarea denumirii și atribuțiilor unei poziții (fără modificare număr poziții/salariați) nu implică cost suplimentar. Reevaluarea poziției consumă credite din sold.
+                  </p>
+                )}
+              </div>
+            )}
 
             {(() => {
               const pos = Number(positions) || 0
@@ -579,13 +637,56 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
 
               // Prorata la upgrade: scadem prețul pachetului curent
               let prorataCredit = 0
+              let scenarioLabel = ""
               if (isUpgrade && purchasedLayer > 0) {
-                const calcCurrent = calcLayerCredits(purchasedLayer, Math.max(1, pos), Math.max(1, emp))
-                const ppcCurrent = pricePerCredit(calcCurrent.total)
-                const volDiscCurrent = getVolumeDiscount(Math.max(1, pos), Math.max(1, emp))
-                prorataCredit = Math.round(Math.round(calcCurrent.total * ppcCurrent) * (1 - volDiscCurrent.pct / 100))
+                // Dimensiunile anterioare (ce a plătit deja)
+                const prevPos = purchasedPositions > 0 ? purchasedPositions : Math.max(1, pos)
+                const prevEmp = purchasedEmployees > 0 ? purchasedEmployees : Math.max(1, emp)
+
+                if (upgradeScenario === "RENAME_POSITION") {
+                  // Redenumire = 0 cost suplimentar (reevaluarea consumă credite din sold)
+                  prorataCredit = serviciiRON // anulează complet
+                  scenarioLabel = "Redenumire poziție — fără cost suplimentar"
+                } else if (upgradeScenario === "ADD_POSITIONS") {
+                  // Plătește doar diferența de poziții (salariați rămân)
+                  const calcPrev = calcLayerCredits(selectedPkg.number, prevPos, prevEmp)
+                  const calcNew = calcLayerCredits(selectedPkg.number, Math.max(1, pos), prevEmp)
+                  const ppcPrev = pricePerCredit(calcPrev.total)
+                  const ppcNew = pricePerCredit(calcNew.total)
+                  prorataCredit = Math.round(calcPrev.total * ppcPrev)
+                  const newTotal = Math.round(calcNew.total * ppcNew)
+                  // Recalculăm serviciiRON pe noile poziții
+                  const diff = Math.max(0, newTotal - prorataCredit)
+                  prorataCredit = serviciiRON - diff
+                  scenarioLabel = `Adăugare poziții: ${prevPos} → ${pos} (salariați neschimbați: ${prevEmp})`
+                } else if (upgradeScenario === "ADD_EMPLOYEES") {
+                  // Plătește doar diferența de salariați (poziții rămân)
+                  const calcPrev = calcLayerCredits(selectedPkg.number, prevPos, prevEmp)
+                  const calcNew = calcLayerCredits(selectedPkg.number, prevPos, Math.max(1, emp))
+                  const ppcPrev = pricePerCredit(calcPrev.total)
+                  const ppcNew = pricePerCredit(calcNew.total)
+                  prorataCredit = Math.round(calcPrev.total * ppcPrev)
+                  const newTotal = Math.round(calcNew.total * ppcNew)
+                  const diff = Math.max(0, newTotal - prorataCredit)
+                  prorataCredit = serviciiRON - diff
+                  scenarioLabel = `Adăugare salariați: ${prevEmp} → ${emp} (poziții neschimbate: ${prevPos})`
+                } else {
+                  // LAYER_UPGRADE: upgrade card complet
+                  const calcCurrent = calcLayerCredits(purchasedLayer, prevPos, prevEmp)
+                  const ppcCurrent = pricePerCredit(calcCurrent.total)
+                  const volDiscCurrent = getVolumeDiscount(prevPos, prevEmp)
+                  prorataCredit = Math.round(Math.round(calcCurrent.total * ppcCurrent) * (1 - volDiscCurrent.pct / 100))
+                  scenarioLabel = `Upgrade: ${PACKAGES.find(p => p.number === purchasedLayer)?.title} → ${selectedPkg.title}`
+                }
               }
               const serviciiDiff = Math.max(0, serviciiRON - prorataCredit)
+
+              // La downgrade: diferența se convertește în credite
+              let downgradeRefundCredits = 0
+              if (serviciiRON < prorataCredit && upgradeScenario !== "RENAME_POSITION") {
+                const refundRON = prorataCredit - serviciiRON
+                downgradeRefundCredits = Math.floor(refundRON / activeTierInfo.creditPrice)
+              }
 
               // Abonament per tier (detectat din nr angajați)
               const tierForSize = emp <= 50 ? "ESSENTIALS" : emp <= 200 ? "BUSINESS" : "ENTERPRISE"
@@ -626,7 +727,15 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
                   {isUpgrade && prorataCredit > 0 && (
                     <>
                       <div style={{ height: "4px" }} />
-                      <p className="text-[9px] text-slate-400">Diferență: {serviciiRON.toLocaleString("ro-RO")} - {prorataCredit.toLocaleString("ro-RO")} (pachet curent) = {serviciiDiff.toLocaleString("ro-RO")} RON</p>
+                      <p className="text-[9px] text-slate-400">
+                        {scenarioLabel}
+                        {upgradeScenario !== "RENAME_POSITION" && (<><br/>Diferență: {serviciiRON.toLocaleString("ro-RO")} - {prorataCredit.toLocaleString("ro-RO")} (deja plătit) = {serviciiDiff.toLocaleString("ro-RO")} RON</>)}
+                      </p>
+                      {downgradeRefundCredits > 0 && (
+                        <p className="text-[9px] text-emerald-600 mt-1 font-medium">
+                          Diferența de {(prorataCredit - serviciiRON).toLocaleString("ro-RO")} RON se convertește în {downgradeRefundCredits} credite (la {activeTierInfo.creditPrice} RON/credit)
+                        </p>
+                      )}
                     </>
                   )}
 
@@ -803,10 +912,10 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
             ) : (
               <button
                 onClick={handlePurchase}
-                disabled={purchasing || !Number(positions) || !Number(employees)}
+                disabled={purchasing || !Number(positions) || (selectedPkg.number >= 2 && !Number(employees))}
                 className={`flex-1 py-3 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${colors.btn}`}
               >
-                {purchasing ? "Se procesează..." : "Plătește"}
+                {purchasing ? "Se procesează..." : upgradeScenario === "RENAME_POSITION" ? "Aplică redenumirea" : "Plătește"}
               </button>
             )}
             <Link
@@ -820,5 +929,21 @@ export default function PackageExplorer({ onLayerChange, purchasedLayer = 0, pur
         document.body
       )}
     </>
+  )
+}
+
+function ScenarioButton({ active, label, detail, onClick }: { active: boolean; label: string; detail: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-left transition-all ${
+        active
+          ? "bg-indigo-100 border-2 border-indigo-400 text-indigo-700"
+          : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+      }`}
+    >
+      <span className="text-[10px] font-semibold block">{label}</span>
+      <span className="text-[9px] text-slate-400 block">{detail}</span>
+    </button>
   )
 }
