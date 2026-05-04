@@ -122,9 +122,7 @@ const adapter: CrawlAdapter = {
         address: firm.address,
         employees: firm.employees,
         revenue: firm.revenue,
-        source: "topfirme.com",
         sourceId: firm.cui,
-        isActive: true,
       })
     }
 
@@ -187,7 +185,7 @@ function parseTopFirmeHtml(html: string): FirmData[] {
         caenName: "",
         employees: parseInt(empMatch?.[1] || "0"),
         revenue: parseFloat((revMatch?.[1] || "0").replace(/\./g, "").replace(",", ".")),
-        address: territory,
+        address: "",
         status: "ACTIVA",
       })
     }

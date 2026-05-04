@@ -62,7 +62,7 @@ const adapter: CrawlAdapter = {
       if (contact) {
         territorialData.push({
           territory, category: "INFRASTRUCTURE", key: "primarie_contact",
-          value: JSON.stringify(contact), numericValue: null,
+          value: JSON.stringify(contact), numericValue: undefined,
           unit: "contact", periodYear: new Date().getFullYear(), confidence: 1.0,
           sourceUrl: c.url,
         })
@@ -216,9 +216,7 @@ function extractPublicServices(
     name: `Primăria ${territory.charAt(0) + territory.slice(1).toLowerCase()}`,
     category: "ADMINISTRATIE",
     subcategory: "Primărie",
-    source: "primarie-website",
     sourceId: `PRIMARIE_${territory}`,
-    isActive: true,
     latitude: lat,
     longitude: lng,
   })

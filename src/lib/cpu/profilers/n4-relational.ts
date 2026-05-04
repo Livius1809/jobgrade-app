@@ -97,11 +97,11 @@ export const RelationalProfiler = {
     const [tenant, jobs, employees] = await Promise.all([
       prisma.tenant.findUnique({ where: { id: tenantId } }),
       prisma.job.findMany({ where: { tenantId }, select: { id: true, title: true, department: true } }),
-      prisma.employee?.findMany?.({ where: { tenantId } }).catch(() => []),
+      (prisma as any).employee?.findMany?.({ where: { tenantId } }).catch(() => []),
     ])
 
     // Sociograme dacă există
-    const sociogramData = await prisma.sociogramGroup?.findMany?.({
+    const sociogramData = await (prisma as any).sociogramGroup?.findMany?.({
       where: { tenantId },
       include: { members: true },
     }).catch(() => [])

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Load existing report
-  const report = await getTenantData(session.user.tenantId, "DATA_QUALITY_REPORT")
+  const report = await getTenantData(session.user.tenantId, "DATA_QUALITY_REPORT") as any
   if (!report?.issues) {
     return NextResponse.json({ error: "Nu există raport de calitate. Rulați GET mai întâi." }, { status: 404 })
   }

@@ -111,7 +111,22 @@ Evaluează toate cele ${criteria.length} criterii. Justificarea trebuie să fie 
   const jsonMatch = text.match(/\[[\s\S]*\]/)
   if (!jsonMatch) throw new Error("AI nu a returnat JSON valid")
 
-  const parsed: Array<{ criterionName: string; selectedCode: string; justification: string }> = JSON.parse(jsonMatch[0])
+  let parsed: Array<{ criterionName: string; selectedCode: string; justification: string }>
+  try {
+    parsed = JSON.parse(jsonMatch[0])
+  } catch {
+    // Retry: curăță JSON malformat (ghilimele neînchise, virgule trailing)
+    const cleaned = jsonMatch[0]
+      .replace(/,\s*([}\]])/g, "$1")          // trailing commas
+      .replace(/[\u201C\u201D\u201E]/g, '"')  // ghilimele românești
+      .replace(/[\u2018\u2019]/g, "'")         // apostrofe fancy
+      .replace(/\n/g, " ")                     // newlines în stringuri
+    try {
+      parsed = JSON.parse(cleaned)
+    } catch {
+      throw new Error(`JSON malformat de la AI: ${jsonMatch[0].slice(0, 200)}...`)
+    }
+  }
 
   // 6. Map to criterion + subfactor IDs
   const results: EvaluationResult[] = []
@@ -144,6 +159,8 @@ Evaluează toate cele ${criteria.length} criterii. Justificarea trebuie să fie 
  */
 export async function autoEvaluateSession(sessionId: string, userId: string): Promise<{
   jobsEvaluated: number
+  errors: number
+  scores: Record<string, number>
   totalScore: Record<string, number>
 }> {
   const sessionJobs = await prisma.sessionJob.findMany({
@@ -153,8 +170,39 @@ export async function autoEvaluateSession(sessionId: string, userId: string): Pr
 
   const totalScore: Record<string, number> = {}
 
+  let errors = 0
   for (const sj of sessionJobs) {
-    const results = await autoEvaluateJob(sj.job.id)
+    // Skip dacă deja evaluat
+    const existingAssignment = await prisma.jobAssignment.findFirst({
+      where: { sessionJobId: sj.id, userId },
+      include: { evaluations: { select: { id: true } } },
+    })
+    if (existingAssignment && existingAssignment.evaluations.length >= 5) {
+      // Deja evaluat, recalculăm scorul
+      const evals = await prisma.evaluation.findMany({
+        where: { assignmentId: existingAssignment.id },
+        include: { subfactor: { select: { points: true, code: true } } },
+      })
+      const jobTotal = evals.reduce((s: number, e: any) => s + (e.subfactor?.points || 0), 0)
+      totalScore[sj.job.title] = jobTotal
+      console.log(`  ${sj.job.title}: ${jobTotal} pct (deja evaluat)`)
+      continue
+    }
+
+    let results
+    try {
+      results = await autoEvaluateJob(sj.job.id)
+    } catch (e: any) {
+      console.error(`  ✗ ${sj.job.title}: ${e.message.slice(0, 80)}`)
+      // Retry o dată
+      try {
+        results = await autoEvaluateJob(sj.job.id)
+      } catch {
+        console.error(`  ✗ ${sj.job.title}: retry failed — skip`)
+        errors++
+        continue
+      }
+    }
 
     // Create or get assignment
     let assignment = await prisma.jobAssignment.findFirst({
@@ -195,5 +243,5 @@ export async function autoEvaluateSession(sessionId: string, userId: string): Pr
     console.log(`  ${sj.job.title}: ${jobTotal} pct (${results.map(r => r.selectedCode).join(",")})`)
   }
 
-  return { jobsEvaluated: sessionJobs.length, totalScore }
+  return { jobsEvaluated: sessionJobs.length - errors, errors, scores: totalScore, totalScore }
 }

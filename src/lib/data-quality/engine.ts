@@ -206,12 +206,13 @@ export async function runDataQualityCheck(tenantId: string): Promise<DataQuality
   }
 
   // ─── 6. CROSS-CHECK — stat funcții vs fișe importate ───
-  if (statFunctii?.rows) {
-    const statTitles = new Set(statFunctii.rows.map((r: any) => r.title.toLowerCase().trim()))
+  const statRows = (statFunctii as any)?.rows
+  if (statRows) {
+    const statTitles = new Set(statRows.map((r: any) => r.title.toLowerCase().trim()))
     const jobTitles = new Set(jobs.map(j => j.title.toLowerCase().trim()))
 
     // Posturi din stat fără fișă
-    const inStatNotInJobs = statFunctii.rows.filter((r: any) => !jobTitles.has(r.title.toLowerCase().trim()))
+    const inStatNotInJobs = statRows.filter((r: any) => !jobTitles.has(r.title.toLowerCase().trim()))
     if (inStatNotInJobs.length > 0) {
       issues.push({
         id: nextId(),
@@ -244,14 +245,14 @@ export async function runDataQualityCheck(tenantId: string): Promise<DataQuality
     }
 
     // Diferențe de headcount
-    const statTotal = statFunctii.rows.reduce((s: number, r: any) => s + (r.positionCount || 0), 0)
+    const statTotal = statRows.reduce((s: number, r: any) => s + (r.positionCount || 0), 0)
     if (statTotal > 0 && Math.abs(statTotal - jobs.length) > statTotal * 0.3) {
       issues.push({
         id: nextId(),
         category: "CROSS_CHECK",
         severity: "INFO",
         description: `Diferență semnificativă între nr. posturi din stat (${statTotal}) și nr. fișe importate (${jobs.length})`,
-        details: `Asta poate fi normal (un post poate avea mai multe poziții ocupate) sau poate indica lipsuri. Statul de funcții conține ${statFunctii.rows.length} posturi distincte cu ${statTotal} poziții totale.`,
+        details: `Asta poate fi normal (un post poate avea mai multe poziții ocupate) sau poate indica lipsuri. Statul de funcții conține ${statRows.length} posturi distincte cu ${statTotal} poziții totale.`,
         affectedItems: [],
         resolved: false,
       })
@@ -259,7 +260,7 @@ export async function runDataQualityCheck(tenantId: string): Promise<DataQuality
   }
 
   // ─── 7. FORMAT — niveluri ierarhice lipsă ───
-  const jobsWithoutLevel = jobs.filter(j => !j.hierarchyLevel && j.hierarchyLevel !== 0)
+  const jobsWithoutLevel = jobs.filter(j => !(j as any).hierarchyLevel && (j as any).hierarchyLevel !== 0)
   if (jobsWithoutLevel.length > jobs.length * 0.5) {
     issues.push({
       id: nextId(),

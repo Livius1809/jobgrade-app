@@ -100,7 +100,7 @@ export async function buildIntegratedContext(
 
   // Load stat funcții
   const statFunctii = await getTenantData(tenantId, "STAT_FUNCTII")
-  const statRow = findStatRow(job.title, statFunctii?.rows || [])
+  const statRow = findStatRow(job.title, (statFunctii as any)?.rows || [])
 
   // Load hierarchy (siblings, reports)
   const allJobs = await prisma.job.findMany({

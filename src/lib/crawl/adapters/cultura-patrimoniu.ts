@@ -103,9 +103,7 @@ const adapter: CrawlAdapter = {
         address: m.address || m.localitate,
         latitude: m.latitude,
         longitude: m.longitude,
-        source: "LMI",
         sourceId: m.cod,
-        isActive: true,
       })
     }
 

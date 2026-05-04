@@ -21,9 +21,11 @@
 // Re-export instrumente existente ca dimensiuni N1
 // Fiecare instrument devine o "dimensiune" accesibilă uniform
 
-import { scoreHermann, type HermannResult } from "@/lib/b2c/questionnaires/hermann-hbdi"
-import { scoreMBTI, type MBTIResult } from "@/lib/b2c/questionnaires/mbti"
-import { normalizeScore, classifyAllScores, buildIntegratedTraits, type NormalizationInput } from "@/lib/profiling/score-normalizer"
+import { scoreHermann } from "@/lib/b2c/questionnaires/hermann-hbdi"
+import type { HermannAnswers, HermannResult } from "@/lib/b2c/questionnaires/types"
+import { scoreMBTI } from "@/lib/b2c/questionnaires/mbti"
+import type { MBTIAnswers, MBTIResult } from "@/lib/b2c/questionnaires/types"
+import { normalizeHBDI, classifyAllScores, buildIntegratedTraits, type NormalizedScore } from "@/lib/profiling/score-normalizer"
 import { calculateTotalPoints, getGradeFromPoints } from "@/lib/evaluation/scoring-table"
 
 // ═══════════════════════════════════════════════════════════════
@@ -68,13 +70,13 @@ export const DimensionalProfiler = {
    * Output: 4 cadrane (A/B/C/D) + derivate
    */
   cognitiveStyle(answers: Record<string, number>, entityId: string): DimensionalProfile {
-    const result = scoreHermann(answers)
+    const result = scoreHermann(answers as unknown as HermannAnswers)
     return {
       dimensionId: "COGNITIVE_STYLE",
       entityId,
       entityType: "PERSON",
       rawResult: result,
-      normalizedScore: normalizeScore({ instrument: "HERRMANN_HBDI", scale: "A", rawScore: result.A }),
+      normalizedScore: normalizeHBDI("A", result.CoS).normalizedT,
       confidence: Object.keys(answers).length >= 60 ? 0.9 : 0.6,
       measuredAt: new Date().toISOString(),
     }
@@ -86,7 +88,7 @@ export const DimensionalProfiler = {
    * Output: tip (ex: ESTJ), intensitate per dicotomie
    */
   personalityType(answers: Record<string, string>, entityId: string): DimensionalProfile {
-    const result = scoreMBTI(answers)
+    const result = scoreMBTI(answers as unknown as MBTIAnswers)
     return {
       dimensionId: "PERSONALITY_TYPE",
       entityId,
@@ -125,15 +127,15 @@ export const DimensionalProfiler = {
    * Input: scoruri brute de la instrument extern
    * Output: T-score normalizat + clasificare
    */
-  externalInstrument(input: NormalizationInput, entityId: string): DimensionalProfile {
-    const tScore = normalizeScore(input)
+  externalInstrument(input: NormalizedScore, entityId: string): DimensionalProfile {
+    const tScore = input.normalizedT
     const dimensionMap: Record<string, DimensionId> = {
       CPI_260: "LEADERSHIP",
       ESQ_2: "INTEGRITY",
       AMI: "MOTIVATION",
     }
     return {
-      dimensionId: dimensionMap[input.instrument] || "COMPETENCE",
+      dimensionId: dimensionMap[input.instrumentId] || "COMPETENCE",
       entityId,
       entityType: "PERSON",
       rawResult: input,
@@ -190,11 +192,11 @@ export const DimensionalProfiler = {
     let integratedTraits
     try {
       const normInputs = profiles
-        .filter(p => p.rawResult?.instrument)
-        .map(p => p.rawResult as NormalizationInput)
+        .filter(p => p.rawResult?.instrumentId)
+        .map(p => p.rawResult as NormalizedScore)
       if (normInputs.length >= 2) {
         const classified = classifyAllScores(normInputs)
-        integratedTraits = buildIntegratedTraits(classified)
+        integratedTraits = buildIntegratedTraits([...classified.excellence, ...classified.development, ...classified.inNorm])
       }
     } catch {
       // Nu toate profilurile au format compatibil

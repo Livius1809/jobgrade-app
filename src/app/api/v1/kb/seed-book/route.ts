@@ -19,13 +19,24 @@ import SDO_SEED_ENTRIES from "@/lib/kb/seeds/specialist-dezvoltare-organizationa
 
 export const dynamic = "force-dynamic"
 
-const AVAILABLE_BOOKS: Record<string, typeof ROCCO_SEED_ENTRIES> = {
-  "rocco-creativitate-ei": ROCCO_SEED_ENTRIES,
-  "psiho-socio-economist": PSEC_SEED_ENTRIES,
-  "specialist-stiinte-educatie": SSED_SEED_ENTRIES,
-  "jurist-dreptul-muncii": JDM_SEED_ENTRIES,
-  "analist-economic-teritorial": AET_SEED_ENTRIES,
-  "specialist-dezvoltare-organizationala": SDO_SEED_ENTRIES,
+// Each seed file defines its own local KBSeedEntry — structurally identical but TS sees them as different types.
+// Use a common shape to unify them.
+interface SeedEntry {
+  agentRole: string
+  kbType: string
+  content: string
+  tags: string[]
+  confidence: number
+  source: string
+}
+
+const AVAILABLE_BOOKS: Record<string, SeedEntry[]> = {
+  "rocco-creativitate-ei": ROCCO_SEED_ENTRIES as SeedEntry[],
+  "psiho-socio-economist": PSEC_SEED_ENTRIES as SeedEntry[],
+  "specialist-stiinte-educatie": SSED_SEED_ENTRIES as SeedEntry[],
+  "jurist-dreptul-muncii": JDM_SEED_ENTRIES as SeedEntry[],
+  "analist-economic-teritorial": AET_SEED_ENTRIES as SeedEntry[],
+  "specialist-dezvoltare-organizationala": SDO_SEED_ENTRIES as SeedEntry[],
 }
 
 function verifyInternalAuth(req: NextRequest): boolean {
@@ -79,11 +90,11 @@ export async function POST(req: NextRequest) {
     await prisma.kBEntry.create({
       data: {
         agentRole: entry.agentRole,
-        kbType: entry.kbType,
+        kbType: entry.kbType as any,
         content: entry.content,
         tags: entry.tags,
         confidence: entry.confidence,
-        source: entry.source,
+        source: entry.source as any,
         status: "PERMANENT",
         usageCount: 0,
         validatedAt: new Date(),

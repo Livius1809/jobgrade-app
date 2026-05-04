@@ -93,10 +93,10 @@ export const OrganizationalProfiler = {
         orderBy: { updatedAt: "desc" },
         take: 1,
       }),
-      prisma.employee?.findMany?.({ where: { tenantId } }).catch(() => []),
+      (prisma as any).employee?.findMany?.({ where: { tenantId } }).catch(() => []),
     ])
 
-    const evaluatedJobs = jobs.filter(j => (j as any).totalScore > 0).length
+    const evaluatedJobs = jobs.filter((j: any) => j.totalScore > 0).length
     const grades = await prisma.salaryGrade.findMany({ where: { tenantId } })
 
     // Structură

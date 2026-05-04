@@ -12,7 +12,10 @@
  *         → Document final integrează ambele perspective
  */
 
-import type { InferenceBlock, OrgInferenceBlock } from "./narrative-profile"
+import type { InferenceBlock } from "./narrative-profile"
+
+// OrgInferenceBlock is a specialization of InferenceBlock for organizational context
+type OrgInferenceBlock = InferenceBlock
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES

@@ -107,6 +107,7 @@ export interface DemandPoint {
   latitude?: number | null
   longitude?: number | null
   // Detalii cerere
+  employees?: number
   estimatedVolume?: number     // unități/an sau RON/an
   urgency?: string
   budget?: string

@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   // Crawl results pentru timeline
   const crawlResults = await prisma.crawlResult.findMany({
     where: {
-      source: { territory: { in: [territory, null] } },
+      source: { territory: { in: [territory, null as any] } },
       crawledAt: { gte: sinceDate },
       status: "SUCCESS",
     },
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
   // Timeline crawl-uri
   const crawlTimeline = crawlResults.map(r => ({
     date: r.crawledAt.toISOString().split("T")[0],
-    source: r.source.displayName || r.source.name,
+    source: (r as any).source.displayName || (r as any).source.name,
     records: r.recordsFound,
     newRecords: r.recordsNew,
     updated: r.recordsUpdated,

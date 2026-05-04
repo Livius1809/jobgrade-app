@@ -15,6 +15,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { DimensionalProfiler, type DimensionalProfile } from "./n1-dimensional"
+export type { DimensionalProfile }
 
 // Re-export funcții existente ca N2
 // B2C: profiler-engine.ts are getUserProfile() — ăla e N2 pentru persoane B2C

@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       const session = sessions.get(body.sessionId || "")
       if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 })
 
-      session.currentScrollPosition = body.scrollPosition || null
+      session.currentScrollPosition = body.scrollPosition || undefined
       return NextResponse.json({ position: session.currentScrollPosition })
     }
 
