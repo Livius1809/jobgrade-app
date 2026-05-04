@@ -3,25 +3,13 @@
 /**
  * PricingCalculator — Componenta UNIFICATĂ de pricing
  *
- * Înlocuiește PackageSelector + PackageExplorer.
- * O singură componentă, sursa de adevăr = pricing.ts.
- *
- * Moduri:
- * - portal: client logat, vede situația curentă, checkout Stripe, upgrade/downgrade
- * - sandbox: vizitator nelogat, explorare, diagnostic gratuit
- * - landing: pagina publică, fără interacțiune, doar afișare
- *
- * Include:
- * - 3 abonamente (Essentials/Business/Enterprise) cu tier auto-detectat
- * - Calculator credite per card (C1-C4)
- * - Câmpuri diferențiate (C1=doar poziții, C2+=ambele)
- * - 4 scenarii upgrade (card/poziții/salariați/redenumire)
- * - Downgrade cu conversie diferență în credite
- * - Billing toggle (lunar/anual) + reînnoire (auto/manual)
- * - Discount dublu (abonament + volum credite, cumulate)
- * - Pachete credite suplimentare
- * - Maturity signals (Company Profiler)
- * - Checkout Stripe (doar portal)
+ * Flow (conform instrucțiuni Owner 04.05.2026):
+ * 1. Prețuri abonamente + pachete credite apar AICI, nu în portal separat
+ * 2. La input poziții → se activează cardul abonamentului + servicii cu credite
+ * 3. La apariția creditelor → se activează pachetele acoperitoare
+ * 4. Jos: abonament default + credite + slidere billing lângă abonament
+ * 5. Manșetă: "De plată acum" (total) + "De plată lunar" (abonament)
+ * 6. Prețuri pachete credite = prețuri din Stripe (basePrice)
  */
 
 import { useState, useRef, useEffect, useMemo } from "react"
@@ -53,16 +41,13 @@ type UpgradeScenario = "LAYER_UPGRADE" | "ADD_POSITIONS" | "ADD_EMPLOYEES" | "RE
 
 interface PricingCalculatorProps {
   mode: Mode
-  /** Doar portal — date din DB */
   purchasedLayer?: number
   purchasedPositions?: number
   purchasedEmployees?: number
   creditBalance?: number
   currentTier?: SubscriptionTier
-  /** Callbacks */
   onLayerChange?: (layer: number | null) => void
   onPanelOpen?: (open: boolean) => void
-  /** UI control */
   forceOpen?: boolean
   forceClose?: boolean
 }
@@ -192,14 +177,12 @@ export default function PricingCalculator({
 
   useEffect(() => { setMounted(true) }, [])
 
-  // Fetch maturity (portal only)
   useEffect(() => {
     if (mode === "portal") {
       fetch("/api/v1/company/maturity").then(r => r.json()).then(d => { if (d.level) setMaturity(d) }).catch(() => {})
     }
   }, [mode])
 
-  // Force open/close
   useEffect(() => {
     if (forceOpen && selectedCard === null) {
       const auto = purchasedLayer > 0 ? purchasedLayer : 1
@@ -216,7 +199,6 @@ export default function PricingCalculator({
     }
   }, [forceClose])
 
-  // Panel position
   useEffect(() => {
     if (selectedCard && cardsRef.current) {
       const rect = cardsRef.current.getBoundingClientRect()
@@ -242,13 +224,13 @@ export default function PricingCalculator({
   // Credits calculation
   const creditCalc = useMemo(() => {
     if (!selectedCard || pos === 0) return null
-    const effectiveEmp = selectedCard === 1 ? pos : Math.max(1, emp) // C1: emp intern = pos
+    const effectiveEmp = selectedCard === 1 ? pos : Math.max(1, emp)
     return calcLayerCredits(selectedCard, Math.max(1, pos), effectiveEmp)
   }, [selectedCard, pos, emp])
 
   const totalRON = creditCalc ? Math.round(creditCalc.total * tierConfig.creditPrice) : 0
 
-  // Add-ons pentru cardul selectat
+  // Add-ons
   const cardAddons = useMemo(() => {
     if (!selectedCard) return []
     return ADDONS.filter(a => a.card <= selectedCard)
@@ -264,12 +246,11 @@ export default function PricingCalculator({
 
   const addonRON = Math.round(addonCreditsTotal * tierConfig.creditPrice)
 
-  // Sumar complet
+  // Sumar
   const serviceCreditsTotal = creditCalc?.total ?? 0
   const allCreditsNeeded = serviceCreditsTotal + addonCreditsTotal
   const balanceDeduction = mode === "portal" ? Math.min(creditBalance, allCreditsNeeded) : 0
   const creditsDeficit = allCreditsNeeded - balanceDeduction
-  const creditsDeficitRON = Math.round(creditsDeficit * tierConfig.creditPrice)
 
   // Pachet sugerat
   const suggestedPkg = useMemo(() => {
@@ -277,15 +258,20 @@ export default function PricingCalculator({
     return suggestCreditPackage(allCreditsNeeded, mode === "portal" ? creditBalance : 0)
   }, [allCreditsNeeded, creditBalance, mode])
 
-  // Preț pachet credite selectat
-  const selectedPkg = selectedCredits ? CREDIT_PKGS.find(p => p.id === selectedCredits) : null
-  const selectedPkgPrice = selectedPkg
-    ? Math.round(selectedPkg.credits * tierConfig.creditPrice * (1 - selectedPkg.discount / 100))
-    : 0
+  // Pachete acoperitoare (doar cele >= credite necesare)
+  const coveringPackages = useMemo(() => {
+    if (creditsDeficit <= 0) return CREDIT_PKGS
+    return CREDIT_PKGS.filter(p => p.credits >= creditsDeficit)
+  }, [creditsDeficit])
 
-  // TOTAL DE PLATĂ ACUM
+  // Preț pachet selectat — PREȚUL DIN STRIPE (basePrice), nu calculat
+  const selectedPkg = selectedCredits ? CREDIT_PKGS.find(p => p.id === selectedCredits) : null
+  const selectedPkgPrice = selectedPkg ? selectedPkg.basePrice : 0
+
+  // TOTAL DE PLATĂ
   const subscriptionDueNow = isUpgrade ? 0 : (billingPeriod === "ANNUAL" ? billing.total : billing.perMonth)
-  const grandTotal = creditsDeficitRON + subscriptionDueNow + selectedPkgPrice
+  const grandTotal = selectedPkgPrice + subscriptionDueNow
+  const monthlyRecurring = billingPeriod === "ANNUAL" ? Math.round(TIERS[detectedTier].annualPrice / 12) : TIERS[detectedTier].monthlyPrice
 
   // ─── Handlers ───
   const handleCardSelect = (card: number | null) => {
@@ -324,52 +310,24 @@ export default function PricingCalculator({
     finally { setPurchasing(false) }
   }
 
+  // Flag: clientul a introdus poziții (activăm tot)
+  const hasInput = pos > 0
+
   return (
     <>
-      {/* ── ABONAMENTE (3 tier-uri) ── */}
+      {/* ── ABONAMENTE (3 tier-uri — mereu vizibile, cel detectat se activează) ── */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Abonament</h3>
-          <div className="flex items-center gap-4">
-            {/* Billing toggle */}
-            <div className="flex bg-slate-100 rounded-lg p-0.5">
-              <button
-                onClick={() => setBillingPeriod("MONTHLY")}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${billingPeriod === "MONTHLY" ? "bg-white shadow-sm font-medium" : "text-slate-500"}`}
-              >Lunar</button>
-              <button
-                onClick={() => setBillingPeriod("ANNUAL")}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${billingPeriod === "ANNUAL" ? "bg-white shadow-sm font-medium" : "text-slate-500"}`}
-              >Anual <span className="text-emerald-600 text-[9px]">-17%</span></button>
-            </div>
-            {/* Renewal toggle */}
-            <div className="flex items-center gap-1.5 border-l border-slate-200 pl-4">
-              <span className="text-[10px] text-slate-400">Reînnoire:</span>
-              <div className="flex bg-slate-100 rounded-lg p-0.5">
-                <button
-                  onClick={() => setRenewalType("AUTO")}
-                  className={`px-2 py-0.5 text-[10px] rounded-md transition-colors ${renewalType === "AUTO" ? "bg-white shadow-sm font-semibold" : "text-slate-500"}`}
-                >Auto</button>
-                <button
-                  onClick={() => setRenewalType("MANUAL")}
-                  className={`px-2 py-0.5 text-[10px] rounded-md transition-colors ${renewalType === "MANUAL" ? "bg-white shadow-sm font-semibold" : "text-slate-500"}`}
-                >Manuală</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Abonament</h3>
         <div className="grid grid-cols-3 gap-3">
           {(Object.values(TIERS) as typeof TIERS[SubscriptionTier][]).map((tier) => {
             const isActive = detectedTier === tier.id
             const isCurrent = currentTier === tier.id
-            // Fiecare tier arată PROPRIUL preț
             const tierBilling = billingPrice(tier.id, { period: billingPeriod, renewal: renewalType, annualDiscount: 17 })
             return (
               <div
                 key={tier.id}
                 className={`relative p-4 rounded-xl border-2 transition-all ${
-                  isActive ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-slate-200"
+                  isActive && hasInput ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-200 scale-[1.02]" : isActive ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-slate-200"
                 }`}
               >
                 {tier.id === "BUSINESS" && (
@@ -378,8 +336,8 @@ export default function PricingCalculator({
                 {isCurrent && (
                   <span className="absolute -top-2 left-3 px-2 py-0.5 bg-emerald-600 text-white text-[8px] font-bold uppercase rounded-full">Activ</span>
                 )}
-                {isActive && !isCurrent && pos > 0 && (
-                  <span className="absolute -top-2 left-3 px-2 py-0.5 bg-indigo-500 text-white text-[8px] font-bold uppercase rounded-full">Recomandat pentru dvs.</span>
+                {isActive && hasInput && !isCurrent && (
+                  <span className="absolute -top-2 left-3 px-2 py-0.5 bg-indigo-500 text-white text-[8px] font-bold uppercase rounded-full animate-pulse">Recomandat pentru dvs.</span>
                 )}
                 <h4 className="font-bold text-sm">{tier.label}</h4>
                 <p className="text-[10px] text-slate-500 mb-2">{tier.employeeRange}</p>
@@ -392,10 +350,8 @@ export default function PricingCalculator({
                 )}
                 <p className="text-[10px] text-slate-500 mt-1">
                   {tier.id === "ESSENTIALS" ? (
-                    // Essentials: preț nominal
                     <><strong>{tier.creditPrice.toFixed(2)} RON</strong>/credit</>
                   ) : (
-                    // Business/Enterprise: doar discountul
                     <>Credit: <span className="text-emerald-600 font-semibold">-{tier.creditDiscount}</span> față de prețul standard</>
                   )}
                 </p>
@@ -404,7 +360,6 @@ export default function PricingCalculator({
             )
           })}
         </div>
-        <p className="mt-2 text-[10px] text-slate-400 text-center">{renewalText}</p>
 
         {/* Downgrade info */}
         {currentTier && detectedTier !== currentTier && (
@@ -420,7 +375,7 @@ export default function PricingCalculator({
         )}
       </div>
 
-      {/* ── CARDURI C1-C4 ── */}
+      {/* ── CARDURI C1-C4 (mereu vizibile) ── */}
       <div ref={cardsRef} className="grid grid-cols-2 gap-3">
         {CARDS.map(card => {
           const c = COLOR_MAP[card.color]
@@ -495,7 +450,7 @@ export default function PricingCalculator({
 
           <div className="h-5" />
 
-          {/* Ce include + Extras */}
+          {/* Ce include + Add-ons */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-[10px] font-bold text-slate-700 mb-2 uppercase tracking-wide">Ce include</h4>
@@ -543,7 +498,7 @@ export default function PricingCalculator({
 
           <div className="h-5" />
 
-          {/* Calculator — câmpuri per card */}
+          {/* ═══ CALCULATOR — input poziții/salariați ═══ */}
           {!isPurchased && (
             <div className={isUpgrade ? `rounded-xl p-4 ${colors.bg} border ${colors.border}` : "bg-amber-50 rounded-xl p-4 border border-amber-200"} style={{ borderWidth: "1px" }}>
               <p className={`text-[10px] font-bold uppercase tracking-wide mb-3 ${isUpgrade ? colors.text : "text-amber-700"}`}>
@@ -589,168 +544,199 @@ export default function PricingCalculator({
                 </div>
               )}
 
-              {/* Rezultat calcul — breakdown detaliat + sumar */}
-              {creditCalc && pos > 0 && (
-                <div className={`rounded-lg p-4 ${colors.bg} space-y-3`}>
-                  {/* Breakdown servicii per componentă */}
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Servicii incluse</p>
+              {/* ═══ CONȚINUT ACTIVAT DE INPUT (punct 2) ═══ */}
+              {hasInput && creditCalc && (
+                <div className="space-y-4 mt-4">
+
+                  {/* ── Servicii cu credite (punct 2) ── */}
+                  <div className={`rounded-lg p-4 ${colors.bg}`}>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Servicii incluse</p>
                     {creditCalc.items.map((item, i) => (
                       <div key={i} className="flex justify-between py-0.5">
                         <span className="text-[11px] text-slate-600">{item.label}</span>
                         <span className="text-[11px] text-slate-500 font-mono">{item.credits.toLocaleString("ro-RO")} cr</span>
                       </div>
                     ))}
-                    <div className="flex justify-between pt-1 border-t border-slate-200/60 mt-1">
-                      <span className="text-xs text-slate-700 font-semibold">Subtotal servicii</span>
-                      <span className="text-xs font-bold">{serviceCreditsTotal.toLocaleString("ro-RO")} cr = {totalRON.toLocaleString("ro-RO")} RON</span>
+                    {addonCreditsTotal > 0 && (
+                      <>
+                        <div className="border-t border-slate-200/60 mt-1 pt-1">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Add-ons</p>
+                        </div>
+                        {cardAddons.filter(a => selectedAddons.has(a.id)).map(addon => {
+                          const effectiveEmp = selectedCard === 1 ? pos : Math.max(1, emp)
+                          const cr = calcAddonCredits(addon, Math.max(1, pos), effectiveEmp)
+                          return (
+                            <div key={addon.id} className="flex justify-between py-0.5">
+                              <span className="text-[11px] text-slate-600">{addon.label}</span>
+                              <span className="text-[11px] text-slate-500 font-mono">{cr.toLocaleString("ro-RO")} cr</span>
+                            </div>
+                          )
+                        })}
+                      </>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-slate-200/60 mt-2">
+                      <span className="text-xs text-slate-700 font-bold">Total credite necesare</span>
+                      <span className="text-xs font-bold">{allCreditsNeeded.toLocaleString("ro-RO")} cr</span>
                     </div>
-                  </div>
-
-                  {/* Breakdown add-ons (dacă selectate) */}
-                  {addonCreditsTotal > 0 && (
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Add-ons selectate</p>
-                      {cardAddons.filter(a => selectedAddons.has(a.id)).map(addon => {
-                        const effectiveEmp = selectedCard === 1 ? pos : Math.max(1, emp)
-                        const cr = calcAddonCredits(addon, Math.max(1, pos), effectiveEmp)
-                        return (
-                          <div key={addon.id} className="flex justify-between py-0.5">
-                            <span className="text-[11px] text-slate-600">{addon.label}</span>
-                            <span className="text-[11px] text-slate-500 font-mono">{cr.toLocaleString("ro-RO")} cr</span>
-                          </div>
-                        )
-                      })}
-                      <div className="flex justify-between pt-1 border-t border-slate-200/60 mt-1">
-                        <span className="text-xs text-slate-700 font-semibold">Subtotal add-ons</span>
-                        <span className="text-xs font-bold">{addonCreditsTotal.toLocaleString("ro-RO")} cr = {addonRON.toLocaleString("ro-RO")} RON</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sold credite existent (portal) */}
-                  {mode === "portal" && balanceDeduction > 0 && (
-                    <div className="flex justify-between py-1 text-emerald-700 bg-emerald-50 rounded px-2">
-                      <span className="text-xs">Sold credite aplicat</span>
-                      <span className="text-xs font-bold">−{balanceDeduction.toLocaleString("ro-RO")} cr</span>
-                    </div>
-                  )}
-
-                  {/* Pachet sugerat */}
-                  {suggestedPkg && creditsDeficit > 0 && !selectedCredits && (
-                    <div
-                      className="flex items-center justify-between py-2 px-3 rounded-lg border-2 border-dashed border-indigo-300 bg-indigo-50/50 cursor-pointer hover:border-indigo-400 transition-colors"
-                      onClick={() => setSelectedCredits(suggestedPkg.id)}
-                    >
-                      <div>
-                        <p className="text-[10px] font-bold text-indigo-600 uppercase">Pachet sugerat</p>
-                        <p className="text-xs text-slate-600">
-                          {suggestedPkg.name} — {suggestedPkg.credits.toLocaleString("ro-RO")} credite
-                          {suggestedPkg.discount > 0 && <span className="text-emerald-600 ml-1">(-{suggestedPkg.discount}%)</span>}
-                        </p>
-                      </div>
-                      <span className="text-xs font-bold text-indigo-700">
-                        {Math.round(suggestedPkg.credits * tierConfig.creditPrice * (1 - suggestedPkg.discount / 100)).toLocaleString("ro-RO")} RON
-                      </span>
-                    </div>
-                  )}
-
-                  <p className="text-[9px] text-slate-400">Preț/credit: {tierConfig.creditPrice.toFixed(2)} RON ({tierConfig.label})</p>
-
-                  {/* ═══ SUMAR TOTAL ═══ */}
-                  <div className="border-t-2 border-slate-300 pt-3 space-y-2">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Sumar de plată</p>
-
-                    {/* Abonament */}
-                    {!isUpgrade && (
-                      <div className="flex justify-between">
-                        <span className="text-xs text-slate-600">
-                          Abonament {tierConfig.label}
-                          <span className="text-[10px] text-slate-400 ml-1">({billing.periodLabel})</span>
-                        </span>
-                        <span className="text-xs font-bold">
-                          {subscriptionDueNow.toLocaleString("ro-RO")} RON
-                        </span>
+                    {mode === "portal" && balanceDeduction > 0 && (
+                      <div className="flex justify-between text-emerald-700 mt-1">
+                        <span className="text-[11px]">Sold credite aplicat</span>
+                        <span className="text-[11px] font-bold">-{balanceDeduction.toLocaleString("ro-RO")} cr</span>
                       </div>
                     )}
+                  </div>
 
-                    {/* Servicii + add-ons (credite) */}
-                    <div className="flex justify-between">
-                      <span className="text-xs text-slate-600">
-                        Credite necesare
-                        {balanceDeduction > 0 && <span className="text-emerald-600 ml-1">(sold aplicat)</span>}
-                      </span>
-                      <span className="text-xs font-bold">{creditsDeficitRON.toLocaleString("ro-RO")} RON</span>
+                  {/* ── Pachete credite acoperitoare (punct 3) ── */}
+                  {creditsDeficit > 0 && (
+                    <div className="bg-white rounded-xl p-4 border border-slate-200">
+                      <div className="flex justify-between mb-2">
+                        <p className="text-[10px] text-slate-500 uppercase font-bold">Pachete credite</p>
+                        {selectedCredits && <button onClick={() => setSelectedCredits(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Anulează</button>}
+                      </div>
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-slate-400 border-b"><th className="text-left py-1.5 w-5"></th><th className="text-left py-1.5">Pachet</th><th className="text-right py-1.5">Credite</th><th className="text-right py-1.5">RON</th><th className="text-right py-1.5">Reducere</th></tr>
+                        </thead>
+                        <tbody className="text-slate-600">
+                          {coveringPackages.map(p => {
+                            const isSelected = selectedCredits === p.id
+                            const isSuggested = suggestedPkg?.id === p.id && !selectedCredits
+                            return (
+                              <tr
+                                key={p.id}
+                                onClick={() => setSelectedCredits(isSelected ? null : p.id)}
+                                className={`border-t border-slate-100 cursor-pointer ${
+                                  isSelected ? "bg-indigo-50" : isSuggested ? "bg-indigo-50/50 ring-1 ring-inset ring-indigo-200" : "hover:bg-slate-50"
+                                }`}
+                              >
+                                <td className="py-1.5"><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? "border-indigo-500" : "border-slate-300"}`}>{isSelected && <div className="w-2 h-2 rounded-full bg-indigo-500" />}</div></td>
+                                <td className="py-1.5 font-medium">
+                                  {p.name}
+                                  {isSuggested && <span className="ml-1.5 text-[8px] font-bold text-indigo-500 bg-indigo-100 px-1 py-0.5 rounded uppercase">recomandat</span>}
+                                </td>
+                                <td className="py-1.5 text-right font-mono">{p.credits.toLocaleString()}</td>
+                                <td className="py-1.5 text-right font-mono">{p.basePrice.toLocaleString()}</td>
+                                <td className="py-1.5 text-right text-emerald-600 font-medium">{p.discount > 0 ? `-${p.discount}%` : "—"}</td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
                     </div>
+                  )}
 
-                    {/* Pachet credite suplimentar */}
+                  {/* ═══ MANȘETĂ JOS (punct 4+5) ═══ */}
+                  <div className="rounded-xl border-2 border-slate-300 bg-white p-5 space-y-3">
+                    {/* Abonament + slidere (punct 4) */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Abonament {tierConfig.label}</p>
+                        <p className="text-lg font-extrabold text-slate-900">{billing.perMonth} <span className="text-xs text-slate-400 font-normal">RON/lună</span></p>
+                      </div>
+                      {/* Slidere billing LÂNGĂ abonament */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex bg-slate-100 rounded-lg p-0.5">
+                          <button onClick={() => setBillingPeriod("MONTHLY")}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${billingPeriod === "MONTHLY" ? "bg-white shadow-sm font-medium" : "text-slate-500"}`}
+                          >Lunar</button>
+                          <button onClick={() => setBillingPeriod("ANNUAL")}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${billingPeriod === "ANNUAL" ? "bg-white shadow-sm font-medium" : "text-slate-500"}`}
+                          >Anual <span className="text-emerald-600 text-[9px]">-17%</span></button>
+                        </div>
+                        <div className="flex bg-slate-100 rounded-lg p-0.5">
+                          <button onClick={() => setRenewalType("AUTO")}
+                            className={`px-2 py-0.5 text-[10px] rounded-md transition-colors ${renewalType === "AUTO" ? "bg-white shadow-sm font-semibold" : "text-slate-500"}`}
+                          >Auto</button>
+                          <button onClick={() => setRenewalType("MANUAL")}
+                            className={`px-2 py-0.5 text-[10px] rounded-md transition-colors ${renewalType === "MANUAL" ? "bg-white shadow-sm font-semibold" : "text-slate-500"}`}
+                          >Manuală</button>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-slate-400">{renewalText}</p>
+
+                    {billing.savings > 0 && (
+                      <p className="text-[10px] text-emerald-600 font-medium">Economisești {billing.savings.toLocaleString("ro-RO")} RON/an cu plata anuală</p>
+                    )}
+
+                    {/* Servicii credite */}
                     {selectedPkg && (
-                      <div className="flex justify-between">
-                        <span className="text-xs text-slate-600">Pachet {selectedPkg.name} ({selectedPkg.credits.toLocaleString("ro-RO")} cr)</span>
+                      <div className="flex justify-between py-1">
+                        <span className="text-xs text-slate-600">Pachet {selectedPkg.name} ({selectedPkg.credits.toLocaleString("ro-RO")} credite)</span>
                         <span className="text-xs font-bold">{selectedPkgPrice.toLocaleString("ro-RO")} RON</span>
                       </div>
                     )}
 
-                    {/* TOTAL */}
-                    <div className="flex justify-between items-baseline pt-2 border-t border-slate-300">
-                      <span className="text-sm font-extrabold text-slate-800">{isUpgrade ? "Rest de plată" : "Total de plată acum"}</span>
-                      <span className="text-2xl font-extrabold text-slate-900">{grandTotal.toLocaleString("ro-RO")} RON</span>
+                    {/* ── Manșetă plată (punct 5 — reflectă configurația sliderelor) ── */}
+                    <div className="border-t-2 border-slate-300 pt-3 space-y-2">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-sm font-extrabold text-slate-800">De plată acum</span>
+                        <span className="text-2xl font-extrabold text-slate-900">{grandTotal.toLocaleString("ro-RO")} RON</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {!isUpgrade && (
+                          <span>
+                            abonament {billingPeriod === "ANNUAL" ? "anual" : "prima lună"}: {subscriptionDueNow.toLocaleString("ro-RO")} RON
+                            {selectedPkg ? ` + credite: ${selectedPkgPrice.toLocaleString("ro-RO")} RON` : ""}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Recurent — doar dacă reînnoire AUTO */}
+                      {renewalType === "AUTO" && (
+                        <div className="flex justify-between items-baseline pt-1">
+                          <span className="text-xs font-semibold text-slate-600">
+                            De plată {billingPeriod === "ANNUAL" ? "anual" : "lunar"}
+                            <span className="text-[10px] text-slate-400 font-normal ml-1">
+                              (începând cu {billingPeriod === "ANNUAL" ? "anul viitor" : "luna viitoare"})
+                            </span>
+                          </span>
+                          <span className="text-lg font-bold text-slate-700">
+                            {billingPeriod === "ANNUAL"
+                              ? TIERS[detectedTier].annualPrice.toLocaleString("ro-RO")
+                              : monthlyRecurring.toLocaleString("ro-RO")
+                            } RON
+                          </span>
+                        </div>
+                      )}
+
+                      <p className="text-[9px] text-slate-400 text-right">Prețuri fără TVA</p>
                     </div>
-                    <p className="text-[9px] text-slate-400 text-right">fără TVA</p>
                   </div>
+
                 </div>
               )}
             </div>
           )}
 
-          {/* Pachete credite */}
+          {/* Pachete credite — pentru card activ (doar cumpără credite) */}
           {isPurchased && (
             <div className={`rounded-xl p-4 ${colors.bg} border ${colors.border}`} style={{ borderWidth: "1px" }}>
               <p className="text-[10px] font-bold uppercase text-slate-500">Pachet activ — cumpără credite suplimentare</p>
+              <div className="mt-3 bg-white rounded-xl p-4 border border-slate-200">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-slate-400 border-b"><th className="text-left py-1.5 w-5"></th><th className="text-left py-1.5">Pachet</th><th className="text-right py-1.5">Credite</th><th className="text-right py-1.5">RON</th><th className="text-right py-1.5">Reducere</th></tr>
+                  </thead>
+                  <tbody className="text-slate-600">
+                    {CREDIT_PKGS.map(p => {
+                      const isSelected = selectedCredits === p.id
+                      return (
+                        <tr key={p.id} onClick={() => setSelectedCredits(isSelected ? null : p.id)}
+                          className={`border-t border-slate-100 cursor-pointer ${isSelected ? "bg-indigo-50" : "hover:bg-slate-50"}`}>
+                          <td className="py-1.5"><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? "border-indigo-500" : "border-slate-300"}`}>{isSelected && <div className="w-2 h-2 rounded-full bg-indigo-500" />}</div></td>
+                          <td className="py-1.5 font-medium">{p.name}</td>
+                          <td className="py-1.5 text-right font-mono">{p.credits.toLocaleString()}</td>
+                          <td className="py-1.5 text-right font-mono">{p.basePrice.toLocaleString()}</td>
+                          <td className="py-1.5 text-right text-emerald-600 font-medium">{p.discount > 0 ? `-${p.discount}%` : "—"}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-
-          <div className="h-5" />
-
-          {/* Tabel credite */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
-            <div className="flex justify-between">
-              <p className="text-[10px] text-slate-400 uppercase">Credite suplimentare (opțional)</p>
-              {selectedCredits && <button onClick={() => setSelectedCredits(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Anulează</button>}
-            </div>
-            <table className="w-full text-xs mt-3">
-              <thead>
-                <tr className="text-slate-400 border-b"><th className="text-left py-1.5 w-5"></th><th className="text-left py-1.5">Pachet</th><th className="text-right py-1.5">Credite</th><th className="text-right py-1.5">RON</th><th className="text-right py-1.5">Reducere</th></tr>
-              </thead>
-              <tbody className="text-slate-600">
-                {CREDIT_PKGS.map(p => {
-                  const isSelected = selectedCredits === p.id
-                  const isSuggested = suggestedPkg?.id === p.id && !selectedCredits
-                  // Preț efectiv: baza tier × (1 - discount volum)
-                  const effPrice = Math.round(p.credits * tierConfig.creditPrice * (1 - p.discount / 100))
-                  const totalDiscount = Math.round((1 - effPrice / (p.credits * 8)) * 100)
-                  return (
-                    <tr
-                      key={p.id}
-                      onClick={() => setSelectedCredits(isSelected ? null : p.id)}
-                      className={`border-t border-slate-100 cursor-pointer ${
-                        isSelected ? "bg-indigo-50" : isSuggested ? "bg-indigo-50/50 ring-1 ring-inset ring-indigo-200" : "hover:bg-slate-50"
-                      }`}
-                    >
-                      <td className="py-1.5"><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? "border-indigo-500" : "border-slate-300"}`}>{isSelected && <div className="w-2 h-2 rounded-full bg-indigo-500" />}</div></td>
-                      <td className="py-1.5 font-medium">
-                        {p.name}
-                        {isSuggested && <span className="ml-1.5 text-[8px] font-bold text-indigo-500 bg-indigo-100 px-1 py-0.5 rounded uppercase">recomandat</span>}
-                      </td>
-                      <td className="py-1.5 text-right font-mono">{p.credits.toLocaleString()}</td>
-                      <td className="py-1.5 text-right font-mono">{effPrice.toLocaleString()}</td>
-                      <td className="py-1.5 text-right text-emerald-600 font-medium">{totalDiscount > 0 ? `-${totalDiscount}%` : "—"}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
 
           <div className="h-8" />
 
@@ -759,7 +745,7 @@ export default function PricingCalculator({
             {mode === "portal" ? (
               <button
                 onClick={handlePurchase}
-                disabled={purchasing || (!isCreditsOnly && !pos) || (selectedCardInfo.number >= 2 && !isPurchased && !emp)}
+                disabled={purchasing || (!isCreditsOnly && !hasInput) || (selectedCardInfo.number >= 2 && !isPurchased && !emp)}
                 className={`flex-1 py-3 rounded-lg text-white text-sm font-semibold text-center transition-colors shadow-sm disabled:opacity-50 ${colors.btn}`}
               >
                 {purchasing ? "Se procesează..." : upgradeScenario === "RENAME_POSITION" ? "Aplică redenumirea" : isPurchased && !isCreditsOnly ? "✓ Activ" : "Plătește"}
