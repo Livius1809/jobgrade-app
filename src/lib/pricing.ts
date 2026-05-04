@@ -305,3 +305,78 @@ export const CARD_DESCRIPTIONS: Record<number, { inputLabel: string; inputHint: 
   3: { inputLabel: "Servicii competitivitate", inputHint: "Datele se preiau din C1 și C2" },
   4: { inputLabel: "Obiective dezvoltare", inputHint: "Datele se preiau din C1, C2 și C3" },
 }
+
+// ═══════════════════════════════════════════════════════════════
+// BILLING PERIOD + RENEWAL TYPE
+// ═══════════════════════════════════════════════════════════════
+
+export type BillingPeriod = "MONTHLY" | "ANNUAL"
+export type RenewalType = "AUTO" | "MANUAL"
+
+export interface BillingConfig {
+  period: BillingPeriod
+  renewal: RenewalType
+  /** Discount anual vs lunar */
+  annualDiscount: number        // 17% (2 luni gratuite)
+}
+
+export const DEFAULT_BILLING: BillingConfig = {
+  period: "MONTHLY",
+  renewal: "AUTO",
+  annualDiscount: 17,
+}
+
+/**
+ * Calculează prețul abonamentului per lună funcție de billing config.
+ *
+ * Lunar: prețul plin pe lună. Reînnoire automată sau manuală.
+ * Anual: 10 luni plătite din 12 (-17%). Reînnoire automată sau manuală.
+ *
+ * Reînnoire automată: se taxează automat la expirare.
+ * Reînnoire manuală: se trimite notificare la T-7 zile, clientul confirmă.
+ *   Dacă nu confirmă în 7 zile: acces read-only, datele se păstrează 90 zile.
+ */
+export function billingPrice(
+  tier: SubscriptionTier,
+  config: BillingConfig
+): {
+  perMonth: number
+  total: number
+  periodLabel: string
+  renewalLabel: string
+  savings: number
+} {
+  const t = TIERS[tier]
+  if (config.period === "ANNUAL") {
+    const perMonth = Math.round(t.annualPrice / 12)
+    const savings = t.monthlyPrice * 12 - t.annualPrice
+    return {
+      perMonth,
+      total: t.annualPrice,
+      periodLabel: "anual",
+      renewalLabel: config.renewal === "AUTO" ? "Reînnoire automată" : "Reînnoire manuală",
+      savings,
+    }
+  }
+  return {
+    perMonth: t.monthlyPrice,
+    total: t.monthlyPrice,
+    periodLabel: "lunar",
+    renewalLabel: config.renewal === "AUTO" ? "Reînnoire automată" : "Reînnoire manuală",
+    savings: 0,
+  }
+}
+
+/**
+ * Textul explicativ pentru reînnoire (client-facing).
+ */
+export function renewalExplanation(config: BillingConfig): string {
+  if (config.renewal === "AUTO") {
+    return config.period === "ANNUAL"
+      ? "Abonamentul se reînnoiește automat anual. Veți fi notificat cu 30 de zile înainte. Puteți anula oricând."
+      : "Abonamentul se reînnoiește automat lunar. Puteți anula oricând, iar accesul rămâne activ până la sfârșitul perioadei plătite."
+  }
+  return config.period === "ANNUAL"
+    ? "Abonamentul expiră la finalul anului. Veți fi notificat cu 30 de zile înainte. Dacă nu reînnoiți, accesul devine read-only iar datele se păstrează 90 de zile."
+    : "Abonamentul expiră la finalul lunii. Veți fi notificat cu 7 zile înainte. Dacă nu reînnoiți, accesul devine read-only iar datele se păstrează 90 de zile."
+}
