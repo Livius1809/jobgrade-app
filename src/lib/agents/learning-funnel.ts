@@ -79,8 +79,18 @@ export async function learningFunnel(event: AgentEvent, businessId?: string): Pr
         antiPattern: antiPattern,
         sourceType: "POST_EXECUTION",
         effectivenessScore: 0.8,
-        businessId: businessId || "shared",
+        ...(businessId ? { businessId } : {}),
       },
+    }).catch(async () => {
+      // Fallback: retry without businessId if column doesn't exist yet (pending migration)
+      await prisma.learningArtifact.create({
+        data: {
+          studentRole: event.agentRole, teacherRole: "learning-funnel",
+          problemClass: "anti-pattern-discovered", rule: antiPattern,
+          example: `Descoperit din ${event.type}: ${event.input.slice(0, 100)}`,
+          antiPattern, sourceType: "POST_EXECUTION", effectivenessScore: 0.8,
+        },
+      }).catch(() => {})
     })
     antiPatternsFound++
   }
@@ -197,8 +207,18 @@ async function upsertAgentKnowledge(
       antiPattern: "",
       sourceType: "POST_EXECUTION",
       effectivenessScore: 0.7, // începe mai jos, crește cu utilizarea
-      businessId: businessId || "shared",
+      ...(businessId ? { businessId } : {}),
     },
+  }).catch(async () => {
+    // Fallback: retry without businessId if column doesn't exist yet
+    await prisma.learningArtifact.create({
+      data: {
+        studentRole: agentRole, teacherRole: "learning-funnel",
+        problemClass: `funnel-${type}`, rule: knowledge,
+        example: "Învățat din experiență directă", antiPattern: "",
+        sourceType: "POST_EXECUTION", effectivenessScore: 0.7,
+      },
+    }).catch(() => {})
   })
   return true // created
 }
