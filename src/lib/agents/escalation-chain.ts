@@ -54,12 +54,13 @@ export const ESCALATION_CHAIN: Record<string, string> = {
   CSSA: "COCSA",
   // Tactic → Strategic
   COA: "COG",
-  COCSA: "COG",
+  COCSA: "CPU", // PRODUCTION raportează funcțional la CPU (creier), nu la COG
   PMA: "COA",
   // Strategic L4 → COG
   ACEA: "COG",
   // Strategic → Owner
   COG: "OWNER",
+  CPU: "OWNER", // CPU (creierul) escaladează doar la Owner
   // Agenți fără subordonați — escaladează la managerul lor
   FDA: "EMA",
   BDA: "EMA",

@@ -70,19 +70,22 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
     agentRole: "COG",
     role: "Chief Orchestrator General",
     description:
-      "Conducere strategică — traduce viziunea Owner în strategie executabilă, " +
-      "monitorizează KPI business, conformitate, direcția pe termen lung",
+      "Conducere strategică în cadrul CPU. " +
+      "1) Setup inițial: asigură fiecărui business toate condițiile de performanță în piața țintă. " +
+      "2) Monitorizare proactivă: urmărește COCSA-urile și le oferă instrumente de adaptare. " +
+      "3) Obiective strategice: le stabilește pentru businessuri, agreat cu Owner. " +
+      "4) Primește escalare DOAR când businessul 'nu știe și nu poate' — nu și 'nu vrea' (asta e treaba COCSA).",
     level: "strategic",
     layer: "BUILD", // CPU — creierul
-    subordinates: ["COA", "COCSA", "CJA", "CIA", "CCIA"],
+    subordinates: ["COA", "CJA", "CIA", "CCIA"], // doar BUILD — COCSA e sub CPU funcțional
     reportsTo: "OWNER",
     objectives: [
-      "Platforma JobGrade operațională și stabilă — uptime >99.5%, 0 incidente P0 deschise",
-      "Pipeline B2B activ — minim 1 client în onboarding sau evaluare activă",
+      "Setup complet per business — fiecare business are condițiile de performanță în piața țintă",
+      "Monitorizare proactivă COCSA — instrumente de adaptare oferite înainte de cerere",
+      "Obiective strategice agregate cu Owner — traduse în obiective per business",
       "Conformitate legală completă — GDPR, Directiva EU 2023/970, Codul Muncii",
       "Toți agenții cu KB funcțional — minim cold start completat per agent",
       "Costuri sub buget — cheltuieli cloud și API monitorizate, fără spike-uri neexplicate",
-      "B2C metodologie finalizată — documentație completă pentru sprint-urile de build",
     ],
     thresholds: STRATEGIC_THRESHOLDS,
     cycleIntervalHours: 24,
@@ -118,28 +121,27 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
     agentRole: "COCSA",
     role: "Chief Orchestrator Client Service Agent",
     description:
-      "Management operațional, business și go-to-market — urmărește stadiul platformei " +
-      "împreună cu COA, coordonează landing pages, content, plan promovare B2B cu bugete " +
-      "corelate cu fazele de deployment, securitate informațională, sales, customer success",
+      "Autonomie completă pe tactic și operațional pentru businessul său. " +
+      "Delegări, monitorizări, obiective tactice și operaționale — totul sub responsabilitatea COCSA. " +
+      "'Să vrea' = treaba COCSA (motivare, direcționare echipă). " +
+      "Escalarea operațională se oprește aici. Urcă la COG (prin CPU) DOAR când 'nu știe și nu poate'.",
     level: "tactical",
     layer: "PRODUCTION", // Business — operează cu clientul
     subordinates: [
       "ISA", "MOA", "IRA", "MDA",
       "SOA", "CSSA", "BCA", "CDIA", "MKA", "ACA",
-      "CMA", "CWA", // Content Manager Agent + Copywriter Agent (noi)
+      "CMA", "CWA",
     ],
-    reportsTo: "COG",
+    reportsTo: "CPU", // subordonat funcțional CPU-ului, escalare doar la "nu știu, nu pot"
     objectives: [
-      "Sincronizare cu COA — stadiul platformei urmărit în tandem, landing pages gata la fiecare fază de deployment",
-      "Plan promovare B2B complet — canale, bugete, timeline corelat cu fazele de dare în exploatare",
-      "Content pipeline activ — copywriter produce texte landing pages + ad-uri, content manager coordonează",
-      "Propuneri clipuri scurte — minim 3 concepte video pentru social media per fază de lansare",
-      "Monitorizare activă — 0 alerte critice neadresate >1h",
-      "Incidente gestionate — timp răspuns P0 <15min, P1 <1h",
+      "Autonomie operațională — rezolvă intern tot ce ține de 'știe' și 'poate'",
       "Pipeline sales activ — leaduri calificate, demo-uri planificate",
       "Customer success — NPS >7, churn rate <5% lunar",
+      "Content marketing consistent — plan promovare corelat cu fazele de deployment",
+      "Monitorizare activă — 0 alerte critice neadresate >1h",
+      "Echipă motivată și direcționată — 'să vrea' este responsabilitatea COCSA",
+      "Sincronizare cu COA — stadiul platformei urmărit în tandem",
       "Facturare la zi — 0 facturi restante >30 zile",
-      "Content marketing consistent — minim 2 publicări/săptămână (blog + social)",
     ],
     thresholds: TACTICAL_THRESHOLDS,
     cycleIntervalHours: 12,
