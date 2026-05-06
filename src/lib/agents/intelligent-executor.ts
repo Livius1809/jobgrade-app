@@ -25,6 +25,7 @@ import { evaluateCostGate } from "./cost-gate"
 import { logExecutionTelemetry, updateAgentBudget } from "./execution-telemetry"
 import { extractPostExecutionLearning } from "./learning-pipeline"
 import { learningFunnel } from "./learning-funnel"
+import { learnFromImprovisation } from "./improvisation-learner"
 
 // ── WHITELIST AGENȚI AUTORIZAȚI PENTRU EXECUȚIE AUTONOMĂ ─────────────────────
 //
@@ -471,10 +472,11 @@ export async function runIntelligentBatch(
       // ═══ IMPROVISATION — Before giving up, try improvisation ═══
       // Instead of immediately marking as FAILED, the organism TRIES SOMETHING.
       // Analogy: the plumber's tool is broken — he doesn't go home, he finds another way.
+      let improvResult: { strategy: string; output: string; confidence: number; reasoning: string; isImprovised: true } | null = null
       try {
         const { improvise } = await import("@/lib/engines/improvisation-engine")
         const kbFragments = kbContext ? [kbContext] : []
-        const improvResult = await improvise({
+        improvResult = await improvise({
           taskTitle: task.title,
           taskDescription: task.description,
           agentRole: task.assignedTo,
@@ -494,6 +496,29 @@ export async function runIntelligentBatch(
               kbHit: false,
             },
           })
+
+          // ═══ IMPROVISATION LEARNING — extract learning regardless of quality ═══
+          try {
+            await learnFromImprovisation(
+              {
+                strategy: improvResult.strategy,
+                context: {
+                  taskTitle: task.title,
+                  taskDescription: task.description,
+                  agentRole: task.assignedTo,
+                  failureReason: e.message ?? "Unknown execution failure",
+                },
+                output: improvResult.output,
+                confidence: improvResult.confidence,
+              },
+              {
+                resultQuality: improvResult.confidence, // Use confidence as initial quality proxy
+              },
+            )
+          } catch {
+            // Learning extraction is non-blocking
+          }
+
           results.push({
             taskId: task.id,
             outcome: "IMPROVISED",
@@ -501,13 +526,37 @@ export async function runIntelligentBatch(
             alignmentLevel,
             model,
             costUSD,
-            learningCreated: false,
+            learningCreated: true,
             reason: `Improvisation strategy: ${improvResult.strategy} (confidence: ${improvResult.confidence.toFixed(2)})`,
           })
           continue
         }
       } catch {
         // Improvisation itself failed — fall through to FAILED
+      }
+
+      // ═══ IMPROVISATION LEARNING FROM FAILURE — even more valuable ═══
+      if (improvResult) {
+        try {
+          await learnFromImprovisation(
+            {
+              strategy: improvResult.strategy,
+              context: {
+                taskTitle: task.title,
+                taskDescription: task.description,
+                agentRole: task.assignedTo,
+                failureReason: e.message ?? "Unknown execution failure",
+              },
+              output: improvResult.output,
+              confidence: improvResult.confidence,
+            },
+            {
+              resultQuality: Math.min(0.2, improvResult.confidence), // Low quality — it was rejected
+            },
+          )
+        } catch {
+          // Learning extraction is non-blocking
+        }
       }
 
       results.push({
@@ -517,7 +566,7 @@ export async function runIntelligentBatch(
         alignmentLevel,
         model,
         costUSD,
-        learningCreated: false,
+        learningCreated: !!improvResult,
       })
       continue
     }

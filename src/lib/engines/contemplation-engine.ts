@@ -17,6 +17,47 @@
 import { prisma } from "@/lib/prisma"
 import { cpuCall } from "@/lib/cpu/gateway"
 
+// ── Level discrimination ──────────────────────────────────────────────────
+
+/** Contemplation level: STRATEGIC for COG/COCSA, TACTICAL for N-1 managers */
+export type ContemplationLevel = "STRATEGIC" | "TACTICAL"
+
+/**
+ * Agents at N and N-1 levels that contemplate (seek connections).
+ * STRATEGIC: COG, COCSA — full cross-organism contemplation
+ * TACTICAL: N-1 managers — contemplation scoped to their department
+ */
+const STRATEGIC_AGENTS = new Set(["COG", "COCSA"])
+const TACTICAL_AGENTS = new Set([
+  "PMA", "EMA", "QLA", "DMA", "CFO", "CJA", "CIA",
+  "COA", "CCO", "DOA", "DOAS",
+])
+
+/**
+ * Returns true if this agent should CONTEMPLATE (seek connections/patterns).
+ * True for managers at N and N-1 levels (strategic + tactical).
+ */
+export function shouldContemplate(agentRole: string): boolean {
+  return STRATEGIC_AGENTS.has(agentRole) || TACTICAL_AGENTS.has(agentRole)
+}
+
+/**
+ * Returns true if this agent should VIGILATE (detect deviations).
+ * True for operational agents — those NOT at strategic/tactical level.
+ */
+export function shouldVigilate(agentRole: string): boolean {
+  return !shouldContemplate(agentRole)
+}
+
+/**
+ * Returns the contemplation level for a given agent role.
+ * STRATEGIC: full cross-organism data
+ * TACTICAL: department-scoped data only
+ */
+export function getContemplationLevel(agentRole: string): ContemplationLevel {
+  return STRATEGIC_AGENTS.has(agentRole) ? "STRATEGIC" : "TACTICAL"
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface ContemplationInsight {
@@ -36,6 +77,8 @@ export interface ContemplationResult {
   insights: ContemplationInsight[]
   inputSummary: { kbEntries: number; taskResults: number; evolutionSnapshots: number }
   contemplationDurationMs: number
+  contemplationLevel: ContemplationLevel
+  agentRole: string
 }
 
 // ── System prompt ──────────────────────────────────────────────────────────
@@ -79,12 +122,40 @@ REGULI:
 - Novelty > 0.7 doar daca e ceva cu adevarat neasteptat
 - Daca nu gasesti nimic interesant, returneaza array gol — NU inventa`
 
+// ── Department scoping for TACTICAL level ─────────────────────────────────
+
+const DEPARTMENT_MAP: Record<string, string[]> = {
+  COG: ["COG", "CCO", "DOA", "DOAS", "QLA"],
+  MARKETING: ["DMA", "CMA", "CWA", "MKA", "ACA"],
+  CLIENT: ["SOA", "COCSA", "CSM", "CSA", "CSSA", "DVB2B"],
+  LEGAL: ["CJA", "DPA", "CCIA"],
+  FINANCE: ["CFO", "COAFin", "BCA"],
+  TECH: ["COA", "SVHA", "DOAS"],
+  INTELLIGENCE: ["CIA", "RDA", "CDIA"],
+  PRODUCT: ["PMA", "PPMO", "DVB2B"],
+}
+
+async function getDepartmentRoles(agentRole: string): Promise<string[]> {
+  for (const [, agents] of Object.entries(DEPARTMENT_MAP)) {
+    if (agents.includes(agentRole)) {
+      return agents
+    }
+  }
+  // Fallback: just the agent itself
+  return [agentRole]
+}
+
 // ── Data gathering helpers ─────────────────────────────────────────────────
 
-async function gatherKBEntries(limit: number = 50) {
+async function gatherKBEntries(limit: number = 50, scopeAgentRole?: string) {
   // Diverse — de la agenti diferiti, tipuri diferite
+  // For TACTICAL level: scoped to the agent's department siblings
+  const departmentFilter = scopeAgentRole
+    ? { agentRole: { in: await getDepartmentRoles(scopeAgentRole) } }
+    : {}
+
   const entries = await prisma.kBEntry.findMany({
-    where: { status: "PERMANENT" },
+    where: { status: "PERMANENT", ...departmentFilter },
     orderBy: { createdAt: "desc" },
     take: limit,
     select: {
@@ -101,9 +172,13 @@ async function gatherKBEntries(limit: number = 50) {
   return entries
 }
 
-async function gatherTaskResults(limit: number = 20) {
+async function gatherTaskResults(limit: number = 20, scopeAgentRole?: string) {
+  const departmentFilter = scopeAgentRole
+    ? { assignedTo: { in: await getDepartmentRoles(scopeAgentRole) } }
+    : {}
+
   const tasks = await prisma.agentTask.findMany({
-    where: { status: "COMPLETED" },
+    where: { status: "COMPLETED", ...departmentFilter },
     orderBy: { completedAt: "desc" },
     take: limit,
     select: {
@@ -166,27 +241,44 @@ async function gatherDisfunctions(limit: number = 10) {
  *
  * Spre deosebire de executia taskurilor (goal → action → result),
  * contemplarea e (observatie → pattern → insight).
+ *
+ * @param contemplationLevel - STRATEGIC (COG/COCSA): full cross-organism data
+ *                             TACTICAL (N-1 managers): department-scoped data only
+ * @param agentRole - The agent doing the contemplation (default: COG)
  */
-export async function contemplate(): Promise<ContemplationResult> {
+export async function contemplate(
+  contemplationLevel: ContemplationLevel = "STRATEGIC",
+  agentRole: string = "COG",
+): Promise<ContemplationResult> {
   const startMs = Date.now()
 
-  // 1. Gather data from all sources
+  // For TACTICAL: scope data gathering to the agent's department
+  const scopeAgent = contemplationLevel === "TACTICAL" ? agentRole : undefined
+
+  // 1. Gather data from all sources (scoped for TACTICAL)
   const [kbEntries, taskResults, evolutionSnapshots, disfunctions] = await Promise.all([
-    gatherKBEntries(50),
-    gatherTaskResults(20),
+    gatherKBEntries(contemplationLevel === "STRATEGIC" ? 50 : 25, scopeAgent),
+    gatherTaskResults(contemplationLevel === "STRATEGIC" ? 20 : 10, scopeAgent),
     gatherEvolutionSnapshots(5),
-    gatherDisfunctions(10),
+    gatherDisfunctions(contemplationLevel === "STRATEGIC" ? 10 : 5),
   ])
 
   // 2. Build user message with all gathered data
-  const userMessage = buildContemplationInput(kbEntries, taskResults, evolutionSnapshots, disfunctions)
+  const levelContext =
+    contemplationLevel === "STRATEGIC"
+      ? "Contempleaza INTREGUL organism — cauta conexiuni CROSS-DEPARTAMENT."
+      : `Contempleaza DEPARTAMENTUL agentului ${agentRole} — cauta conexiuni IN INTERIORUL departamentului si cu vecinii.`
+
+  const userMessage =
+    `[NIVEL CONTEMPLARE: ${contemplationLevel}]\n${levelContext}\n\n` +
+    buildContemplationInput(kbEntries, taskResults, evolutionSnapshots, disfunctions)
 
   // 3. Call CPU for contemplation
   const cpuResult = await cpuCall({
     system: CONTEMPLATION_SYSTEM_PROMPT,
     messages: [{ role: "user", content: userMessage }],
-    max_tokens: 4000,
-    agentRole: "COG",
+    max_tokens: contemplationLevel === "STRATEGIC" ? 4000 : 2000,
+    agentRole,
     operationType: "contemplation",
     skipObjectiveCheck: true, // contemplation e mereu activa
     skipKBFirst: true, // nu exista raspuns KB pentru gandire libera
@@ -210,6 +302,8 @@ export async function contemplate(): Promise<ContemplationResult> {
       evolutionSnapshots: evolutionSnapshots.length,
     },
     contemplationDurationMs: Date.now() - startMs,
+    contemplationLevel,
+    agentRole,
   }
 
   return result

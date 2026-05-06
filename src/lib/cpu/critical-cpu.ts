@@ -16,6 +16,7 @@
 
 import { cpuCall, type CPUCallParams, type CPUCallResult } from "./gateway"
 import { evaluateCritically, type CriticalEvaluation } from "./critical-thinker"
+import { enrichMessagesWithContext } from "./contextual-enrichment"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,25 @@ function shouldSkipCritical(operationType?: string): boolean {
 export async function criticalCpuCall(
   params: CPUCallParams
 ): Promise<CriticalCpuResult> {
-  const rawResult = await cpuCall(params)
+  // ── PRE-CALL: Contextual enrichment ────────────────────────────────────
+  // Enrich the prompt with agent's context BEFORE sending to Claude.
+  // Skip enrichment for cheap/internal operations (same logic as critical eval skip).
+  let enrichedParams = params
+  if (!shouldSkipCritical(params.operationType) && params.messages?.length > 0) {
+    try {
+      const enrichedMessages = await enrichMessagesWithContext(
+        params.messages,
+        params.agentRole,
+        params.tenantId,
+      )
+      enrichedParams = { ...params, messages: enrichedMessages }
+    } catch {
+      // Enrichment failed — proceed with original params
+      enrichedParams = params
+    }
+  }
+
+  const rawResult = await cpuCall(enrichedParams)
 
   // Skip critical evaluation for cheap/internal operations or degraded responses
   if (shouldSkipCritical(params.operationType) || rawResult.degraded || !rawResult.text) {
