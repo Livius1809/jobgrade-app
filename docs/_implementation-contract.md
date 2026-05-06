@@ -1,6 +1,6 @@
 # REGISTRU IMPLEMENTARE — Contract Cod vs Documentatie
 
-> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 2 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
+> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 3 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
 > **Scop**: Fiecare functionare discutata si agreata are status verificat in cod.
 > **Regula**: Nimic nu e "facut" fara commit demonstrabil.
 
@@ -8,13 +8,13 @@
 
 | Zona | DONE | PARTIAL | SKELETON | MISSING | Total |
 |------|------|---------|----------|---------|-------|
-| B2B Platform | 64 | 14 | 0 | 0 | 78 |
-| B2C Platform | 38 | 3 | 0 | 1 | 42 |
+| B2B Platform | 67 | 11 | 0 | 0 | 78 |
+| B2C Platform | 39 | 2 | 0 | 1 | 42 |
 | Arhitectura + Mecanisme | 51 | 7 | 1 | 3 | 62 |
-| Infra + Legal + Ops | 75 | 11 | 1 | 1 | 88 |
-| **TOTAL** | **228** | **35** | **2** | **5** | **270** |
+| Infra + Legal + Ops | 76 | 10 | 1 | 1 | 88 |
+| **TOTAL** | **233** | **30** | **2** | **5** | **270** |
 
-**Rata completare**: 228/270 = **84% DONE**, 13% PARTIAL, 1% SKELETON, **2% MISSING**
+**Rata completare**: 233/270 = **86% DONE**, 11% PARTIAL, 1% SKELETON, **2% MISSING**
 
 > Diferenta fata de audit anterior: +21 DONE (din 26 MISSING rezolvate), 5 PARTIAL promovate la DONE,
 > 2 SKELETON promovate (i18n→DONE, strategic themes→DONE). 5 MISSING ramase.
@@ -69,26 +69,31 @@
 - i18n localizare RO+EN (ro.json, en.json, index.ts, use-locale.ts)
 - Strategic themes (pagina + actiuni + API)
 
-### PARTIAL → DONE (5)
+### PARTIAL → DONE (5, commit ec2ab46)
 - Profil leadership (leadership-profile/route.ts)
 - S2 Multigenerational (engine complet)
 - Comunitati B2C (API + UI complet)
 - B2C frontend (6 pagini din 6: card-2, card-4, card-5, communities adaugate)
 - Localizare RO+EN (fisiere traducere complete)
 
+### PARTIAL → DONE (6, commit c02a9a9)
+- Toggle UMAN/AI/MIXT — evaluationType pe sesiuni (schema + API + create)
+- Toggle CLASIC/TRANSFORMATIONAL — transversal pe cascade simulator
+- Simulare Impact — unificat: cascade-engine.ts + /simulations/unified dispatcher
+- TVA checkout — conditie B2B (isVATPayer=0%) vs B2C (+19%)
+- C3 sequential flow — LOCKED = opacity-60+pointer-events-none + validare server card-inputs
+- Palnia ingestie businessId — learning-funnel + kb-first-resolver filtrare shared+business
+
 ---
 
-## PARTIAL (35 items — cod exista dar incomplet)
+## PARTIAL (30 items — cod exista dar incomplet)
 
-### B2B (14 PARTIAL)
+### B2B (11 PARTIAL)
 - Organigrama functionala — pagina exista, lipsa vizualizare org chart
-- Toggle UMAN/AI/MIXT — enum in schema, lipsa UI per post
 - Matching B2B-B2C — engine exista dar pe mock data, nu pe B2C users reali
 - Cost pozitie vacanta — tip VACANCY in simulare dar fara raport dedicat
 - JD recomandat fit cultural vs agent schimbare — enum dar fara generare
 - Documente interne C3 — card-inputs accepta upload dar fara pipeline AI
-- Simulare Impact — 2 endpoint-uri separate in loc de motor unic
-- Toggle CLASIC/TRANSFORMATIONAL — doar in culture/simulator, nu transversal
 - Obiective strategice CA — card-inputs suporta dar fara pagina cascade
 - Declarat vs practicat — acoperit in 3C dar fara raport standalone
 - Anonimizare progresiva B2B-B2C — schema are alias dar flow 6 pasi neimplementat
@@ -96,10 +101,9 @@
 - Media Books continut — config 7 books, continut doar pt MB-R1/R2/R3
 - Onboarding template Acme — task-uri in DB dar fara wizard automat
 
-### B2C (3 PARTIAL)
+### B2C (2 PARTIAL)
 - Comunicare adaptiva — aplicata in prompturi, lipsa engine dedicat Psiholingvist
 - MBook componente — ExpandableSection exista dar fara blocuri atomice/PDF/voice
-- C3 evaluation sequential flow — panel exista dar fara sequentialitate impusa
 
 ### Arhitectura (7 PARTIAL)
 - D3 process detection — modele exista, tracking procesual scheletral
@@ -108,16 +112,15 @@
 - DOAS rol — agent in DB dar cele 7 functii nu au cod dedicat
 - Psiholingvist — detectie exista, workflow complet neautomatizat
 - Stack Healthcheck — fixes aplicate dar sursa sidecar lipsa
-- Palnia ingestie — functioneaza, multi-business adaugat (businessId pe KB), validare pending
+- Palnia ingestie — multi-business cu businessId, filtrare shared+business in kb-first-resolver
 
-### Infra/Legal/Ops (11 PARTIAL)
+### Infra/Legal/Ops (10 PARTIAL)
 - Redis Upstash — env vars may be missing, fallback in-memory
 - Contract standard PDF — markdown draft, fara generare PDF
 - B2C pseudonim 2 straturi — routes exista dar profunzime neverificata
 - BudgetLine/RevenueEntry — budget route exista dar RevenueEntry lipsa
 - Video conference Jitsi — route exista, cost 0, Faza 1
 - Voice AI ElevenLabs — route exista, Faza 2 planificata
-- TVA in checkout — Stripe exista dar toggle TVA explicit lipsa
 - Media Books continut — pipeline structura dar continut majoritar ASSIGNED
 - Onboarding template — task-uri dar fara wizard
 - UptimeRobot — heartbeat exista, integrare externa
