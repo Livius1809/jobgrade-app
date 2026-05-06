@@ -12,9 +12,9 @@
 | B2C Platform | 42 | 0 | 0 | 1 | 43 |
 | Arhitectura + Mecanisme | 63 | 0 | 0 | 1 | 64 |
 | Infra + Legal + Ops | 86 | 2 | 1 | 1 | 90 |
-| **TOTAL** | **266** | **5** | **1** | **3** | **275** |
+| **TOTAL** | **267** | **4** | **1** | **3** | **275** |
 
-**Rata completare**: 266/275 = **97% DONE**, 2% PARTIAL, 0.4% SKELETON, **1% MISSING**
+**Rata completare**: 267/275 = **97% DONE**, 1.5% PARTIAL, 0.4% SKELETON, **1% MISSING**
 
 > Diferenta fata de audit anterior: +21 DONE (din 26 MISSING rezolvate), 5 PARTIAL promovate la DONE,
 > 2 SKELETON promovate (i18n→DONE, strategic themes→DONE). 5 MISSING ramase.
@@ -117,15 +117,14 @@
 
 ---
 
-## PARTIAL (5 items — BLOCATE LA OWNER)
+## PARTIAL (4 items — BLOCATE LA OWNER)
 
 ### B2B (3 PARTIAL)
 - Matching B2B-B2C — engine exista dar pe mock data → BLOCKER: useri B2C reali (primul client)
 - JD recomandat fit cultural vs agent schimbare — enum dar fara generare → BLOCKER: date audit C4 de la tenant
 - Anonimizare progresiva B2B-B2C — schema are alias dar flow 6 pasi neimplementat → BLOCKER: Owner decizie praguri revelare
 
-### Infra/Legal/Ops (2 PARTIAL)
-- BudgetLine/RevenueEntry — budget route exista dar RevenueEntry lipsa → BLOCKER: Owner decizie model financiar
+### Infra/Legal/Ops (1 PARTIAL)
 - Voice AI ElevenLabs — route exista, Faza 2 planificata → BLOCKER: Owner inregistrare voce + API key
 
 ---
