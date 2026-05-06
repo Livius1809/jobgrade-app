@@ -23,6 +23,11 @@ import {
   getActiveEscalations,
   type Escalation,
 } from "./escalation-chain"
+import {
+  validateAgent as svValidateAgent,
+  validateManager as svValidateManager,
+  validateOrganism as svValidateOrganism,
+} from "@/lib/engines/self-validation-engine"
 
 // ── Tipuri ────────────────────────────────────────────────────────────────────
 
@@ -826,6 +831,51 @@ export async function runProactiveCycle(
     }
   }
 
+  // 0a. SELF-VALIDATION — oglinda internă înainte de orice acțiune.
+  // Agentul își vede propriile metrici și se ajustează ÎNAINTE de a acționa.
+  // Zero apeluri Claude — doar query-uri DB.
+  try {
+    if (config.agentRole === "COG") {
+      // COG: validare la nivel organism
+      const orgValidation = await svValidateOrganism(30)
+      console.log(`   🪞 [${config.agentRole}] Self-validation organism: ${orgValidation.selfAssessment} (autonomy=${orgValidation.overallAutonomyRate}%, spiral=${orgValidation.spiralVelocity})`)
+
+      // Store validation for contemplation to use
+      await prisma.systemConfig.upsert({
+        where: { key: "SELF_VALIDATION_ORGANISM" },
+        update: { value: JSON.stringify(orgValidation) },
+        create: { key: "SELF_VALIDATION_ORGANISM", value: JSON.stringify(orgValidation), label: "Self-validation organism (auto-updated)" },
+      }).catch(() => {})
+
+      // If spiralVelocity declining, feed strategic adjustments into objectives context
+      if (orgValidation.strategicAdjustments.length > 0) {
+        console.log(`   🪞 [${config.agentRole}] Ajustări strategice necesare: ${orgValidation.strategicAdjustments.join("; ")}`)
+      }
+    } else {
+      // Manager: validare la nivel manager
+      const mgrValidation = await svValidateManager(config.agentRole, 7)
+      console.log(`   🪞 [${config.agentRole}] Self-validation manager: ${mgrValidation.selfAssessment} (teamAutonomy=${mgrValidation.teamAutonomyRate}%)`)
+
+      // Store for this manager's contemplation
+      await prisma.systemConfig.upsert({
+        where: { key: `SELF_VALIDATION_${config.agentRole}` },
+        update: { value: JSON.stringify(mgrValidation) },
+        create: { key: `SELF_VALIDATION_${config.agentRole}`, value: JSON.stringify(mgrValidation), label: `Self-validation ${config.agentRole} (auto-updated)` },
+      }).catch(() => {})
+
+      // If weakestLink found, log it for action
+      if (mgrValidation.weakestLink) {
+        console.log(`   🪞 [${config.agentRole}] Weakest link: ${mgrValidation.weakestLink.role} — ${mgrValidation.weakestLink.issue}`)
+      }
+      // If BOTTLENECK, log warning
+      if (mgrValidation.selfAssessment === "BOTTLENECK") {
+        console.log(`   🪞 [${config.agentRole}] ATENTIE: self-assessment=BOTTLENECK — reduce interventiile, lasa echipa sa rezolve`)
+      }
+    }
+  } catch (e: any) {
+    console.warn(`[proactive-loop] self-validation failed for ${config.agentRole}: ${e.message}`)
+  }
+
   // 0. SELF-TASKS — execută taskurile proprii ASSIGNED înainte de evaluare subordonați.
   // Esențial pentru a primi obiective de la Owner/COG. Fix GAP B din E2E test #1 (10.04.2026):
   // managerii erau orbi la propriile taskuri.
@@ -1043,6 +1093,26 @@ async function runLeanCycle(
   let selfTasksExecuted = 0
   let selfTasksBlocked = 0
   let selfTasksFailed = 0
+
+  // 0a. SELF-VALIDATION — oglinda internă (zero Claude calls)
+  try {
+    const agentValidation = await svValidateAgent(config.agentRole, 7)
+    console.log(`   🪞 [${config.agentRole}] Self-validation agent: ${agentValidation.selfAssessment} (autonomy=${agentValidation.autonomyRate}%, quality=${agentValidation.avgOutputQuality})`)
+
+    // Store for contemplation and next cycle
+    await prisma.systemConfig.upsert({
+      where: { key: `SELF_VALIDATION_${config.agentRole}` },
+      update: { value: JSON.stringify(agentValidation) },
+      create: { key: `SELF_VALIDATION_${config.agentRole}`, value: JSON.stringify(agentValidation), label: `Self-validation ${config.agentRole} (auto-updated)` },
+    }).catch(() => {})
+
+    // If STAGNATING or DECLINING, log adjustment needs
+    if (agentValidation.selfAssessment === "STAGNATING" || agentValidation.selfAssessment === "DECLINING") {
+      console.log(`   🪞 [${config.agentRole}] Ajustari necesare: ${agentValidation.adjustmentNeeded.join("; ") || "none"}`)
+    }
+  } catch (e: any) {
+    console.warn(`[proactive-loop] self-validation failed for ${config.agentRole}: ${(e as Error).message}`)
+  }
 
   // 1. SELF-TASKS — execută taskurile proprii ASSIGNED
   try {
