@@ -12,25 +12,22 @@
 | B2C Platform | 42 | 0 | 0 | 1 | 43 |
 | Arhitectura + Mecanisme | 63 | 0 | 0 | 1 | 64 |
 | Infra + Legal + Ops | 86 | 2 | 1 | 1 | 90 |
-| **TOTAL** | **267** | **4** | **1** | **3** | **275** |
+| **TOTAL** | **268** | **4** | **1** | **2** | **275** |
 
-**Rata completare**: 267/275 = **97% DONE**, 1.5% PARTIAL, 0.4% SKELETON, **1% MISSING**
+**Rata completare**: 268/275 = **97.5% DONE**, 1.5% PARTIAL, 0.4% SKELETON, **0.7% MISSING**
 
 > Diferenta fata de audit anterior: +21 DONE (din 26 MISSING rezolvate), 5 PARTIAL promovate la DONE,
 > 2 SKELETON promovate (i18n→DONE, strategic themes→DONE). 5 MISSING ramase.
 
 ---
 
-## MISSING (3 items — blocate extern)
-
-### B2C (1 MISSING)
-1. MBook pipeline (Remotion + DALL-E + social publishing) — BLOCKER: API keys + sesiune dedicata
+## MISSING (2 items — blocate extern)
 
 ### Arhitectura (1 MISSING)
-2. Vendor Manuals Roadmap (4 obiective post-scanare) — BLOCKER: Owner furnizare manuale scanate
+1. Vendor Manuals Roadmap (4 obiective post-scanare) — BLOCKER: Owner furnizare manuale scanate
 
 ### Infra/Legal/Ops (1 MISSING)
-3. Oblio.eu integrare facturare (ANAF SPV) — BLOCKER: Owner cont Oblio + API key
+2. Oblio.eu integrare facturare (ANAF SPV) — BLOCKER: Owner cont Oblio + API key
 
 ---
 
