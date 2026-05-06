@@ -119,6 +119,9 @@ export async function getManagerConfigs(prisma: PrismaClient): Promise<ManagerCo
         maxPendingBuffer: 20,
       },
       cycleIntervalHours: m.cycleIntervalHours || 12,
+      layer: m.agentRole === "COCSA" || m.agentRole === "CSSA"
+        ? "PRODUCTION" as const
+        : "BUILD" as const,
     }
   })
 

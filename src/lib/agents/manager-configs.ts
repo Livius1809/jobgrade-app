@@ -19,6 +19,16 @@ export interface ManagerConfig {
   role: string
   description: string
   level: "strategic" | "tactical" | "operational"
+  /**
+   * BUILD = CPU (creierul) — construiește, menține, învață, îmbunătățește.
+   *   Structura COG: COG → COA → EMA/QLA/PMA + subordonații lor.
+   *   Trăiește în CPU, shared între toate businessurile.
+   *
+   * PRODUCTION = Business (perifericul) — operează cu clientul, livrează servicii.
+   *   Structura COCSA: COCSA → SOA/CSSA/MKA/CMA/etc.
+   *   Fiecare business are propria structură PRODUCTION.
+   */
+  layer: "BUILD" | "PRODUCTION"
   subordinates: string[]
   reportsTo: string             // cui escaladează
   objectives: string[]
@@ -63,6 +73,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Conducere strategică — traduce viziunea Owner în strategie executabilă, " +
       "monitorizează KPI business, conformitate, direcția pe termen lung",
     level: "strategic",
+    layer: "BUILD", // CPU — creierul
     subordinates: ["COA", "COCSA", "CJA", "CIA", "CCIA"],
     reportsTo: "OWNER",
     objectives: [
@@ -88,6 +99,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Management tehnic — arhitectură, standarde cod, SLA performanță, " +
       "securitate, coordonare echipe de dezvoltare și QA",
     level: "tactical",
+    layer: "BUILD", // CPU — construiește și menține
     subordinates: ["PMA", "EMA", "DPA", "QLA", "SA", "CAA", "COAFin"],
     reportsTo: "COG",
     objectives: [
@@ -110,6 +122,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "împreună cu COA, coordonează landing pages, content, plan promovare B2B cu bugete " +
       "corelate cu fazele de deployment, securitate informațională, sales, customer success",
     level: "tactical",
+    layer: "PRODUCTION", // Business — operează cu clientul
     subordinates: [
       "ISA", "MOA", "IRA", "MDA",
       "SOA", "CSSA", "BCA", "CDIA", "MKA", "ACA",
@@ -139,6 +152,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Management produs — backlog, user stories, research, documentare, " +
       "suport, echipa de specialiști (psiholog, statistician, sociolog)",
     level: "tactical",
+    layer: "BUILD", // CPU — produs și cercetare
     subordinates: ["RDA", "DOA", "DOAS", "CSA", "PPMO", "STA", "SOC", "PPA", "PSE", "PSYCHOLINGUIST", "PCM", "NSA", "SCA", "MEDIATOR"],
     reportsTo: "COA",
     objectives: [
@@ -164,6 +178,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Management engineering — sprint execution, distribuire task-uri, " +
       "code review, blocaje tehnice, velocity tracking",
     level: "operational",
+    layer: "BUILD", // CPU — engineering
     subordinates: ["FDA", "BDA", "DEA", "MAA"],
     reportsTo: "COA",
     objectives: [
@@ -184,6 +199,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Management quality assurance — strategie testare, quality gates, " +
       "coordonare QA automation și security QA",
     level: "operational",
+    layer: "BUILD", // CPU — quality
     subordinates: ["QAA", "SQA"],
     reportsTo: "COA",
     objectives: [
@@ -203,6 +219,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Management customer success — sănătate conturi, adoptare, " +
       "coordonare suport direct",
     level: "operational",
+    layer: "PRODUCTION", // Business — customer success
     subordinates: ["CSA"],
     reportsTo: "COCSA",
     objectives: [
@@ -235,3 +252,21 @@ export function getManagersByLevel(
 // ── Utilitar: toți managerii ──────────────────────────────────────────────────
 
 export const ALL_MANAGER_ROLES = MANAGER_CONFIGS.map((c) => c.agentRole)
+
+// ── Utilitar: manageri per layer ─────────────────────────────────────────
+
+/**
+ * BUILD = CPU (creierul) — COG + COA + PMA + EMA + QLA + subordonații lor.
+ * Shared între toate businessurile. Construiește, menține, învață.
+ */
+export function getBuildManagers(): ManagerConfig[] {
+  return MANAGER_CONFIGS.filter((c) => c.layer === "BUILD")
+}
+
+/**
+ * PRODUCTION = Business (perifericul) — COCSA + CSSA + subordonații lor.
+ * Fiecare business are propria structură PRODUCTION.
+ */
+export function getProductionManagers(): ManagerConfig[] {
+  return MANAGER_CONFIGS.filter((c) => c.layer === "PRODUCTION")
+}
