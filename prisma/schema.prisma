@@ -4387,3 +4387,20 @@ model VitalSignsCheck {
   @@index([componentName])
   @@map("vital_signs_checks")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRITICAL THINKING — Log evaluări critice pre-acceptare răspuns Claude
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model CriticalEvalLog {
+  id             String   @id @default(cuid())
+  agentRole      String
+  verdict        String   // ACCEPT | FLAG | CONTEST | REJECT
+  issueCount     Int      @default(0)
+  responseLength Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([agentRole, createdAt])
+  @@index([verdict, createdAt])
+  @@map("critical_eval_logs")
+}

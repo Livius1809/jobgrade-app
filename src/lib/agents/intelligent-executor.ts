@@ -468,6 +468,48 @@ export async function runIntelligentBatch(
       execResult = await executeTask(task.id)
       tasksExecuted++
     } catch (e: any) {
+      // ═══ IMPROVISATION — Before giving up, try improvisation ═══
+      // Instead of immediately marking as FAILED, the organism TRIES SOMETHING.
+      // Analogy: the plumber's tool is broken — he doesn't go home, he finds another way.
+      try {
+        const { improvise } = await import("@/lib/engines/improvisation-engine")
+        const kbFragments = kbContext ? [kbContext] : []
+        const improvResult = await improvise({
+          taskTitle: task.title,
+          taskDescription: task.description,
+          agentRole: task.assignedTo,
+          failureReason: e.message ?? "Unknown execution failure",
+          availableKB: kbFragments,
+        })
+
+        if (improvResult && improvResult.confidence > 0.4) {
+          // Use improvised result instead of blocking
+          tasksExecuted++
+          await prisma.agentTask.update({
+            where: { id: task.id },
+            data: {
+              status: "COMPLETED",
+              completedAt: new Date(),
+              result: `[IMPROVISED:${improvResult.strategy}] ${improvResult.output.slice(0, 2000)}`,
+              kbHit: false,
+            },
+          })
+          results.push({
+            taskId: task.id,
+            outcome: "IMPROVISED",
+            kbHit: false,
+            alignmentLevel,
+            model,
+            costUSD,
+            learningCreated: false,
+            reason: `Improvisation strategy: ${improvResult.strategy} (confidence: ${improvResult.confidence.toFixed(2)})`,
+          })
+          continue
+        }
+      } catch {
+        // Improvisation itself failed — fall through to FAILED
+      }
+
       results.push({
         taskId: task.id,
         outcome: "FAILED",
