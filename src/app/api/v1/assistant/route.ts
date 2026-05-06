@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { buildClientContext, formatContextForPrompt } from "@/lib/context/client-context-engine"
@@ -119,16 +119,19 @@ export async function POST(req: NextRequest) {
     }))
     history.push({ role: "user" as const, content: message.trim() })
 
-    // 5. Call Claude with full context
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    // 5. Call Claude via CPU gateway
+    const cpuResult = await cpuCall({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1500,
       system: buildAssistantSystemPrompt(contextPrompt, currentPage),
       messages: history,
+      agentRole: "SOA",
+      operationType: "chat",
+      tenantId,
+      userId,
     })
 
-    const assistantText = response.content[0].type === "text" ? response.content[0].text : ""
+    const assistantText = cpuResult.text
 
     // 5b. Record API usage (BUILD-008)
     recordAPIUsage(tenantId || userId, 'B2B', 0.015)

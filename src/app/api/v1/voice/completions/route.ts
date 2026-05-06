@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import Anthropic from "@anthropic-ai/sdk" // TODO: extend cpuCall for streaming — kept for streaming support
+import { cpuCall } from "@/lib/cpu/gateway"
 import { readFileSync } from "fs"
 import { join } from "path"
 import type { AgentRole } from "@/lib/chat/types"
@@ -141,16 +142,14 @@ export async function POST(req: NextRequest) {
 
     // ── Non-streaming fallback ───────────────────────────────────────────
     if (!stream) {
-      const client = new Anthropic()
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: CLAUDE_MODEL,
         max_tokens: 1000,
         system: fullSystemPrompt,
         messages: anthropicMessages,
+        agentRole: "SOA",
+        operationType: "voice-completion",
       })
-
-      const text =
-        response.content[0].type === "text" ? response.content[0].text : ""
 
       return NextResponse.json({
         id: generateCompletionId(),
@@ -160,15 +159,14 @@ export async function POST(req: NextRequest) {
         choices: [
           {
             index: 0,
-            message: { role: "assistant", content: text },
+            message: { role: "assistant", content: cpuResult.text },
             finish_reason: "stop",
           },
         ],
         usage: {
-          prompt_tokens: response.usage.input_tokens,
-          completion_tokens: response.usage.output_tokens,
-          total_tokens:
-            response.usage.input_tokens + response.usage.output_tokens,
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: cpuResult.tokensUsed,
         },
       })
     }

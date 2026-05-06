@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export const dynamic = "force-dynamic"
 
@@ -82,17 +82,20 @@ export async function POST(
         )
         .join("\n")
 
-      const client = new Anthropic()
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 500,
         system: `Esti mediatorul AI intr-o evaluare comuna Art. 10 (Directiva EU 2023/970). Echipa discuta un capitol al raportului de pay gap. Rolul tau: ofera perspective obiective bazate pe date, ajuta la consens, nu ia parte. Raspunde in romana, concis (1-2 paragrafe). Capitol discutat: ${parsed.data.chapterId}.`,
         messages: [
           { role: "user", content: conversationText || "Echipa nu a inceput inca discutia pe acest capitol. Ofera o introducere si intrebari de ghidaj." },
         ],
+        agentRole: "HR_COUNSELOR",
+        operationType: "mediation",
+        tenantId: session.user.tenantId,
+        userId: session.user.id,
       })
 
-      const aiText = response.content[0].type === "text" ? response.content[0].text : ""
+      const aiText = cpuResult.text
 
       actionPlan.discussion.push({
         id: `ai-${Date.now()}`,

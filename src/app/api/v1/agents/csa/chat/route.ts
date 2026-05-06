@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { readFileSync } from "fs"
 import { join } from "path"
 import { authOrKey as auth } from "@/lib/auth-or-key"
@@ -242,16 +242,19 @@ export async function POST(req: NextRequest) {
       "- NICIODATĂ nu minimiza problema clientului",
     ].filter(Boolean).join("\n")
 
-    // 6. Call Claude
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    // 6. Call Claude via CPU gateway
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1500,
       system: fullSystemPrompt,
       messages: history,
+      agentRole: "CSA",
+      operationType: "chat",
+      tenantId,
+      userId,
     })
 
-    const assistantText = response.content[0].type === "text" ? response.content[0].text : ""
+    const assistantText = cpuResult.text
 
     // 6b. Record API usage (BUILD-008)
     recordAPIUsage(tenantId || userId, 'B2B', 0.015)

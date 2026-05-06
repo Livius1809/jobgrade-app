@@ -16,7 +16,7 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type {
   NarrativeDocument,
   NarrativeSection,
@@ -63,30 +63,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const anthropic = new Anthropic()
-
     // ─── Build system prompt ───
     const systemPrompt = buildSystemPrompt(language)
 
     // ─── Build user prompt with profile data ───
     const userPrompt = buildUserPrompt(profile, scope, subjectAlias)
 
-    // ─── Generate narrative + inference ───
-    const message = await anthropic.messages.create({
+    // ─── Generate narrative + inference via CPU gateway ───
+    const cpuResult = await cpuCall({
       model: "claude-sonnet-4-20250514",
       max_tokens: 16000,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
+      agentRole: "PROFILER",
+      operationType: "narrative-generate",
     })
 
-    const textContent = message.content.find((c) => c.type === "text")
-    if (!textContent || textContent.type !== "text") {
+    if (!cpuResult.text) {
       return NextResponse.json({ error: "No response generated" }, { status: 500 })
     }
 
     // ─── Parse structured response ───
     const narrativeDocument = parseNarrativeResponse(
-      textContent.text,
+      cpuResult.text,
       profile,
       scope,
       subjectAlias

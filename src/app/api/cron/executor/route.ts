@@ -53,13 +53,16 @@ export async function GET(request: NextRequest) {
     // Dacă API-ul era down și a revenit, resetăm imediat task-urile eșuate
     let supplierRecovery = 0
     try {
-      const Anthropic = (await import("@anthropic-ai/sdk")).default
-      const client = new Anthropic()
+      const { cpuCall } = await import("@/lib/cpu/gateway")
       // Ping minimal — 1 token, cost ~$0.000003
-      await client.messages.create({
+      await cpuCall({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 1,
+        system: "ping",
         messages: [{ role: "user", content: "ping" }],
+        agentRole: "COG",
+        operationType: "health-probe",
+        skipObjectiveCheck: true,
       })
 
       // API răspunde — resetăm task-urile eșuate din cauza limitei

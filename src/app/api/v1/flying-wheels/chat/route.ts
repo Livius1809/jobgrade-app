@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { prisma } from "@/lib/prisma"
 import { routeQuestion, type FWAgentTarget } from "@/lib/flying-wheels/fw-router"
@@ -382,15 +382,18 @@ async function selfRespond(
   const systemPrompt = buildFWSystemPrompt(contextPrompt, guide.detailedGuide, currentPage, culturalSection, linguisticProfile)
     + (deescalation ? `\n\n${deescalation}` : "")
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 800,
     system: systemPrompt,
     messages: conversationHistory,
+    agentRole: "COG",
+    operationType: "fw-self-respond",
+    tenantId,
+    userId,
   })
 
-  return response.content[0].type === "text" ? response.content[0].text : ""
+  return cpuResult.text
 }
 
 // ── Delegate to agent ───────────────────────────────────────────────────
@@ -437,8 +440,7 @@ async function delegateToAgent(
   }))
   conversationHistory.push({ role: "user" as const, content: message })
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-sonnet-4-20250514",
     max_tokens: 1200,
     system: `${agentPrompt}
@@ -471,9 +473,13 @@ ${contextPrompt}
 ${facilitationSection}
 Raspunde in romana, concis (2-4 paragrafe maxim), natural.${deescalation ? `\n\n${deescalation}` : ""}`,
     messages: conversationHistory,
+    agentRole: "COG",
+    operationType: "fw-delegate",
+    tenantId,
+    userId,
   })
 
-  return response.content[0].type === "text" ? response.content[0].text : ""
+  return cpuResult.text
 }
 
 // ── Filtru anti-auto-reflecție (voce unică) ─────────────────────────────

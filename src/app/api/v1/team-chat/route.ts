@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { buildAgentPromptWithKB } from "@/lib/agents/agent-prompt-builder"
 import { calibrateOwnerInput } from "@/lib/agents/owner-calibration"
 import { logOwnerCalibration } from "@/lib/agents/owner-calibration-log"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export const maxDuration = 60
 
@@ -70,8 +70,7 @@ export async function POST(req: NextRequest) {
       content: h.content,
     }))
 
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1500,
       system: systemPrompt,
@@ -79,9 +78,12 @@ export async function POST(req: NextRequest) {
         ...historyMessages,
         { role: "user", content: `OWNER: ${message.trim()}` },
       ],
+      agentRole: "COG",
+      operationType: "team-chat",
+      skipObjectiveCheck: true,
     })
 
-    const answer = response.content[0].type === "text" ? response.content[0].text : "Nu am putut genera un răspuns."
+    const answer = cpuResult.text || "Nu am putut genera un răspuns."
 
     return NextResponse.json({
       answer,

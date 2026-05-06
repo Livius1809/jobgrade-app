@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { prisma } from "@/lib/prisma"
 
 export const maxDuration = 60
@@ -39,13 +39,13 @@ export async function PATCH(
   if (body.autoReview !== false) {
     try {
       const validation = await validateHierarchy(prisma)
-      const client = new Anthropic()
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1024,
+        system: "Ești COG (Chief Orchestrator General) al platformei JobGrade.",
         messages: [{
           role: "user",
-          content: `Ca COG (Chief Orchestrator General) al platformei JobGrade, evaluează această propunere de restructurare:
+          content: `Evaluează această propunere de restructurare:
 
 Tip: ${proposal.proposalType}
 Titlu: ${proposal.title}
@@ -62,9 +62,12 @@ Evaluează:
 
 Răspunde JSON: {"approved": true/false, "comment": "explicație scurtă", "risks": ["risc1"]}`,
         }],
+        agentRole: "COG",
+        operationType: "review",
+        skipObjectiveCheck: true,
       })
 
-      const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+      const text = cpuResult.text || "{}"
       const match = text.match(/\{[\s\S]*\}/)
       if (match) {
         const parsed = JSON.parse(match[0])

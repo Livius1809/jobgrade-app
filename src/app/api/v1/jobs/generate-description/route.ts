@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { authOrKey as auth } from "@/lib/auth-or-key"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -61,14 +61,18 @@ Reguli:
 Răspunde DOAR cu textul paragrafului, fără explicații suplimentare.`
 
   try {
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 300,
+      system: "Ești expert HR. Generezi texte pentru fișe de post.",
       messages: [{ role: "user", content: prompt }],
+      agentRole: "DOA",
+      operationType: "generate-description",
+      tenantId: session.user.tenantId,
+      userId: session.user.id,
     })
 
-    const suggestion = response.content[0].type === "text" ? response.content[0].text.trim() : ""
+    const suggestion = cpuResult.text.trim()
 
     return NextResponse.json({ suggestion })
   } catch (error: any) {
