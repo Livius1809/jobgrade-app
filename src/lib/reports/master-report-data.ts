@@ -345,8 +345,13 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
     jobs.map(j => j.department?.name).filter((n): n is string => !!n)
   )]
 
-  // Determinăm layere deblocate pe baza creditelor/serviciilor plătite
-  // TODO: verificare reală din ServiceActivation sau credit consumption
+  // Determinăm layere deblocate pe baza serviciului achiziționat
+  const purchase = await prisma.servicePurchase.findUnique({
+    where: { tenantId },
+    select: { layer: true },
+  }).catch(() => null)
+  const maxLayer = purchase?.layer ?? 0
+
   const hasPayroll = payroll.length > 0
   const hasEvaluation = !!latestSession
   const hasSalaryGrades = (latestSession?.salaryGrades?.length ?? 0) > 0
@@ -414,25 +419,25 @@ async function getRealData(tenantId: string): Promise<MasterReportData> {
     },
     layers: {
       baza: {
-        unlocked: hasEvaluation,
-        reason: hasEvaluation ? "plătit" : "neplătit",
+        unlocked: maxLayer >= 1 && hasEvaluation,
+        reason: maxLayer >= 1 && hasEvaluation ? "plătit" : "neplătit",
         jobEvaluations,
         jobDescriptions,
       },
       layer1: {
-        unlocked: hasSalaryGrades && hasPayroll,
-        reason: hasSalaryGrades ? "plătit" : "neplătit",
+        unlocked: maxLayer >= 2 && hasSalaryGrades && hasPayroll,
+        reason: maxLayer >= 2 ? "plătit" : "neplătit",
         salaryGrades,
         payGapCategories,
       },
       layer2: {
-        unlocked: false,
-        reason: "neplătit",
+        unlocked: maxLayer >= 3,
+        reason: maxLayer >= 3 ? "plătit" : "neplătit",
         benchmarks: [],
       },
       layer3: {
-        unlocked: false,
-        reason: "neplătit",
+        unlocked: maxLayer >= 4,
+        reason: maxLayer >= 4 ? "plătit" : "neplătit",
         available: [],
       },
     },

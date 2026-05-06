@@ -428,8 +428,21 @@ export default function JESimulator({ jobs, companyName = "—" }: Props) {
         {/* Salvează progresul */}
         {Object.keys(state.jeModifications).length > 0 && !showValidateConfirm && (
           <button
-            onClick={() => {
-              // TODO: persistare server-side (ScoreOverride)
+            onClick={async () => {
+              // Persist score overrides server-side
+              try {
+                await fetch("/api/v1/simulations", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ type: "score_override", overrides: state.jeModifications }),
+                })
+              } catch {
+                // Fallback: save to localStorage if API unavailable
+                localStorage.setItem(
+                  "je_simulator_overrides",
+                  JSON.stringify({ overrides: state.jeModifications, savedAt: new Date().toISOString() })
+                )
+              }
               const toast = document.createElement("div")
               toast.className = "fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-lg shadow-xl text-sm z-50"
               toast.textContent = "Progresul a fost salvat. Puteți reveni oricând."

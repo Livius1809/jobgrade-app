@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import PortalClientSection from "@/components/portal/PortalClientSection"
+import SmartReportsDashboard from "@/components/dashboard/SmartReportsDashboard"
 import PortalC1Pipeline from "@/components/portal/PortalC1Pipeline"
 import PortalC2Pipeline from "@/components/portal/PortalC2Pipeline"
 import PortalC3Pipeline from "@/components/portal/PortalC3Pipeline"
@@ -340,6 +341,14 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
       />
 
       {/* Evaluare + Rapoarte sunt acum inline în PortalClientSection */}
+
+      {/* ═══ Rapoarte inteligente ═══ */}
+      {purchasedLayer > 0 && (
+        <section>
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Rapoarte inteligente</h2>
+          <SmartReportsDashboard />
+        </section>
+      )}
 
       {/* ═══ AJUTOR ═══ */}
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-between">

@@ -303,11 +303,23 @@ export async function POST(req: NextRequest) {
         : "",
     ].filter(Boolean).join("\n")
 
+    // 8b. Psycholinguistic calibration
+    let psychoBlock = ""
+    try {
+      const { analyzeAndCalibrate } = await import("@/lib/agents/psycholinguist-workflow")
+      const calibration = await analyzeAndCalibrate(userId, message.trim(), AGENT_ROLE, history)
+      if (calibration.adjustedPromptBlock) {
+        psychoBlock = "\n\n--- CALIBRARE PSIHOLINGVISTICA ---\n" + calibration.adjustedPromptBlock
+      }
+    } catch {}
+
+    const calibratedSystemPrompt = fullSystemPrompt + psychoBlock
+
     // 9. Call Claude via CPU gateway
     const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 900,
-      system: fullSystemPrompt,
+      system: calibratedSystemPrompt,
       messages: history,
       agentRole: AGENT_ROLE,
       operationType: "chat",
