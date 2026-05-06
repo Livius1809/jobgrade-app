@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import OrganismSelfValidation from "@/components/dashboard/OrganismSelfValidation"
 
 interface Check {
   component: string
@@ -111,6 +112,11 @@ export default function OrganismHealthPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Self-Validation — Organism Pulse */}
+      <div className="mb-6">
+        <OrganismSelfValidation />
       </div>
 
       {/* Checks — ROSU first, apoi GALBEN, apoi VERDE */}

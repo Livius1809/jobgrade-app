@@ -7,6 +7,7 @@ import { getOrganismTelemetryOverview } from "@/lib/agents/execution-telemetry"
 import { getLearningStats } from "@/lib/agents/learning-pipeline"
 import LayerCardInteractive from "./LayerCardInteractive"
 import OrganismPulse from "./OrganismPulse"
+import OrganismSelfValidation from "@/components/dashboard/OrganismSelfValidation"
 import OwnerInbox from "@/components/owner/OwnerInbox"
 import OwnerServicePipelines from "@/components/owner/OwnerServicePipelines"
 import type { OwnerCockpitResult, LayerStatus, DecisionItem, DecisionOption } from "@/lib/owner/cockpit-aggregator"
@@ -803,6 +804,8 @@ export default async function OwnerDashboard() {
               <div style={{ height: "4px" }} />
               <p className="text-xs text-slate-500">Sănătatea organismului, performanță, straturi</p>
             </div>
+
+            <OrganismSelfValidation />
 
             <OrganismPulse
               verdict={data.vitalSigns.verdict}
