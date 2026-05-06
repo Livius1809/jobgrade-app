@@ -13,7 +13,7 @@
  * Doar ce nu se poate rezolva se escaladează.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { type ManagerConfig } from "./manager-configs"
 import { runFullAnalysis, formatAnalysisForPrompt, type OrgAnalysisReport } from "./org-analysis"
 import { buildAgentPrompt } from "./agent-prompt-builder"
@@ -266,8 +266,6 @@ async function evaluateSubordinates(
   actions: CycleAction[]
   summary: string
 }> {
-  const client = apiKey ? new Anthropic({ apiKey }) : new Anthropic()
-
   const statusReport = statuses
     .map(
       (s) =>
@@ -311,7 +309,7 @@ Generează propuneri DOAR pentru gap-uri sau redundanțe cu severity HIGH.`
     includeSystemPrompt: true,
   })
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 2048,
     system: systemPrompt,
@@ -321,9 +319,13 @@ Generează propuneri DOAR pentru gap-uri sau redundanțe cu severity HIGH.`
         content: `Status subordonați la ${new Date().toISOString()}:\n\n${statusReport}`,
       },
     ],
+    agentRole: config.agentRole,
+    operationType: "proactive-cycle-evaluation",
+    skipObjectiveCheck: true, // obiectivul e deja verificat la intrare în ciclu
+    skipKBFirst: true, // evaluarea manager necesită întotdeauna AI
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text || "{}"
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
     return {
@@ -579,12 +581,10 @@ async function reviewCompletedTasks(
 
   console.log(`   📝 [${config.agentRole}] ${completedTasks.length} taskuri completate de revizuit`)
 
-  const client = new Anthropic()
-
   for (const task of completedTasks) {
     try {
-      // Manager-ul evaluează calitatea rezultatului
-      const response = await client.messages.create({
+      // Manager-ul evaluează calitatea rezultatului — prin CPU
+      const cpuReviewResult = await cpuCall({
         model: MODEL,
         max_tokens: 300,
         system: `Ești ${config.agentRole}, manager. Evaluezi rezultatul unui task completat de subordonatul ${task.assignedTo}.
@@ -597,9 +597,12 @@ Dacă task-ul nu are rezultat documentat sau e neclar, respinge cu feedback cons
             content: `Task: "${task.title}"\nDescriere: ${task.description}\nRezultat raportat: ${task.result || "niciun rezultat documentat"}\nDurată: ${task.completedAt && task.startedAt ? Math.round((new Date(task.completedAt).getTime() - new Date(task.startedAt).getTime()) / 60000) + " min" : "necunoscută"}`,
           },
         ],
+        agentRole: config.agentRole,
+        operationType: "task-review",
+        skipObjectiveCheck: true,
       })
 
-      const text = response.content[0].type === "text" ? response.content[0].text : ""
+      const text = cpuReviewResult.text || ""
       let review: { approved: boolean; feedback: string; reason: string }
 
       try {
