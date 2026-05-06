@@ -133,8 +133,9 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "SOA", "CSSA", "BCA", "CDIA", "MKA", "ACA",
       "CMA", "CWA",
     ],
-    reportsTo: "CPU", // subordonat funcțional CPU-ului, escalare doar la "nu știu, nu pot"
-    // NOTĂ: Owner ține legătura direct cu COCSA pe chestiuni operaționale.
+    reportsTo: "CPU", // subordonat funcțional CPU-ului
+    // Escalare doar la COG, doar pentru "nu știu, nu pot" (capabilități/cunoaștere).
+    // Owner vorbește cu COCSA (direcție, feedback) dar COCSA nu escaladează la Owner.
     // COG poate transmite rapoarte dar pe operațiuni preia ce i se dă, nu intervine.
     objectives: [
       "Autonomie operațională — rezolvă intern tot ce ține de 'știe' și 'poate'",
