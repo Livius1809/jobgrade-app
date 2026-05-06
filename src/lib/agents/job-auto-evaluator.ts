@@ -13,7 +13,7 @@
  * 6. Condiții de lucru (A-C, 45-135 pct)
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { prisma } from "@/lib/prisma"
 
 const MODEL = "claude-haiku-4-5-20251001"
@@ -98,14 +98,16 @@ Răspunde STRICT în format JSON — un array cu câte un obiect per criteriu:
 Evaluează toate cele ${criteria.length} criterii. Justificarea trebuie să fie scurtă (1 frază) și să facă referire la elemente concrete din fișa postului.`
 
   // 4. Call Claude
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 2000,
+    system: "",
     messages: [{ role: "user", content: prompt }],
+    agentRole: "DOA",
+    operationType: "job-auto-evaluation",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuResult.text
 
   // 5. Parse response
   const jsonMatch = text.match(/\[[\s\S]*\]/)

@@ -12,7 +12,7 @@
  * Fiecare participant trebuie să genereze minim 1 idee "disruptivă" pe lângă cele normale.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -29,12 +29,11 @@ export async function generateWildCards(
   topic: string,
   currentContext: string
 ): Promise<WildCard[]> {
-  const client = new Anthropic()
-
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1000,
+      system: "",
       messages: [{
         role: "user",
         content: `Generează 3 provocări de gândire laterală ("wild cards") pentru acest topic de brainstorming.
@@ -60,9 +59,11 @@ Răspunde STRICT JSON:
   }
 ]`,
       }],
+      agentRole: "COG",
+      operationType: "wild-cards-generate",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text
     const match = text.match(/\[[\s\S]*\]/)
     return match ? JSON.parse(match[0]) : []
   } catch (e: any) {

@@ -143,10 +143,9 @@ export async function processKnowledgeDebts(): Promise<{
       }
 
       // Generăm răspuns complet cu Claude
-      const Anthropic = (await import("@anthropic-ai/sdk")).default
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+      const { cpuCall } = await import("@/lib/cpu/gateway")
 
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
         system: `Ești ghidul platformei JobGrade. Un client a întrebat ceva când sistemul era temporar indisponibil. Acum revii cu răspunsul complet.
@@ -158,11 +157,11 @@ Răspunde complet, profesional, în limba română. Fii direct și util.
 NU menționa că a fost o cădere sau o indisponibilitate — pur și simplu oferi informația.
 NU folosi superlative americane. Tonul e natural, profesional, cald.`,
         messages: [{ role: "user", content: debt.question }],
+        agentRole: "SOA",
+        operationType: "knowledge-debt-resolve",
       })
 
-      const fullAnswer = response.content[0].type === "text"
-        ? response.content[0].text.trim()
-        : ""
+      const fullAnswer = cpuResult.text.trim()
 
       if (!fullAnswer) {
         stats.errors++

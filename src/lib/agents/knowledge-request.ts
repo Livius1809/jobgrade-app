@@ -13,7 +13,7 @@
  * Procesul e de ÎNVĂȚARE — fiecare participare adaugă experiență în KB.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -56,7 +56,6 @@ async function analyzeCompetence(
   prisma: PrismaClient
 ): Promise<{ isCompetent: boolean; reason: string }> {
   const p = prisma as any
-  const client = new Anthropic()
 
   const receiver = await p.agentDefinition.findUnique({
     where: { agentRole: receiverRole },
@@ -70,8 +69,9 @@ async function analyzeCompetence(
     select: { content: true },
   })
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL, max_tokens: 300,
+    system: "",
     messages: [{
       role: "user",
       content: `Ești ${receiver?.displayName || receiverRole} (${receiver?.description || ""}).
@@ -81,9 +81,11 @@ Cunoașterea ta: ${kb.map((e: any) => e.content.substring(0, 80)).join("; ") || 
 Întrebare: Această cerere intră în competența TA directă sau a structurii de sub tine?
 Răspunde JSON: {"isCompetent": true/false, "reason": "de ce da/nu, 1 propoziție"}`,
     }],
+    agentRole: receiverRole,
+    operationType: "knowledge-request-competence",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text
   const match = text.match(/\{[\s\S]*?\}/)
   if (!match) return { isCompetent: false, reason: "Nu pot evalua" }
   return JSON.parse(match[0])
@@ -114,15 +116,15 @@ async function evaluatePeer(
   prisma: PrismaClient
 ): Promise<PeerEvaluation> {
   const p = prisma as any
-  const client = new Anthropic()
 
   const peer = await p.agentDefinition.findUnique({
     where: { agentRole: peerRole },
     select: { displayName: true, description: true },
   })
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL, max_tokens: 400,
+    system: "",
     messages: [{
       role: "user",
       content: `Ești ${peer?.displayName || peerRole} (${peer?.description || ""}).
@@ -130,9 +132,11 @@ Un coleg a distribuit lateral cererea: "${question}"
 Evaluează: structura ta (tu + subordonații tăi) poate contribui la răspuns?
 Răspunde JSON: {"isRelevant": true/false, "relevanceScore": 0-100, "reason": "scurt"}`,
     }],
+    agentRole: peerRole,
+    operationType: "knowledge-request-peer-eval",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text
   const match = text.match(/\{[\s\S]*?\}/)
   const parsed = match ? JSON.parse(match[0]) : { isRelevant: false, relevanceScore: 0, reason: "Nu pot evalua" }
 
@@ -152,7 +156,6 @@ async function miniTopDown(
   prisma: PrismaClient
 ): Promise<string> {
   const p = prisma as any
-  const client = new Anthropic()
 
   // Get subordinates' KB
   const subs = await p.agentRelationship.findMany({
@@ -168,8 +171,9 @@ async function miniTopDown(
     select: { agentRole: true, content: true },
   })
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL, max_tokens: 600,
+    system: "",
     messages: [{
       role: "user",
       content: `Ești ${managerRole} cu echipa: ${subRoles.join(", ")}.
@@ -179,9 +183,11 @@ ${subKB.map((e: any) => `[${e.agentRole}] ${e.content.substring(0, 100)}`).join(
 
 Generează contribuția echipei tale la rezolvarea cererii. Concis, 2-4 propoziții.`,
     }],
+    agentRole: managerRole,
+    operationType: "knowledge-request-topdown",
   })
 
-  return response.content[0].type === "text" ? response.content[0].text : ""
+  return cpuResult.text
 }
 
 // ── Flow complet ─────────────────────────────────────────────────────────────
@@ -241,7 +247,6 @@ export async function processKnowledgeRequest(
   const leadContributor = contributions[0]?.role || sentTo
 
   // Pasul 6: Sinteză finală de către lider
-  const client = new Anthropic()
   let integratedAnswer = ""
 
   if (contributions.length > 0) {
@@ -249,8 +254,9 @@ export async function processKnowledgeRequest(
       .map(c => `[${c.role}, relevantă ${c.score}%]: ${c.contribution}`)
       .join("\n\n")
 
-    const synthResponse = await client.messages.create({
+    const synthResult = await cpuCall({
       model: MODEL, max_tokens: 800,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești ${leadContributor} și integrezi răspunsul la cererea: "${question}"
@@ -261,8 +267,10 @@ ${contribText}
 Integrează într-un SINGUR RĂSPUNS coerent. Tu ai ponderea cea mai mare.
 Concis, acționabil, 3-5 propoziții. O singură voce.`,
       }],
+      agentRole: leadContributor,
+      operationType: "knowledge-request-synthesize",
     })
-    integratedAnswer = synthResponse.content[0].type === "text" ? synthResponse.content[0].text : ""
+    integratedAnswer = synthResult.text
   } else {
     integratedAnswer = "Nu s-a identificat nicio contribuție relevantă pentru această cerere."
   }

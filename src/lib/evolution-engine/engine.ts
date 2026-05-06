@@ -19,7 +19,7 @@
  * Owner este client zero — engine-ul rulează ÎNTÂI pe el.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type {
   EvolutionContext,
   EvolutionCycle,
@@ -279,8 +279,6 @@ async function generateNarrative(
   config: ContextConfig
 ): Promise<string> {
   try {
-    const client = new Anthropic()
-
     const contextInstructions: Record<EvolutionContext, string> = {
       OWNER: `Ești consilierul intern al fondatorului JobGrade. Ton: prieten înțelept, nu auditor.
 Nu felicita gratuit — observă cu onestitate. Nu critica — invită la reflecție.
@@ -302,9 +300,10 @@ Vorbește despre ce a descoperit, nu despre ce a performat.`,
     const gaps = cycle.diagnosis?.length || 0
     const score = cycle.newAwareness?.compositeScore || cycle.awareness?.compositeScore || 0
 
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 400,
+      system: "",
       messages: [{
         role: "user",
         content: `${contextInstructions[config.context]}
@@ -316,9 +315,11 @@ Dezalinieri: ${gaps}. ${cycle.diagnosis?.filter(g => g.revealedBy).length || 0} 
 
 Scrie maxim 4 propoziții în română cu diacritice. Fiecare propoziție să aibă greutate.`,
       }],
+      agentRole: "EVOLUTION_ENGINE",
+      operationType: "narrative-generation",
     })
 
-    return response.content[0].type === "text" ? response.content[0].text : ""
+    return cpuResult.text
   } catch {
     return `Ciclul #${cycle.cycleNumber} completat. Scor: ${cycle.awareness?.compositeScore || 0}/100.`
   }

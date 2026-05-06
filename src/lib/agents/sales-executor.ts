@@ -8,14 +8,11 @@
  * 4. Genera propuneri comerciale personalizate
  */
 
-import Anthropic from "@anthropic-ai/sdk"
 import type { PrismaClient } from "@/generated/prisma"
 import { sendMarketingEmail, generateOutreachSequence } from "./marketing-executor"
 import { recordClientMemory } from "./client-memory"
 import { calibrateCommunication, getLanguageHints } from "@/lib/comms/calibrate"
 import type { CalibrationContext } from "@/lib/comms/calibrate"
-
-const MODEL = "claude-sonnet-4-20250514"
 
 // ── Prospect Outreach ────────────────────────────────────────────────────────
 

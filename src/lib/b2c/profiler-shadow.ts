@@ -21,7 +21,7 @@
  *   - Progres pe spirală (se blochează? avansează? regresează?)
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -78,11 +78,10 @@ export async function observeInteraction(
   } | null
 ): Promise<ProfileUpdate | null> {
   try {
-    const client = new Anthropic()
-
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 400,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești Profiler-ul platformei JobGrade. Observi INVIZIBIL o interacțiune între un client B2C și un agent.
@@ -119,9 +118,11 @@ REGULI:
 - insight: maxim o propoziție, observație concretă
 - NU presupune — observă doar ce e evident din textul dat`,
       }],
+      agentRole: "PROFILER",
+      operationType: "shadow-observation",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text.trim() : ""
+    const text = cpuResult.text.trim()
 
     // Parse JSON — tolerant la formatting
     const jsonMatch = text.match(/\{[\s\S]*\}/)

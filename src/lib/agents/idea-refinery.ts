@@ -12,7 +12,7 @@
  * Output: idee rafinată + plan de acțiune + document pentru Owner
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -93,7 +93,6 @@ export async function refineIdea(
 ): Promise<RefineryResult> {
   const start = Date.now()
   const p = prisma as any
-  const client = new Anthropic()
   const iterations: RefineryIteration[] = []
   let currentIdea = rawIdea
   let previousScore = 0
@@ -117,9 +116,10 @@ export async function refineIdea(
       const kbContext = kbEntries.map((e: any) => `[${e.agentRole}] ${e.content.substring(0, 120)}`).join("\n")
 
       try {
-        const response = await client.messages.create({
+        const cpuResult = await cpuCall({
           model: MODEL,
           max_tokens: 1000,
+          system: "",
           messages: [{
             role: "user",
             content: `RAFINARE IDEE — Dimensiunea ${dimension} (Iterația ${iter})
@@ -142,9 +142,11 @@ Evaluează strict și concret. Răspunde JSON:
   "score": 0-100
 }`,
           }],
+          agentRole: config.roles[0],
+          operationType: "idea-refinery-evaluate",
         })
 
-        const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+        const text = cpuResult.text || "{}"
         const match = text.match(/\{[\s\S]*\}/)
         if (match) {
           const parsed = JSON.parse(match[0])
@@ -173,9 +175,10 @@ Evaluează strict și concret. Răspunde JSON:
       .join("\n")
 
     try {
-      const synthResponse = await client.messages.create({
+      const synthResult = await cpuCall({
         model: MODEL,
         max_tokens: 1500,
+        system: "",
         messages: [{
           role: "user",
           content: `RE-SINTETIZARE IDEE (Iterația ${iter})
@@ -195,9 +198,11 @@ Re-formulează ideea integrând îmbunătățirile propuse. Ideea rafinată treb
 
 Răspunde cu ideea rafinată (3-5 paragrafe, concret și acționabil). Fără JSON, doar text.`,
         }],
+        agentRole: "COG",
+        operationType: "idea-refinery-synthesize",
       })
 
-      currentIdea = synthResponse.content[0].type === "text" ? synthResponse.content[0].text : currentIdea
+      currentIdea = synthResult.text || currentIdea
     } catch { /* keep current idea */ }
 
     const overallScore = Math.round(

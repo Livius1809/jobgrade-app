@@ -12,7 +12,7 @@
  * Înlocuiește propagarea directă (care crea duplicate).
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -36,7 +36,6 @@ async function collectAndDistill(
   prisma: PrismaClient
 ): Promise<{ insight: string; sources: string[]; inputCount: number } | null> {
   const p = prisma as any
-  const client = new Anthropic()
 
   // Get subordinates
   const rels = await p.agentRelationship.findMany({
@@ -73,9 +72,10 @@ async function collectAndDistill(
     .map((e: any) => `[${e.agentRole}] ${e.content.substring(0, 200)}`)
     .join("\n")
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 800,
+    system: "",
     messages: [{
       role: "user",
       content: `Ești ${manager?.displayName || managerRole} (${manager?.description || ""}).
@@ -92,9 +92,11 @@ SARCINA TA: Distilează toate aceste informații într-un SINGUR INSIGHT de nive
 
 Răspunde DOAR cu insight-ul, fără explicații suplimentare.`,
     }],
+    agentRole: managerRole,
+    operationType: "knowledge-distill-collect",
   })
 
-  const insight = response.content[0].type === "text" ? response.content[0].text : ""
+  const insight = cpuResult.text
 
   // Mark source entries as distilled (dispar ca identitate)
   for (const e of subEntries) {
@@ -122,7 +124,6 @@ async function enrichInsight(
   prisma: PrismaClient
 ): Promise<{ enrichedInsight: string; enrichedWith: string[] }> {
   const p = prisma as any
-  const client = new Anthropic()
 
   // Find peers (same parent)
   const myParent = await p.agentRelationship.findFirst({
@@ -181,9 +182,10 @@ async function enrichInsight(
   }
 
   // Enrich via Claude
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 600,
+    system: "",
     messages: [{
       role: "user",
       content: `Ai distilat acest insight din echipa ta:
@@ -194,9 +196,11 @@ ${superiorContext ? `Superiorul tău a observat:\n${superiorContext}\n` : ""}
 
 Îmbogățește-ți insight-ul integrând aceste perspective. Nu le adăuga mecanic — sintetizează într-o viziune mai completă. 2-3 propoziții.`,
     }],
+    agentRole: managerRole,
+    operationType: "knowledge-distill-enrich",
   })
 
-  const enrichedInsight = response.content[0].type === "text" ? response.content[0].text : baseInsight
+  const enrichedInsight = cpuResult.text || baseInsight
   return { enrichedInsight, enrichedWith }
 }
 

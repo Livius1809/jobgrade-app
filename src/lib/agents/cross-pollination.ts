@@ -9,7 +9,7 @@
  * Extensibil: poate deveni trigger reflexiv când un agent primește KB nou.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 import { buildAgentPrompt } from "./agent-prompt-builder"
 
@@ -94,7 +94,6 @@ async function pollinatePair(
 ): Promise<CrossPollinationResult> {
   const start = Date.now()
   const p = prisma as any
-  const client = new Anthropic()
 
   // Get top KB entries for each agent
   const kbA = await p.kBEntry.findMany({
@@ -114,7 +113,7 @@ async function pollinatePair(
   const topic = `Întâlnire cross-domain: ${a.displayName} × ${b.displayName}`
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1500,
       system: buildAgentPrompt(a.agentRole, a.description),
@@ -146,9 +145,11 @@ Răspunde STRICT JSON:
 
 Doar insight-uri cu valoare reală, nu generalități.`,
       }],
+      agentRole: a.agentRole,
+      operationType: "cross-pollination",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text || "[]"
     const match = text.match(/\[[\s\S]*\]/)
     const insights: any[] = match ? JSON.parse(match[0]) : []
 

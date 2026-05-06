@@ -17,7 +17,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { getDirectSubordinates } from "./hierarchy-enforcer"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export interface DeadlineProposal {
   /** Obiectivul propus */
@@ -122,8 +122,7 @@ export async function evaluateFeasibility(proposal: DeadlineProposal): Promise<F
   // 3. Evaluare AI — managerul evaluează cu cunoașterea lui
   const daysUntilDeadline = Math.round((proposal.requestedDeadline.getTime() - now.getTime()) / (24 * 3600000))
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 1000,
     system: `Esti managerul ${proposal.evaluatedBy}. Evaluezi daca poti livra un obiectiv in termenul cerut.
@@ -176,9 +175,11 @@ ${currentPriorities.map((p: any, i: number) => `${i + 1}. ${p.title} (${p.priori
 
 Evalueaza ONEST: pot livra in termen? Daca nu, propune alternative CONCRETE cu consecinte.`,
     }],
+    agentRole: proposal.evaluatedBy,
+    operationType: "deadline-negotiation",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuResult.text
 
   try {
     const parsed = JSON.parse(text)

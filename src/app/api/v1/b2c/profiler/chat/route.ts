@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { readFileSync } from "fs"
 import { join } from "path"
 import { prisma } from "@/lib/prisma"
@@ -293,16 +293,17 @@ export async function POST(req: NextRequest) {
         : "",
     ].filter(Boolean).join("\n")
 
-    // 9. Call Claude
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    // 9. Call Claude via CPU gateway
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1200,
       system: fullSystemPrompt,
       messages: history,
+      agentRole: AGENT_ROLE,
+      operationType: "chat",
     })
 
-    let assistantText = response.content[0].type === "text" ? response.content[0].text : ""
+    let assistantText = cpuResult.text
 
     // 9b. Record API usage (BUILD-008)
     recordAPIUsage(userId, 'B2C', 0.015)

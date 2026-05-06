@@ -11,7 +11,7 @@
  * Fiecare generare actualizează versiunea — nu suprascrie, adaugă.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -50,7 +50,6 @@ export async function generateBusinessPlan(
   previousPlan?: any
 ): Promise<BusinessPlan> {
   const p = prisma as any
-  const client = new Anthropic()
 
   // ── Collect platform data for context ──────────────────────────────────────
   const agentCount = await p.agentDefinition.count({ where: { isActive: true } })
@@ -92,9 +91,10 @@ export async function generateBusinessPlan(
     : "\nPRIM PLAN — generare inițială."
 
   // ── Generate each section ──────────────────────────────────────────────────
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 8000,
+    system: "",
     messages: [{
       role: "user",
       content: `Ca COG (Chief Orchestrator General) al platformei JobGrade, generează un Business Plan complet.
@@ -157,9 +157,11 @@ Răspunde STRICT JSON:
 
 IMPORTANT: Conținut DETALIAT și SPECIFIC — nu generalități. Numere concrete, date, acțiuni.`,
     }],
+    agentRole: "COG",
+    operationType: "business-plan",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text || "{}"
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error("Failed to parse business plan from AI response")
 

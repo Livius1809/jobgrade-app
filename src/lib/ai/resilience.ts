@@ -79,13 +79,15 @@ export async function getResilienceStatus(): Promise<ResilienceStatus> {
 
   // Probe Claude
   try {
-    const Anthropic = (await import("@anthropic-ai/sdk")).default
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const { cpuCall } = await import("@/lib/cpu/gateway")
     const t0 = Date.now()
-    await client.messages.create({
+    await cpuCall({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 5,
+      system: "",
       messages: [{ role: "user", content: "ping" }],
+      agentRole: "SYSTEM",
+      operationType: "resilience-probe",
     })
     claudeLatencyMs = Date.now() - t0
     claudeAvailable = true

@@ -10,7 +10,7 @@
  * Conținutul generat alimentează și KB-ul (learning loop).
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 import type { ExecutionAction, ExecutionResult } from "./execution-framework"
 
@@ -38,7 +38,6 @@ export async function generateMarketingContent(
   context: string,
   prisma: PrismaClient
 ): Promise<GeneratedContent> {
-  const client = new Anthropic()
   const p = prisma as any
 
   // Get marketing KB for context
@@ -59,9 +58,10 @@ export async function generateMarketingContent(
     landing_copy: "Copy landing page: headline, subheadline, 3 benefit blocks, CTA, social proof section. Format: JSON structurat.",
   }
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 3000,
+    system: "",
     messages: [{
       role: "user",
       content: `Generează conținut marketing pentru platforma JobGrade.
@@ -92,9 +92,11 @@ Răspunde JSON:
   }
 }`,
     }],
+    agentRole: "CMA",
+    operationType: "marketing-content-generate",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text
   const match = text.match(/\{[\s\S]*\}/)
   const parsed = match ? JSON.parse(match[0]) : { title: topic, body: "", metadata: {} }
 
@@ -144,11 +146,10 @@ export async function generateOutreachSequence(
   context: string,
   prisma: PrismaClient
 ): Promise<Array<{ day: number; subject: string; body: string }>> {
-  const client = new Anthropic()
-
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 2000,
+    system: "",
     messages: [{
       role: "user",
       content: `Generează o secvență de 3 emailuri outreach B2B pentru JobGrade.
@@ -176,9 +177,11 @@ Răspunde JSON array:
   {"day": 7, "subject": "...", "body": "..."}
 ]`,
     }],
+    agentRole: "SOA",
+    operationType: "marketing-outreach-sequence",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+  const text = cpuResult.text
   const match = text.match(/\[[\s\S]*\]/)
   return match ? JSON.parse(match[0]) : []
 }

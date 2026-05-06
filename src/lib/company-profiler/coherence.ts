@@ -8,7 +8,7 @@
  */
 
 import type { CoherenceCheck, CoherenceReport, CoherencePair, MaturityLevel } from "./types"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 interface CoherenceInput {
   caenName: string | null
@@ -85,10 +85,10 @@ export async function computeCoherence(input: CoherenceInput): Promise<Coherence
   // Perechi relevante la nivelul curent de maturitate
   const relevantPairs = getRelevantPairs(input.maturity)
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 800,
+    system: "",
     messages: [{
       role: "user",
       content: `Analizează coerența organizațională a unei companii din România.
@@ -122,9 +122,11 @@ JSON STRICT:
   "summary": "..."
 }`
     }],
+    agentRole: "DOAS",
+    operationType: "coherence-analysis",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuResult.text
   const jsonMatch = text.match(/\{[\s\S]*\}/)
 
   if (!jsonMatch) {

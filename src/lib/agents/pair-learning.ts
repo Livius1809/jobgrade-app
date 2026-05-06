@@ -10,7 +10,7 @@
  * Trigger: automat din reflecție (când un junior are GAP) sau manual
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -34,7 +34,6 @@ export async function runPairLearning(
 ): Promise<PairLearningResult> {
   const start = Date.now()
   const p = prisma as any
-  const client = new Anthropic()
 
   // Load agent definitions
   const senior = await p.agentDefinition.findUnique({ where: { agentRole: seniorRole } })
@@ -59,9 +58,10 @@ export async function runPairLearning(
 
   try {
     // Step 1: Senior teaches, Junior asks
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 2000,
+      system: "",
       messages: [{
         role: "user",
         content: `SESIUNE MENTORING în platforma JobGrade.
@@ -94,9 +94,11 @@ Răspunde STRICT JSON:
   ]
 }`,
       }],
+      agentRole: seniorRole,
+      operationType: "pair-learning-session",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+    const text = cpuResult.text
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) return { senior: seniorRole, junior: juniorRole, topic, seniorTeaching: "", juniorQuestions: [], insights: [], kbEntriesAdded: 0, durationMs: Date.now() - start }
 

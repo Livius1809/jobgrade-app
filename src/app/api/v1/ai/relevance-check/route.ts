@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { authOrKey as auth } from "@/lib/auth-or-key"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
       } catch {}
     }
 
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 400,
+      system: "",
       messages: [{
         role: "user",
         content: `Analizează acest text de fișă de post și evaluează cât de completă e informația per criteriu de evaluare.
@@ -99,9 +99,11 @@ Exemple de hint-uri BUNE:
 
 Hint GOLL DOAR dacă score = 100.`
       }],
+      agentRole: "JE_ASSISTANT",
+      operationType: "relevance-check",
     })
 
-    const raw = response.content[0].type === "text" ? response.content[0].text : ""
+    const raw = cpuResult.text
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       return NextResponse.json({ score: 0, criteria: {} })

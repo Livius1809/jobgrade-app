@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export const maxDuration = 30
 
@@ -96,15 +96,16 @@ LUNGIME: 2-3 paragrafe maxim. Nu monologa.`
     content: h.content,
   }))
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 800,
     system: systemPrompt,
     messages: [...historyMessages, { role: "user", content: message.trim() }],
+    agentRole: "CAREER_COUNSELOR",
+    operationType: "chat",
   })
 
-  const answer = response.content[0].type === "text" ? response.content[0].text : ""
+  const answer = cpuResult.text
 
   // Update stare cognitivă Consilier Carieră
   try {

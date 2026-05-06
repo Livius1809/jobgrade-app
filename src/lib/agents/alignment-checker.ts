@@ -19,7 +19,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export interface AlignmentResult {
   allowed: boolean
@@ -174,18 +174,20 @@ export async function checkAlignment(
   // ═══ NIVEL 4: DEDUCȚIE AI MINIMALĂ (cost = Haiku mic) ═══
   if (isSensitive) {
     try {
-      const client = new Anthropic()
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 100,
+        system: "",
         messages: [{
           role: "user",
           content: `Acest task este aliniat cu principiul BINELUI (susține viața, replicabil, auto-propagă)?\n\nTask: "${taskTitle}"\nDetalii: "${taskDescription.slice(0, 200)}"\n\nRăspunde strict: ALIGNED sau UNCERTAIN sau MISALIGNED + motivul în max 20 cuvinte.`,
         }],
+        agentRole: agentRole,
+        operationType: "alignment-check",
       })
 
-      const text = response.content[0].type === "text" ? response.content[0].text : ""
-      const tokensUsed = (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0)
+      const text = cpuResult.text
+      const tokensUsed = cpuResult.tokensUsed
 
       if (text.includes("ALIGNED") && !text.includes("MISALIGNED")) {
         // Salvăm principiul dedus în KB

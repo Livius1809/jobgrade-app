@@ -23,7 +23,7 @@
  *   - Recomandările CSSA pentru check-in-uri
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -68,11 +68,10 @@ export async function observeB2BInteraction(
   existingMemory: string // rezumatul ClientMemory existent
 ): Promise<B2BProfileInsight | null> {
   try {
-    const client = new Anthropic()
-
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 300,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești HR_Counselor pe platforma JobGrade. Observi INVIZIBIL o interacțiune a unui client B2B.
@@ -103,9 +102,12 @@ REGULI:
 - insight: maxim o propoziție
 - cssaRecommendation: doar dacă e ceva acționabil (ex: "clientul pare blocat pe configurare, sugerează un check-in")`,
       }],
+      agentRole: "HR_COUNSELOR",
+      operationType: "shadow-observation",
+      tenantId: observation.tenantId,
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text.trim() : ""
+    const text = cpuResult.text.trim()
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return null
 

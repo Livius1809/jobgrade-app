@@ -12,7 +12,7 @@
  * Claude facilitează: traduce business ↔ tehnic, clarifică ambiguități.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { buildAgentPrompt } from "./agent-prompt-builder"
 import { calibrateOwnerInput, getCalibrationPromptSection } from "./owner-calibration"
 import { logOwnerCalibration } from "./owner-calibration-log"
@@ -20,7 +20,6 @@ import type { PrismaClient } from "@/generated/prisma"
 import { BINE } from "./moral-core"
 import { searchKB } from "@/lib/kb/search"
 
-const MODEL = "claude-sonnet-4-20250514"
 
 export interface CogResponse {
   cogAnswer: string
@@ -36,7 +35,6 @@ export async function chatWithCOG(
   conversationHistory?: Array<{ role: "owner" | "cog"; content: string }>
 ): Promise<CogResponse> {
   const p = prisma as any
-  const client = new Anthropic()
 
   // ── Gather COG's context ───────────────────────────────────────────────────
 
@@ -136,8 +134,8 @@ ${historyText ? `ISTORIC CONVERSAȚIE:\n${historyText}\n` : ""}`
 
   // ── Call Claude as COG ─────────────────────────────────────────────────────
 
-  const response = await client.messages.create({
-    model: MODEL,
+  const cpuResult = await cpuCall({
+    model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
     system: enrichedSystemPrompt,
     messages: [{
@@ -158,9 +156,11 @@ Răspunde JSON:
   "internalNotes": "gânduri interne pe care Owner nu trebuie să le vadă dar sunt utile pentru context"
 }`,
     }],
+    agentRole: "COG",
+    operationType: "chat",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text || "{}"
   const match = text.match(/\{[\s\S]*\}/)
 
   if (!match) {

@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { prisma } from "@/lib/prisma"
 import { generateEmbedding } from "./embeddings"
 
@@ -60,7 +60,6 @@ export async function distillRecentSessions(options?: {
   }
 
   const results: DistillResult[] = []
-  const client = new Anthropic()
 
   for (const [role, roleThreads] of byRole) {
     const result: DistillResult = {
@@ -80,7 +79,7 @@ export async function distillRecentSessions(options?: {
           .join("\n\n")
           .slice(0, 6000) // limit to avoid token overflow
 
-        const response = await client.messages.create({
+        const cpuResult = await cpuCall({
           model: MODEL,
           max_tokens: 800,
           system: `Ești un sistem de distilare a cunoștințelor. Extragi PATTERN-URI GENERALIZABILE dintr-o conversație agent-client.
@@ -101,9 +100,11 @@ EXEMPLU RĂU: "- Clientul Ion de la Firma X nu avea buget" (prea specific)`,
               content: `Distilează insight-uri generalizabile din această conversație a agentului ${role}:\n\n${transcript}`,
             },
           ],
+          agentRole: role,
+          operationType: "kb-distill-session",
         })
 
-        const text = response.content[0].type === "text" ? response.content[0].text : ""
+        const text = cpuResult.text
         const insights = text
           .split("\n")
           .filter((l) => l.trim().startsWith("- "))

@@ -14,7 +14,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 // ═══ TIPURI ═══
 
@@ -106,10 +106,10 @@ async function distillLearning(event: AgentEvent): Promise<DistilledKnowledge> {
   if (event.output.length < 50) return empty
 
   try {
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 500,
+      system: "",
       messages: [{
         role: "user",
         content: `Analizează această interacțiune a agentului ${event.agentRole} și extrage cunoștințe:
@@ -134,9 +134,11 @@ Reguli:
 - Dacă nu e nimic nou → arrays goale
 - Maxim 3 per categorie`
       }],
+      agentRole: event.agentRole,
+      operationType: "learning-funnel-distill",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    const text = cpuResult.text
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return empty
 

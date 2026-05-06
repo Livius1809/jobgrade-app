@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 import { matchProfiles, type CriteriaProfile } from "@/lib/b2c/matching-engine"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -29,18 +29,18 @@ async function estimateJobCriteria(job: any): Promise<CriteriaProfile> {
 
     if (jobText.length < 20) return {}
 
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
       system: `Estimează nivelul pe 6 criterii JobGrade pentru un post. Răspunde DOAR cu JSON valid:
 {"Knowledge":"A-G","Communications":"A-E","ProblemSolving":"A-G","DecisionMaking":"A-G","BusinessImpact":"A-D","WorkingConditions":"A-C"}
 A=minim, G=maxim. Fii realist, nu infla.`,
       messages: [{ role: "user", content: jobText.slice(0, 1500) }],
+      agentRole: "CAREER_COUNSELOR",
+      operationType: "estimate-job-criteria",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
-    return JSON.parse(text) as CriteriaProfile
+    return JSON.parse(cpuResult.text) as CriteriaProfile
   } catch {
     return {}
   }

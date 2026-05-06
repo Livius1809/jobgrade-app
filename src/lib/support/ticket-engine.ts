@@ -13,7 +13,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { getDirectSubordinates } from "@/lib/agents/hierarchy-enforcer"
 
 // ── Categorii fluxuri ──────────────────────────────────────
@@ -73,8 +73,7 @@ export async function refineTicket(ticketId: string): Promise<{
   const ticket = await p.supportTicket.findUnique({ where: { id: ticketId } })
   if (!ticket) throw new Error("Ticket negăsit")
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 500,
     system: `Esti front desk suport. Rafineaza semnalarea clientului.
@@ -89,9 +88,11 @@ Raspunde JSON:
   "followUpQuestion": "intrebare suplimentara daca needsMoreInfo=true"
 }`,
     messages: [{ role: "user", content: `Subiect: ${ticket.subject}\nDescriere: ${ticket.description}` }],
+    agentRole: "CSA",
+    operationType: "ticket-refine",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+  const text = cpuResult.text
   const parsed = JSON.parse(text)
 
   await p.supportTicket.update({
@@ -173,8 +174,7 @@ export async function formulateResponse(ticketId: string, internalResolution: st
   const ticket = await p.supportTicket.findUnique({ where: { id: ticketId } })
   if (!ticket) throw new Error("Ticket negăsit")
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 500,
     system: `Esti agent suport client. Formuleaza raspunsul catre client pe baza rezolvarii interne.
@@ -193,9 +193,11 @@ Raspunde cu textul pentru client (direct, nu JSON).`,
       role: "user",
       content: `Semnalarea clientului: ${ticket.subject}\n${ticket.refinedDescription || ticket.description}\n\nRezolvare interna: ${internalResolution}`,
     }],
+    agentRole: "CSA",
+    operationType: "ticket-formulate-response",
   })
 
-  const clientResponse = response.content[0].type === "text" ? response.content[0].text : ""
+  const clientResponse = cpuResult.text
 
   await p.supportTicket.update({
     where: { id: ticketId },

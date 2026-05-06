@@ -12,7 +12,7 @@
  * Pregătit pentru extensie ulterioară cu triggere reflexive condiționale.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { getDailyMoralReflection } from "./moral-core"
 import { buildAgentPrompt } from "./agent-prompt-builder"
 import type { PrismaClient } from "@/generated/prisma"
@@ -91,12 +91,11 @@ export async function reflectAgent(
     ? recentIdeas.map((i: any) => `- "${i.title}" (score: ${i.compositeScore}, ${i.status})`).join("\n")
     : "Nicio participare la brainstorming recent."
 
-  const client = new Anthropic()
-
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1500,
+      system: "",
       messages: [{
         role: "user",
         content: `${buildAgentPrompt(agentRole, agent.description, {
@@ -136,9 +135,11 @@ Răspunde STRICT JSON:
 
 Fii critic și specific. Dacă totul e ok, returnează array gol.`,
       }],
+      agentRole: agentRole,
+      operationType: "idle-reflection",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text || "[]"
     const match = text.match(/\[[\s\S]*\]/)
     const insights: ReflectionInsight[] = match ? JSON.parse(match[0]) : []
 

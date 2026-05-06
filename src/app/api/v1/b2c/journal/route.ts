@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 import {
@@ -149,10 +149,10 @@ export async function POST(req: NextRequest) {
     // If we have enough client text, adapt linguistically via Claude
     if (clientVocab.length > 50) {
       try {
-        const client = new Anthropic()
-        const response = await client.messages.create({
+        const cpuResult = await cpuCall({
           model: MODEL,
           max_tokens: 300,
+          system: "",
           messages: [{
             role: "user",
             content: `Ești Specialistul Psiholingvistică al platformei JobGrade. Rescrie acest prompt de journaling
@@ -190,9 +190,11 @@ CRITICĂ — LIMBA ROMÂNĂ NATURALĂ:
 
 Răspunde DOAR cu prompt-ul rescris, nimic altceva.`,
           }],
+          agentRole: "PROFILER",
+          operationType: "journal-linguistic-calibration",
         })
 
-        const adapted = response.content[0].type === "text" ? response.content[0].text.trim() : ""
+        const adapted = cpuResult.text.trim()
         if (adapted.length > 10 && adapted.length < 500) {
           adaptedPrompt = adapted
         }

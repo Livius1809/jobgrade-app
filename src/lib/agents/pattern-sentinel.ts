@@ -17,7 +17,7 @@
  * Cost: 1 apel Claude per manager per rulare
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -113,12 +113,11 @@ export async function runPatternSentinel(
     return { agentRole, signals: [], kbEntriesAdded: 0, durationMs: Date.now() - start }
   }
 
-  const client = new Anthropic()
-
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1500,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești un "pattern sentinel" — detectezi semnale slabe pe care un manager obișnuit le-ar ignora.
@@ -161,9 +160,11 @@ Răspunde STRICT JSON:
 
 Fii PARANOIC — mai bine un fals pozitiv decât un semnal ratat. Dacă chiar nu detectezi nimic, returnează [].`,
       }],
+      agentRole: agentRole,
+      operationType: "pattern-sentinel-scan",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text
     const match = text.match(/\[[\s\S]*\]/)
     const signals: WeakSignal[] = match ? JSON.parse(match[0]) : []
 

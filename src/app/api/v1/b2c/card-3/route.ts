@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import { scoreHermann } from "@/lib/b2c/questionnaires/hermann-hbdi"
 import { scoreMBTI } from "@/lib/b2c/questionnaires/mbti"
 import type { HermannAnswers, MBTIAnswers } from "@/lib/b2c/questionnaires/types"
@@ -259,8 +259,7 @@ async function handleCVUpload(formData: FormData, cardId: string, userId: string
   let extractedData: Record<string, unknown> = {}
   try {
     const textContent = buffer.toString("utf-8").slice(0, 10000) // primele 10K caractere
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 2000,
       system: `Ești un specialist HR care extrage informații structurate din CV-uri.
@@ -284,9 +283,11 @@ Extrage și returnează un JSON cu exact aceste câmpuri:
 }
 Răspunde DOAR cu JSON valid, fără text adițional. Dacă un câmp nu e clar din CV, pune "nedeterminat".`,
       messages: [{ role: "user", content: `CV:\n${textContent}` }],
+      agentRole: "CAREER_COUNSELOR",
+      operationType: "cv-extraction",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    const text = cpuResult.text
     try {
       extractedData = JSON.parse(text)
     } catch {

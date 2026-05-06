@@ -15,7 +15,7 @@
  *    → KB-ul se separă pe tag-uri (layer:build vs layer:ops)
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 import { clearRegistryCache } from "./agent-registry"
 
@@ -106,9 +106,9 @@ export async function addProductionLayer(
 
   // Generate initial ops KB entries via Claude
   try {
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL, max_tokens: 2000,
+      system: "",
       messages: [{
         role: "user",
         content: `Generează 5 entries de Knowledge Base OPERAȚIONALE pentru agentul ${agentRole} (${agent.displayName}).
@@ -120,9 +120,11 @@ Perspective operațională, nu de construcție.
 
 Răspunde JSON: [{"content":"...", "tags":["tag1"], "confidence": 0.80}]`,
       }],
+      agentRole: agentRole,
+      operationType: "layer-kb-generation",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text || "[]"
     const match = text.match(/\[[\s\S]*\]/)
     if (match) {
       const entries = JSON.parse(match[0])

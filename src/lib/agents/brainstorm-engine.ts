@@ -9,7 +9,7 @@
  * 5. COG sintetizează și formulează propuneri strategice/tactice → Owner
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 import { generateWildCards, formatWildCardsForPrompt } from "./wild-cards"
 import { getCoreInjection } from "./moral-core"
@@ -101,7 +101,6 @@ export async function generateIdeas(
   const session = await p.brainstormSession.findUnique({ where: { id: sessionId } })
   if (!session) throw new Error("Session not found")
 
-  const client = new Anthropic()
   let totalIdeas = 0
 
   // Get agent descriptions for context
@@ -156,9 +155,10 @@ ${prevIdeas.map((i: any) => `- "${i.title}" (${i.compositeScore}) — ${i.scorin
     } catch { /* no previous brainstorms */ }
 
     try {
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: MODEL,
         max_tokens: 2048,
+        system: "",
         messages: [{
           role: "user",
           content: `${buildAgentPrompt(role, agent.description, {
@@ -185,9 +185,11 @@ Răspunde STRICT JSON:
 
 Nu include text în afara JSON-ului.`,
         }],
+        agentRole: role,
+        operationType: "brainstorm-generate",
       })
 
-      const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+      const text = cpuResult.text || "[]"
       const match = text.match(/\[[\s\S]*\]/)
       if (!match) continue
 
@@ -235,17 +237,16 @@ export async function evaluateIdeas(
 
   if (ideas.length === 0) return 0
 
-  const client = new Anthropic()
-
   // Batch evaluate — send all ideas to Claude for scoring
   const ideasText = ideas.map((idea: any, i: number) =>
     `${i + 1}. [${idea.generatedBy}] "${idea.title}": ${idea.description}`
   ).join("\n")
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 4096,
+      system: "",
       messages: [{
         role: "user",
         content: `Evaluează aceste idei din sesiunea de brainstorming a platformei JobGrade.
@@ -280,9 +281,11 @@ Răspunde STRICT JSON array:
 
 Fii obiectiv și exigent. Score 100 = excepțional, 50 = mediocru, sub 30 = slab.`,
       }],
+      agentRole: "COG",
+      operationType: "brainstorm-evaluate",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text || "[]"
     const match = text.match(/\[[\s\S]*\]/)
     if (!match) return 0
 
@@ -455,7 +458,6 @@ async function generateStrategicProposals(
   prisma: PrismaClient
 ): Promise<AggregationResult> {
   const p = prisma as any
-  const client = new Anthropic()
 
   const ideasText = topIdeas.map((i: any, idx: number) =>
     `${idx + 1}. "${i.title}" (score: ${i.compositeScore}/100, by ${i.generatedBy})
@@ -465,9 +467,10 @@ async function generateStrategicProposals(
   ).join("\n\n")
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 3000,
+      system: "",
       messages: [{
         role: "user",
         content: `Ca COG (Chief Orchestrator General) al platformei JobGrade, formulează propuneri strategice și tactice pentru Owner bazate pe cele mai bune idei din brainstorming.
@@ -499,9 +502,11 @@ Răspunde STRICT JSON:
   }
 ]`,
       }],
+      agentRole: "COG",
+      operationType: "brainstorm-strategic-proposals",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text || "[]"
     const match = text.match(/\[[\s\S]*\]/)
     const proposals: any[] = match ? JSON.parse(match[0]) : []
 

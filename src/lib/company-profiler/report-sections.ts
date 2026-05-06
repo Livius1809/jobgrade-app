@@ -10,7 +10,7 @@
  */
 
 import type { CompanyProfile, ReportSection, ServiceType } from "./types"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 /**
  * Generează secțiunile de raport disponibile pentru un serviciu
@@ -41,10 +41,10 @@ export async function generateReportSections(
     ? Math.round(relevantCoherence.reduce((s, c) => s + c.score, 0) / relevantCoherence.length)
     : profile.coherence.overallScore
 
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 1000,
+    system: "",
     messages: [{
       role: "user",
       content: `Generează secțiuni de raport pentru serviciul ${service} al unei companii.
@@ -80,9 +80,11 @@ JSON STRICT:
   "recommendations": ["..."]
 }]`
     }],
+    agentRole: "DOAS",
+    operationType: "report-section-generation",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuResult.text
   const jsonMatch = text.match(/\[[\s\S]*\]/)
   if (!jsonMatch) return []
 

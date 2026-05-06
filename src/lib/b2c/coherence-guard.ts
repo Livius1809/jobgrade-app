@@ -20,7 +20,7 @@
  *    Dacă altcineva intră aici, nu mai ești tu cel pe care îl vedem."
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -142,11 +142,10 @@ export async function checkCoherence(
   }
 
   try {
-    const client = new Anthropic()
-
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 300,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești sistemul de verificare a coerenței pe platforma JobGrade.
@@ -189,9 +188,11 @@ REGULI:
 - HERRMANN_SHIFT = brusc analitic când era empatic, sau invers
 - STYLE_SHIFT = lungime mesaje, complexitate, formalitate schimbate brusc`,
       }],
+      agentRole: "PROFILER",
+      operationType: "coherence-check",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text.trim() : ""
+    const text = cpuResult.text.trim()
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return { isCoherent: true, confidence: 0.5, anomalies: [] }
 

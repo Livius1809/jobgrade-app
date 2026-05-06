@@ -9,7 +9,7 @@
  * 5. Factură proforma
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -38,7 +38,6 @@ export async function generateDocument(
   },
   prisma: PrismaClient
 ): Promise<GeneratedDocument> {
-  const client = new Anthropic()
   const p = prisma as any
 
   // Get legal KB
@@ -84,9 +83,10 @@ TVA: 19% (plătitor TVA)
 Termen plată: 30 zile`,
   }
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 4000,
+    system: "",
     messages: [{
       role: "user",
       content: `Generează un document ${docType} complet și profesional.
@@ -109,9 +109,11 @@ LIMBĂ: Română
 
 Răspunde doar cu HTML-ul documentului, fără JSON wrapper.`,
     }],
+    agentRole: docType === "DPA" || docType === "NDA" || docType === "CONTRACT" ? "CJA" : "SOA",
+    operationType: "document-generation",
   })
 
-  const content = response.content[0].type === "text" ? response.content[0].text : ""
+  const content = cpuResult.text
 
   return {
     type: docType,

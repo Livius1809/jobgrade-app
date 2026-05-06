@@ -10,7 +10,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export type MVVMaturity = "IMPLICIT" | "EMERGENT" | "PARTIAL" | "SUBSTANTIAL" | "COMPLETE"
 
@@ -110,10 +110,10 @@ export async function rebuildMVV(tenantId: string): Promise<MVVState> {
   }).join("\n")
 
   // 4. AI construiește MVV de jos în sus
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 600,
+    system: "",
     messages: [{
       role: "user",
       content: `Construiește MVV (Misiune, Viziune, Valori) pentru o companie din România.
@@ -148,9 +148,12 @@ JSON STRICT:
 coherenceScore = cât de coerent e MVV-ul cu posturile existente.
 coherenceGaps = unde sunt inconsistențe (gol dacă totul e coerent).`
     }],
+    agentRole: "DOAS",
+    operationType: "mvv-build",
+    tenantId,
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuResult.text
   const jsonMatch = text.match(/\{[\s\S]*\}/)
 
   let result: MVVState = {

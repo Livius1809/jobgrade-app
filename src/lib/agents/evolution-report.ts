@@ -17,7 +17,7 @@
  */
 
 import type { PrismaClient } from "@/generated/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -463,14 +463,14 @@ export async function generateEvolutionReport(
   // Generate summary with Claude
   let summary = ""
   try {
-    const client = new Anthropic()
     const top3 = agentEvolutions.slice(0, 3).map(a => `${a.agentRole}: ${a.compositeScore}/100 (${a.maturityLevel})`).join(", ")
     const bottom3 = agentEvolutions.slice(-3).map(a => `${a.agentRole}: ${a.compositeScore}/100 (${a.maturityLevel})`).join(", ")
     const highConcerns = concerns.filter(c => c.severity === "HIGH").map(c => `${c.role}: ${c.issue}`).join("; ")
 
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 500,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești COG și redactezi un sumar executiv al raportului de evoluție a echipei de agenți AI.
@@ -483,8 +483,10 @@ Preocupări critice: ${highConcerns || "Niciuna"}.
 
 Scrie un paragraf de 3-4 propoziții în română, cu diacritice, ton profesional dar cald. Fără bullet points — text continuu.`,
       }],
+      agentRole: "COG",
+      operationType: "evolution-report-summary",
     })
-    summary = response.content[0].type === "text" ? response.content[0].text : ""
+    summary = cpuResult.text
   } catch {
     summary = `Raport de evoluție: ${agentEvolutions.length} agenți evaluați. Media echipei: ${avgComposite}/100. Distribuție: ${distribution.seed} SEED, ${distribution.growing} GROWING, ${distribution.competent} COMPETENT, ${distribution.expert} EXPERT, ${distribution.master} MASTER.`
   }

@@ -18,7 +18,7 @@
  * - Continuitate: SOA vinde, CSSA preia, CSA răspunde — toți "cunosc" clientul
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -173,14 +173,14 @@ export async function distillFromSession(
   })
   if (!session) return 0
 
-  const client = new Anthropic()
   const jobTitles = session.sessionJobs?.map((sj: any) => sj.job?.title).filter(Boolean)
   const participantNames = session.participants?.map((p: any) => `${p.user?.firstName} ${p.user?.lastName} (${p.role})`).filter(Boolean)
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 1000,
+      system: "",
       messages: [{
         role: "user",
         content: `Dintr-o sesiune de evaluare joburi, extrage observații despre client.
@@ -203,9 +203,12 @@ Răspunde JSON:
 
 Doar observații UTILE pentru viitoare interacțiuni. Dacă nu poți deduce nimic, returnează [].`,
       }],
+      agentRole: "HR_COUNSELOR",
+      operationType: "client-memory-distill",
+      tenantId,
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+    const text = cpuResult.text || "[]"
     const match = text.match(/\[[\s\S]*\]/)
     if (!match) return 0
 

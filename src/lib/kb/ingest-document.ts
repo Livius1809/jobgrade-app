@@ -22,7 +22,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 // ── Tipuri ──────────────────────────────────────────────────
 
@@ -262,10 +262,7 @@ export async function extractKnowledgeFromChunk(
   chunkIndex: number,
   totalChunks: number,
 ): Promise<IngestedEntry[]> {
-  const client = new Anthropic()
-
-  const startTime = Date.now()
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
     system: EXTRACTION_SYSTEM_PROMPT,
@@ -276,27 +273,13 @@ FRAGMENT ${chunkIndex + 1}/${totalChunks}:
 
 ${chunk}`,
     }],
+    agentRole: "OWNER_INGEST",
+    operationType: "kb-ingest-chunk",
+    skipObjectiveCheck: true,
+    skipKBFirst: true,
   })
 
-  // Logăm apelul în telemetry (vizibil în dashboard Owner)
-  try {
-    const { logExecutionTelemetry } = await import("@/lib/agents/execution-telemetry")
-    const tokensIn = response.usage?.input_tokens || 0
-    const tokensOut = response.usage?.output_tokens || 0
-    await logExecutionTelemetry({
-      agentRole: "OWNER_INGEST",
-      taskType: "KB_INGEST",
-      modelUsed: "claude-sonnet-4-20250514",
-      tokensInput: tokensIn,
-      tokensOutput: tokensOut,
-      estimatedCostUSD: (tokensIn * 0.003 + tokensOut * 0.015) / 1000,
-      kbHit: false,
-      thresholdPassed: true,
-      durationMs: Date.now() - startTime,
-    })
-  } catch {}
-
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuResult.text
 
   try {
     const parsed = JSON.parse(text)
@@ -357,8 +340,6 @@ Răspunde STRICT cu JSON valid:
 `
 
 async function extractFromBibliography(input: IngestDocumentInput): Promise<{ entries: IngestedEntry[]; knownSource: boolean; sourceDescription: string }> {
-  const client = new Anthropic()
-
   const reference = [
     `Titlu: "${input.sourceTitle}"`,
     `Autor: ${input.sourceAuthor}`,
@@ -413,7 +394,7 @@ async function extractFromBibliography(input: IngestDocumentInput): Promise<{ en
       }`,
     })
 
-    const response = await client.messages.create({
+    const cpuBibResult = await cpuCall({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4000,
       system: BIBLIO_SYSTEM_PROMPT,
@@ -421,9 +402,13 @@ async function extractFromBibliography(input: IngestDocumentInput): Promise<{ en
         role: "user",
         content: userContent.length === 1 ? userContent[0].text : userContent,
       }],
+      agentRole: "OWNER_INGEST",
+      operationType: "kb-ingest-bibliography",
+      skipObjectiveCheck: true,
+      skipKBFirst: true,
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    const text = cpuBibResult.text
 
     try {
       const parsed = JSON.parse(text)
@@ -480,8 +465,7 @@ async function processBibliography(input: IngestDocumentInput): Promise<Bibliogr
   const fullText = anonymizeText(rawText)
 
   // 2. Claude parsează lista de referințe bibliografice
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  const cpuParseResult = await cpuCall({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4000,
     system: `Primesti textul unei bibliografii (lista de referinte dintr-o carte sau document academic).
@@ -501,9 +485,13 @@ REGULI:
 - Ignora note de subsol, referinte interne (ex: "vezi cap. 3")
 - Daca textul nu contine o bibliografie recognoscibila, returneaza {"references": []}`,
     messages: [{ role: "user", content: `TEXTUL BIBLIOGRAFIEI:\n\n${fullText.slice(0, 15000)}` }],
+    agentRole: "OWNER_INGEST",
+    operationType: "kb-parse-bibliography",
+    skipObjectiveCheck: true,
+    skipKBFirst: true,
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : ""
+  const text = cpuParseResult.text
   let references: ParsedReference[] = []
 
   try {

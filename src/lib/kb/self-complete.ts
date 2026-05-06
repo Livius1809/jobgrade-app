@@ -15,7 +15,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { searchKB } from "@/lib/kb/search"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export interface KBGap {
   agentRole: string        // cine are nevoie
@@ -167,8 +167,7 @@ export async function selfComplete(gap: KBGap): Promise<SelfCompleteResult> {
 
   // ── Pas 5: Claude generează entry targeted (ULTIMUL resort) ��─
   try {
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
       system: `Esti consultant expert. Genereaza cunoastere actionabila pe un subiect specific.
@@ -189,9 +188,11 @@ ${gap.context ? `Context: ${gap.context}` : ""}
 
 Genereaza cunoastere actionabila pe acest subiect.`,
       }],
+      agentRole: gap.agentRole,
+      operationType: "kb-self-complete",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    const text = cpuResult.text
     const parsed = JSON.parse(text)
 
     if (parsed.canAnswer && parsed.confidence >= 0.5 && parsed.content?.length > 30) {

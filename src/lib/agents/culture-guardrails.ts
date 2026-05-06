@@ -17,7 +17,7 @@
  * - Securitate date salariale
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -53,14 +53,13 @@ export async function checkCultureAlignment(
   actionDescription: string,
   context?: string
 ): Promise<CultureCheck> {
-  const client = new Anthropic()
-
   const valuesText = PLATFORM_VALUES.map((v, i) => `${i + 1}. ${v.name}: ${v.description}`).join("\n")
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 800,
+      system: "",
       messages: [{
         role: "user",
         content: `Verifică dacă această acțiune respectă valorile organizaționale.
@@ -89,9 +88,11 @@ Răspunde STRICT JSON:
 
 Dacă acțiunea respectă toate valorile, passed=true și violations=[].`,
       }],
+      agentRole: agentRole,
+      operationType: "culture-check",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "{}"
+    const text = cpuResult.text || "{}"
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) return { passed: true, violations: [], recommendation: "" }
 

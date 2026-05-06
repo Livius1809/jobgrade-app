@@ -8,7 +8,7 @@
  * - Source: SELF_INTERVIEW
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 // ── Tipuri ────────────────────────────────────────────────────────────────────
 
@@ -644,7 +644,6 @@ export async function generateColdStartEntries(
   agentRole: string,
   options?: {
     maxBatches?: number
-    apiKey?: string
     prisma?: any  // opțional: pentru fallback la DB
   }
 ): Promise<ColdStartResult> {
@@ -675,10 +674,6 @@ export async function generateColdStartEntries(
     )
   }
 
-  const client = options?.apiKey
-    ? new Anthropic({ apiKey: options.apiKey })
-    : new Anthropic()
-
   const maxBatches = Math.min(options?.maxBatches ?? MAX_BATCHES, config.prompts.length)
   const allEntries: ColdStartEntry[] = []
 
@@ -687,14 +682,18 @@ export async function generateColdStartEntries(
     if (!prompt) break
 
     try {
-      const response = await client.messages.create({
+      const cpuResult = await cpuCall({
         model: MODEL,
         max_tokens: 4096,
         system: buildSelfInterviewSystemPrompt(agentRole, config.description),
         messages: [{ role: "user", content: prompt }],
+        agentRole,
+        operationType: "kb-cold-start",
+        skipObjectiveCheck: true,
+        skipKBFirst: true,
       })
 
-      const text = response.content[0].type === "text" ? response.content[0].text : ""
+      const text = cpuResult.text
 
       // Extrage JSON din răspuns (poate fi wrapat în markdown code block)
       const jsonMatch = text.match(/\[[\s\S]*\]/)
@@ -739,7 +738,6 @@ export async function runColdStart(
   prisma: any,
   options?: {
     maxBatches?: number
-    apiKey?: string
     clearExisting?: boolean
   }
 ): Promise<ColdStartResult & { persisted: number }> {
@@ -757,7 +755,7 @@ export async function runColdStart(
   }
 
   // Generează entries (cu fallback la DB pentru prompturi)
-  const result = await generateColdStartEntries(agentRole, { ...options, prisma })
+  const result = await generateColdStartEntries(agentRole, { maxBatches: options?.maxBatches, prisma })
 
   // Persistă în DB
   let persisted = 0

@@ -21,7 +21,7 @@
  */
 
 import type { PrismaClient } from "@/generated/prisma"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 const MODEL = "claude-sonnet-4-20250514"
 
@@ -370,10 +370,10 @@ export async function generateOwnerEvolutionReport(
   // Sumar narativ (generat de Claude)
   let narrativeSummary = ""
   try {
-    const client = new Anthropic()
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 600,
+      system: "",
       messages: [{
         role: "user",
         content: `Ești consilierea internă a organizației JobGrade. Scrie un paragraf de reflecție pentru Owner (Liviu), bazat pe datele raportului de evoluție:
@@ -389,8 +389,10 @@ Nu felicita gratuit — observă cu onestitate. Nu critica — invită la reflec
 Maxim 4 propoziții. Fiecare propoziție să aibă greutate.
 NU menționa scoruri numerice — vorbește despre esență, nu despre cifre.`,
       }],
+      agentRole: "COG",
+      operationType: "owner-evolution-narrative",
     })
-    narrativeSummary = response.content[0].type === "text" ? response.content[0].text : ""
+    narrativeSummary = cpuResult.text
   } catch {
     narrativeSummary = `Perioadă cu ${data.calibrations.current} momente de calibrare și ${data.decisions.total} decizii. Evoluția e un proces continuu — fiecare flag e o oglindă, nu o judecată.`
   }

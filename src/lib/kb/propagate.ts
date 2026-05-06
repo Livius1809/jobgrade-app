@@ -10,7 +10,7 @@
  * nu brută — deci raționamentul lor e de calitate superioară.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 // ── Tipuri ────────────────────────────────────────────────────────────────────
 
@@ -207,11 +207,8 @@ async function abstractKnowledge(
   targetRole: string,
   reason: string,
   content: string,
-  apiKey?: string
 ): Promise<string> {
-  const client = apiKey ? new Anthropic({ apiKey }) : new Anthropic()
-
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 512,
     system: buildAbstractionPrompt(sourceRole, targetRole, reason),
@@ -221,9 +218,11 @@ async function abstractKnowledge(
         content: `Cunoștința de la ${sourceRole}:\n\n${content}`,
       },
     ],
+    agentRole: targetRole,
+    operationType: "kb-propagate-abstract",
   })
 
-  return response.content[0].type === "text" ? response.content[0].text.trim() : content
+  return cpuResult.text.trim() || content
 }
 
 // ── Propagare singulară (1 entry → N targets) ────────────────────────────────
@@ -237,7 +236,7 @@ export async function propagateEntry(
     tags: string[]
   },
   prisma: any,
-  options?: { apiKey?: string; dryRun?: boolean }
+  options?: { dryRun?: boolean }
 ): Promise<PropagationResult> {
   // FIX #4: Folosește reguli statice + fallback la DB relationships
   let targets = PROPAGATION_RULES[entry.agentRole] || []
@@ -284,7 +283,6 @@ export async function propagateEntry(
         target.targetRole,
         target.reason,
         entry.content,
-        options?.apiKey
       )
 
       // Verifică duplicat: caută entries similare la target
@@ -367,7 +365,6 @@ export async function propagateEntry(
 export async function runBatchPropagation(
   prisma: any,
   options?: {
-    apiKey?: string
     dryRun?: boolean
     sinceHours?: number // default: 24h (nightly)
     sourceRole?: string // opțional: doar un agent specific

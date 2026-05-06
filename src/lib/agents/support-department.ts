@@ -23,7 +23,7 @@
  * Client-facing (NU resursă suport): HR_COUNSELOR
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 import { BINE } from "./moral-core"
 
@@ -71,15 +71,14 @@ async function triajRequest(
   request: SupportRequest,
   prisma: PrismaClient
 ): Promise<Array<{ role: string; relevance: number }>> {
-  const client = new Anthropic()
-
   const resourceList = SUPPORT_RESOURCES
     .map(r => `${r.role}: ${r.domain}`)
     .join("\n")
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 500,
+    system: "",
     messages: [{
       role: "user",
       content: `TRIAJ cerere suport. Evaluează relevanța fiecărei resurse (0-100).
@@ -95,9 +94,11 @@ Răspunde STRICT JSON array ordonat descrescător după relevanță:
 
 Doar resurse cu relevanță > 20. Fii precis — nu toți sunt relevanți pentru orice cerere.`,
     }],
+    agentRole: "COCSA",
+    operationType: "support-triaj",
   })
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+  const text = cpuResult.text
   const match = text.match(/\[[\s\S]*\]/)
   return match ? JSON.parse(match[0]) : []
 }
@@ -109,7 +110,6 @@ async function getContribution(
   request: SupportRequest,
   prisma: PrismaClient
 ): Promise<string> {
-  const client = new Anthropic()
   const p = prisma as any
 
   // Get resource's KB
@@ -122,9 +122,10 @@ async function getContribution(
 
   const resource = SUPPORT_RESOURCES.find(r => r.role === role)
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 800,
+    system: "",
     messages: [{
       role: "user",
       content: `Ești ${role} (${resource?.domain || role}) în departamentul suport JobGrade.
@@ -138,9 +139,11 @@ ${kb.map((e: any) => "- " + e.content.substring(0, 120)).join("\n") || "KB gener
 Oferă contribuția ta SPECIFICĂ la rezolvarea acestei situații, din perspectiva expertizei tale.
 Fii concret, acționabil, 3-5 propoziții. Nu repeta ce ar spune alți colegi — doar ce poți tu aduce unic.`,
     }],
+    agentRole: role,
+    operationType: "support-contribution",
   })
 
-  return response.content[0].type === "text" ? response.content[0].text : ""
+  return cpuResult.text
 }
 
 // ── Sinteză integrată (liderul face) ─────────────────────────────────────────
@@ -151,15 +154,14 @@ async function synthesizeResponse(
   request: SupportRequest,
   prisma: PrismaClient
 ): Promise<string> {
-  const client = new Anthropic()
-
   const contribText = contributions
     .map(c => `[${c.role}${c.isLead ? " — LIDER" : ""}, relevanță ${c.relevanceScore}%]: ${c.contribution}`)
     .join("\n\n")
 
-  const response = await client.messages.create({
+  const cpuResult = await cpuCall({
     model: MODEL,
     max_tokens: 1500,
+    system: "",
     messages: [{
       role: "user",
       content: `Ești ${lead} și conduci echipa de răspuns la această cerere. Integrează contribuțiile colegilor într-un RĂSPUNS UNIFICAT.
@@ -179,9 +181,11 @@ INSTRUCȚIUNI:
 
 Răspunde ca o SINGURĂ VOCE — departamentul suport, nu 7 opinii separate.`,
     }],
+    agentRole: lead,
+    operationType: "support-synthesize",
   })
 
-  return response.content[0].type === "text" ? response.content[0].text : ""
+  return cpuResult.text
 }
 
 // ── Flow complet ─────────────────────────────────────────────────────────────

@@ -194,17 +194,19 @@ async function executeAddAgent(
   // 3. AUTOMAT: Generare cunoaștere domeniu din descriere (via Claude)
   if (description) {
     try {
-      const Anthropic = (await import("@anthropic-ai/sdk")).default
-      const client = new Anthropic()
-      const response = await client.messages.create({
+      const { cpuCall } = await import("@/lib/cpu/gateway")
+      const cpuResult = await cpuCall({
         model: "claude-sonnet-4-20250514",
         max_tokens: 3000,
+        system: "",
         messages: [{
           role: "user",
           content: `Generează 10 entries de Knowledge Base pentru un agent AI cu rolul: "${displayName}" (${description}). Fiecare entry trebuie să fie o cunoaștere fundamentală din domeniul de activitate al agentului — teorie, autori cheie, modele, best practices, aplicabilitate organizațională. Răspunde JSON array: [{"content":"...", "tags":["tag1","tag2"], "confidence": 0.85}]`,
         }],
+        agentRole: agentRole,
+        operationType: "org-executor-domain-kb",
       })
-      const text = response.content[0].type === "text" ? response.content[0].text : "[]"
+      const text = cpuResult.text
       const match = text.match(/\[[\s\S]*\]/)
       if (match) {
         const entries = JSON.parse(match[0])

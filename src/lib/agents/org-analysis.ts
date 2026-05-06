@@ -10,7 +10,7 @@
  * propuneri de restructurare (OrgProposal).
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 import type { PrismaClient } from "@/generated/prisma"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -106,7 +106,6 @@ export async function analyzeGaps(prisma: PrismaClient): Promise<GapReport> {
   }
 
   // Batch analyze via Claude
-  const client = new Anthropic()
   const prompt = `Analizează următoarele obiective ale managerilor și subordonații lor.
 Identifică obiective care NU au un agent dedicat care le acoperă direct.
 
@@ -138,13 +137,16 @@ Dacă toate obiectivele sunt acoperite, returnează arrays goale.
 Fii conservator — sugerează doar dacă gap-ul e real, nu ipotetic.`
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 2048,
+      system: "",
       messages: [{ role: "user", content: prompt }],
+      agentRole: "COG",
+      operationType: "org-analysis-gaps",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    const text = cpuResult.text
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       return { uncoveredObjectives: [], suggestedAgents: [], analyzedManagers: managers.length, totalObjectives: allObjectives.length }
@@ -208,7 +210,6 @@ export async function analyzeRedundancies(prisma: PrismaClient): Promise<Redunda
   // Batch analyze — limit to first 20 pairs to control API cost
   const batchPairs = pairs.slice(0, 20)
 
-  const client = new Anthropic()
   const prompt = `Compară următoarele perechi de agenți (subordonați ai aceluiași manager).
 Identifică suprapuneri SEMNIFICATIVE de atribuții.
 
@@ -231,13 +232,16 @@ Raportează doar suprapuneri REALE și semnificative, nu similarități vagi.
 Dacă nu există suprapuneri, returnează array gol.`
 
   try {
-    const response = await client.messages.create({
+    const cpuResult = await cpuCall({
       model: MODEL,
       max_tokens: 2048,
+      system: "",
       messages: [{ role: "user", content: prompt }],
+      agentRole: "COG",
+      operationType: "org-analysis-redundancies",
     })
 
-    const text = response.content[0].type === "text" ? response.content[0].text : ""
+    const text = cpuResult.text
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       return { overlaps: [], pairsAnalyzed: batchPairs.length }

@@ -14,7 +14,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
-import Anthropic from "@anthropic-ai/sdk"
+import { cpuCall } from "@/lib/cpu/gateway"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -154,16 +154,17 @@ ${REPORT_PROMPTS[reportType]}`
     "\nGenereaza raportul complet.",
   ].filter(Boolean).join("\n")
 
-  // 5. Generează raportul
-  const client = new Anthropic()
-  const response = await client.messages.create({
+  // 5. Generează raportul via CPU gateway
+  const cpuResult = await cpuCall({
     model: "claude-sonnet-4-20250514",
     max_tokens: 3000,
     system: systemPrompt,
     messages: [{ role: "user", content: userMessage }],
+    agentRole: "CAREER_COUNSELOR",
+    operationType: `report-${reportType}`,
   })
 
-  const reportContent = response.content[0].type === "text" ? response.content[0].text : ""
+  const reportContent = cpuResult.text
 
   if (!reportContent || reportContent.length < 100) {
     return NextResponse.json({ error: "Raportul nu a putut fi generat" }, { status: 500 })
