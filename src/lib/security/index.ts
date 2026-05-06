@@ -18,6 +18,7 @@ export { checkRateLimit, rateLimitHeaders } from "./rate-limiter"
 export { checkCSRF } from "./csrf-guard"
 export { handleCORSPreflight, setCORSHeaders } from "./cors-guard"
 export { validateUpload, MAX_FILE_SIZE } from "./upload-validator"
+export { sanitizeB2CResponse, auditIdentityLeaks, type ViewerRole } from "./pseudonym-guard"
 
 // ── Secrets Audit (VUL-034) ───────────────────────────────────────────────────
 

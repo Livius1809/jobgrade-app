@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { extractB2CAuth, verifyB2COwnership } from "@/lib/security/b2c-auth"
 import { checkPromptInjection, getInjectionBlockResponse } from "@/lib/security"
+import { sanitizeB2CResponse } from "@/lib/security/pseudonym-guard"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 15
@@ -57,7 +58,10 @@ export async function GET(req: NextRequest) {
       joinedAt: m.joinedAt,
     }))
 
-    return NextResponse.json({ communities })
+    // Sanitizare: utilizatorul vede doar date de tip COMMUNITY (alias, nu identitate)
+    const sanitized = sanitizeB2CResponse(communities, "COMMUNITY")
+
+    return NextResponse.json({ communities: sanitized })
   } catch (e: any) {
     console.error("[B2C Communities GET] Error:", e.message)
     return NextResponse.json(
@@ -146,13 +150,16 @@ export async function POST(req: NextRequest) {
       select: { alias: true },
     })
 
-    return NextResponse.json({
+    const responseData = {
       id: message.id,
       communityId: message.communityId,
       authorAlias: author?.alias || "Anonim",
       content: message.content,
       createdAt: message.createdAt,
-    })
+    }
+
+    // Sanitizare: mesajele in comunitate nu expun niciodata identitatea reala
+    return NextResponse.json(sanitizeB2CResponse(responseData, "COMMUNITY"))
   } catch (e: any) {
     console.error("[B2C Communities POST] Error:", e.message)
     return NextResponse.json(
