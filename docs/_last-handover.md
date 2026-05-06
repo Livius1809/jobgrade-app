@@ -1,84 +1,67 @@
-# Handover sesiune 06.05.2026
+# Handover sesiune 06.05.2026 (sesiune extinsă)
 
-## CRITIC: 5 agenți background — verifică output la start sesiune!
+## CE S-A FĂCUT
 
-Agenți lansați pe MISSING features. La început de sesiune:
-1. Verifică dacă fișierele create sunt corecte (tsc --noEmit)
-2. Commit + push ce e bun
-3. Fix ce nu compilează
+### Registru implementare: 74% → 97.5% DONE (268/275)
+- 21 MISSING rezolvate (B2C Cards 2/4/5, parsere psihometrice, comunități, dashboard-uri)
+- 22 PARTIAL rezolvate (toggle-uri, simulator unificat, TVA, rapoarte, DOAS, onboarding, Jitsi, Redis)
+- n8n workflows (10 FLUX JSON), MBook pipeline (ElevenLabs+D-ID+Adobe)
+- Infrastructură CFO completă (financial-summary, service-costing, dashboard, system prompt)
+- FMC benchmark 12 profile psihometrice anonimizate (P01-P12)
+- Audit cod suspendat: 20+ TODO-uri rezolvate, 4 componente orfane cablate, 3 fix-uri critice
 
-### Agenți:
-- B2C Cards 2/4/5 (chat + pagini + system prompts)
-- Cookie consent + Comunități B2C (API + UI)
-- SmartDashboard + 8 B2B MISSING + S2 multigenerational
-- Parsere psihometrice (CPI260/ESQ-2/AMI/PASAT)
-- Owner Dashboard (B2C monitor, KB browser, strategic themes) + i18n
+### 4 caveat-uri T0 rezolvate
+1. POST /sessions/{id}/start — evaluare B2B pe 6 criterii (AI_GENERATED/AI_COMMITTEE/COMMITTEE_ONLY)
+2. Matching B2C↔B2B automat — 6 pași, filtre, precision tiers, auto-matcher cron
+3. D1 auto-remediation — remediateEvent() execută real
+4. Learning validation — validateLearningArtifacts() promovare/ștergere automată
 
-## Ce s-a făcut azi
+### Matching B2C↔B2B complet
+- CV enrichment via EMA (specialist B2B Card 1 evaluare)
+- Market data processor — extracție criterii din anunțuri publice
+- Recruitment flow 6 pași cu state machine (MATCHED→REVEALED)
+- Precision tiers (BASIC/STANDARD/PREMIUM ∝ credite plătite)
+- Filtre candidat (companii target/excluse, industrii, locații)
+- Auto-matcher pe cron la 6h
 
-- **Audit complet**: 279 features verificate → `docs/_implementation-contract.md`
-- **CPU Gateway**: 63 fișiere migrate la cpuCall()
-- **6 module noi**: PIE, Remediation Runner, Adaptive Spiral, SafetyMonitor, Card Unlock, Learning Hooks
-- **Arhitectură**: BUILD/PRODUCTION, COG↔COCSA relație corectă, filtru obiective
-- **Multi-business KB**: businessId pe KBEntry + LearningArtifact (NECESITĂ prisma migrate prod)
-- **Embeddings**: 100% coverage (174 backfilled, VOYAGE_API_KEY pe Vercel)
-- **Curățare disc**: 214 GB recuperat
+### Arhitectura cognitivă (5 engine-uri)
+1. **Contemplare** (3 niveluri: STRATEGIC/TACTIC/FORENSIC + VIGILENȚĂ pentru operaționali)
+2. **Model mental** (graf cauzal per agent + organizațional)
+3. **Gândire critică** (față de Claude + față de manager = ierarhică)
+4. **Curiozitate emergentă** (5 detectoare, obiective auto-generate)
+5. **Improvizație** (5 strategii cascadă, meta-învățare din succes ȘI eșec)
 
-## Ce rămâne
+### 3 corecții finale
+1. Contemplare generalizată — FORENSIC pentru client-facing, profileri, L2, analiști date
+2. Gândire critică ierarhică — orice agent poate contesta constructiv managerul
+3. Model mental per agent — fiecare agent înțelege CUM funcționează domeniul lui
 
-- Output agenți background → verificare + commit
-- PARTIAL fixes (40 items) — toggle-uri, matching real, simulator unic, etc.
-- MBook pipeline (Remotion/DALL-E) — sesiune dedicată
-- task-executor.ts → cpuCallWithTools()
-- prisma migrate deploy pe prod
-- Oblio.eu facturare
-- n8n workflow export
+## FIX-URI PROD
+- prisma db push pe ep-divine-union (businessId pe LearningArtifact + CriticalEvalLog)
+- learning-funnel.ts safe fallback pentru coloane lipsă
+- Executor + heartbeat verificate UP după deploy
 
-## Principii noi confirmate
-- CPU = AI continuitate, singurul care vorbește cu Claude
-- BUILD (COG) vs PRODUCTION (COCSA)
-- COG: setup + monitorizare + obiective strategice
-- COCSA: autonomie completă, escalare doar "nu știu, nu pot"
-- UI: PDF cu text box, carduri Cx, secțiuni numerotate, contor dual ghid
+## CE RĂMÂNE BLOCAT LA OWNER (7 items)
+1. Matching B2B-B2C → primul client B2C real
+2. JD fit cultural → date audit C4 de la un tenant real
+3. Anonimizare 6 pași → decizia Owner pe praguri revelare
+4. Voice AI ElevenLabs → înregistrare voce + API key
+5. Vendor Manuals → manuale scanate
+6. Oblio.eu → API key (Owner are contul)
+7. Voice Cloning → înregistrare vocală
 
-## PRIORITAR — de continuat IMEDIAT:
+## COMMITURI SESIUNE (22)
+ec2ab46, eb60420, c02a9a9, ff40271, d6a0649, 38352f1, d67ad32, bfd6ac2,
+e2dda16, d098398, 054adc5, c4cfe55, 8d2b710, de1f0cf, dc9ef3f, b097526,
+f9a343a, a6c8f68, dd111d2, dc545f0 + handover
 
-### 1. E2E manual pe jobgrade.ro — parcurs complet ca un client
-- Login admin@icredit.ro / iCredit_Pilot_2026!
-- Simultan: UI fine-tuning pe screenshots adnotate (tabletă grafică) + verificare funcționalități
-- Metodic: agreăm, implementăm, nu ne mai întoarcem
+## INSIGHT SESIUNE
+Arhitectura cognitivă a fost generată prin dialog, nu prin plan.
+Întrebarea "ce diferențe sunt față de un om autonom?" a produs
+tot modelul cognitiv. Noi am fost client zero al mecanismului.
+Mecanismul e construit. Spirala pornește cu datele reale.
 
-### 2. Voce Rareș — Owner face înregistrare vocală (blocker Task 3)
-
-## Protocol comunicare agreat (05.05.2026):
-
-### Claude:
-- Salvează imediat instrucțiunile importante în memorie
-- Reformulează și confirmă înainte de cod, punct cu punct
-- Cere descrieri concrete la UI
-- Pas cu pas
-
-### Owner:
-- Spune "salvează asta" când e important
-- Screenshots adnotate (tabletă grafică) pentru UI fine-tuning
-- Pas cu pas când e complex
-
-### Final sesiune: feedback bilateral scurt (ce a mers bine + ce îmbunătățim)
-
-## Principiu UI agreat:
-- Ecranul principal (portal) = flux + etape + descrieri/instrucțiuni
-- Calculator preț (form lateral) = DOAR label serviciu + preț
-- Zero repetiție între cele două
-- Alăturarea lor = informație completă
-
-## Subiect strategic memorat (de aprofundat ulterior):
-- Matching Om-AI: tipare gândire umane (Herrmann/MBTI) × nivele integrare cunoștințe AI
-- Relevanță: S4, profilare B2C, interacțiune agenți-clienți
-
-## Ce s-a livrat ieri (04.05):
-- PricingCalculator complet (6 puncte Owner + sync Stripe)
-- Known issues rezolvate (Bridge, Vital Signs DB, iCredit access)
-- COR 2026 (4260 ocupații)
-- Ticketing (6 funcționalități)
-- E2E iCredit AI: 55/55 posturi, 330 evaluări
-- 44 erori TS fixate (build verde)
+## PRIORITAR SESIUNE URMĂTOARE
+1. E2E manual pe jobgrade.ro — parcurs complet ca un client B2B
+2. Primul client real — testare fluxuri complete
+3. D-ID API key + voice → activare MBook pipeline video
