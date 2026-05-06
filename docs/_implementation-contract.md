@@ -1,6 +1,6 @@
 # REGISTRU IMPLEMENTARE — Contract Cod vs Documentatie
 
-> **Generat**: 06.05.2026 | **Verificat contra cod**: da, grep + citire fisiere
+> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 2 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
 > **Scop**: Fiecare functionare discutata si agreata are status verificat in cod.
 > **Regula**: Nimic nu e "facut" fara commit demonstrabil.
 
@@ -8,63 +8,84 @@
 
 | Zona | DONE | PARTIAL | SKELETON | MISSING | Total |
 |------|------|---------|----------|---------|-------|
-| B2B Platform | 55 | 16 | 0 | 9 | 80 |
-| B2C Platform | 29 | 5 | 1 | 9 | 44 |
-| Arhitectura + Mecanisme | 51 | 7 | 2 | 3 | 63 |
-| Infra + Legal + Ops | 72 | 12 | 3 | 5 | 92 |
-| **TOTAL** | **207** | **40** | **6** | **26** | **279** |
+| B2B Platform | 64 | 14 | 0 | 0 | 78 |
+| B2C Platform | 38 | 3 | 0 | 1 | 42 |
+| Arhitectura + Mecanisme | 51 | 7 | 1 | 3 | 62 |
+| Infra + Legal + Ops | 75 | 11 | 1 | 1 | 88 |
+| **TOTAL** | **228** | **35** | **2** | **5** | **270** |
 
-**Rata completare**: 207/279 = **74% DONE**, 14% PARTIAL, 2% SKELETON, **9% MISSING**
+**Rata completare**: 228/270 = **84% DONE**, 13% PARTIAL, 1% SKELETON, **2% MISSING**
+
+> Diferenta fata de audit anterior: +21 DONE (din 26 MISSING rezolvate), 5 PARTIAL promovate la DONE,
+> 2 SKELETON promovate (i18n→DONE, strategic themes→DONE). 5 MISSING ramase.
 
 ---
 
-## MISSING (26 items — nu exista in cod)
+## MISSING (5 items — nu exista in cod)
 
-### B2B (9 MISSING)
-1. SmartReportsDashboard (rapoarte activate de date, per-report readiness)
-2. S2 Management multigenerational — analiza 5 factori (varsta/generatie/cultura/personalitate/rezultanta)
-3. Raport capacitate de invatare
-4. Raport capacitate de adaptare
-5. Metrici performanta strategice (endpoint dedicat)
-6. Manual cultura organizationala (generare)
-7. Business plan operational (generare)
-8. Notificari B2C candidat interesat (flow notificare)
-9. Sectiune Angajati/Candidati in portalul B2B
-
-### B2C (9 MISSING)
-10. Card 2 "Eu si ceilalti" — chat route + pagina (schema exista, zero cod functional)
-11. Card 4 "Oameni de succes/valoare" — chat route + pagina
-12. Card 5 "Antreprenoriat transformational" — chat route + pagina
-13. MBook pipeline (Remotion + DALL-E + social publishing)
-14. Parser CPI260 (35 scale din PDF)
-15. Parser ESQ-2 (16 centile din PDF)
-16. Parser AMI (17 stanine din PDF)
-17. Parser PASAT 2000
-18. Comunitati B2C — API routes + UI pagini (schema exista)
+### B2C (1 MISSING)
+1. MBook pipeline (Remotion + DALL-E + social publishing) — sesiune dedicata
 
 ### Arhitectura (3 MISSING)
-19. n8n workflow JSON files (FLUX-041 la FLUX-056) — nu sunt in repo, doar in n8n DB
-20. Vendor Manuals Roadmap (4 obiective post-scanare) — zero cod
-21. Remediation Runner server.py — referit in docker-compose, sursa lipsa din repo
+2. n8n workflow JSON files (FLUX-041 la FLUX-056) — nu sunt in repo, doar in n8n DB
+3. Vendor Manuals Roadmap (4 obiective post-scanare) — zero cod
+4. Remediation Runner server.py — referit in docker-compose, sursa lipsa din repo
 
-### Infra/Legal/Ops (5 MISSING)
-22. Cookie consent banner (GDPR obligatoriu)
-23. Oblio.eu integrare facturare (ANAF SPV)
-24. B2C monitor in Owner Dashboard
-25. KB browser UI per agent
-26. Strategic themes model + editor
+### Infra/Legal/Ops (1 MISSING)
+5. Oblio.eu integrare facturare (ANAF SPV) — integrare externa
 
 ---
 
-## PARTIAL (40 items — cod exista dar incomplet)
+## REZOLVAT DIN MISSING (21 items — commit ec2ab46, 06.05.2026)
 
-### B2B (16 PARTIAL)
+### B2B (9/9 MISSING → DONE)
+- SmartReportsDashboard + report-readiness-engine.ts + readiness/route.ts
+- S2 Multigenerational engine (multigenerational-engine.ts)
+- Raport capacitate invatare (learning-capacity/route.ts)
+- Raport capacitate adaptare (adaptation-capacity/route.ts)
+- Metrici strategice (strategic-metrics/route.ts)
+- Manual cultura organizationala (culture/manual/route.ts)
+- Business plan operational (business-plan/route.ts)
+- Notificari B2C candidat (matching/notifications/route.ts)
+- Sectiune Angajati/Candidati (candidates/page.tsx + CandidatesList.tsx)
+
+### B2C (8/9 MISSING → DONE)
+- Card 2 chat complet (route + component + page + system-prompt)
+- Card 4 chat complet (route + component + page + system-prompt)
+- Card 5 chat complet (route + component + page + system-prompt)
+- Parser CPI260 (35 scale, categorii, cuboid type)
+- Parser ESQ-2 (16 centile)
+- Parser AMI (17 stanine)
+- Parser PASAT 2000
+- Comunitati B2C (3 API routes + UI pagina)
+
+### Infra/Legal/Ops (4/5 MISSING → DONE)
+- Cookie consent banner GDPR (CookieConsent.tsx + layout.tsx)
+- B2C monitor Owner Dashboard (b2c-monitor/page.tsx + API)
+- KB browser UI per agent (kb-browser/page.tsx + API)
+- Strategic themes model + editor (page + ThemeActions + API)
+
+### SKELETON → DONE (2)
+- i18n localizare RO+EN (ro.json, en.json, index.ts, use-locale.ts)
+- Strategic themes (pagina + actiuni + API)
+
+### PARTIAL → DONE (5)
+- Profil leadership (leadership-profile/route.ts)
+- S2 Multigenerational (engine complet)
+- Comunitati B2C (API + UI complet)
+- B2C frontend (6 pagini din 6: card-2, card-4, card-5, communities adaugate)
+- Localizare RO+EN (fisiere traducere complete)
+
+---
+
+## PARTIAL (35 items — cod exista dar incomplet)
+
+### B2B (14 PARTIAL)
 - Organigrama functionala — pagina exista, lipsa vizualizare org chart
 - Toggle UMAN/AI/MIXT — enum in schema, lipsa UI per post
 - Matching B2B-B2C — engine exista dar pe mock data, nu pe B2C users reali
 - Cost pozitie vacanta — tip VACANCY in simulare dar fara raport dedicat
 - JD recomandat fit cultural vs agent schimbare — enum dar fara generare
-- Profil manager leadership — lipsa raport dedicat
 - Documente interne C3 — card-inputs accepta upload dar fara pipeline AI
 - Simulare Impact — 2 endpoint-uri separate in loc de motor unic
 - Toggle CLASIC/TRANSFORMATIONAL — doar in culture/simulator, nu transversal
@@ -73,26 +94,23 @@
 - Anonimizare progresiva B2B-B2C — schema are alias dar flow 6 pasi neimplementat
 - Raport compatibilitate bilateral — scor returnat dar fara PDF formal
 - Media Books continut — config 7 books, continut doar pt MB-R1/R2/R3
-- S2 Multigenerational — team reports exista dar fara analiza factori
 - Onboarding template Acme — task-uri in DB dar fara wizard automat
 
-### B2C (5 PARTIAL)
-- Comunitati acces — schema cu communityReady flag dar fara API/UI
+### B2C (3 PARTIAL)
 - Comunicare adaptiva — aplicata in prompturi, lipsa engine dedicat Psiholingvist
 - MBook componente — ExpandableSection exista dar fara blocuri atomice/PDF/voice
 - C3 evaluation sequential flow — panel exista dar fara sequentialitate impusa
-- B2C frontend — doar 2 pagini (/personal, /personal/card-3) din 6 necesare
 
 ### Arhitectura (7 PARTIAL)
 - D3 process detection — modele exista, tracking procesual scheletral
-- Remediation Runner — exista in lib/agents/ (nou creat azi) dar Docker sidecar lipsa
+- Remediation Runner — exista in lib/agents/ dar Docker sidecar lipsa
 - Platform Flows — FluxStepRole seeded, orchestrare in n8n extern
 - DOAS rol — agent in DB dar cele 7 functii nu au cod dedicat
 - Psiholingvist — detectie exista, workflow complet neautomatizat
 - Stack Healthcheck — fixes aplicate dar sursa sidecar lipsa
-- Palnia ingestie — functioneaza dar fara multi-business (zero businessId pe KB)
+- Palnia ingestie — functioneaza, multi-business adaugat (businessId pe KB), validare pending
 
-### Infra/Legal/Ops (12 PARTIAL)
+### Infra/Legal/Ops (11 PARTIAL)
 - Redis Upstash — env vars may be missing, fallback in-memory
 - Contract standard PDF — markdown draft, fara generare PDF
 - B2C pseudonim 2 straturi — routes exista dar profunzime neverificata
@@ -100,19 +118,17 @@
 - Video conference Jitsi — route exista, cost 0, Faza 1
 - Voice AI ElevenLabs — route exista, Faza 2 planificata
 - TVA in checkout — Stripe exista dar toggle TVA explicit lipsa
-- B2C frontend — 2 pagini din vertical complet
 - Media Books continut — pipeline structura dar continut majoritar ASSIGNED
 - Onboarding template — task-uri dar fara wizard
 - UptimeRobot — heartbeat exista, integrare externa
-- Localizare RO+EN — directoare goale, zero fisiere traducere
+- Psychometric parse route — endpoint unificat exista, validare per instrument pending
 
 ---
 
-## SKELETON (6 items — fisiere/stubs exista dar fara implementare reala)
+## SKELETON (2 items — fisiere/stubs exista dar fara implementare reala)
 
 1. Voice Cloning ElevenLabs — config + audition scripts, BLOCKER: inregistrare Owner
-2. Localizare i18n — directoare goale, zero traduceri
-3. L3 Trei Sub-straturi (L3.1/L3.2/L3.3) — conceptual, fara separare in cod
+2. L3 Trei Sub-straturi (L3.1/L3.2/L3.3) — conceptual, fara separare in cod
 4. B2C frontend complet — doar 2 pagini din 6+
 5. Voice AI endpoint — route exista minimal
 6. Strategic themes — placeholder in cod
