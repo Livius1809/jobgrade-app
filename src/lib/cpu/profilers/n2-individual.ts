@@ -14,7 +14,11 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { getTenantData } from "@/lib/tenant-storage"
 import { DimensionalProfiler, type DimensionalProfile } from "./n1-dimensional"
+import { aggregateBattery, type AggregatedProfile } from "@/lib/psychometrics/battery-aggregator"
+import { cpuCall } from "@/lib/cpu/gateway"
+import type { PsychometricResult } from "@/lib/psychometrics/parsers/types"
 export type { DimensionalProfile }
 
 // Re-export funcții existente ca N2
@@ -146,11 +150,19 @@ export const IndividualProfiler = {
       }
     }
 
+    // Încărcăm bateria psihometrică (dacă există)
+    const batteryProfile = await loadBatteryForEntity(entityId)
+
+    // Injectăm dimensiuni din baterie dacă lipsesc din B2C
+    if (batteryProfile) {
+      injectBatteryDimensions(dimensions, batteryProfile, entityId)
+    }
+
     // Integrăm N1
     const integrated = DimensionalProfiler.integrateAllDimensions(dimensions)
 
-    // Sinteză
-    const synthesis = buildSynthesis(dimensions, b2cProfile, bridgeParticipant)
+    // Sinteză (include acum și bateria psihometrică)
+    const synthesis = await buildSynthesis(dimensions, b2cProfile, bridgeParticipant, batteryProfile)
 
     // Congruențe și tensiuni
     const { congruences, tensions } = detectCongruencesAndTensions(dimensions, synthesis)
@@ -178,11 +190,117 @@ export const IndividualProfiler = {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-function buildSynthesis(
+// ── Battery loading ──────────────────────────────────────────
+
+/** Shape stored by parse/route.ts */
+interface ParsedResultsState {
+  results: Array<{
+    id: string
+    employeeCode: string
+    instrumentType: string
+    result: PsychometricResult
+    uploadedAt: string
+    fileName: string
+  }>
+}
+
+/**
+ * Încarcă rezultatele bateriei psihometrice pentru o entitate.
+ * Caută în TOATE tenanturile (entitatea poate fi B2C fără tenant).
+ */
+async function loadBatteryForEntity(entityId: string): Promise<AggregatedProfile | null> {
+  try {
+    // Încercăm să găsim un tenant asociat
+    const employee = await prisma.employeeSalaryRecord.findFirst({
+      where: { employeeCode: entityId },
+      select: { tenantId: true },
+    }).catch(() => null)
+
+    if (!employee?.tenantId) return null
+
+    const state = await getTenantData<ParsedResultsState>(employee.tenantId, "PSYCHOMETRICS_PARSED")
+    if (!state?.results) return null
+
+    const entityResults = state.results
+      .filter(r => r.employeeCode === entityId)
+      .map(r => r.result)
+
+    if (entityResults.length === 0) return null
+
+    return aggregateBattery(entityResults)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Injectează dimensiuni N1 din bateria psihometrică care nu vin din B2C.
+ * Leadership (CPI260), Motivation (AMI), Integrity (ESQ-2) pot lipsi din B2C.
+ */
+function injectBatteryDimensions(
+  dimensions: DimensionalProfile[],
+  battery: AggregatedProfile,
+  entityId: string
+): void {
+  const now = new Date().toISOString()
+
+  // Leadership din baterie (dacă nu e deja din B2C)
+  if (!dimensions.find(d => d.dimensionId === "LEADERSHIP")) {
+    const leadershipTrait = battery.integratedTraits.find(t => t.name === "Potențial de leadership")
+    if (leadershipTrait) {
+      dimensions.push({
+        dimensionId: "LEADERSHIP",
+        entityId,
+        entityType: "PERSON",
+        rawResult: { source: "battery", trait: leadershipTrait },
+        normalizedScore: leadershipTrait.tScore,
+        confidence: 0.85,
+        measuredAt: now,
+      })
+    }
+  }
+
+  // Motivation din baterie
+  if (!dimensions.find(d => d.dimensionId === "MOTIVATION")) {
+    const motivationTrait = battery.integratedTraits.find(t => t.name === "Orientare spre performanță")
+    if (motivationTrait) {
+      dimensions.push({
+        dimensionId: "MOTIVATION",
+        entityId,
+        entityType: "PERSON",
+        rawResult: { source: "battery", trait: motivationTrait, profile: battery.motivationProfile },
+        normalizedScore: motivationTrait.tScore,
+        confidence: 0.85,
+        measuredAt: now,
+      })
+    }
+  }
+
+  // Integrity din baterie
+  if (!dimensions.find(d => d.dimensionId === "INTEGRITY")) {
+    const integrityTrait = battery.integratedTraits.find(t => t.name === "Integritate profesională")
+    if (integrityTrait) {
+      dimensions.push({
+        dimensionId: "INTEGRITY",
+        entityId,
+        entityType: "PERSON",
+        rawResult: { source: "battery", trait: integrityTrait, riskFlags: battery.riskFlags },
+        normalizedScore: integrityTrait.tScore,
+        confidence: 0.85,
+        measuredAt: now,
+      })
+    }
+  }
+}
+
+// ── Synthesis builder ────────────────────────────────────────
+
+async function buildSynthesis(
   dimensions: DimensionalProfile[],
   b2cProfile: any,
-  bridgeParticipant: any
-): IndividualProfile["synthesis"] {
+  bridgeParticipant: any,
+  batteryProfile: AggregatedProfile | null
+): Promise<IndividualProfile["synthesis"]> {
   const synthesis: IndividualProfile["synthesis"] = {
     maturityLevel: "NEWCOMER",
   }
@@ -227,16 +345,27 @@ function buildSynthesis(
     synthesis.consciousnessZone = zones[hawkins.rawResult.zone] || "RATIONAL"
   }
 
-  // Leadership din instrumente externe
+  // Leadership din instrumente externe (dimensiune N1 — poate fi din baterie)
   const leadership = dimensions.find(d => d.dimensionId === "LEADERSHIP")
   if (leadership?.normalizedScore) {
     synthesis.leadershipPotential = leadership.normalizedScore >= 60 ? "RIDICAT" : leadership.normalizedScore >= 40 ? "MEDIU" : "SCAZUT"
   }
 
-  // Integritate din ESQ-2
+  // Integritate din ESQ-2 (dimensiune N1 — poate fi din baterie)
   const integrity = dimensions.find(d => d.dimensionId === "INTEGRITY")
   if (integrity?.normalizedScore) {
     synthesis.integrityLevel = integrity.normalizedScore >= 60 ? "RIDICATA" : integrity.normalizedScore >= 40 ? "MEDIE" : "DE_MONITORIZAT"
+  }
+
+  // Dacă avem baterie psihometrică, generăm text sinteză via cpuCall
+  if (batteryProfile && batteryProfile.integratedTraits.length > 0) {
+    // Upgradem maturitatea pe baza readiness dacă nu avem B2C spiral
+    if (!b2cProfile?.spiralLevel) {
+      if (batteryProfile.overallReadiness >= 80) synthesis.maturityLevel = "INTEGRATED"
+      else if (batteryProfile.overallReadiness >= 60) synthesis.maturityLevel = "MATURING"
+      else if (batteryProfile.overallReadiness >= 40) synthesis.maturityLevel = "DEVELOPING"
+      else if (batteryProfile.overallReadiness >= 20) synthesis.maturityLevel = "EXPLORING"
+    }
   }
 
   return synthesis

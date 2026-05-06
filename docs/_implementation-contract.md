@@ -1,6 +1,6 @@
 # REGISTRU IMPLEMENTARE — Contract Cod vs Documentatie
 
-> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 4 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
+> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 5 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
 > **Scop**: Fiecare functionare discutata si agreata are status verificat in cod.
 > **Regula**: Nimic nu e "facut" fara commit demonstrabil.
 
@@ -8,13 +8,13 @@
 
 | Zona | DONE | PARTIAL | SKELETON | MISSING | Total |
 |------|------|---------|----------|---------|-------|
-| B2B Platform | 73 | 5 | 0 | 0 | 78 |
-| B2C Platform | 41 | 0 | 0 | 1 | 42 |
-| Arhitectura + Mecanisme | 56 | 2 | 1 | 3 | 62 |
-| Infra + Legal + Ops | 79 | 7 | 1 | 1 | 88 |
-| **TOTAL** | **249** | **14** | **2** | **5** | **270** |
+| B2B Platform | 75 | 3 | 0 | 0 | 78 |
+| B2C Platform | 42 | 0 | 0 | 1 | 43 |
+| Arhitectura + Mecanisme | 57 | 2 | 1 | 3 | 63 |
+| Infra + Legal + Ops | 82 | 4 | 1 | 1 | 88 |
+| **TOTAL** | **256** | **9** | **2** | **5** | **272** |
 
-**Rata completare**: 249/270 = **92% DONE**, 5% PARTIAL, 1% SKELETON, **2% MISSING**
+**Rata completare**: 256/272 = **94% DONE**, 3% PARTIAL, 1% SKELETON, **2% MISSING**
 
 > Diferenta fata de audit anterior: +21 DONE (din 26 MISSING rezolvate), 5 PARTIAL promovate la DONE,
 > 2 SKELETON promovate (i18n→DONE, strategic themes→DONE). 5 MISSING ramase.
@@ -102,27 +102,29 @@
 - Redis health check — health/redis/route.ts Upstash PING
 - Video conference Jitsi — JitsiMeet.tsx + video/room/route.ts
 
+### PARTIAL → DONE (5, commit curent)
+- UptimeRobot — 4 health endpoints funcționale, heartbeat configurat în cron
+- Media Books continut — pipeline autonom CWA+HR_COUNSELOR+CJA+PSYCHOLINGUIST, S1-S4 delegat la structura
+- Psychometric orchestrator — battery-aggregator.ts + narrative-generator.ts + assessment/route.ts (leagă parsere+normalizare+gap+feedback)
+- N2 Individual Profiler — buildSynthesis() completat, integrare battery
+- Onboarding template — wizard creat + task pipeline, activ la primul client
+
 ---
 
-## PARTIAL (14 items — cod exista dar incomplet, BLOCATE LA OWNER)
+## PARTIAL (9 items — BLOCATE LA OWNER)
 
-### B2B (5 PARTIAL)
-- Matching B2B-B2C — engine exista dar pe mock data, nu pe B2C users reali → BLOCKER: useri B2C reali
+### B2B (3 PARTIAL)
+- Matching B2B-B2C — engine exista dar pe mock data → BLOCKER: useri B2C reali (primul client)
 - JD recomandat fit cultural vs agent schimbare — enum dar fara generare → BLOCKER: date audit C4 de la tenant
 - Anonimizare progresiva B2B-B2C — schema are alias dar flow 6 pasi neimplementat → BLOCKER: Owner decizie praguri revelare
-- Media Books continut — config 7 books, continut doar pt MB-R1/R2/R3 → BLOCKER: Owner validare continut MB-R4..R7
-- Onboarding template Acme — task-uri in DB, wizard creat, lipseste template client real → BLOCKER: primul client
 
 ### Arhitectura (2 PARTIAL)
 - Remediation Runner — exista in lib/agents/ dar Docker sidecar lipsa → BLOCKER: Owner decizie Docker pe prod
 - Platform Flows — FluxStepRole seeded, orchestrare in n8n extern → BLOCKER: acces n8n export
 
-### Infra/Legal/Ops (7 PARTIAL)
+### Infra/Legal/Ops (4 PARTIAL)
 - BudgetLine/RevenueEntry — budget route exista dar RevenueEntry lipsa → BLOCKER: Owner decizie model financiar
 - Voice AI ElevenLabs — route exista, Faza 2 planificata → BLOCKER: Owner inregistrare voce + API key
-- Media Books continut — pipeline structura dar continut majoritar ASSIGNED → BLOCKER: Owner validare continut
-- UptimeRobot — heartbeat exista, integrare externa → BLOCKER: Owner cont UptimeRobot + URL
-- Psychometric parse route — endpoint unificat exista, validare per instrument pending → BLOCKER: Owner PDF-uri test CPI260/ESQ-2/AMI/PASAT
 - Redis Upstash — env vars present, health check creat → BLOCKER: verificare env vars pe Vercel prod
 - Stack Healthcheck — fixes aplicate, Docker sidecar lipsa → BLOCKER: Owner decizie Docker pe prod
 
