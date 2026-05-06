@@ -790,6 +790,39 @@ export async function runProactiveCycle(
   // (bug-ul "8 evaluations la COA cu 1 subordonat real" — 05.04.2026).
   const effectiveConfig: ManagerConfig = { ...config, subordinates: evaluableSubs }
 
+  // FILTRU OBIECTIVE (06.05.2026): Dacă managerul nu are niciun obiectiv activ,
+  // ciclul se oprește automat — fără apel Claude, fără escalare la Owner.
+  // Principiu: agenții fără obiective nu consumă resurse. Când primesc obiectiv
+  // (via task delegation sau objective-cascade), ciclul se reactivează natural.
+  // Excepție: COG — orchestratorul principal rulează întotdeauna.
+  if (config.agentRole !== "COG") {
+    const hasActiveObjective = await prisma.organizationalObjective.findFirst({
+      where: {
+        completedAt: null,
+        OR: [
+          { ownerRoles: { has: config.agentRole } },
+          { contributorRoles: { has: config.agentRole } },
+        ],
+      },
+      select: { id: true },
+    }).catch(() => null)
+
+    if (!hasActiveObjective) {
+      console.log(`   ⤷ [${config.agentRole}] Niciun obiectiv activ — skip ciclu (zero Claude calls)`)
+      return {
+        managerId: config.agentRole.toLowerCase(),
+        managerRole: config.agentRole,
+        timestamp,
+        durationMs: Date.now() - startTime,
+        subordinatesChecked: 0,
+        evaluations: [],
+        actions: [],
+        summary: `skip_no_active_objectives`,
+        nextCycleAt: new Date(Date.now() + config.cycleIntervalHours * 60 * 60 * 1000).toISOString(),
+      }
+    }
+  }
+
   // 0. SELF-TASKS — execută taskurile proprii ASSIGNED înainte de evaluare subordonați.
   // Esențial pentru a primi obiective de la Owner/COG. Fix GAP B din E2E test #1 (10.04.2026):
   // managerii erau orbi la propriile taskuri.
