@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
   const consumptionAnalysis = analyzeConsumption(
     analysis.resources.population.byAge,
     analysis.resources.businesses,
-    analysis.resources.entities
+    analysis.resources.entities,
+    territory
   )
 
   // Analiză nevoi (Axa 3 — stadii dezvoltare × Maslow × spirală)

@@ -18,6 +18,8 @@ interface SimulationResult {
   createdAt: string
 }
 
+type EngineType = "cascade" | "unified"
+
 const TABS = [
   { key: "SCHIMB_OM", label: "Schimb om" },
   { key: "POZITIE_VACANTA", label: "Pozitie vacanta" },
@@ -28,6 +30,15 @@ const TABS = [
 
 type SimType = (typeof TABS)[number]["key"]
 
+/** Map tab keys to unified engine preset names */
+const UNIFIED_PRESET_MAP: Record<SimType, string> = {
+  SCHIMB_OM: "CHANGE_PERSON",
+  POZITIE_VACANTA: "VACANT_POSITION",
+  RESTRUCTURARE: "CHANGE_STRUCTURE",
+  MODIFIC_KPI: "STRATEGIC_OBJECTIVES",
+  PACHET_SALARIAL: "CHANGE_SALARY",
+}
+
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   LOW: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Scazut" },
   MEDIUM: { bg: "bg-amber-50", text: "text-amber-700", label: "Mediu" },
@@ -37,6 +48,7 @@ const SEVERITY_STYLES: Record<string, { bg: string; text: string; label: string 
 
 export default function CascadeSimulationsPage() {
   const [activeTab, setActiveTab] = useState<SimType>("SCHIMB_OM")
+  const [engine, setEngine] = useState<EngineType>("unified")
   const [result, setResult] = useState<SimulationResult | null>(null)
   const [running, setRunning] = useState(false)
 
@@ -53,30 +65,46 @@ export default function CascadeSimulationsPage() {
     setRunning(true)
     setResult(null)
     try {
-      const payload: Record<string, unknown> = { type: activeTab, description }
+      const params: Record<string, unknown> = {}
 
       switch (activeTab) {
         case "SCHIMB_OM":
-          payload.personName = personName
-          payload.positionId = positionId
+          params.personName = personName
+          params.positionId = positionId
           break
         case "POZITIE_VACANTA":
-          payload.positionId = positionId
+          params.positionId = positionId
           break
         case "RESTRUCTURARE":
-          payload.departmentId = departmentId
+          params.departmentId = departmentId
           break
         case "MODIFIC_KPI":
-          payload.kpiName = kpiName
-          payload.kpiNewValue = kpiNewValue
+          params.kpiName = kpiName
+          params.kpiNewValue = kpiNewValue
           break
         case "PACHET_SALARIAL":
-          payload.positionId = positionId
-          payload.salaryChange = salaryChange
+          params.positionId = positionId
+          params.salaryChange = salaryChange
           break
       }
 
-      const res = await fetch("/api/v1/simulations/cascade", {
+      let endpoint: string
+      let payload: Record<string, unknown>
+
+      if (engine === "unified") {
+        endpoint = "/api/v1/simulations/unified"
+        payload = {
+          preset: UNIFIED_PRESET_MAP[activeTab],
+          mode: "CLASIC",
+          params,
+          description,
+        }
+      } else {
+        endpoint = "/api/v1/simulations/cascade"
+        payload = { type: activeTab, description, ...params }
+      }
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -115,6 +143,31 @@ export default function CascadeSimulationsPage() {
         >
           &larr; Portal
         </Link>
+      </div>
+
+      {/* Engine toggle */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-xs text-text-secondary font-medium">Motor:</span>
+        <button
+          onClick={() => setEngine("unified")}
+          className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
+            engine === "unified"
+              ? "bg-indigo-100 text-indigo-700 border border-indigo-300"
+              : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+          }`}
+        >
+          Unificat (WIF + Cascade)
+        </button>
+        <button
+          onClick={() => setEngine("cascade")}
+          className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
+            engine === "cascade"
+              ? "bg-indigo-100 text-indigo-700 border border-indigo-300"
+              : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+          }`}
+        >
+          Doar Cascade (AI)
+        </button>
       </div>
 
       {/* Tabs */}

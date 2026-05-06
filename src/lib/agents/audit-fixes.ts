@@ -63,13 +63,19 @@ export async function getExecutionMetrics(prisma: any, days = 7): Promise<Execut
   const total = Number(row.total || 0)
   const kbHits = Number(row.kb_hits || 0)
 
+  // Aggregate token counts from execution telemetry
+  const tokenAgg = await prisma.executionTelemetry.aggregate({
+    _sum: { tokensInput: true, tokensOutput: true },
+    where: { createdAt: { gte: since } },
+  }).catch(() => ({ _sum: { tokensInput: null, tokensOutput: null } }))
+
   return {
     totalTasks: total,
     kbHits,
     kbHitRate: total > 0 ? Math.round(kbHits / total * 100) : 0,
     avgResultQuality: Math.round(Number(row.avg_quality || 0)),
-    totalTokensInput: 0, // TODO: aggregate from execution logs when available
-    totalTokensOutput: 0,
+    totalTokensInput: tokenAgg._sum.tokensInput ?? 0,
+    totalTokensOutput: tokenAgg._sum.tokensOutput ?? 0,
     avgDurationMs: Math.round(Number(row.avg_duration || 0)),
   }
 }

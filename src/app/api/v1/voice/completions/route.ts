@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import Anthropic from "@anthropic-ai/sdk" // TODO: extend cpuCall for streaming — kept for streaming support
+// NOTE: Uses direct Anthropic SDK for streaming (cpuCall doesn't support streaming yet).
+// When cpuCall adds streaming support, migrate to cpuCall for unified telemetry.
+import Anthropic from "@anthropic-ai/sdk"
 import { cpuCall } from "@/lib/cpu/gateway"
 import { readFileSync } from "fs"
 import { join } from "path"

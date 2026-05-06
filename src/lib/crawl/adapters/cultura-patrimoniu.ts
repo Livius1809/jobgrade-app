@@ -44,7 +44,14 @@ const adapter: CrawlAdapter = {
     if (monuments.length === 0) {
       return {
         territorialData, localEntities,
-        metadata: { source: "CULTURA_PATRIMONIU", note: "Zero monumente găsite", territory },
+        metadata: {
+          source: "CULTURA_PATRIMONIU",
+          note: "Zero monumente găsite",
+          territory,
+          dataSource: "Lista Monumentelor Istorice (LMI) — Ministerul Culturii, date seed (PDF parser planificat)",
+          refreshUrl: "https://patrimoniu.gov.ro/ro/monumente-istorice/lista-monumentelor-istorice",
+          lastUpdated: "2024-01-01",
+        },
       }
     }
 
@@ -117,6 +124,9 @@ const adapter: CrawlAdapter = {
         categoryI: catI,
         categoryII: catII,
         types: byType,
+        dataSource: "Lista Monumentelor Istorice (LMI) — Ministerul Culturii, date seed (PDF parser planificat)",
+        refreshUrl: "https://patrimoniu.gov.ro/ro/monumente-istorice/lista-monumentelor-istorice",
+        lastUpdated: "2024-01-01",
       },
     }
   },

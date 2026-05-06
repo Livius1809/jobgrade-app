@@ -15,7 +15,13 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { authOrKey as auth } from "@/lib/auth-or-key"
-import { runSimulation, type SimulationInput } from "@/lib/engines/wif-engine"
+import {
+  runSimulation,
+  proposeOptimalDecision,
+  measureDecisionOutcome,
+  type SimulationInput,
+  type DecisionOutcome,
+} from "@/lib/engines/wif-engine"
 import { runCascadeSimulation, CASCADE_TYPES, type CascadeType } from "@/lib/engines/cascade-engine"
 
 export const dynamic = "force-dynamic"
@@ -30,7 +36,52 @@ export async function POST(req: NextRequest) {
 
   const tenantId = session.user.tenantId
   const body = await req.json()
-  const { preset, type, mode, params } = body
+  const { preset, type, mode, params, action, variants, outcome } = body
+
+  // ── Action modes: propose / measure ──
+  if (action === "propose") {
+    if (!Array.isArray(variants) || variants.length === 0) {
+      return NextResponse.json(
+        { error: "action=propose necesita variants: SimulationInput[]" },
+        { status: 400 },
+      )
+    }
+    try {
+      const variantsWithTenant = variants.map((v: any, i: number) => ({
+        description: v.description || `Varianta ${i + 1}`,
+        input: {
+          preset: v.preset,
+          mode: v.mode || "CLASIC",
+          tenantId,
+          params: v.params || {},
+        } as SimulationInput,
+      }))
+      const proposal = await proposeOptimalDecision(
+        body.context || "Simulare unificata",
+        variantsWithTenant,
+      )
+      return NextResponse.json({ ...proposal, engine: "wif-propose" })
+    } catch (error) {
+      console.error("[UNIFIED SIMULATION — PROPOSE]", error)
+      return NextResponse.json({ error: "Eroare propunere decizie." }, { status: 500 })
+    }
+  }
+
+  if (action === "measure") {
+    if (!outcome || !outcome.proposalId || !outcome.variantChosen) {
+      return NextResponse.json(
+        { error: "action=measure necesita outcome: DecisionOutcome (proposalId, variantChosen)" },
+        { status: 400 },
+      )
+    }
+    try {
+      const calibration = await measureDecisionOutcome(outcome as DecisionOutcome)
+      return NextResponse.json({ ...calibration, engine: "wif-measure" })
+    } catch (error) {
+      console.error("[UNIFIED SIMULATION — MEASURE]", error)
+      return NextResponse.json({ error: "Eroare masurare decizie." }, { status: 500 })
+    }
+  }
 
   // Accept atât "preset" (format WIF) cât și "type" (format cascade)
   const simulationType: string | undefined = preset || type

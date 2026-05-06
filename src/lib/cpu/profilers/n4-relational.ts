@@ -170,7 +170,7 @@ export const RelationalProfiler = {
       edges,
       criticalNodes,
       isolatedNodes,
-      clusters: [], // TODO: algoritem clustering
+      clusters: buildClusters(nodes, edges),
       networkHealth,
     }
   },
@@ -233,7 +233,7 @@ export const RelationalProfiler = {
       edges,
       criticalNodes: findCriticalNodes(nodes, edges),
       isolatedNodes: findIsolatedNodes(nodes, edges),
-      clusters: [],
+      clusters: buildClusters(nodes, edges),
       networkHealth,
     }
   },
@@ -262,7 +262,7 @@ function analyzeNetwork(
   return {
     density,
     avgPathLength: density > 0 ? Math.round(1 / density * 10) / 10 : Infinity,
-    clusteringCoeff: 0, // TODO: calcul real
+    clusteringCoeff: computeClusteringCoefficient(nodes, edges),
     vulnerabilities,
   }
 }
@@ -306,4 +306,145 @@ function findIsolatedNodes(
       reason: "Zero conexiuni — complet izolat",
       recommendation: "Identificare și creare punți cu noduri complementare",
     }))
+}
+
+/**
+ * Calculează coeficientul de clustering mediu al rețelei.
+ * Pentru fiecare nod: (triunghi-uri reale cu vecinii) / (triunghi-uri posibile cu vecinii).
+ * Media pe toată rețeaua.
+ */
+function computeClusteringCoefficient(
+  nodes: RelationalProfile["nodes"],
+  edges: RelationalProfile["edges"]
+): number {
+  // Construim lista de adiacență
+  const neighbors = new Map<string, Set<string>>()
+  for (const node of nodes) {
+    neighbors.set(node.id, new Set())
+  }
+  for (const e of edges) {
+    neighbors.get(e.from)?.add(e.to)
+    neighbors.get(e.to)?.add(e.from)
+  }
+
+  let totalCoeff = 0
+  let countable = 0
+
+  for (const [nodeId, nodeNeighbors] of neighbors) {
+    const k = nodeNeighbors.size
+    if (k < 2) continue // trebuie minim 2 vecini pentru triunghi
+
+    const possibleTriangles = (k * (k - 1)) / 2
+    let actualTriangles = 0
+
+    const neighborArr = [...nodeNeighbors]
+    for (let i = 0; i < neighborArr.length; i++) {
+      for (let j = i + 1; j < neighborArr.length; j++) {
+        if (neighbors.get(neighborArr[i])?.has(neighborArr[j])) {
+          actualTriangles++
+        }
+      }
+    }
+
+    totalCoeff += actualTriangles / possibleTriangles
+    countable++
+  }
+
+  return countable > 0 ? Math.round((totalCoeff / countable) * 100) / 100 : 0
+}
+
+/**
+ * Grupează noduri în clustere pe baza conectivității.
+ * Doi noduri care împărtășesc >2 conexiuni comune ajung în același cluster.
+ * Fallback: union-find pe noduri cu cel puțin o conexiune directă.
+ */
+function buildClusters(
+  nodes: RelationalProfile["nodes"],
+  edges: RelationalProfile["edges"]
+): RelationalProfile["clusters"] {
+  if (nodes.length === 0 || edges.length === 0) return []
+
+  // Union-Find
+  const parent = new Map<string, string>()
+  for (const n of nodes) parent.set(n.id, n.id)
+
+  function find(x: string): string {
+    let root = x
+    while (parent.get(root) !== root) root = parent.get(root)!
+    // path compression
+    let curr = x
+    while (curr !== root) {
+      const next = parent.get(curr)!
+      parent.set(curr, root)
+      curr = next
+    }
+    return root
+  }
+  function union(a: string, b: string) {
+    parent.set(find(a), find(b))
+  }
+
+  // Construim lista de adiacență
+  const neighbors = new Map<string, Set<string>>()
+  for (const n of nodes) neighbors.set(n.id, new Set())
+  for (const e of edges) {
+    neighbors.get(e.from)?.add(e.to)
+    neighbors.get(e.to)?.add(e.from)
+  }
+
+  // Unificăm noduri care împărtășesc >2 vecini comuni
+  const nodeIds = nodes.map(n => n.id)
+  for (let i = 0; i < nodeIds.length; i++) {
+    for (let j = i + 1; j < nodeIds.length; j++) {
+      const nA = neighbors.get(nodeIds[i])
+      const nB = neighbors.get(nodeIds[j])
+      if (!nA || !nB) continue
+
+      let commonCount = 0
+      for (const neighbor of nA) {
+        if (nB.has(neighbor)) commonCount++
+      }
+      if (commonCount > 2) {
+        union(nodeIds[i], nodeIds[j])
+      }
+    }
+  }
+
+  // Grupăm pe root
+  const groups = new Map<string, string[]>()
+  for (const n of nodes) {
+    const root = find(n.id)
+    if (!groups.has(root)) groups.set(root, [])
+    groups.get(root)!.push(n.id)
+  }
+
+  // Construim clustere (doar cele cu >1 nod)
+  const nodeMap = new Map(nodes.map(n => [n.id, n]))
+  const clusters: RelationalProfile["clusters"] = []
+
+  for (const [, memberIds] of groups) {
+    if (memberIds.length < 2) continue
+
+    // Densitate internă ca măsură de coeziune
+    let internalEdges = 0
+    for (const e of edges) {
+      if (memberIds.includes(e.from) && memberIds.includes(e.to)) internalEdges++
+    }
+    const maxInternal = (memberIds.length * (memberIds.length - 1)) / 2
+    const cohesion = maxInternal > 0 ? Math.round((internalEdges / maxInternal) * 100) / 100 : 0
+
+    const names = memberIds
+      .slice(0, 3)
+      .map(id => nodeMap.get(id)?.name || id)
+    const suffix = memberIds.length > 3 ? ` +${memberIds.length - 3}` : ""
+
+    clusters.push({
+      nodeIds: memberIds,
+      name: `Cluster: ${names.join(", ")}${suffix}`,
+      cohesion,
+      description: `${memberIds.length} noduri strâns conectate (coeziune: ${cohesion})`,
+    })
+  }
+
+  return clusters
 }

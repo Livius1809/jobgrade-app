@@ -137,7 +137,22 @@ export async function PATCH(req: NextRequest) {
     })
 
     // Notificare: fișele trebuie re-semnate
-    // TODO: email + notificare în portal
+    // Create in-portal notification for affected employees' managers
+    const affectedUserIds = affectedEmployees.map((e) => e.employeeCode)
+    if (affectedUserIds.length > 0) {
+      await prisma.notification.createMany({
+        data: affectedUserIds.map((uid) => ({
+          userId: uid,
+          type: "AGENT_MESSAGE" as const,
+          title: "Document actualizat \u2014 re-semnare necesar\u0103",
+          body: `Pasajul "${passage.passageTitle || passageId}" (${passage.sourceDocType || "document"} ${newVersion || passage.sourceDocVersion}) a fost modificat. Este necesara re-semnarea fisei de post.`,
+          sourceRole: "SYSTEM",
+        })),
+      }).catch((err: unknown) => {
+        console.error("[linked-docs] Failed to create notifications:", err)
+      })
+    }
+
     return NextResponse.json({
       ok: true,
       passageId,

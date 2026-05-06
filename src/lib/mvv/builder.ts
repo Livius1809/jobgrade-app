@@ -81,12 +81,13 @@ export async function rebuildMVV(tenantId: string): Promise<MVVState> {
   }
 
   const hasJobDescriptions = jobs.some(j => j.purpose || j.responsibilities)
+  const benchmarkExists = await prisma.salaryBenchmark.count({ where: { isActive: true } }).catch(() => 0)
   const maturity = determineMVVMaturity({
     hasCaen: !!profile.caenName,
     jobCount: jobs.length,
     hasJobDescriptions,
     hasSalaryStructure: sessions > 0,
-    hasBenchmark: false, // TODO: verifică dacă are benchmark
+    hasBenchmark: benchmarkExists > 0,
     hasMissionValidated: !!profile.mvvValidatedAt,
   })
 

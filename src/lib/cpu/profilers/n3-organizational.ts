@@ -114,10 +114,33 @@ export const OrganizationalProfiler = {
           : "NESTRUCTURATA",
     }
 
-    // Workforce (agregate)
+    // Workforce (agregate) — count profiled employees via completed analysis/review tasks
+    const employeeIds = ((employees as any[]) || []).map((e: any) => e.id).filter(Boolean)
+    let profiledCount = 0
+    if (employeeIds.length > 0) {
+      // An employee is "profiled" if an N2 individual profile was built for them.
+      // Proxy: employees referenced in completed agent tasks of type DATA_ANALYSIS or REVIEW.
+      profiledCount = await prisma.agentTask.groupBy({
+        by: ["tags"],
+        where: {
+          status: "COMPLETED",
+          taskType: { in: ["DATA_ANALYSIS", "REVIEW", "PROCESS_EXECUTION"] },
+          tags: { hasSome: employeeIds },
+        },
+      }).then((groups: Array<{ tags: string[] }>) => {
+        const taggedIds = new Set<string>()
+        for (const g of groups) {
+          for (const tag of (g.tags || [])) {
+            if (employeeIds.includes(tag)) taggedIds.add(tag)
+          }
+        }
+        return taggedIds.size
+      }).catch(() => 0)
+    }
+
     const workforce: OrganizationalProfile["workforce"] = {
       totalEmployees: (employees as any[])?.length || 0,
-      profiledEmployees: 0, // TODO: count employees with N2 profiles
+      profiledEmployees: profiledCount,
       avgMaturity: "DEVELOPING",
       tensionsDetected: 0,
       topTrainingNeeds: [],

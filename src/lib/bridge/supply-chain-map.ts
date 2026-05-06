@@ -196,7 +196,10 @@ export async function generateSupplyChainMap(
 
   // Teritorii de căutat (principal + vecine)
   const territories = [territory.toUpperCase()]
-  // TODO: adaugă teritorii vecine dacă includeNeighbors
+  if (includeNeighbors) {
+    const neighbors = getNeighborTerritories(territory.toUpperCase())
+    territories.push(...neighbors)
+  }
 
   const [entities, bridgeOffers, bridgeNeeds, territorialData] = await Promise.all([
     prisma.localEntity.findMany({
@@ -380,6 +383,27 @@ export async function generateSupplyChainMap(
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
+
+/**
+ * Known neighbor relationships between territories.
+ * Extend as more territories are crawled.
+ */
+const TERRITORY_NEIGHBORS: Record<string, string[]> = {
+  MEDGIDIA: ["CERNAVODA", "ADAMCLISI", "MURFATLAR"],
+  CERNAVODA: ["MEDGIDIA", "FETESTI"],
+  ADAMCLISI: ["MEDGIDIA", "OSTROV"],
+  MURFATLAR: ["MEDGIDIA", "CONSTANTA"],
+  CONSTANTA: ["MURFATLAR", "NAVODARI", "EFORIE"],
+  NAVODARI: ["CONSTANTA"],
+  EFORIE: ["CONSTANTA", "MANGALIA"],
+  MANGALIA: ["EFORIE"],
+  FETESTI: ["CERNAVODA"],
+  OSTROV: ["ADAMCLISI"],
+}
+
+function getNeighborTerritories(territory: string): string[] {
+  return TERRITORY_NEIGHBORS[territory] || []
+}
 
 function getSectorName(sectorId: string): string {
   const names: Record<string, string> = {

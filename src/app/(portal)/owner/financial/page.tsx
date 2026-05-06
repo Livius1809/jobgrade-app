@@ -17,6 +17,23 @@ interface TenantRevenue {
   amount: number
 }
 
+interface ServiceCostingItem {
+  type: string
+  transactionCount: number
+  totalRevenue: number
+  avgPricePerTransaction: number
+  estimatedAiCost: number
+  margin: number
+}
+
+interface ServiceCostingData {
+  periodMonth: string
+  aiCost: { planned: number; actual: number; variancePercent: number }
+  totalAgentExecutions: number
+  avgCostPerExecution: number
+  serviceCosting: ServiceCostingItem[]
+}
+
 interface FinancialSummary {
   periodMonth: string
   revenue: {
@@ -72,16 +89,25 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function FinancialPage() {
   const [data, setData] = useState<FinancialSummary | null>(null)
+  const [costingData, setCostingData] = useState<ServiceCostingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/api/v1/cfo/financial-summary")
-      .then((r) => {
+    Promise.all([
+      fetch("/api/v1/cfo/financial-summary").then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
+      }),
+      fetch("/api/v1/cfo/service-costing").then((r) => {
+        if (!r.ok) return null
+        return r.json()
+      }).catch(() => null),
+    ])
+      .then(([summary, costing]) => {
+        setData(summary)
+        setCostingData(costing)
       })
-      .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
@@ -303,6 +329,68 @@ export default function FinancialPage() {
                 </span>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Service Costing (cost AI per serviciu) ────────────────────────── */}
+      {costingData && costingData.serviceCosting.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">
+            Cost AI per serviciu — {costingData.periodMonth}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm text-center">
+              <p className="text-sm text-gray-500">Cost mediu / executie</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatRON(costingData.avgCostPerExecution)}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm text-center">
+              <p className="text-sm text-gray-500">Total executii agenti</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {costingData.totalAgentExecutions}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm text-center">
+              <p className="text-sm text-gray-500">Cost AI total</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatRON(costingData.aiCost.actual)}
+              </p>
+              <p className={`text-sm mt-1 ${costingData.aiCost.variancePercent > 0 ? "text-red-600" : "text-green-600"}`}>
+                {costingData.aiCost.variancePercent > 0 ? "+" : ""}{costingData.aiCost.variancePercent}% vs planificat
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-3 text-gray-600 font-medium">Serviciu</th>
+                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Tranzactii</th>
+                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Cost AI estimat</th>
+                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Pret mediu</th>
+                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Marja</th>
+                </tr>
+              </thead>
+              <tbody>
+                {costingData.serviceCosting.map((svc) => {
+                  const marginPctSvc = svc.margin * 100
+                  const marginSvcColor = marginPctSvc >= 50 ? "text-green-600" : marginPctSvc >= 30 ? "text-yellow-600" : "text-red-600"
+                  return (
+                    <tr key={svc.type} className="border-t border-gray-100">
+                      <td className="px-4 py-3 text-gray-900">{TYPE_LABELS[svc.type] || svc.type}</td>
+                      <td className="px-4 py-3 text-right text-gray-600">{svc.transactionCount}</td>
+                      <td className="px-4 py-3 text-right text-gray-900 font-medium">{formatRON(svc.estimatedAiCost)}</td>
+                      <td className="px-4 py-3 text-right text-gray-600">{formatRON(svc.avgPricePerTransaction)}</td>
+                      <td className={`px-4 py-3 text-right font-medium ${marginSvcColor}`}>
+                        {marginPctSvc.toFixed(1)}%
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </section>
       )}

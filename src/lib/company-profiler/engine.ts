@@ -101,6 +101,11 @@ export async function getCompanyProfile(tenantId: string, forceRefresh = false):
   }
 
   // 2. Construim inventarul datelor
+  const [benchmarkCount, kpiCount] = await Promise.all([
+    prisma.salaryBenchmark.count({ where: { isActive: true } }).catch(() => 0),
+    prisma.kpiDefinition.count({ where: { tenantId } }).catch(() => 0),
+  ])
+
   const dataPoints: DataPointPresence = {
     hasCaen: !!company.caenName,
     hasDescription: !!company.description,
@@ -111,9 +116,9 @@ export async function getCompanyProfile(tenantId: string, forceRefresh = false):
     jobsWithDescriptions: jobs.filter(j => j.purpose || j.responsibilities).length,
     evaluationSessionsCompleted: sessions,
     hasSalaryStructure: (salaryData || 0) > 0,
-    hasBenchmark: false, // TODO: verificare reală benchmark
+    hasBenchmark: benchmarkCount > 0,
     hasPayGapAnalysis: (payGapData || 0) > 0,
-    hasKPIs: false, // TODO: când avem model KPI
+    hasKPIs: kpiCount > 0,
   }
 
   // 3. Maturitate
@@ -130,7 +135,10 @@ export async function getCompanyProfile(tenantId: string, forceRefresh = false):
       purpose: j.purpose,
       responsibilities: j.responsibilities,
     })),
-    evaluationCriteria: [], // TODO: extrage din sesiuni
+    evaluationCriteria: await prisma.criterion.findMany({
+      where: { isActive: true, evaluations: { some: { session: { tenantId } } } },
+      select: { name: true, category: true },
+    }).then(criteria => criteria.map(c => c.name)).catch(() => [] as string[]),
     salaryNotes: (salaryData || 0) > 0 ? `${salaryData} grade salariale configurate` : null,
     maturity: maturityState.level,
   }).catch(() => ({

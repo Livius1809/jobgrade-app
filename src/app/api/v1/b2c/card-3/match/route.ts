@@ -111,6 +111,45 @@ export async function POST(req: NextRequest) {
   // Matching
   const result = matchProfiles(candidateProfile, jobProfile)
 
+  // Notify B2B tenant if compatibility is good (>= 65%)
+  if (result.overallScore >= 65 && job.tenant) {
+    try {
+      const b2cUser = await prisma.b2CUser.findUnique({
+        where: { id: userId },
+        select: { alias: true },
+      })
+      const pseudonym = (b2cUser as any)?.alias || `candidat_${userId.slice(0, 6)}`
+
+      // Fire-and-forget notification to B2B side
+      const notificationPayload = {
+        jobId,
+        jobTitle: job.title,
+        matchedCandidates: [{
+          pseudonym,
+          compatibilityScore: result.overallScore,
+          b2cUserId: userId,
+        }],
+      }
+
+      // Call the notification endpoint internally
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000"
+      fetch(`${baseUrl}/api/v1/matching/notifications`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.INTERNAL_API_KEY || "",
+        },
+        body: JSON.stringify(notificationPayload),
+      }).catch(() => {
+        // Notification is best-effort, don't block the match response
+      })
+    } catch {
+      // Notification failure doesn't affect match result
+    }
+  }
+
   return NextResponse.json({
     match: result,
     job: {

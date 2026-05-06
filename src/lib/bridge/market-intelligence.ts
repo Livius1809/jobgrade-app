@@ -156,10 +156,19 @@ export async function generateC3Intelligence(
 ): Promise<C3MarketIntelligence> {
   const sectorId = caenToSector(companyCaen)
 
-  const [entities, territorialData, supplyChain] = await Promise.all([
+  const threeMonthsAgo = new Date()
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+
+  const [entities, territorialData, supplyChain, currentEntityCount, pastEntityCount] = await Promise.all([
     prisma.localEntity.findMany({ where: { territory, isActive: true } }),
     prisma.territorialData.findMany({ where: { territory } }),
     generateSupplyChainMap(territory, sectorId),
+    prisma.localEntity.count({
+      where: { territory, isActive: true, type: "BUSINESS" },
+    }),
+    prisma.localEntity.count({
+      where: { territory, isActive: true, type: "BUSINESS", crawledAt: { lt: threeMonthsAgo } },
+    }),
   ])
 
   const popTotal = territorialData.find(d => d.category === "POPULATION" && d.key === "total")?.numericValue || 0
@@ -242,7 +251,7 @@ export async function generateC3Intelligence(
       estimatedSize: estimatedMarketSize,
       localDemandPoints,
       demographicDemand: popTotal,
-      growthTrend: "CRESTERE", // TODO: din trends API
+      growthTrend: calculateGrowthTrend(currentEntityCount, pastEntityCount),
       unmetNeeds,
     },
     positioning: {
@@ -394,10 +403,11 @@ export async function generateCard5Intelligence(
   const profile = `${participant.status}, ${participant.ageRange || "vârstă nedeclarată"}, ${territory}`
 
   // Analiză teritorială
-  const [analysis, supplyChain, territorialData] = await Promise.all([
+  const [analysis, supplyChain, territorialData, allEntities] = await Promise.all([
     analyzeTerritory(territory),
     generateSupplyChainMap(territory, "SERVICII"), // default — rafinăm per oportunitate
     prisma.territorialData.findMany({ where: { territory } }),
+    prisma.localEntity.findMany({ where: { territory, isActive: true, type: "BUSINESS" } }),
   ])
 
   const popTotal = analysis.resources.population.total
@@ -436,7 +446,7 @@ export async function generateCard5Intelligence(
       niche: opp.nicheName,
       whyForYou,
       marketSize: popTotal * getPerCapitaSpend(opp.sectorId),
-      competitors: 0, // TODO: din entități locale
+      competitors: countLocalCompetitors(allEntities, opp.sectorId),
       entryBarrier: opp.legal.regulationLevel === "STRICT_REGLEMENTAT" ? "Mare" : opp.legal.regulationLevel === "REGLEMENTAT" ? "Medie" : "Mică",
       investmentEstimate: estimateInvestment,
       timeToFirstRevenue: opp.legal.regulationLevel === "STRICT_REGLEMENTAT" ? "6-12 luni" : "1-3 luni",
@@ -494,6 +504,45 @@ export async function generateCard5Intelligence(
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
+
+/**
+ * Count entities in the same territory with a category matching the sector's CAEN prefix.
+ */
+function countLocalCompetitors(
+  entities: Array<{ category: string | null }>,
+  sectorId: string
+): number {
+  const sectorCaenPrefixes: Record<string, string[]> = {
+    AGRICULTURA: ["01", "02", "03"],
+    SANATATE: ["86", "87", "88"],
+    EDUCATIE: ["85"],
+    ENERGIE: ["05", "06", "35", "36", "37", "38", "39"],
+    TURISM: ["55", "56", "90", "91", "92", "93"],
+    SERVICII: ["45", "46", "47", "49", "50", "51", "52", "53", "58", "59", "60", "61", "62", "63", "69", "70", "71", "72", "73", "74", "75", "77", "78", "79", "80", "81", "82"],
+    PRODUCTIE: ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33"],
+    IMOBILIAR: ["41", "42", "43", "68"],
+  }
+  const prefixes = sectorCaenPrefixes[sectorId] || []
+  if (prefixes.length === 0) return 0
+  return entities.filter(e =>
+    e.category && prefixes.some(p => e.category!.startsWith(p))
+  ).length
+}
+
+/**
+ * Compare current entity count vs count from 3 months ago.
+ * If new entities appeared (current > past), market is growing.
+ */
+function calculateGrowthTrend(
+  currentCount: number,
+  pastCount: number
+): "CRESTERE" | "STABIL" | "SCADERE" {
+  if (pastCount === 0) return currentCount > 0 ? "CRESTERE" : "STABIL"
+  const ratio = currentCount / pastCount
+  if (ratio > 1.05) return "CRESTERE"
+  if (ratio < 0.95) return "SCADERE"
+  return "STABIL"
+}
 
 function caenToSector(caen: string): string {
   const c2 = parseInt(caen.substring(0, 2))

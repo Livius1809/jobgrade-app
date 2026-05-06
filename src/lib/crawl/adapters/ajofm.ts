@@ -26,11 +26,21 @@ const adapter: CrawlAdapter = {
       { territory, category: "LABOR", key: "services_available", value: JSON.stringify(["informare profesională", "consiliere carieră", "mediere muncă", "formare profesională"]), periodYear: year, confidence: 1.0 },
     )
 
-    // TODO Faza 2: crawl mediere.anofm.ro pentru locuri muncă specifice Medgidia
+    // Faza 2 planificată: crawl mediere.anofm.ro pentru locuri muncă specifice Medgidia
     // URL: https://mediere.anofm.ro/app/module/mediere/jobs?judet=CT&localitate=MEDGIDIA
     // Parse: titlu job, angajator, nr posturi, cerințe, salariu
 
-    return { territorialData, localEntities: [], metadata: { source: "AJOFM_SEED_2025", note: "Date seed — Faza 2: scraper mediere.anofm.ro" } }
+    return {
+      territorialData,
+      localEntities: [],
+      metadata: {
+        source: "AJOFM_SEED_2025",
+        note: "Date seed — Faza 2: scraper mediere.anofm.ro",
+        dataSource: "AJOFM Constanța — date de referință (crawl automat planificat)",
+        refreshUrl: "https://mediere.anofm.ro",
+        lastUpdated: "2025-01-01",
+      },
+    }
   },
 }
 

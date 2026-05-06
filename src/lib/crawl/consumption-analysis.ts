@@ -263,9 +263,9 @@ export interface ConsumptionAnalysis {
 export function analyzeConsumption(
   ageGroups: Array<{ group: string; count: number }>,
   businessData: { total: number; employees: number; revenue: number; topSectors: any[] },
-  entityCounts: Record<string, number>
+  entityCounts: Record<string, number>,
+  territory: string = "MEDGIDIA"
 ): ConsumptionAnalysis {
-  const territory = "MEDGIDIA" // TODO: parametrizare
 
   // ═══ CONSUM PERSOANE ═══
   // Cheltuieli medii lunare per persoană (RON, estimare 2024-2025 din INS)
@@ -340,16 +340,26 @@ export function analyzeConsumption(
     firmSectors.includes(bc.caenCategory) || bc.caenCategory === "servicii" // servicii e universal
   )
 
+  const entityCountKeys = Object.keys(entityCounts)
   const businessNeeds = relevantBizConsumption.flatMap(bc =>
-    bc.typicalNeeds.map(need => ({
-      category: `${bc.name}: ${need.category}`,
-      description: need.description,
-      localizable: need.localizable,
-      currentlyLocal: false, // TODO: detectare din entități
-      opportunity: need.localizable
-        ? `Furnizor local ${need.category.toLowerCase()} pentru ${businessData.total} firme`
-        : `Intermediar/distribuitor ${need.category.toLowerCase()}`,
-    }))
+    bc.typicalNeeds.map(need => {
+      // Check if any entity type matches this need category (case-insensitive partial match)
+      const needKey = need.category.toUpperCase().replace(/\s+/g, "_")
+      const currentlyLocal = entityCountKeys.some(k => {
+        const upperK = k.toUpperCase()
+        return (upperK.includes(needKey) || needKey.includes(upperK)) && (entityCounts[k] || 0) > 0
+      })
+
+      return {
+        category: `${bc.name}: ${need.category}`,
+        description: need.description,
+        localizable: need.localizable,
+        currentlyLocal,
+        opportunity: need.localizable
+          ? `Furnizor local ${need.category.toLowerCase()} pentru ${businessData.total} firme`
+          : `Intermediar/distribuitor ${need.category.toLowerCase()}`,
+      }
+    })
   )
 
   // ═══ DEPENDENȚE IMPORT ═══

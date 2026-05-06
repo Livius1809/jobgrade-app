@@ -101,7 +101,16 @@ const adapter: CrawlAdapter = {
       })
     }
 
-    return { territorialData, localEntities: [], metadata: { source: "INS_CENSUS_2022", note: "Date statice seed — de înlocuit cu TEMPO API" } }
+    return {
+      territorialData,
+      localEntities: [],
+      metadata: {
+        source: "INS_CENSUS_2022",
+        note: "Date statice seed — de înlocuit cu TEMPO API",
+        dataSource: "Recensământ 2022 — date statice (TEMPO API integration planificată)",
+        lastUpdated: "2022-12-01",
+      },
+    }
   },
 }
 

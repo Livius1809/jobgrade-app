@@ -235,8 +235,19 @@ export function isPublishReady(reviews: PeerReviewResult[]): boolean {
   const hasChallenged = reviews.some((r) => r.outcome === "CHALLENGED")
   if (!hasChallenged) return true
 
-  // TODO: verificare dacă challenged a fost rezolvat într-un review ulterior
-  return false
+  // Verificăm dacă fiecare CHALLENGED a fost rezolvat într-un review ulterior
+  // Un CHALLENGED e rezolvat dacă un review mai recent (timestamp >) de la
+  // același reviewer sau alt reviewer a produs CONFIRMED_ENRICHED sau NUANCED
+  const challenged = reviews.filter((r) => r.outcome === "CHALLENGED")
+  for (const ch of challenged) {
+    const laterAccepted = reviews.some(
+      (r) =>
+        r.timestamp > ch.timestamp &&
+        (r.outcome === "CONFIRMED_ENRICHED" || r.outcome === "NUANCED")
+    )
+    if (!laterAccepted) return false
+  }
+  return true
 }
 
 /** Generează prompt-ul de peer review pentru Claude (agentul peer) */

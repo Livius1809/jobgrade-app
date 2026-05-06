@@ -434,11 +434,33 @@ export async function buildAgentProfiles(): Promise<AgentBehaviorProfile[]> {
       .filter(([type]) => !sortedTypes.slice(0, 3).some(([t]) => t === type))
       .sort((a, b) => b[1] - a[1])
 
+    // Calculăm avgResponseTime din diferența startedAt - createdAt (sau completedAt - startedAt)
+    const responseTimes = await prisma.agentTask.findMany({
+      where: {
+        assignedTo: role,
+        status: "COMPLETED",
+        startedAt: { not: null },
+        completedAt: { not: null },
+      },
+      select: { startedAt: true, completedAt: true },
+      orderBy: { completedAt: "desc" },
+      take: 50,
+    })
+    let avgResponseTime = 0
+    if (responseTimes.length > 0) {
+      const totalMs = responseTimes.reduce((sum, t) => {
+        const start = t.startedAt ? new Date(t.startedAt).getTime() : 0
+        const end = t.completedAt ? new Date(t.completedAt).getTime() : 0
+        return sum + (end - start)
+      }, 0)
+      avgResponseTime = Math.round(totalMs / responseTimes.length)
+    }
+
     profiles.push({
       agentRole: role,
       metrics: {
         avgCompletionRate: completionRate,
-        avgResponseTime: 0, // TODO: calculat din timestamps
+        avgResponseTime,
         refusalRate,
         preferredTaskTypes: sortedTypes.slice(0, 3).map(([t]) => t),
         avoidedTaskTypes: avoidedTypes.slice(0, 2).map(([t]) => t),
