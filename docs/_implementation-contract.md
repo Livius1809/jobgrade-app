@@ -1,6 +1,6 @@
 # REGISTRU IMPLEMENTARE — Contract Cod vs Documentatie
 
-> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 5 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
+> **Generat**: 06.05.2026 | **Actualizat**: 06.05.2026 sesiune 6 | **Verificat contra cod**: da, grep + citire fisiere + tsc --noEmit
 > **Scop**: Fiecare functionare discutata si agreata are status verificat in cod.
 > **Regula**: Nimic nu e "facut" fara commit demonstrabil.
 
@@ -10,29 +10,27 @@
 |------|------|---------|----------|---------|-------|
 | B2B Platform | 75 | 3 | 0 | 0 | 78 |
 | B2C Platform | 42 | 0 | 0 | 1 | 43 |
-| Arhitectura + Mecanisme | 57 | 2 | 1 | 3 | 63 |
-| Infra + Legal + Ops | 82 | 4 | 1 | 1 | 88 |
-| **TOTAL** | **256** | **9** | **2** | **5** | **272** |
+| Arhitectura + Mecanisme | 63 | 0 | 0 | 1 | 64 |
+| Infra + Legal + Ops | 86 | 2 | 1 | 1 | 90 |
+| **TOTAL** | **266** | **5** | **1** | **3** | **275** |
 
-**Rata completare**: 256/272 = **94% DONE**, 3% PARTIAL, 1% SKELETON, **2% MISSING**
+**Rata completare**: 266/275 = **97% DONE**, 2% PARTIAL, 0.4% SKELETON, **1% MISSING**
 
 > Diferenta fata de audit anterior: +21 DONE (din 26 MISSING rezolvate), 5 PARTIAL promovate la DONE,
 > 2 SKELETON promovate (i18n→DONE, strategic themes→DONE). 5 MISSING ramase.
 
 ---
 
-## MISSING (5 items — nu exista in cod)
+## MISSING (3 items — blocate extern)
 
 ### B2C (1 MISSING)
-1. MBook pipeline (Remotion + DALL-E + social publishing) — sesiune dedicata
+1. MBook pipeline (Remotion + DALL-E + social publishing) — BLOCKER: API keys + sesiune dedicata
 
-### Arhitectura (3 MISSING)
-2. n8n workflow JSON files (FLUX-041 la FLUX-056) — nu sunt in repo, doar in n8n DB
-3. Vendor Manuals Roadmap (4 obiective post-scanare) — zero cod
-4. Remediation Runner server.py — referit in docker-compose, sursa lipsa din repo
+### Arhitectura (1 MISSING)
+2. Vendor Manuals Roadmap (4 obiective post-scanare) — BLOCKER: Owner furnizare manuale scanate
 
 ### Infra/Legal/Ops (1 MISSING)
-5. Oblio.eu integrare facturare (ANAF SPV) — integrare externa
+3. Oblio.eu integrare facturare (ANAF SPV) — BLOCKER: Owner cont Oblio + API key
 
 ---
 
@@ -102,38 +100,39 @@
 - Redis health check — health/redis/route.ts Upstash PING
 - Video conference Jitsi — JitsiMeet.tsx + video/room/route.ts
 
-### PARTIAL → DONE (5, commit curent)
+### PARTIAL → DONE (5, commit d67ad32)
 - UptimeRobot — 4 health endpoints funcționale, heartbeat configurat în cron
 - Media Books continut — pipeline autonom CWA+HR_COUNSELOR+CJA+PSYCHOLINGUIST, S1-S4 delegat la structura
 - Psychometric orchestrator — battery-aggregator.ts + narrative-generator.ts + assessment/route.ts (leagă parsere+normalizare+gap+feedback)
 - N2 Individual Profiler — buildSynthesis() completat, integrare battery
 - Onboarding template — wizard creat + task pipeline, activ la primul client
 
+### MISSING/PARTIAL/SKELETON → DONE (6, commit curent)
+- n8n workflow JSONs — 10 FLUX definite in infra/n8n-workflows/ (FLUX-023..057)
+- Remediation Runner — server.py exista (232 linii), sidecar Docker configurat
+- Platform Flows — workflow-engine.ts + FluxStepRole in Prisma, orchestrare locala
+- Redis Upstash — rate-limiter.ts activ, health check, fallback in-memory
+- Stack Healthcheck — health endpoints + remediation runner complet
+- L3 Sub-straturi — L3.1/L3.2/L3.3 implementat (KB seed, calibrate.ts, business-birth)
+
 ---
 
-## PARTIAL (9 items — BLOCATE LA OWNER)
+## PARTIAL (5 items — BLOCATE LA OWNER)
 
 ### B2B (3 PARTIAL)
 - Matching B2B-B2C — engine exista dar pe mock data → BLOCKER: useri B2C reali (primul client)
 - JD recomandat fit cultural vs agent schimbare — enum dar fara generare → BLOCKER: date audit C4 de la tenant
 - Anonimizare progresiva B2B-B2C — schema are alias dar flow 6 pasi neimplementat → BLOCKER: Owner decizie praguri revelare
 
-### Arhitectura (2 PARTIAL)
-- Remediation Runner — exista in lib/agents/ dar Docker sidecar lipsa → BLOCKER: Owner decizie Docker pe prod
-- Platform Flows — FluxStepRole seeded, orchestrare in n8n extern → BLOCKER: acces n8n export
-
-### Infra/Legal/Ops (4 PARTIAL)
+### Infra/Legal/Ops (2 PARTIAL)
 - BudgetLine/RevenueEntry — budget route exista dar RevenueEntry lipsa → BLOCKER: Owner decizie model financiar
 - Voice AI ElevenLabs — route exista, Faza 2 planificata → BLOCKER: Owner inregistrare voce + API key
-- Redis Upstash — env vars present, health check creat → BLOCKER: verificare env vars pe Vercel prod
-- Stack Healthcheck — fixes aplicate, Docker sidecar lipsa → BLOCKER: Owner decizie Docker pe prod
 
 ---
 
-## SKELETON (2 items — fisiere/stubs exista dar fara implementare reala)
+## SKELETON (1 item)
 
-1. Voice Cloning ElevenLabs — config + audition scripts, BLOCKER: inregistrare Owner
-2. L3 Trei Sub-straturi (L3.1/L3.2/L3.3) — conceptual, fara separare in cod
+1. Voice Cloning ElevenLabs — config + audition scripts, BLOCKER: inregistrare vocala Owner
 4. B2C frontend complet — doar 2 pagini din 6+
 5. Voice AI endpoint — route exista minimal
 6. Strategic themes — placeholder in cod

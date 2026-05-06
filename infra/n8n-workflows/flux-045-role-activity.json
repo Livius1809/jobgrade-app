@@ -1,0 +1,27 @@
+{
+  "name": "FLUX-045 Role Activity Monitor",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 * * * *" }] } },
+      "name": "Cron 1h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.WEBHOOK_URL }}/api/v1/agents/metrics",
+        "headerParametersJson": "{ \"x-internal-key\": \"{{ $env.INTERNAL_API_KEY }}\" }",
+        "options": { "timeout": 30000 }
+      },
+      "name": "Agent Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [500, 300]
+    }
+  ],
+  "connections": { "Cron 1h": { "main": [[{ "node": "Agent Metrics", "type": "main", "index": 0 }]] } },
+  "active": true,
+  "settings": { "executionOrder": "v1" }
+}
