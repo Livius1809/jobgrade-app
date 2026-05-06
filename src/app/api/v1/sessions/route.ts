@@ -24,6 +24,9 @@ const schema = z.object({
   name: z.string().min(3),
   jobIds: z.array(z.string()).min(1),
   participantIds: z.array(z.string()).min(1),
+  evaluationType: z
+    .enum(["AI_GENERATED", "AI_COMMITTEE", "COMMITTEE_ONLY"])
+    .default("AI_GENERATED"),
 })
 
 export async function POST(req: NextRequest) {
@@ -65,6 +68,7 @@ export async function POST(req: NextRequest) {
           tenantId,
           name: data.name,
           status: "DRAFT",
+          evaluationType: data.evaluationType,
           createdById: session.user.id,
         },
       })

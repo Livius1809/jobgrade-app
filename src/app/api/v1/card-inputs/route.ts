@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authOrKey as auth } from "@/lib/auth-or-key"
 import { getTenantData, setTenantData } from "@/lib/tenant-storage"
+import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
@@ -30,6 +31,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: `card invalid. Optiuni: ${VALID_CARDS.join(", ")}` }, { status: 400 })
   }
 
+  // Guard: C3 inputs require C1+C2 completion
+  if (card?.startsWith("C3_")) {
+    const c1c2Check = await prisma.job.count({ where: { tenantId: session.user.tenantId, isActive: true } })
+    if (c1c2Check < 2) {
+      return NextResponse.json({ error: "C1+C2 trebuie completate înainte de C3" }, { status: 403 })
+    }
+  }
+
   const data = await getTenantData(session.user.tenantId, card)
   return NextResponse.json({ card, data: data || null })
 }
@@ -46,6 +55,15 @@ export async function POST(req: NextRequest) {
   if (!card || !VALID_CARDS.includes(card)) {
     return NextResponse.json({ error: `card invalid. Optiuni: ${VALID_CARDS.join(", ")}` }, { status: 400 })
   }
+
+  // Guard: C3 inputs require C1+C2 completion
+  if (card?.startsWith("C3_")) {
+    const c1c2Check = await prisma.job.count({ where: { tenantId: session.user.tenantId, isActive: true } })
+    if (c1c2Check < 2) {
+      return NextResponse.json({ error: "C1+C2 trebuie completate înainte de C3" }, { status: 403 })
+    }
+  }
+
   if (data === undefined) {
     return NextResponse.json({ error: "data obligatoriu" }, { status: 400 })
   }

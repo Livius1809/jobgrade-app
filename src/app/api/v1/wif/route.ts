@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       output: `Impact: ${impactSummary}. ${result.transformationalInsight || ""}`.slice(0, 1000),
       success: true,
       metadata: { source: "wif-simulation", preset, mode, tenantId: session.user.tenantId, areasAffected: result.summary.areasAffected },
-    })
+    }, session.user.tenantId)
   } catch {}
 
   return NextResponse.json(result)

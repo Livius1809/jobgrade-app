@@ -40,7 +40,7 @@ interface DistilledKnowledge {
 /**
  * Punct de intrare principal: orice interacțiune trece prin pâlnie.
  */
-export async function learningFunnel(event: AgentEvent): Promise<{
+export async function learningFunnel(event: AgentEvent, businessId?: string): Promise<{
   knowledgeCreated: number
   knowledgeUpdated: number
   antiPatternsFound: number
@@ -55,14 +55,14 @@ export async function learningFunnel(event: AgentEvent): Promise<{
   // NIVEL 3: Integrare agent
   for (const knowledge of distilled.declarative) {
     if (knowledge.length < 20) continue
-    const created = await upsertAgentKnowledge(event.agentRole, "declarative", knowledge)
+    const created = await upsertAgentKnowledge(event.agentRole, "declarative", knowledge, businessId)
     if (created) knowledgeCreated++
     else knowledgeUpdated++
   }
 
   for (const procedure of distilled.procedural) {
     if (procedure.length < 20) continue
-    const created = await upsertAgentKnowledge(event.agentRole, "procedural", procedure)
+    const created = await upsertAgentKnowledge(event.agentRole, "procedural", procedure, businessId)
     if (created) knowledgeCreated++
     else knowledgeUpdated++
   }
@@ -79,6 +79,7 @@ export async function learningFunnel(event: AgentEvent): Promise<{
         antiPattern: antiPattern,
         sourceType: "POST_EXECUTION",
         effectivenessScore: 0.8,
+        businessId: businessId || "shared",
       },
     })
     antiPatternsFound++
@@ -161,7 +162,8 @@ Reguli:
 async function upsertAgentKnowledge(
   agentRole: string,
   type: "declarative" | "procedural",
-  knowledge: string
+  knowledge: string,
+  businessId?: string
 ): Promise<boolean> {
   // Caută dacă există deja ceva similar
   const existing = await prisma.learningArtifact.findFirst({
@@ -195,6 +197,7 @@ async function upsertAgentKnowledge(
       antiPattern: "",
       sourceType: "POST_EXECUTION",
       effectivenessScore: 0.7, // începe mai jos, crește cu utilizarea
+      businessId: businessId || "shared",
     },
   })
   return true // created

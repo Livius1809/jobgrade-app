@@ -161,7 +161,7 @@ export default function CardPipeline({ cardId, cardName, phases, overallProgress
                   </div>
 
                   {/* Card fază */}
-                  <div className={`flex-1 rounded-xl border ${cfg.border} ${cfg.bg} mb-2`} style={{ padding: "12px 16px" }}>
+                  <div className={`flex-1 rounded-xl border ${cfg.border} ${cfg.bg} mb-2 ${phase.status === "LOCKED" ? "opacity-60 pointer-events-none" : ""}`} style={{ padding: "12px 16px" }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`text-[10px] font-bold ${cfg.text}`}>{phase.id}</span>

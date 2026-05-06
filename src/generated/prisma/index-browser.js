@@ -714,7 +714,8 @@ exports.Prisma.KBEntryScalarFieldEnum = {
   tags: 'tags',
   createdAt: 'createdAt',
   validatedAt: 'validatedAt',
-  propagatedFrom: 'propagatedFrom'
+  propagatedFrom: 'propagatedFrom',
+  businessId: 'businessId'
 };
 
 exports.Prisma.KBBufferScalarFieldEnum = {
@@ -1787,6 +1788,7 @@ exports.Prisma.LearningArtifactScalarFieldEnum = {
   effectivenessScore: 'effectivenessScore',
   validated: 'validated',
   expiresAt: 'expiresAt',
+  businessId: 'businessId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

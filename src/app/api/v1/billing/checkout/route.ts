@@ -75,6 +75,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Tenant negăsit." }, { status: 404 })
     }
 
+    // ── TVA: B2B (plătitor TVA) = fără TVA, altfel +19% ──
+    const companyProfile = await prisma.companyProfile.findFirst({
+      where: { tenantId },
+      select: { isVATPayer: true },
+    })
+    const isB2B = companyProfile?.isVATPayer === true
+    const vatRate = isB2B ? 0 : 0.19
+
     let customerId = tenant.stripeCustomerId
     if (!customerId) {
       const customer = await stripeClient.customers.create({
@@ -158,6 +166,12 @@ export async function POST(req: NextRequest) {
       const creditPkg = data.creditPackageId ? CREDIT_PACKAGES.find(p => p.id === data.creditPackageId) : null
       const crediteRON = creditPkg ? creditPkg.price : 0
       const totalRON = serviciiDiff + abonamentRON + crediteRON
+      const vatAmount = Math.round(totalRON * vatRate)
+      const totalWithVAT = totalRON + vatAmount
+
+      // Aplica TVA pe fiecare line item proportional
+      const serviceBaseRON = serviciiDiff + abonamentRON
+      const serviceVAT = Math.round(serviceBaseRON * vatRate)
 
       const lineItems: any[] = [
         {
@@ -166,24 +180,25 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: isUpgrade ? `JobGrade — Upgrade → ${layerName}` : `JobGrade — ${layerName}`,
               description: isUpgrade
-                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.`
-                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
+                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.${!isB2B ? " (incl. TVA 19%)" : ""}`
+                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.${!isB2B ? " (incl. TVA 19%)" : ""}`,
             },
-            unit_amount: (serviciiDiff + abonamentRON) * 100,
+            unit_amount: (serviceBaseRON + serviceVAT) * 100,
           },
           quantity: 1,
         },
       ]
 
       if (creditPkg) {
+        const creditVAT = Math.round(creditPkg.price * vatRate)
         lineItems.push({
           price_data: {
             currency: "ron",
             product_data: {
               name: `Credite ${creditPkg.label} — ${creditPkg.credits} credite`,
-              description: `Pachet credite suplimentare`,
+              description: `Pachet credite suplimentare${!isB2B ? " (incl. TVA 19%)" : ""}`,
             },
-            unit_amount: creditPkg.price * 100,
+            unit_amount: (creditPkg.price + creditVAT) * 100,
           },
           quantity: 1,
         })
@@ -203,6 +218,10 @@ export async function POST(req: NextRequest) {
           positions: String(data.positions),
           employees: String(data.employees),
           priceRON: String(totalRON),
+          totalWithVAT: String(totalWithVAT),
+          tax_amount: String(vatAmount),
+          includes_vat: String(!isB2B),
+          isB2B: String(isB2B),
           creditPackageId: data.creditPackageId || "",
           credits: creditPkg ? String(creditPkg.credits) : "0",
         },
