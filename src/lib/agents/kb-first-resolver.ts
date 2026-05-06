@@ -30,7 +30,8 @@ export async function resolveFromKB(
   agentRole: string,
   taskTitle: string,
   taskDescription: string,
-  threshold: number = 0.85
+  threshold: number = 0.85,
+  businessId?: string // "shared" (CPU core) + business-specific; undefined = caută ambele
 ): Promise<KBResolveResult> {
   // Cuvinte cheie din task
   const keywords = (taskTitle + " " + taskDescription)
