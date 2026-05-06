@@ -1,0 +1,38 @@
+═══════════════════════════════════════════════════════════════
+PROFIL INTEGRAT — P06
+═══════════════════════════════════════════════════════════════
+Sex: M | Vârstă: 0 | Completitudine: 91%
+
+── SINTEZĂ ──
+Tip personalitate: ISTJ — Inspectorul — responsabil, minuțios, de încredere, loial
+Stil cognitiv: A — P01litic — gândire logică, fapte, date
+Model Cuboid CPI: Tip DELTA, Nivel integrare 2
+Leadership: SCAZUT
+Integritate: MEDIE
+Motivație: MEDIU
+
+── PUNCTE FORTE (scoruri > T60) ──
+  ★ CPI 260 / Feminitate/Masculinitate: T=70
+  ★ Climat Organizațional / LEADERSHIP: T=70
+  ★ Climat Organizațional / DEZVOLTARE PERSONALA: T=70
+  ★ Climat Organizațional / INOVARE SI SCHIMBARE: T=68
+  ★ HBDI (Herrmann) / Analitic (stânga-sus): T=66
+  ★ ESQ-2 / Promovabilitate: T=65
+  ★ Climat Organizațional / OBIECTIVE CLARE: T=65
+  ★ Climat Organizațional / MOTIVARE SI RECOMPENSA: T=63
+  ★ CPI 260 / Ostilitate: T=61
+
+── ARII DE PERFECȚIONARE / RISCURI ──
+  ▼ CPI 260 / Prezență socială: T=27 — FOARTE_SCAZUT — scor 27 (Etalon RO N=1600 masculin)
+  ▼ CPI 260 / Acceptare de sine: T=28 — FOARTE_SCAZUT — scor 28 (Etalon RO N=1600 masculin)
+  ▼ CPI 260 / Sociabilitate: T=35 — SCAZUT — scor 35 (Etalon RO N=1600 masculin)
+  ▼ CPI 260 / Empatie: T=36 — SCAZUT — scor 36 (Etalon RO N=1600 masculin)
+  ▼ CPI 260 / Potențial managerial: T=37 — SCAZUT — scor 37 (Etalon RO N=1600 masculin)
+  ▼ CPI 260 / Ostilitate: T=61 — RIDICAT pe scală inversă — indicator de risc (T=61)
+
+── CONGRUENȚE ──
+  ↔ Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)
+
+── TENSIUNI / OPORTUNITĂȚI DE DEZVOLTARE ──
+  ⚡ Introversie puternică + prezență socială scăzută — vizibilitate limitată în organizație
+    → Dezvoltare canal de influență prin competență (nu prin sociabilitate)

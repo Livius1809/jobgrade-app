@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════════════
+PROFIL INTEGRAT — P01
+═══════════════════════════════════════════════════════════════
+Sex: F | Vârstă: 41 | Completitudine: 100%
+
+── SINTEZĂ ──
+Tip personalitate: ISTJ — Inspectorul — responsabil, minuțios, de încredere, loial
+Stil cognitiv: B — Organizat — structură, proces, detalii
+Model Cuboid CPI: Tip BETA, Nivel integrare 3
+Leadership: MEDIU
+Integritate: RIDICATA
+Motivație: RIDICAT
+
+── PUNCTE FORTE (scoruri > T60) ──
+  ★ ESQ-2 / Acuratete: T=73
+  ★ MBTI / Rațional vs. Afectiv: T=69
+  ★ ESQ-2 / Productivitate: T=68
+  ★ CPI 260 / Ostilitate: T=66
+  ★ HBDI (Herrmann) / Organizat (stânga-jos): T=66
+  ★ MBTI / Senzorial vs. Intuitiv: T=66
+  ★ MBTI / Judecător vs. Perceptiv: T=66
+  ★ AMI / Angajamentul: T=65
+  ★ ESQ-2 / Recomandare Generala de Angajare: T=65
+  ★ ESQ-2 / Promovabilitate: T=64
+
+── ARII DE PERFECȚIONARE / RISCURI ──
+  ▼ CPI 260 / Capacitate de statut: T=38 — SCAZUT — scor 38 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Sociabilitate: T=38 — SCAZUT — scor 38 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Toleranță: T=39 — SCAZUT — scor 39 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Temperament creativ: T=39 — SCAZUT — scor 39 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Ostilitate: T=66 — RIDICAT pe scală inversă — indicator de risc (T=66)
+
+── CONGRUENȚE ──
+  ↔ Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)
+  ↔ Autodisciplină confirmată cross-instrument: CPI SC + AMI SK
+
+── TENSIUNI / OPORTUNITĂȚI DE DEZVOLTARE ──
+  ⚡ Ostilitate (CPI) + Dominanță puternică (AMI) — risc de agresivitate în conducere
+    → Coaching pe gestionarea conflictelor și comunicare asertivă non-agresivă

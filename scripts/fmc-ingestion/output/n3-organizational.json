@@ -1,0 +1,3566 @@
+{
+  "entityId": "FMC_ORG",
+  "entityName": "FMC — Frontier Management Consulting",
+  "headcount": 12,
+  "profiles": [
+    {
+      "entityId": "1_P01",
+      "name": "P01",
+      "sex": "F",
+      "age": 41,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "1_P01",
+          "scores": {
+            "DO": 53,
+            "CS": 38,
+            "SY": 38,
+            "SP": 43,
+            "SA": 48,
+            "IN": 58,
+            "EM": 40,
+            "RE": 52,
+            "SO": 60,
+            "SC": 60,
+            "GI": 53,
+            "CM": 62,
+            "WB": 49,
+            "TO": 39,
+            "AC": 59,
+            "AI": 52,
+            "CF": 54,
+            "IS": 47,
+            "FX": 43,
+            "SN": 60,
+            "MP": 40,
+            "WO": 48,
+            "CT": 39,
+            "LP": 48,
+            "AMI_CPI": 43,
+            "LEO": 50,
+            "TM": 54,
+            "B-MS": 55,
+            "B-FM": 51,
+            "ANX": 42,
+            "NAR": 50,
+            "D-SD": 51,
+            "D-AC": 51,
+            "HOS": 66,
+            "FF": 50
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "beta",
+              "level": 3
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "1_P01",
+          "scores": {
+            "BE": 60,
+            "DO": 60,
+            "EN": 65,
+            "EZ": 60,
+            "FX": 55,
+            "FL": 55,
+            "FU": 55,
+            "IN": 50,
+            "KA": 55,
+            "LS": 55,
+            "LB": 50,
+            "SP": 45,
+            "SE": 45,
+            "SK": 60
+          },
+          "rawResult": {
+            "BE": 7,
+            "DO": 7,
+            "EN": 8,
+            "EZ": 7,
+            "FX": 6,
+            "FL": 6,
+            "FU": 6,
+            "IN": 5,
+            "KA": 6,
+            "LS": 6,
+            "LB": 5,
+            "SP": 4,
+            "SE": 4,
+            "SK": 7
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "1_P01",
+          "scores": {
+            "Orientare spre Client": 56,
+            "Productivitate": 68,
+            "Acuratete": 73,
+            "Satisfactia Muncii": 62,
+            "Promovabilitate": 64,
+            "Consum de Alcool si de alte Substante": 29,
+            "Concediu Medical Neautorizat": 32,
+            "Infractiuni Rutiere": 29,
+            "Intarzieri": 31,
+            "Indolenta": 31,
+            "Sabotaj al Productiei sau al Proprietatii": 29,
+            "Nerespectarea Protectiei Muncii": 31,
+            "Furt": 29,
+            "Risc de Comportament Contraproductiv": 31,
+            "Recomandare Generala de Angajare": 65
+          },
+          "rawResult": {
+            "Orientare spre Client": 72,
+            "Productivitate": 96,
+            "Acuratete": 99,
+            "Satisfactia Muncii": 88,
+            "Promovabilitate": 92,
+            "Consum de Alcool si de alte Substante": 2,
+            "Concediu Medical Neautorizat": 4,
+            "Infractiuni Rutiere": 2,
+            "Intarzieri": 3,
+            "Indolenta": 3,
+            "Sabotaj al Productiei sau al Proprietatii": 2,
+            "Nerespectarea Protectiei Muncii": 3,
+            "Furt": 2,
+            "Risc de Comportament Contraproductiv": 3,
+            "Recomandare Generala de Angajare": 93
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "1_P01",
+          "scores": {
+            "A": 63.32,
+            "B": 66,
+            "C": 57.12,
+            "D": 58.879999999999995
+          },
+          "rawResult": {
+            "A": 83.3,
+            "B": 90,
+            "C": 67.8,
+            "D": 72.2
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "1_P01",
+          "scores": {
+            "E": 0,
+            "I": 7,
+            "S": 41,
+            "N": 0,
+            "T": 47,
+            "F": 0,
+            "J": 41,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "1_P01",
+          "scores": {
+            "OBIECTIVE CLARE": 44,
+            "ORGANIZARE EFICIENTA": 45,
+            "LEADERSHIP": 56,
+            "DEZVOLTARE PERSONALA": 52,
+            "COMUNICARE INTERNA": 52,
+            "MOTIVARE SI RECOMPENSA": 48,
+            "INOVARE SI SCHIMBARE": 41,
+            "PERFORMANTA": 42
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 4.2,
+            "ORGANIZARE EFICIENTA": 4.4,
+            "LEADERSHIP": 5.8,
+            "DEZVOLTARE PERSONALA": 5.4,
+            "COMUNICARE INTERNA": 5.4,
+            "MOTIVARE SI RECOMPENSA": 4.8,
+            "INOVARE SI SCHIMBARE": 3.8,
+            "PERFORMANTA": 4
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 1,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "B",
+          "description": "Organizat — structură, proces, detalii"
+        },
+        "personalityType": {
+          "type": "ISTJ",
+          "description": "Inspectorul — responsabil, minuțios, de încredere, loial"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "RIDICATA",
+        "motivationLevel": "RIDICAT",
+        "cuboidType": "beta",
+        "cuboidLevel": 3
+      },
+      "strengths": [
+        {
+          "instrument": "ESQ-2",
+          "scale": "Acuratete",
+          "tScore": 73,
+          "interpretation": "FOARTE_RIDICAT — scor 99 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Rațional vs. Afectiv",
+          "tScore": 69,
+          "interpretation": "FOARTE_RIDICAT — scor T47 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Productivitate",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 96 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 66 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Organizat (stânga-jos)",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 90 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Senzorial vs. Intuitiv",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor S41 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Judecător vs. Perceptiv",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor J41 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Angajamentul",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Recomandare Generala de Angajare",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 93 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Promovabilitate",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 92 (Etalon candidați selecție)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Capacitate de statut",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 38 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Sociabilitate",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 38 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Toleranță",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Temperament creativ",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 66,
+          "interpretation": "RIDICAT pe scală inversă — indicator de risc (T=66)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        },
+        {
+          "finding": "Autodisciplină confirmată cross-instrument: CPI SC + AMI SK",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": [
+        {
+          "tension": "Ostilitate (CPI) + Dominanță puternică (AMI) — risc de agresivitate în conducere",
+          "developmentOpportunity": "Coaching pe gestionarea conflictelor și comunicare asertivă non-agresivă"
+        }
+      ]
+    },
+    {
+      "entityId": "2_P02",
+      "name": "P02",
+      "sex": "F",
+      "age": 47,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "2_P02",
+          "scores": {
+            "DO": 47,
+            "CS": 49,
+            "SY": 46,
+            "SP": 56,
+            "SA": 45,
+            "IN": 53,
+            "EM": 43,
+            "RE": 64,
+            "SO": 58,
+            "SC": 52,
+            "GI": 51,
+            "CM": 62,
+            "WB": 62,
+            "TO": 73,
+            "AC": 54,
+            "AI": 52,
+            "CF": 58,
+            "IS": 54,
+            "FX": 41,
+            "SN": 50,
+            "MP": 52,
+            "WO": 65,
+            "CT": 44,
+            "LP": 54,
+            "AMI_CPI": 62,
+            "LEO": 43,
+            "TM": 47,
+            "B-MS": 50,
+            "B-FM": 54,
+            "ANX": 42,
+            "NAR": 40,
+            "D-SD": 57,
+            "D-AC": 55,
+            "HOS": 46,
+            "FF": 50
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "beta",
+              "level": 5
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "2_P02",
+          "scores": {
+            "BE": 55,
+            "DO": 50,
+            "EN": 55,
+            "EZ": 55,
+            "FX": 45,
+            "FL": 50,
+            "FU": 55,
+            "IN": 45,
+            "KA": 40,
+            "LS": 45,
+            "LB": 50,
+            "SP": 55,
+            "SE": 45,
+            "SK": 55
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 5,
+            "EN": 6,
+            "EZ": 6,
+            "FX": 4,
+            "FL": 5,
+            "FU": 6,
+            "IN": 4,
+            "KA": 3,
+            "LS": 4,
+            "LB": 5,
+            "SP": 6,
+            "SE": 4,
+            "SK": 6
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "2_P02",
+          "scores": {
+            "Orientare spre Client": 49,
+            "Productivitate": 56,
+            "Acuratete": 54,
+            "Satisfactia Muncii": 50,
+            "Promovabilitate": 52,
+            "Consum de Alcool si de alte Substante": 45,
+            "Concediu Medical Neautorizat": 50,
+            "Infractiuni Rutiere": 55,
+            "Intarzieri": 47,
+            "Indolenta": 48,
+            "Sabotaj al Productiei sau al Proprietatii": 44,
+            "Nerespectarea Protectiei Muncii": 52,
+            "Furt": 48,
+            "Risc de Comportament Contraproductiv": 49,
+            "Recomandare Generala de Angajare": 52
+          },
+          "rawResult": {
+            "Orientare spre Client": 46,
+            "Productivitate": 73,
+            "Acuratete": 65,
+            "Satisfactia Muncii": 50,
+            "Promovabilitate": 56,
+            "Consum de Alcool si de alte Substante": 30,
+            "Concediu Medical Neautorizat": 50,
+            "Infractiuni Rutiere": 68,
+            "Intarzieri": 40,
+            "Indolenta": 41,
+            "Sabotaj al Productiei sau al Proprietatii": 29,
+            "Nerespectarea Protectiei Muncii": 57,
+            "Furt": 41,
+            "Risc de Comportament Contraproductiv": 45,
+            "Recomandare Generala de Angajare": 57
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "2_P02",
+          "scores": {
+            "A": 61.56,
+            "B": 60.68,
+            "C": 62.44,
+            "D": 62.44
+          },
+          "rawResult": {
+            "A": 78.9,
+            "B": 76.7,
+            "C": 81.1,
+            "D": 81.1
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "2_P02",
+          "scores": {
+            "E": 0,
+            "I": 3,
+            "S": 15,
+            "N": 0,
+            "T": 25,
+            "F": 0,
+            "J": 11,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "2_P02",
+          "scores": {
+            "OBIECTIVE CLARE": 48,
+            "ORGANIZARE EFICIENTA": 51,
+            "LEADERSHIP": 41,
+            "DEZVOLTARE PERSONALA": 58,
+            "COMUNICARE INTERNA": 58,
+            "MOTIVARE SI RECOMPENSA": 52,
+            "INOVARE SI SCHIMBARE": 39,
+            "PERFORMANTA": 42
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 4.8,
+            "ORGANIZARE EFICIENTA": 5.2,
+            "LEADERSHIP": 3.8,
+            "DEZVOLTARE PERSONALA": 6,
+            "COMUNICARE INTERNA": 6,
+            "MOTIVARE SI RECOMPENSA": 5.4,
+            "INOVARE SI SCHIMBARE": 3.2,
+            "PERFORMANTA": 4
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 1,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "C",
+          "description": "Relațional — empatie, comunicare, echipă"
+        },
+        "personalityType": {
+          "type": "ISTJ",
+          "description": "Inspectorul — responsabil, minuțios, de încredere, loial"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "beta",
+        "cuboidLevel": 5
+      },
+      "strengths": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Toleranță",
+          "tScore": 73,
+          "interpretation": "FOARTE_RIDICAT — scor 73 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Orientare spre muncă",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Responsabilitate",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Comunalitate",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Sănătate",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Amabilitate",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Analitic (stânga-sus)",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 78.9 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Interpersonal (dreapta-jos)",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 81.1 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Holistic (dreapta-sus)",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 81.1 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Organizat (stânga-jos)",
+          "tScore": 61,
+          "interpretation": "RIDICAT — scor 76.7 (CPA 72 itemi — calcul intern)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "INOVARE SI SCHIMBARE",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 3.2 (Praguri normative CO 8 dim)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": []
+    },
+    {
+      "entityId": "3_P03",
+      "name": "P03",
+      "sex": "F",
+      "age": 40,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "3_P03",
+          "scores": {
+            "DO": 62,
+            "CS": 62,
+            "SY": 62,
+            "SP": 59,
+            "SA": 60,
+            "IN": 64,
+            "EM": 62,
+            "RE": 61,
+            "SO": 58,
+            "SC": 56,
+            "GI": 55,
+            "CM": 59,
+            "WB": 62,
+            "TO": 53,
+            "AC": 59,
+            "AI": 55,
+            "CF": 54,
+            "IS": 54,
+            "FX": 43,
+            "SN": 40,
+            "MP": 60,
+            "WO": 62,
+            "CT": 52,
+            "LP": 63,
+            "AMI_CPI": 58,
+            "LEO": 67,
+            "TM": 64,
+            "B-MS": 64,
+            "B-FM": 51,
+            "ANX": 35,
+            "NAR": 57,
+            "D-SD": 63,
+            "D-AC": 44,
+            "HOS": 56,
+            "FF": 54
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "alfa",
+              "level": 3
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "3_P03",
+          "scores": {
+            "BE": 65,
+            "DO": 60,
+            "EN": 50,
+            "EZ": 70,
+            "FX": 65,
+            "FL": 55,
+            "FU": 65,
+            "IN": 65,
+            "KA": 55,
+            "LS": 50,
+            "LB": 60,
+            "SP": 50,
+            "SE": 60,
+            "SK": 55
+          },
+          "rawResult": {
+            "BE": 8,
+            "DO": 7,
+            "EN": 5,
+            "EZ": 9,
+            "FX": 8,
+            "FL": 6,
+            "FU": 8,
+            "IN": 8,
+            "KA": 6,
+            "LS": 5,
+            "LB": 7,
+            "SP": 5,
+            "SE": 7,
+            "SK": 6
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "3_P03",
+          "scores": {
+            "Orientare spre Client": 51,
+            "Productivitate": 42,
+            "Acuratete": 40,
+            "Satisfactia Muncii": 51,
+            "Promovabilitate": 52,
+            "Consum de Alcool si de alte Substante": 53,
+            "Concediu Medical Neautorizat": 49,
+            "Infractiuni Rutiere": 55,
+            "Intarzieri": 49,
+            "Indolenta": 49,
+            "Sabotaj al Productiei sau al Proprietatii": 52,
+            "Nerespectarea Protectiei Muncii": 51,
+            "Furt": 53,
+            "Risc de Comportament Contraproductiv": 52,
+            "Recomandare Generala de Angajare": 48
+          },
+          "rawResult": {
+            "Orientare spre Client": 53,
+            "Productivitate": 20,
+            "Acuratete": 15,
+            "Satisfactia Muncii": 54,
+            "Promovabilitate": 56,
+            "Consum de Alcool si de alte Substante": 60,
+            "Concediu Medical Neautorizat": 48,
+            "Infractiuni Rutiere": 69,
+            "Intarzieri": 45,
+            "Indolenta": 47,
+            "Sabotaj al Productiei sau al Proprietatii": 59,
+            "Nerespectarea Protectiei Muncii": 55,
+            "Furt": 62,
+            "Risc de Comportament Contraproductiv": 56,
+            "Recomandare Generala de Angajare": 42
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "3_P03",
+          "scores": {
+            "A": 57.56,
+            "B": 62.88,
+            "C": 56.239999999999995,
+            "D": 58
+          },
+          "rawResult": {
+            "A": 68.9,
+            "B": 82.2,
+            "C": 65.6,
+            "D": 70
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "3_P03",
+          "scores": {
+            "E": 29,
+            "I": 0,
+            "S": 3,
+            "N": 0,
+            "T": 41,
+            "F": 0,
+            "J": 7,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ESTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "3_P03",
+          "scores": {
+            "OBIECTIVE CLARE": 58,
+            "ORGANIZARE EFICIENTA": 54,
+            "LEADERSHIP": 54,
+            "DEZVOLTARE PERSONALA": 65,
+            "COMUNICARE INTERNA": 68,
+            "MOTIVARE SI RECOMPENSA": 56,
+            "INOVARE SI SCHIMBARE": 60,
+            "PERFORMANTA": 63
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 6,
+            "ORGANIZARE EFICIENTA": 5.6,
+            "LEADERSHIP": 5.6,
+            "DEZVOLTARE PERSONALA": 6.6,
+            "COMUNICARE INTERNA": 6.8,
+            "MOTIVARE SI RECOMPENSA": 5.8,
+            "INOVARE SI SCHIMBARE": 6.2,
+            "PERFORMANTA": 6.4
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 1,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "B",
+          "description": "Organizat — structură, proces, detalii"
+        },
+        "personalityType": {
+          "type": "ESTJ",
+          "description": "Executivul — organizat, responsabil, decisiv, eficient"
+        },
+        "leadershipPotential": "RIDICAT",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "RIDICAT",
+        "cuboidType": "alfa",
+        "cuboidLevel": 3
+      },
+      "strengths": [
+        {
+          "instrument": "AMI",
+          "scale": "Siguranța succesului",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 9 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "COMUNICARE INTERNA",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Orientare spre aplicarea legii",
+          "tScore": 67,
+          "interpretation": "FOARTE_RIDICAT — scor 67 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Rațional vs. Afectiv",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor T41 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Perseverența",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Flexibilitatea",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Neînfricarea",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Internalitatea",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "DEZVOLTARE PERSONALA",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Independență",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Anxietate",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 35 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Autodisciplină confirmată cross-instrument: CPI SC + AMI SK",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": []
+    },
+    {
+      "entityId": "4_P04",
+      "name": "P04",
+      "sex": "F",
+      "age": 42,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "4_P04",
+          "scores": {
+            "DO": 62,
+            "CS": 59,
+            "SY": 54,
+            "SP": 53,
+            "SA": 60,
+            "IN": 66,
+            "EM": 43,
+            "RE": 58,
+            "SO": 53,
+            "SC": 45,
+            "GI": 43,
+            "CM": 59,
+            "WB": 55,
+            "TO": 53,
+            "AC": 52,
+            "AI": 55,
+            "CF": 58,
+            "IS": 61,
+            "FX": 41,
+            "SN": 40,
+            "MP": 50,
+            "WO": 57,
+            "CT": 52,
+            "LP": 65,
+            "AMI_CPI": 43,
+            "LEO": 60,
+            "TM": 64,
+            "B-MS": 66,
+            "B-FM": 40,
+            "ANX": 56,
+            "NAR": 65,
+            "D-SD": 57,
+            "D-AC": 58,
+            "HOS": 52,
+            "FF": 39
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "alfa",
+              "level": 2
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "4_P04",
+          "scores": {
+            "BE": 55,
+            "DO": 65,
+            "EN": 55,
+            "EZ": 60,
+            "FX": 45,
+            "FL": 50,
+            "FU": 60,
+            "IN": 55,
+            "KA": 40,
+            "LS": 40,
+            "LB": 55,
+            "SP": 60,
+            "SE": 55,
+            "SK": 50
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 8,
+            "EN": 6,
+            "EZ": 7,
+            "FX": 4,
+            "FL": 5,
+            "FU": 7,
+            "IN": 6,
+            "KA": 3,
+            "LS": 3,
+            "LB": 6,
+            "SP": 7,
+            "SE": 6,
+            "SK": 5
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "4_P04",
+          "scores": {
+            "Orientare spre Client": 43,
+            "Productivitate": 61,
+            "Acuratete": 56,
+            "Satisfactia Muncii": 46,
+            "Promovabilitate": 57,
+            "Consum de Alcool si de alte Substante": 48,
+            "Concediu Medical Neautorizat": 49,
+            "Infractiuni Rutiere": 42,
+            "Intarzieri": 49,
+            "Indolenta": 49,
+            "Sabotaj al Productiei sau al Proprietatii": 48,
+            "Nerespectarea Protectiei Muncii": 47,
+            "Furt": 47,
+            "Risc de Comportament Contraproductiv": 47,
+            "Recomandare Generala de Angajare": 53
+          },
+          "rawResult": {
+            "Orientare spre Client": 24,
+            "Productivitate": 87,
+            "Acuratete": 74,
+            "Satisfactia Muncii": 34,
+            "Promovabilitate": 77,
+            "Consum de Alcool si de alte Substante": 42,
+            "Concediu Medical Neautorizat": 47,
+            "Infractiuni Rutiere": 20,
+            "Intarzieri": 46,
+            "Indolenta": 46,
+            "Sabotaj al Productiei sau al Proprietatii": 41,
+            "Nerespectarea Protectiei Muncii": 38,
+            "Furt": 39,
+            "Risc de Comportament Contraproductiv": 40,
+            "Recomandare Generala de Angajare": 60
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "4_P04",
+          "scores": {
+            "A": 61.120000000000005,
+            "B": 59.760000000000005,
+            "C": 59.32,
+            "D": 59.760000000000005
+          },
+          "rawResult": {
+            "A": 77.8,
+            "B": 74.4,
+            "C": 73.3,
+            "D": 74.4
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "4_P04",
+          "scores": {
+            "E": 21,
+            "I": 0,
+            "S": 35,
+            "N": 0,
+            "T": 49,
+            "F": 0,
+            "J": 5,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ESTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "4_P04",
+          "scores": {
+            "OBIECTIVE CLARE": 49,
+            "ORGANIZARE EFICIENTA": 47,
+            "LEADERSHIP": 51,
+            "DEZVOLTARE PERSONALA": 48,
+            "COMUNICARE INTERNA": 60,
+            "MOTIVARE SI RECOMPENSA": 49,
+            "INOVARE SI SCHIMBARE": 47,
+            "PERFORMANTA": 49
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 5,
+            "ORGANIZARE EFICIENTA": 4.6,
+            "LEADERSHIP": 5.2,
+            "DEZVOLTARE PERSONALA": 4.8,
+            "COMUNICARE INTERNA": 6.2,
+            "MOTIVARE SI RECOMPENSA": 5,
+            "INOVARE SI SCHIMBARE": 4.6,
+            "PERFORMANTA": 5
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 1,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "A",
+          "description": "Analitic — gândire logică, fapte, date"
+        },
+        "personalityType": {
+          "type": "ESTJ",
+          "description": "Executivul — organizat, responsabil, decisiv, eficient"
+        },
+        "leadershipPotential": "RIDICAT",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "alfa",
+        "cuboidLevel": 2
+      },
+      "strengths": [
+        {
+          "instrument": "MBTI",
+          "scale": "Rațional vs. Afectiv",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor T49 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Independență",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 66 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Baucom Masculinitate",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 66 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Leadership",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Narcisism",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Dominanța",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Obiectivitate în gândire",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Senzorial vs. Intuitiv",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor S35 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Dominanța",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Intuiție psihologică",
+          "tScore": 61,
+          "interpretation": "RIDICAT — scor 61 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Luptător",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Narcisism",
+          "tScore": 65,
+          "interpretation": "RIDICAT pe scală inversă — indicator de risc (T=65)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": []
+    },
+    {
+      "entityId": "5_P05",
+      "name": "P05",
+      "sex": "F",
+      "age": 53,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "5_P05",
+          "scores": {
+            "DO": 43,
+            "CS": 41,
+            "SY": 33,
+            "SP": 37,
+            "SA": 36,
+            "IN": 55,
+            "EM": 49,
+            "RE": 58,
+            "SO": 60,
+            "SC": 70,
+            "GI": 64,
+            "CM": 56,
+            "WB": 65,
+            "TO": 63,
+            "AC": 61,
+            "AI": 46,
+            "CF": 61,
+            "IS": 54,
+            "FX": 35,
+            "SN": 57,
+            "MP": 60,
+            "WO": 65,
+            "CT": 36,
+            "LP": 54,
+            "AMI_CPI": 65,
+            "LEO": 50,
+            "TM": 57,
+            "B-MS": 49,
+            "B-FM": 51,
+            "ANX": 42,
+            "NAR": 36,
+            "D-SD": 51,
+            "D-AC": 37,
+            "HOS": 39,
+            "FF": 54
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "beta",
+              "level": 5
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "5_P05",
+          "scores": {
+            "BE": 55,
+            "DO": 50,
+            "EN": 55,
+            "EZ": 55,
+            "FX": 45,
+            "FL": 50,
+            "FU": 55,
+            "IN": 55,
+            "KA": 55,
+            "LS": 45,
+            "LB": 50,
+            "SP": 60,
+            "SE": 55,
+            "SK": 60
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 5,
+            "EN": 6,
+            "EZ": 6,
+            "FX": 4,
+            "FL": 5,
+            "FU": 6,
+            "IN": 6,
+            "KA": 6,
+            "LS": 4,
+            "LB": 5,
+            "SP": 7,
+            "SE": 6,
+            "SK": 7
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "5_P05",
+          "scores": {
+            "Orientare spre Client": 64,
+            "Productivitate": 40,
+            "Acuratete": 68,
+            "Satisfactia Muncii": 60,
+            "Promovabilitate": 55,
+            "Consum de Alcool si de alte Substante": 36,
+            "Concediu Medical Neautorizat": 41,
+            "Infractiuni Rutiere": 42,
+            "Intarzieri": 44,
+            "Indolenta": 42,
+            "Sabotaj al Productiei sau al Proprietatii": 38,
+            "Nerespectarea Protectiei Muncii": 40,
+            "Furt": 35,
+            "Risc de Comportament Contraproductiv": 40,
+            "Recomandare Generala de Angajare": 58
+          },
+          "rawResult": {
+            "Orientare spre Client": 92,
+            "Productivitate": 15,
+            "Acuratete": 96,
+            "Satisfactia Muncii": 84,
+            "Promovabilitate": 70,
+            "Consum de Alcool si de alte Substante": 8,
+            "Concediu Medical Neautorizat": 18,
+            "Infractiuni Rutiere": 21,
+            "Intarzieri": 27,
+            "Indolenta": 22,
+            "Sabotaj al Productiei sau al Proprietatii": 11,
+            "Nerespectarea Protectiei Muncii": 16,
+            "Furt": 7,
+            "Risc de Comportament Contraproductiv": 16,
+            "Recomandare Generala de Angajare": 78
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "5_P05",
+          "scores": {
+            "A": 64.24000000000001,
+            "B": 62,
+            "C": 59.32,
+            "D": 58.879999999999995
+          },
+          "rawResult": {
+            "A": 85.6,
+            "B": 80,
+            "C": 73.3,
+            "D": 72.2
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "5_P05",
+          "scores": {
+            "E": 0,
+            "I": 11,
+            "S": 5,
+            "N": 0,
+            "T": 29,
+            "F": 0,
+            "J": 25,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "5_P05",
+          "scores": {
+            "OBIECTIVE CLARE": 63,
+            "ORGANIZARE EFICIENTA": 65,
+            "LEADERSHIP": 68,
+            "DEZVOLTARE PERSONALA": 65,
+            "COMUNICARE INTERNA": 68,
+            "MOTIVARE SI RECOMPENSA": 63,
+            "INOVARE SI SCHIMBARE": 63,
+            "PERFORMANTA": 63
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 6.4,
+            "ORGANIZARE EFICIENTA": 6.6,
+            "LEADERSHIP": 6.8,
+            "DEZVOLTARE PERSONALA": 6.6,
+            "COMUNICARE INTERNA": 6.8,
+            "MOTIVARE SI RECOMPENSA": 6.4,
+            "INOVARE SI SCHIMBARE": 6.4,
+            "PERFORMANTA": 6.4
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 1,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "A",
+          "description": "Analitic — gândire logică, fapte, date"
+        },
+        "personalityType": {
+          "type": "ISTJ",
+          "description": "Inspectorul — responsabil, minuțios, de încredere, loial"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "beta",
+        "cuboidLevel": 5
+      },
+      "strengths": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Autocontrol",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 70 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Acuratete",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 96 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "LEADERSHIP",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "COMUNICARE INTERNA",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Sănătate",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Orientare spre muncă",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Amabilitate",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "ORGANIZARE EFICIENTA",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "DEZVOLTARE PERSONALA",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Impresie bună",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Sociabilitate",
+          "tScore": 33,
+          "interpretation": "FOARTE_SCAZUT — scor 33 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Flexibilitate",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 35 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Acceptare de sine",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Temperament creativ",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Narcisism",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Prezență socială",
+          "tScore": 37,
+          "interpretation": "SCAZUT — scor 37 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Afirmare necondiționată",
+          "tScore": 37,
+          "interpretation": "SCAZUT — scor 37 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        },
+        {
+          "finding": "Autodisciplină confirmată cross-instrument: CPI SC + AMI SK",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": [
+        {
+          "tension": "Introversie puternică + prezență socială scăzută — vizibilitate limitată în organizație",
+          "developmentOpportunity": "Dezvoltare canal de influență prin competență (nu prin sociabilitate)"
+        }
+      ]
+    },
+    {
+      "entityId": "6_P06",
+      "name": "P06",
+      "sex": "M",
+      "age": 0,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "6_P06",
+          "scores": {
+            "DO": 40,
+            "CS": 45,
+            "SY": 35,
+            "SP": 27,
+            "SA": 28,
+            "IN": 45,
+            "EM": 36,
+            "RE": 41,
+            "SO": 53,
+            "SC": 47,
+            "GI": 44,
+            "CM": 41,
+            "WB": 47,
+            "TO": 46,
+            "AC": 48,
+            "AI": 49,
+            "CF": 47,
+            "IS": 54,
+            "FX": 54,
+            "SN": 70,
+            "MP": 37,
+            "WO": 45,
+            "CT": 46,
+            "LP": 47,
+            "AMI_CPI": 40,
+            "LEO": 52,
+            "HOS": 61,
+            "FF": 44
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "delta",
+              "level": 2
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "6_P06",
+          "scores": {
+            "BE": 55,
+            "DO": 55,
+            "EN": 45,
+            "EZ": 60,
+            "FX": 45,
+            "FL": 50,
+            "FU": 40,
+            "IN": 50,
+            "KA": 55,
+            "LS": 55,
+            "LB": 55,
+            "SP": 55,
+            "SE": 60,
+            "SK": 50
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 6,
+            "EN": 4,
+            "EZ": 7,
+            "FX": 4,
+            "FL": 5,
+            "FU": 3,
+            "IN": 5,
+            "KA": 6,
+            "LS": 6,
+            "LB": 6,
+            "SP": 6,
+            "SE": 7,
+            "SK": 5
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "6_P06",
+          "scores": {
+            "Orientare spre Client": 58,
+            "Productivitate": 44,
+            "Acuratete": 48,
+            "Satisfactia Muncii": 60,
+            "Promovabilitate": 65,
+            "Consum de Alcool si de alte Substante": 38,
+            "Concediu Medical Neautorizat": 40,
+            "Infractiuni Rutiere": 49,
+            "Intarzieri": 38,
+            "Indolenta": 38,
+            "Sabotaj al Productiei sau al Proprietatii": 37,
+            "Nerespectarea Protectiei Muncii": 44,
+            "Furt": 40,
+            "Risc de Comportament Contraproductiv": 41,
+            "Recomandare Generala de Angajare": 56
+          },
+          "rawResult": {
+            "Orientare spre Client": 80,
+            "Productivitate": 27,
+            "Acuratete": 43,
+            "Satisfactia Muncii": 84,
+            "Promovabilitate": 93,
+            "Consum de Alcool si de alte Substante": 11,
+            "Concediu Medical Neautorizat": 17,
+            "Infractiuni Rutiere": 47,
+            "Intarzieri": 12,
+            "Indolenta": 12,
+            "Sabotaj al Productiei sau al Proprietatii": 10,
+            "Nerespectarea Protectiei Muncii": 26,
+            "Furt": 17,
+            "Risc de Comportament Contraproductiv": 19,
+            "Recomandare Generala de Angajare": 73
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "6_P06",
+          "scores": {
+            "A": 66,
+            "B": 56.68,
+            "C": 56.239999999999995,
+            "D": 59.760000000000005
+          },
+          "rawResult": {
+            "A": 90,
+            "B": 66.7,
+            "C": 65.6,
+            "D": 74.4
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "6_P06",
+          "scores": {
+            "E": 0,
+            "I": 7,
+            "S": 3,
+            "N": 0,
+            "T": 19,
+            "F": 0,
+            "J": 5,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "6_P06",
+          "scores": {
+            "OBIECTIVE CLARE": 65,
+            "ORGANIZARE EFICIENTA": 60,
+            "LEADERSHIP": 70,
+            "DEZVOLTARE PERSONALA": 70,
+            "COMUNICARE INTERNA": 58,
+            "MOTIVARE SI RECOMPENSA": 63,
+            "INOVARE SI SCHIMBARE": 68,
+            "PERFORMANTA": 58
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 6.6,
+            "ORGANIZARE EFICIENTA": 6.2,
+            "LEADERSHIP": 7,
+            "DEZVOLTARE PERSONALA": 7,
+            "COMUNICARE INTERNA": 6,
+            "MOTIVARE SI RECOMPENSA": 6.4,
+            "INOVARE SI SCHIMBARE": 6.8,
+            "PERFORMANTA": 6
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 0.91,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "A",
+          "description": "Analitic — gândire logică, fapte, date"
+        },
+        "personalityType": {
+          "type": "ISTJ",
+          "description": "Inspectorul — responsabil, minuțios, de încredere, loial"
+        },
+        "leadershipPotential": "SCAZUT",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "delta",
+        "cuboidLevel": 2
+      },
+      "strengths": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Feminitate/Masculinitate",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 70 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "LEADERSHIP",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 7 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "DEZVOLTARE PERSONALA",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 7 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "INOVARE SI SCHIMBARE",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Analitic (stânga-sus)",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 90 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Promovabilitate",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 93 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "OBIECTIVE CLARE",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "MOTIVARE SI RECOMPENSA",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 6.4 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 61,
+          "interpretation": "RIDICAT — scor 61 (Etalon RO N=1600 masculin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Prezență socială",
+          "tScore": 27,
+          "interpretation": "FOARTE_SCAZUT — scor 27 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Acceptare de sine",
+          "tScore": 28,
+          "interpretation": "FOARTE_SCAZUT — scor 28 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Sociabilitate",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 35 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Empatie",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Potențial managerial",
+          "tScore": 37,
+          "interpretation": "SCAZUT — scor 37 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 61,
+          "interpretation": "RIDICAT pe scală inversă — indicator de risc (T=61)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": [
+        {
+          "tension": "Introversie puternică + prezență socială scăzută — vizibilitate limitată în organizație",
+          "developmentOpportunity": "Dezvoltare canal de influență prin competență (nu prin sociabilitate)"
+        }
+      ]
+    },
+    {
+      "entityId": "7_P07",
+      "name": "P07",
+      "sex": "F",
+      "age": 46,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "7_P07",
+          "scores": {
+            "DO": 36,
+            "CS": 36,
+            "SY": 38,
+            "SP": 40,
+            "SA": 32,
+            "IN": 50,
+            "EM": 27,
+            "RE": 55,
+            "SO": 55,
+            "SC": 62,
+            "GI": 57,
+            "CM": 56,
+            "WB": 59,
+            "TO": 59,
+            "AC": 40,
+            "AI": 34,
+            "CF": 33,
+            "IS": 43,
+            "FX": 43,
+            "SN": 64,
+            "MP": 42,
+            "WO": 51,
+            "CT": 36,
+            "LP": 46,
+            "AMI_CPI": 65,
+            "LEO": 33,
+            "HOS": 39,
+            "FF": 54
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "beta",
+              "level": 5
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "7_P07",
+          "scores": {
+            "BE": 50,
+            "DO": 40,
+            "EN": 50,
+            "EZ": 45,
+            "FX": 45,
+            "FL": 45,
+            "FU": 45,
+            "IN": 45,
+            "KA": 45,
+            "LS": 35,
+            "LB": 40,
+            "SP": 55,
+            "SE": 45,
+            "SK": 50
+          },
+          "rawResult": {
+            "BE": 5,
+            "DO": 3,
+            "EN": 5,
+            "EZ": 4,
+            "FX": 4,
+            "FL": 4,
+            "FU": 4,
+            "IN": 4,
+            "KA": 4,
+            "LS": 2,
+            "LB": 3,
+            "SP": 6,
+            "SE": 4,
+            "SK": 5
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "7_P07",
+          "scores": {
+            "Orientare spre Client": 37,
+            "Productivitate": 68,
+            "Acuratete": 60,
+            "Satisfactia Muncii": 42,
+            "Promovabilitate": 54,
+            "Consum de Alcool si de alte Substante": 46,
+            "Concediu Medical Neautorizat": 49,
+            "Infractiuni Rutiere": 46,
+            "Intarzieri": 47,
+            "Indolenta": 47,
+            "Sabotaj al Productiei sau al Proprietatii": 46,
+            "Nerespectarea Protectiei Muncii": 48,
+            "Furt": 47,
+            "Risc de Comportament Contraproductiv": 47,
+            "Recomandare Generala de Angajare": 52
+          },
+          "rawResult": {
+            "Orientare spre Client": 10,
+            "Productivitate": 96,
+            "Acuratete": 85,
+            "Satisfactia Muncii": 22,
+            "Promovabilitate": 65,
+            "Consum de Alcool si de alte Substante": 36,
+            "Concediu Medical Neautorizat": 45,
+            "Infractiuni Rutiere": 36,
+            "Intarzieri": 39,
+            "Indolenta": 40,
+            "Sabotaj al Productiei sau al Proprietatii": 34,
+            "Nerespectarea Protectiei Muncii": 43,
+            "Furt": 39,
+            "Risc de Comportament Contraproductiv": 39,
+            "Recomandare Generala de Angajare": 59
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "7_P07",
+          "scores": {
+            "A": 53.56,
+            "B": 54.879999999999995,
+            "C": 55.32,
+            "D": 49.12
+          },
+          "rawResult": {
+            "A": 58.9,
+            "B": 62.2,
+            "C": 63.3,
+            "D": 47.8
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "7_P07",
+          "scores": {
+            "E": 0,
+            "I": 19,
+            "S": 31,
+            "N": 0,
+            "T": 0,
+            "F": 35,
+            "J": 13,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISFJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "7_P07",
+          "scores": {
+            "OBIECTIVE CLARE": 60,
+            "ORGANIZARE EFICIENTA": 63,
+            "LEADERSHIP": 68,
+            "DEZVOLTARE PERSONALA": 65,
+            "COMUNICARE INTERNA": 68,
+            "MOTIVARE SI RECOMPENSA": 65,
+            "INOVARE SI SCHIMBARE": 56,
+            "PERFORMANTA": 65
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 6.2,
+            "ORGANIZARE EFICIENTA": 6.4,
+            "LEADERSHIP": 6.8,
+            "DEZVOLTARE PERSONALA": 6.6,
+            "COMUNICARE INTERNA": 6.8,
+            "MOTIVARE SI RECOMPENSA": 6.6,
+            "INOVARE SI SCHIMBARE": 5.8,
+            "PERFORMANTA": 6.6
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 0.91,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "C",
+          "description": "Relațional — empatie, comunicare, echipă"
+        },
+        "personalityType": {
+          "type": "ISFJ",
+          "description": "Protectorul — empatic, loial, conștiincios, dedicat"
+        },
+        "leadershipPotential": "SCAZUT",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "beta",
+        "cuboidLevel": 5
+      },
+      "strengths": [
+        {
+          "instrument": "ESQ-2",
+          "scale": "Productivitate",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 96 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "LEADERSHIP",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "COMUNICARE INTERNA",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Amabilitate",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "DEZVOLTARE PERSONALA",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "MOTIVARE SI RECOMPENSA",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "PERFORMANTA",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 6.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Feminitate/Masculinitate",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "ORGANIZARE EFICIENTA",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 6.4 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Autocontrol",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Empatie",
+          "tScore": 27,
+          "interpretation": "FOARTE_SCAZUT — scor 27 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Acceptare de sine",
+          "tScore": 32,
+          "interpretation": "FOARTE_SCAZUT — scor 32 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Eficiență intelectuală",
+          "tScore": 33,
+          "interpretation": "FOARTE_SCAZUT — scor 33 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Orientare spre aplicarea legii",
+          "tScore": 33,
+          "interpretation": "FOARTE_SCAZUT — scor 33 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Realizarea prin independență",
+          "tScore": 34,
+          "interpretation": "FOARTE_SCAZUT — scor 34 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Mândria performanței",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 2 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Dominanța",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Capacitate de statut",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Temperament creativ",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Rațional vs. Afectiv",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor F35 (Etalon RO feminin)"
+        }
+      ],
+      "congruences": [],
+      "tensions": []
+    },
+    {
+      "entityId": "8_P08",
+      "name": "P08",
+      "sex": "M",
+      "age": 26,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "8_P08",
+          "scores": {
+            "DO": 38,
+            "CS": 45,
+            "SY": 46,
+            "SP": 51,
+            "SA": 38,
+            "IN": 41,
+            "EM": 29,
+            "RE": 49,
+            "SO": 53,
+            "SC": 59,
+            "GI": 50,
+            "CM": 49,
+            "WB": 47,
+            "TO": 61,
+            "AC": 43,
+            "AI": 52,
+            "CF": 52,
+            "IS": 50,
+            "FX": 45,
+            "SN": 43,
+            "MP": 47,
+            "WO": 48,
+            "CT": 40,
+            "LP": 50,
+            "AMI_CPI": 56,
+            "LEO": 59,
+            "HOS": 55,
+            "FF": 65
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "delta",
+              "level": 4
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "8_P08",
+          "scores": {
+            "BE": 50,
+            "DO": 50,
+            "EN": 60,
+            "EZ": 50,
+            "FX": 45,
+            "FL": 60,
+            "FU": 50,
+            "IN": 50,
+            "KA": 55,
+            "LS": 50,
+            "LB": 50,
+            "SP": 50,
+            "SE": 45,
+            "SK": 55
+          },
+          "rawResult": {
+            "BE": 5,
+            "DO": 5,
+            "EN": 7,
+            "EZ": 5,
+            "FX": 4,
+            "FL": 7,
+            "FU": 5,
+            "IN": 5,
+            "KA": 6,
+            "LS": 5,
+            "LB": 5,
+            "SP": 5,
+            "SE": 4,
+            "SK": 6
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "8_P08",
+          "scores": {
+            "Orientare spre Client": 59,
+            "Productivitate": 60,
+            "Acuratete": 71,
+            "Satisfactia Muncii": 62,
+            "Promovabilitate": 58,
+            "Consum de Alcool si de alte Substante": 34,
+            "Concediu Medical Neautorizat": 35,
+            "Infractiuni Rutiere": 32,
+            "Intarzieri": 36,
+            "Indolenta": 35,
+            "Sabotaj al Productiei sau al Proprietatii": 34,
+            "Nerespectarea Protectiei Muncii": 34,
+            "Furt": 32,
+            "Risc de Comportament Contraproductiv": 34,
+            "Recomandare Generala de Angajare": 63
+          },
+          "rawResult": {
+            "Orientare spre Client": 82,
+            "Productivitate": 84,
+            "Acuratete": 98,
+            "Satisfactia Muncii": 89,
+            "Promovabilitate": 80,
+            "Consum de Alcool si de alte Substante": 5,
+            "Concediu Medical Neautorizat": 7,
+            "Infractiuni Rutiere": 4,
+            "Intarzieri": 8,
+            "Indolenta": 7,
+            "Sabotaj al Productiei sau al Proprietatii": 5,
+            "Nerespectarea Protectiei Muncii": 5,
+            "Furt": 4,
+            "Risc de Comportament Contraproductiv": 6,
+            "Recomandare Generala de Angajare": 91
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "8_P08",
+          "scores": {
+            "A": 56.239999999999995,
+            "B": 56.239999999999995,
+            "C": 52.68000000000001,
+            "D": 54
+          },
+          "rawResult": {
+            "A": 65.6,
+            "B": 65.6,
+            "C": 56.7,
+            "D": 60
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "8_P08",
+          "scores": {
+            "E": 0,
+            "I": 23,
+            "S": 43,
+            "N": 0,
+            "T": 37,
+            "F": 0,
+            "J": 0,
+            "P": 19
+          },
+          "rawResult": {
+            "type": "ISTP"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "8_P08",
+          "scores": {
+            "OBIECTIVE CLARE": 48,
+            "ORGANIZARE EFICIENTA": 48,
+            "LEADERSHIP": 51,
+            "DEZVOLTARE PERSONALA": 54,
+            "COMUNICARE INTERNA": 48,
+            "MOTIVARE SI RECOMPENSA": 42,
+            "INOVARE SI SCHIMBARE": 47,
+            "PERFORMANTA": 48
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 4.8,
+            "ORGANIZARE EFICIENTA": 4.8,
+            "LEADERSHIP": 5.2,
+            "DEZVOLTARE PERSONALA": 5.6,
+            "COMUNICARE INTERNA": 4.8,
+            "MOTIVARE SI RECOMPENSA": 4,
+            "INOVARE SI SCHIMBARE": 4.6,
+            "PERFORMANTA": 4.8
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 0.91,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "A",
+          "description": "Analitic — gândire logică, fapte, date"
+        },
+        "personalityType": {
+          "type": "ISTP",
+          "description": "Meșterul — practic, analitic, adaptabil, observator"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "RIDICATA",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "delta",
+        "cuboidLevel": 4
+      },
+      "strengths": [
+        {
+          "instrument": "ESQ-2",
+          "scale": "Acuratete",
+          "tScore": 71,
+          "interpretation": "FOARTE_RIDICAT — scor 98 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Senzorial vs. Intuitiv",
+          "tScore": 67,
+          "interpretation": "FOARTE_RIDICAT — scor S43 (Etalon RO masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Luptător",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 65 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Rațional vs. Afectiv",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor T37 (Etalon RO masculin)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Recomandare Generala de Angajare",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 91 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Satisfactia Muncii",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 89 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Toleranță",
+          "tScore": 61,
+          "interpretation": "RIDICAT — scor 61 (Etalon RO N=1600 masculin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Empatie",
+          "tScore": 29,
+          "interpretation": "FOARTE_SCAZUT — scor 29 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Dominanța",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 38 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Acceptare de sine",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 38 (Etalon RO N=1600 masculin)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Autodisciplină confirmată cross-instrument: CPI SC + AMI SK",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": []
+    },
+    {
+      "entityId": "9_P09",
+      "name": "P09",
+      "sex": "F",
+      "age": 32,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "9_P09",
+          "scores": {
+            "DO": 47,
+            "CS": 36,
+            "SY": 51,
+            "SP": 40,
+            "SA": 48,
+            "IN": 47,
+            "EM": 43,
+            "RE": 61,
+            "SO": 49,
+            "SC": 60,
+            "GI": 51,
+            "CM": 49,
+            "WB": 49,
+            "TO": 53,
+            "AC": 42,
+            "AI": 55,
+            "CF": 49,
+            "IS": 57,
+            "FX": 54,
+            "SN": 67,
+            "MP": 40,
+            "WO": 51,
+            "CT": 52,
+            "LP": 49,
+            "AMI_CPI": 48,
+            "LEO": 54,
+            "HOS": 46,
+            "FF": 57
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "beta",
+              "level": 4
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "9_P09",
+          "scores": {
+            "BE": 55,
+            "DO": 40,
+            "EN": 45,
+            "EZ": 45,
+            "FX": 45,
+            "FL": 45,
+            "FU": 55,
+            "IN": 45,
+            "KA": 45,
+            "LS": 35,
+            "LB": 45,
+            "SP": 55,
+            "SE": 50,
+            "SK": 45
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 3,
+            "EN": 4,
+            "EZ": 4,
+            "FX": 4,
+            "FL": 4,
+            "FU": 6,
+            "IN": 4,
+            "KA": 4,
+            "LS": 2,
+            "LB": 4,
+            "SP": 6,
+            "SE": 5,
+            "SK": 4
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "9_P09",
+          "scores": {
+            "Orientare spre Client": 45,
+            "Productivitate": 54,
+            "Acuratete": 66,
+            "Satisfactia Muncii": 44,
+            "Promovabilitate": 54,
+            "Consum de Alcool si de alte Substante": 44,
+            "Concediu Medical Neautorizat": 49,
+            "Infractiuni Rutiere": 45,
+            "Intarzieri": 50,
+            "Indolenta": 49,
+            "Sabotaj al Productiei sau al Proprietatii": 44,
+            "Nerespectarea Protectiei Muncii": 47,
+            "Furt": 43,
+            "Risc de Comportament Contraproductiv": 47,
+            "Recomandare Generala de Angajare": 53
+          },
+          "rawResult": {
+            "Orientare spre Client": 32,
+            "Productivitate": 66,
+            "Acuratete": 95,
+            "Satisfactia Muncii": 29,
+            "Promovabilitate": 64,
+            "Consum de Alcool si de alte Substante": 26,
+            "Concediu Medical Neautorizat": 45,
+            "Infractiuni Rutiere": 32,
+            "Intarzieri": 51,
+            "Indolenta": 47,
+            "Sabotaj al Productiei sau al Proprietatii": 29,
+            "Nerespectarea Protectiei Muncii": 39,
+            "Furt": 24,
+            "Risc de Comportament Contraproductiv": 37,
+            "Recomandare Generala de Angajare": 60
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "9_P09",
+          "scores": {
+            "A": 56.239999999999995,
+            "B": 58,
+            "C": 55.760000000000005,
+            "D": 57.56
+          },
+          "rawResult": {
+            "A": 65.6,
+            "B": 70,
+            "C": 64.4,
+            "D": 68.9
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "9_P09",
+          "scores": {
+            "E": 0,
+            "I": 5,
+            "S": 43,
+            "N": 0,
+            "T": 25,
+            "F": 0,
+            "J": 5,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "9_P09",
+          "scores": {
+            "OBIECTIVE CLARE": 38,
+            "ORGANIZARE EFICIENTA": 39,
+            "LEADERSHIP": 36,
+            "DEZVOLTARE PERSONALA": 38,
+            "COMUNICARE INTERNA": 49,
+            "MOTIVARE SI RECOMPENSA": 37,
+            "INOVARE SI SCHIMBARE": 41,
+            "PERFORMANTA": 34
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 3,
+            "ORGANIZARE EFICIENTA": 3.2,
+            "LEADERSHIP": 2.6,
+            "DEZVOLTARE PERSONALA": 3,
+            "COMUNICARE INTERNA": 5,
+            "MOTIVARE SI RECOMPENSA": 2.8,
+            "INOVARE SI SCHIMBARE": 3.8,
+            "PERFORMANTA": 2
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 0.91,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "B",
+          "description": "Organizat — structură, proces, detalii"
+        },
+        "personalityType": {
+          "type": "ISTJ",
+          "description": "Inspectorul — responsabil, minuțios, de încredere, loial"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "beta",
+        "cuboidLevel": 4
+      },
+      "strengths": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Feminitate/Masculinitate",
+          "tScore": 67,
+          "interpretation": "FOARTE_RIDICAT — scor 67 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Senzorial vs. Intuitiv",
+          "tScore": 67,
+          "interpretation": "FOARTE_RIDICAT — scor S43 (Etalon RO feminin)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Acuratete",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 95 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Responsabilitate",
+          "tScore": 61,
+          "interpretation": "RIDICAT — scor 61 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "PERFORMANTA",
+          "tScore": 34,
+          "interpretation": "FOARTE_SCAZUT — scor 2 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Mândria performanței",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 2 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Capacitate de statut",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 36 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "LEADERSHIP",
+          "tScore": 36,
+          "interpretation": "SCAZUT — scor 2.6 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "MOTIVARE SI RECOMPENSA",
+          "tScore": 37,
+          "interpretation": "SCAZUT — scor 2.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "OBIECTIVE CLARE",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 3 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "DEZVOLTARE PERSONALA",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 3 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "ORGANIZARE EFICIENTA",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 3.2 (Praguri normative CO 8 dim)"
+        }
+      ],
+      "congruences": [],
+      "tensions": []
+    },
+    {
+      "entityId": "10_P10",
+      "name": "P10",
+      "sex": "M",
+      "age": 25,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "10_P10",
+          "scores": {
+            "DO": 50,
+            "CS": 50,
+            "SY": 43,
+            "SP": 48,
+            "SA": 45,
+            "IN": 51,
+            "EM": 39,
+            "RE": 35,
+            "SO": 38,
+            "SC": 41,
+            "GI": 48,
+            "CM": 49,
+            "WB": 58,
+            "TO": 40,
+            "AC": 43,
+            "AI": 27,
+            "CF": 42,
+            "IS": 35,
+            "FX": 45,
+            "SN": 39,
+            "MP": 40,
+            "WO": 51,
+            "CT": 32,
+            "LP": 50,
+            "AMI_CPI": 44,
+            "LEO": 41,
+            "HOS": 64,
+            "FF": 44
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "alfa",
+              "level": 2
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "10_P10",
+          "scores": {
+            "BE": 50,
+            "DO": 50,
+            "EN": 50,
+            "EZ": 45,
+            "FX": 40,
+            "FL": 45,
+            "FU": 45,
+            "IN": 45,
+            "KA": 60,
+            "LS": 65,
+            "LB": 50,
+            "SP": 55,
+            "SE": 50,
+            "SK": 50
+          },
+          "rawResult": {
+            "BE": 5,
+            "DO": 5,
+            "EN": 5,
+            "EZ": 4,
+            "FX": 3,
+            "FL": 4,
+            "FU": 4,
+            "IN": 4,
+            "KA": 7,
+            "LS": 8,
+            "LB": 5,
+            "SP": 6,
+            "SE": 5,
+            "SK": 5
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "10_P10",
+          "scores": {
+            "Orientare spre Client": 60,
+            "Productivitate": 45,
+            "Acuratete": 61,
+            "Satisfactia Muncii": 58,
+            "Promovabilitate": 58,
+            "Consum de Alcool si de alte Substante": 37,
+            "Concediu Medical Neautorizat": 44,
+            "Infractiuni Rutiere": 46,
+            "Intarzieri": 44,
+            "Indolenta": 43,
+            "Sabotaj al Productiei sau al Proprietatii": 38,
+            "Nerespectarea Protectiei Muncii": 44,
+            "Furt": 38,
+            "Risc de Comportament Contraproductiv": 42,
+            "Recomandare Generala de Angajare": 57
+          },
+          "rawResult": {
+            "Orientare spre Client": 85,
+            "Productivitate": 32,
+            "Acuratete": 86,
+            "Satisfactia Muncii": 79,
+            "Promovabilitate": 80,
+            "Consum de Alcool si de alte Substante": 10,
+            "Concediu Medical Neautorizat": 26,
+            "Infractiuni Rutiere": 34,
+            "Intarzieri": 27,
+            "Indolenta": 24,
+            "Sabotaj al Productiei sau al Proprietatii": 12,
+            "Nerespectarea Protectiei Muncii": 28,
+            "Furt": 12,
+            "Risc de Comportament Contraproductiv": 22,
+            "Recomandare Generala de Angajare": 75
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "10_P10",
+          "scores": {
+            "A": 58.879999999999995,
+            "B": 62,
+            "C": 58.879999999999995,
+            "D": 59.32
+          },
+          "rawResult": {
+            "A": 72.2,
+            "B": 80,
+            "C": 72.2,
+            "D": 73.3
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "10_P10",
+          "scores": {
+            "E": 0,
+            "I": 7,
+            "S": 45,
+            "N": 0,
+            "T": 25,
+            "F": 0,
+            "J": 21,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ISTJ"
+          },
+          "confidence": 0.85
+        },
+        {
+          "dimensionId": "CLIMATE",
+          "entityId": "10_P10",
+          "scores": {
+            "OBIECTIVE CLARE": 70,
+            "ORGANIZARE EFICIENTA": 63,
+            "LEADERSHIP": 70,
+            "DEZVOLTARE PERSONALA": 70,
+            "COMUNICARE INTERNA": 68,
+            "MOTIVARE SI RECOMPENSA": 54,
+            "INOVARE SI SCHIMBARE": 63,
+            "PERFORMANTA": 68
+          },
+          "rawResult": {
+            "OBIECTIVE CLARE": 7,
+            "ORGANIZARE EFICIENTA": 6.4,
+            "LEADERSHIP": 7,
+            "DEZVOLTARE PERSONALA": 7,
+            "COMUNICARE INTERNA": 6.8,
+            "MOTIVARE SI RECOMPENSA": 5.6,
+            "INOVARE SI SCHIMBARE": 6.4,
+            "PERFORMANTA": 6.8
+          },
+          "confidence": 0.8
+        }
+      ],
+      "completeness": 0.91,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "B",
+          "description": "Organizat — structură, proces, detalii"
+        },
+        "personalityType": {
+          "type": "ISTJ",
+          "description": "Inspectorul — responsabil, minuțios, de încredere, loial"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "alfa",
+        "cuboidLevel": 2
+      },
+      "strengths": [
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "OBIECTIVE CLARE",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 7 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "LEADERSHIP",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 7 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "DEZVOLTARE PERSONALA",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 7 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "MBTI",
+          "scale": "Senzorial vs. Intuitiv",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor S45 (Etalon RO masculin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "COMUNICARE INTERNA",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "PERFORMANTA",
+          "tScore": 68,
+          "interpretation": "FOARTE_RIDICAT — scor 6.8 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Mândria performanței",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "ORGANIZARE EFICIENTA",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 6.4 (Praguri normative CO 8 dim)"
+        },
+        {
+          "instrument": "Climat Organizațional",
+          "scale": "INOVARE SI SCHIMBARE",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 6.4 (Praguri normative CO 8 dim)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Realizarea prin independență",
+          "tScore": 27,
+          "interpretation": "FOARTE_SCAZUT — scor 27 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Temperament creativ",
+          "tScore": 32,
+          "interpretation": "FOARTE_SCAZUT — scor 32 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Responsabilitate",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 35 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Intuiție psihologică",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 35 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Conformism social",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 38 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Empatie",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Feminitate/Masculinitate",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 masculin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 64,
+          "interpretation": "RIDICAT pe scală inversă — indicator de risc (T=64)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": []
+    },
+    {
+      "entityId": "11_P11",
+      "name": "P11",
+      "sex": "F",
+      "age": 47,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "11_P11",
+          "scores": {
+            "DO": 45,
+            "CS": 46,
+            "SY": 51,
+            "SP": 40,
+            "SA": 51,
+            "IN": 53,
+            "EM": 46,
+            "RE": 52,
+            "SO": 38,
+            "SC": 56,
+            "GI": 47,
+            "CM": 59,
+            "WB": 43,
+            "TO": 63,
+            "AC": 49,
+            "AI": 55,
+            "CF": 54,
+            "IS": 50,
+            "FX": 54,
+            "SN": 40,
+            "MP": 55,
+            "WO": 48,
+            "CT": 57,
+            "LP": 48,
+            "AMI_CPI": 41,
+            "LEO": 54,
+            "HOS": 39,
+            "FF": 50
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "delta",
+              "level": 5
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "11_P11",
+          "scores": {
+            "BE": 55,
+            "DO": 40,
+            "EN": 50,
+            "EZ": 40,
+            "FX": 45,
+            "FL": 45,
+            "FU": 60,
+            "IN": 40,
+            "KA": 40,
+            "LS": 35,
+            "LB": 40,
+            "SP": 40,
+            "SE": 45,
+            "SK": 50
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 3,
+            "EN": 5,
+            "EZ": 3,
+            "FX": 4,
+            "FL": 4,
+            "FU": 7,
+            "IN": 3,
+            "KA": 3,
+            "LS": 2,
+            "LB": 3,
+            "SP": 3,
+            "SE": 4,
+            "SK": 5
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "11_P11",
+          "scores": {
+            "Orientare spre Client": 63,
+            "Productivitate": 52,
+            "Acuratete": 60,
+            "Satisfactia Muncii": 63,
+            "Promovabilitate": 59,
+            "Consum de Alcool si de alte Substante": 38,
+            "Concediu Medical Neautorizat": 40,
+            "Infractiuni Rutiere": 35,
+            "Intarzieri": 40,
+            "Indolenta": 40,
+            "Sabotaj al Productiei sau al Proprietatii": 38,
+            "Nerespectarea Protectiei Muncii": 38,
+            "Furt": 37,
+            "Risc de Comportament Contraproductiv": 39,
+            "Recomandare Generala de Angajare": 60
+          },
+          "rawResult": {
+            "Orientare spre Client": 91,
+            "Productivitate": 59,
+            "Acuratete": 85,
+            "Satisfactia Muncii": 91,
+            "Promovabilitate": 81,
+            "Consum de Alcool si de alte Substante": 12,
+            "Concediu Medical Neautorizat": 15,
+            "Infractiuni Rutiere": 7,
+            "Intarzieri": 17,
+            "Indolenta": 16,
+            "Sabotaj al Productiei sau al Proprietatii": 12,
+            "Nerespectarea Protectiei Muncii": 11,
+            "Furt": 10,
+            "Risc de Comportament Contraproductiv": 13,
+            "Recomandare Generala de Angajare": 84
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "11_P11",
+          "scores": {
+            "A": 57.12,
+            "B": 58.879999999999995,
+            "C": 56.68,
+            "D": 52.68000000000001
+          },
+          "rawResult": {
+            "A": 67.8,
+            "B": 72.2,
+            "C": 66.7,
+            "D": 56.7
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "11_P11",
+          "scores": {
+            "E": 11,
+            "I": 0,
+            "S": 19,
+            "N": 0,
+            "T": 19,
+            "F": 0,
+            "J": 23,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ESTJ"
+          },
+          "confidence": 0.85
+        }
+      ],
+      "completeness": 0.81,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "B",
+          "description": "Organizat — structură, proces, detalii"
+        },
+        "personalityType": {
+          "type": "ESTJ",
+          "description": "Executivul — organizat, responsabil, decisiv, eficient"
+        },
+        "leadershipPotential": "MEDIU",
+        "integrityLevel": "RIDICATA",
+        "motivationLevel": "SCAZUT",
+        "cuboidType": "delta",
+        "cuboidLevel": 5
+      },
+      "strengths": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Toleranță",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 63 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Orientare spre Client",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 91 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Satisfactia Muncii",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 91 (Etalon candidați selecție)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "AMI",
+          "scale": "Mândria performanței",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 2 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Conformism social",
+          "tScore": 38,
+          "interpretation": "SCAZUT — scor 38 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Ostilitate",
+          "tScore": 39,
+          "interpretation": "SCAZUT — scor 39 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "congruences": [],
+      "tensions": []
+    },
+    {
+      "entityId": "12_P12",
+      "name": "P12",
+      "sex": "F",
+      "age": 47,
+      "dimensions": [
+        {
+          "dimensionId": "LEADERSHIP",
+          "entityId": "12_P12",
+          "scores": {
+            "DO": 66,
+            "CS": 62,
+            "SY": 56,
+            "SP": 45,
+            "SA": 48,
+            "IN": 64,
+            "EM": 56,
+            "RE": 61,
+            "SO": 45,
+            "SC": 35,
+            "GI": 45,
+            "CM": 56,
+            "WB": 55,
+            "TO": 59,
+            "AC": 56,
+            "AI": 60,
+            "CF": 70,
+            "IS": 57,
+            "FX": 49,
+            "SN": 43,
+            "MP": 62,
+            "WO": 54,
+            "CT": 55,
+            "LP": 56,
+            "AMI_CPI": 41,
+            "LEO": 54,
+            "TM": 64,
+            "B-MS": 60,
+            "B-FM": 33,
+            "ANX": 42,
+            "NAR": 55,
+            "D-SD": 54,
+            "D-AC": 48,
+            "HOS": 49,
+            "FF": 50
+          },
+          "rawResult": {
+            "cuboid": {
+              "type": "gama",
+              "level": 4
+            }
+          },
+          "confidence": 0.95
+        },
+        {
+          "dimensionId": "MOTIVATION",
+          "entityId": "12_P12",
+          "scores": {
+            "BE": 55,
+            "DO": 60,
+            "EN": 60,
+            "EZ": 55,
+            "FX": 60,
+            "FL": 50,
+            "FU": 65,
+            "IN": 45,
+            "KA": 40,
+            "LS": 60,
+            "LB": 55,
+            "SP": 40,
+            "SE": 50,
+            "SK": 55
+          },
+          "rawResult": {
+            "BE": 6,
+            "DO": 7,
+            "EN": 7,
+            "EZ": 6,
+            "FX": 7,
+            "FL": 5,
+            "FU": 8,
+            "IN": 4,
+            "KA": 3,
+            "LS": 7,
+            "LB": 6,
+            "SP": 3,
+            "SE": 5,
+            "SK": 6
+          },
+          "confidence": 0.9
+        },
+        {
+          "dimensionId": "INTEGRITY",
+          "entityId": "12_P12",
+          "scores": {
+            "Orientare spre Client": 46,
+            "Productivitate": 63,
+            "Acuratete": 46,
+            "Satisfactia Muncii": 51,
+            "Promovabilitate": 52,
+            "Consum de Alcool si de alte Substante": 52,
+            "Concediu Medical Neautorizat": 48,
+            "Infractiuni Rutiere": 44,
+            "Intarzieri": 47,
+            "Indolenta": 48,
+            "Sabotaj al Productiei sau al Proprietatii": 51,
+            "Nerespectarea Protectiei Muncii": 47,
+            "Furt": 52,
+            "Risc de Comportament Contraproductiv": 49,
+            "Recomandare Generala de Angajare": 51
+          },
+          "rawResult": {
+            "Orientare spre Client": 33,
+            "Productivitate": 91,
+            "Acuratete": 34,
+            "Satisfactia Muncii": 53,
+            "Promovabilitate": 59,
+            "Consum de Alcool si de alte Substante": 59,
+            "Concediu Medical Neautorizat": 44,
+            "Infractiuni Rutiere": 27,
+            "Intarzieri": 37,
+            "Indolenta": 41,
+            "Sabotaj al Productiei sau al Proprietatii": 55,
+            "Nerespectarea Protectiei Muncii": 40,
+            "Furt": 58,
+            "Risc de Comportament Contraproductiv": 45,
+            "Recomandare Generala de Angajare": 55
+          },
+          "confidence": 0.92
+        },
+        {
+          "dimensionId": "COGNITIVE_STYLE",
+          "entityId": "12_P12",
+          "scores": {
+            "A": 59.760000000000005,
+            "B": 60.239999999999995,
+            "C": 64.24000000000001,
+            "D": 65.56
+          },
+          "rawResult": {
+            "A": 74.4,
+            "B": 75.6,
+            "C": 85.6,
+            "D": 88.9
+          },
+          "confidence": 0.75
+        },
+        {
+          "dimensionId": "PERSONALITY_TYPE",
+          "entityId": "12_P12",
+          "scores": {
+            "E": 19,
+            "I": 0,
+            "S": 0,
+            "N": 11,
+            "T": 9,
+            "F": 0,
+            "J": 27,
+            "P": 0
+          },
+          "rawResult": {
+            "type": "ENTJ"
+          },
+          "confidence": 0.85
+        }
+      ],
+      "completeness": 0.9,
+      "synthesis": {
+        "cognitiveStyle": {
+          "dominant": "D",
+          "description": "Vizionar — imaginație, sinteză, inovație"
+        },
+        "personalityType": {
+          "type": "ENTJ",
+          "description": "Comandantul — decisiv, strategic, eficient, ambițios"
+        },
+        "leadershipPotential": "RIDICAT",
+        "integrityLevel": "MEDIE",
+        "motivationLevel": "MEDIU",
+        "cuboidType": "gama",
+        "cuboidLevel": 4
+      },
+      "strengths": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Eficiență intelectuală",
+          "tScore": 70,
+          "interpretation": "FOARTE_RIDICAT — scor 70 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Dominanța",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 66 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Holistic (dreapta-sus)",
+          "tScore": 66,
+          "interpretation": "FOARTE_RIDICAT — scor 88.9 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "AMI",
+          "scale": "Neînfricarea",
+          "tScore": 65,
+          "interpretation": "FOARTE_RIDICAT — scor 8 (Etalon RO adulți N=1300)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Independență",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Obiectivitate în gândire",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 64 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "HBDI (Herrmann)",
+          "scale": "Interpersonal (dreapta-jos)",
+          "tScore": 64,
+          "interpretation": "RIDICAT — scor 85.6 (CPA 72 itemi — calcul intern)"
+        },
+        {
+          "instrument": "ESQ-2",
+          "scale": "Productivitate",
+          "tScore": 63,
+          "interpretation": "RIDICAT — scor 91 (Etalon candidați selecție)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Capacitate de statut",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Potențial managerial",
+          "tScore": 62,
+          "interpretation": "RIDICAT — scor 62 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "risks": [
+        {
+          "instrument": "CPI 260",
+          "scale": "Baucom Feminitate",
+          "tScore": 33,
+          "interpretation": "FOARTE_SCAZUT — scor 33 (Etalon RO N=1600 feminin)"
+        },
+        {
+          "instrument": "CPI 260",
+          "scale": "Autocontrol",
+          "tScore": 35,
+          "interpretation": "SCAZUT — scor 35 (Etalon RO N=1600 feminin)"
+        }
+      ],
+      "congruences": [
+        {
+          "finding": "Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)",
+          "valence": "POZITIVA"
+        }
+      ],
+      "tensions": []
+    }
+  ],
+  "organizationalSynthesis": {
+    "dominantCognitiveStyle": "B (media 75)",
+    "dominantPersonalityTypes": [
+      "ISTJ (6)",
+      "ESTJ (3)",
+      "ISFJ (1)"
+    ],
+    "cuboidDistribution": {
+      "beta": 5,
+      "alfa": 3,
+      "delta": 3,
+      "gama": 1
+    },
+    "leadershipPool": {
+      "ridicat": 3,
+      "mediu": 7,
+      "scazut": 2
+    },
+    "integrityOverview": {
+      "ridicata": 3,
+      "medie": 9,
+      "deMonitorizat": 0
+    },
+    "motivationMean": 5.2,
+    "climatePerception": {
+      "OBIECTIVE CLARE": 5.4,
+      "ORGANIZARE EFICIENTA": 5.3,
+      "LEADERSHIP": 5.6,
+      "DEZVOLTARE PERSONALA": 5.9,
+      "COMUNICARE INTERNA": 6.1,
+      "MOTIVARE SI RECOMPENSA": 5.3,
+      "INOVARE SI SCHIMBARE": 5.2,
+      "PERFORMANTA": 5.2
+    }
+  },
+  "groupStrengths": [
+    "Echipă cu capacitate organizatorică puternică (Herrmann B)",
+    "Echipă cu competență relațională ridicată (Herrmann C)"
+  ],
+  "groupRisks": [],
+  "teamComposition": {
+    "herrmannBalance": {
+      "A": 74,
+      "B": 75,
+      "C": 70,
+      "D": 70
+    },
+    "mbtiDistribution": {
+      "ISTJ": 6,
+      "ESTJ": 3,
+      "ISFJ": 1,
+      "ISTP": 1,
+      "ENTJ": 1
+    }
+  }
+}

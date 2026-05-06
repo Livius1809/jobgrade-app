@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════════════
+PROFIL INTEGRAT — P05
+═══════════════════════════════════════════════════════════════
+Sex: F | Vârstă: 53 | Completitudine: 100%
+
+── SINTEZĂ ──
+Tip personalitate: ISTJ — Inspectorul — responsabil, minuțios, de încredere, loial
+Stil cognitiv: A — P01litic — gândire logică, fapte, date
+Model Cuboid CPI: Tip BETA, Nivel integrare 5
+Leadership: MEDIU
+Integritate: MEDIE
+Motivație: MEDIU
+
+── PUNCTE FORTE (scoruri > T60) ──
+  ★ CPI 260 / Autocontrol: T=70
+  ★ ESQ-2 / Acuratete: T=68
+  ★ Climat Organizațional / LEADERSHIP: T=68
+  ★ Climat Organizațional / COMUNICARE INTERNA: T=68
+  ★ CPI 260 / Sănătate: T=65
+  ★ CPI 260 / Orientare spre muncă: T=65
+  ★ CPI 260 / Amabilitate: T=65
+  ★ Climat Organizațional / ORGANIZARE EFICIENTA: T=65
+  ★ Climat Organizațional / DEZVOLTARE PERSONALA: T=65
+  ★ CPI 260 / Impresie bună: T=64
+
+── ARII DE PERFECȚIONARE / RISCURI ──
+  ▼ CPI 260 / Sociabilitate: T=33 — FOARTE_SCAZUT — scor 33 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Flexibilitate: T=35 — SCAZUT — scor 35 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Acceptare de sine: T=36 — SCAZUT — scor 36 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Temperament creativ: T=36 — SCAZUT — scor 36 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Narcisism: T=36 — SCAZUT — scor 36 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Prezență socială: T=37 — SCAZUT — scor 37 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Afirmare necondiționată: T=37 — SCAZUT — scor 37 (Etalon RO N=1600 feminin)
+  ▼ CPI 260 / Ostilitate: T=39 — SCAZUT — scor 39 (Etalon RO N=1600 feminin)
+
+── CONGRUENȚE ──
+  ↔ Profil analitic congruent: Herrmann A (logic) + MBTI T (rațional)
+  ↔ Autodisciplină confirmată cross-instrument: CPI SC + AMI SK
+
+── TENSIUNI / OPORTUNITĂȚI DE DEZVOLTARE ──
+  ⚡ Introversie puternică + prezență socială scăzută — vizibilitate limitată în organizație
+    → Dezvoltare canal de influență prin competență (nu prin sociabilitate)
