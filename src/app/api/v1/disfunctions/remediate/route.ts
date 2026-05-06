@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { RemediationLevel } from "@/generated/prisma"
+import { remediateEvent, isAutoRemediable } from "@/lib/agents/remediation-runner"
 
 export const dynamic = "force-dynamic"
 
@@ -76,6 +77,32 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  // D1 AUTO: executare efectivă a remedierii prin remediation-runner
+  let executionResult: { outcome: string; details: string } | null = null
+  if (input.level === "AUTO" && isAutoRemediable(event.targetType, event.signal)) {
+    try {
+      const attempt = await remediateEvent(event.id)
+      if (attempt) {
+        executionResult = { outcome: attempt.outcome, details: attempt.details }
+        // Update event with execution result if runner changed status
+        if (attempt.outcome === "SUCCESS") {
+          await prisma.disfunctionEvent.update({
+            where: { id: event.id },
+            data: {
+              status: "RESOLVED",
+              remediationOk: true,
+              resolvedAt: new Date(),
+              resolvedBy: "auto",
+            },
+          }).catch(() => {})
+        }
+      }
+    } catch (err) {
+      console.warn(`[remediate] Auto-execution error: ${err instanceof Error ? err.message : "unknown"}`)
+      executionResult = { outcome: "FAILED", details: err instanceof Error ? err.message : "unknown error" }
+    }
+  }
+
   // Sincronizare cu tabela escalations: când un eveniment trece la ESCALATED,
   // creează automat înregistrare în escalations (single source of truth)
   if (nextStatus === "ESCALATED") {
@@ -109,5 +136,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ event: updated })
+  return NextResponse.json({ event: updated, ...(executionResult ? { execution: executionResult } : {}) })
 }

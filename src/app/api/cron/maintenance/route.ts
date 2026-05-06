@@ -50,6 +50,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // 1b. LEARNING VALIDATION — promovare cunostinte validate, stergere cele ineficiente
+  await withTimeout("learningValidation", async () => {
+    const { validateLearningArtifacts } = await import("@/lib/agents/learning-validator")
+    const vr = await validateLearningArtifacts()
+    results.learningValidation = vr
+  })
+
   // 2. SIGNALS PROCESSING
   await withTimeout("signals", async () => {
     const pending = await prisma.externalSignal.findMany({
@@ -341,6 +348,31 @@ export async function GET(request: NextRequest) {
       console.log(`[maintenance] Full-check: ${data.passed}/${data.totalChecks} pass, ${data.failed} fail${data.escalated ? " — ESCALAT" : ""}`)
     } else {
       results.fullCheck = { skipped: true, nextInMs: SIX_HOURS - lastCheckAge }
+    }
+  })
+
+  // 13. AUTO-MATCHING B2C ↔ B2B (la fiecare 6h)
+  await withTimeout("autoMatching", async () => {
+    const lastMatchRun = await prisma.systemConfig.findUnique({ where: { key: "AUTO_MATCHING_LAST_RUN" } })
+    const lastMatchAge = lastMatchRun ? Date.now() - new Date(lastMatchRun.value).getTime() : Infinity
+    const SIX_HOURS = 6 * 3600000
+
+    if (lastMatchAge >= SIX_HOURS) {
+      const { runAutoMatching } = await import("@/lib/matching/auto-matcher")
+      const matchResult = await runAutoMatching()
+      results.autoMatching = { newMatches: matchResult.newMatches, notifications: matchResult.notifications }
+
+      await prisma.systemConfig.upsert({
+        where: { key: "AUTO_MATCHING_LAST_RUN" },
+        update: { value: new Date().toISOString() },
+        create: { key: "AUTO_MATCHING_LAST_RUN", value: new Date().toISOString() },
+      })
+
+      if (matchResult.newMatches > 0) {
+        console.log(`[maintenance] Auto-matching: ${matchResult.newMatches} new matches, ${matchResult.notifications} notifications`)
+      }
+    } else {
+      results.autoMatching = { skipped: true, nextInMs: SIX_HOURS - lastMatchAge }
     }
   })
 
