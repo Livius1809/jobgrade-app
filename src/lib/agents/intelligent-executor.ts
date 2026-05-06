@@ -215,7 +215,101 @@ export async function runIntelligentBatch(
     assessCertainty = advLayers.assessCertainty
   } catch {}
 
+  // Import hierarchical critical thinking (agent→manager contestation)
+  let evalManagerDirective: ((
+    directive: string, agentRole: string, managerRole: string, ctx: any
+  ) => Promise<{ verdict: string; reasoning: string; contestPoints?: string[]; suggestedAlternative?: string }>) | null = null
+  let buildAgentCtx: ((role: string) => Promise<any>) | null = null
+  try {
+    const hct = await import("@/lib/agents/hierarchical-critical-thinking")
+    evalManagerDirective = hct.evaluateManagerDirective
+    buildAgentCtx = hct.buildAgentContext
+  } catch {}
+
   for (const task of tasks) {
+    // ═══ STRAT 0: HIERARCHICAL CRITICAL THINKING — "Does this directive make sense?" ═══
+    // Before executing, if the task was assigned by a manager (not OWNER/SYSTEM/CONTEMPLATION),
+    // the agent THINKS about the directive and may contest it.
+    if (evalManagerDirective && buildAgentCtx && task.assignedTo) {
+      try {
+        // Load full task to check assignedBy
+        const fullTask = await prisma.agentTask.findUnique({
+          where: { id: task.id },
+          select: { assignedBy: true },
+        })
+        const assignedBy = fullTask?.assignedBy
+        const isManagerDirective = assignedBy &&
+          assignedBy !== "OWNER" &&
+          assignedBy !== "SYSTEM" &&
+          assignedBy !== "CONTEMPLATION_ENGINE" &&
+          assignedBy !== task.assignedTo // not self-assigned
+
+        if (isManagerDirective) {
+          const agentCtx = await buildAgentCtx(task.assignedTo)
+          const contestResult = await evalManagerDirective(
+            `${task.title}\n${task.description}`,
+            task.assignedTo,
+            assignedBy,
+            agentCtx,
+          )
+
+          if (contestResult.verdict === "CONTEST" || contestResult.verdict === "SUGGEST_ALTERNATIVE") {
+            // Create a response task back to the manager with the contestation
+            const biz = await prisma.systemConfig.findUnique({ where: { key: "DEFAULT_BUSINESS_ID" } })
+            const businessId = biz?.value ?? "biz_jobgrade"
+
+            const contestDescription = [
+              `[CONTESTARE DE LA ${task.assignedTo}]`,
+              `Directiva originala: "${task.title}"`,
+              `\nMotivare: ${contestResult.reasoning}`,
+              ...(contestResult.contestPoints ?? []).map((p, i) => `\n${i + 1}. ${p}`),
+              contestResult.suggestedAlternative
+                ? `\nAlternativa propusa: ${contestResult.suggestedAlternative}`
+                : "",
+            ].join("\n")
+
+            await prisma.agentTask.create({
+              data: {
+                businessId,
+                assignedBy: task.assignedTo,
+                assignedTo: assignedBy,
+                title: `[Contestare] Re: ${task.title.slice(0, 80)}`,
+                description: contestDescription,
+                taskType: "REVIEW",
+                priority: task.priority,
+                tags: ["contestation", "hierarchical-critical-thinking", `ref:${task.id}`],
+                status: "ASSIGNED",
+              },
+            })
+
+            // Block the original task pending manager review
+            await prisma.agentTask.update({
+              where: { id: task.id },
+              data: {
+                status: "BLOCKED",
+                blockerType: "DEPENDENCY",
+                blockerDescription: `[HCT:${contestResult.verdict}] ${task.assignedTo} contesta directiva. Asteptare decizie ${assignedBy}.`,
+                blockedAt: new Date(),
+              },
+            })
+
+            results.push({
+              taskId: task.id,
+              assignedTo: task.assignedTo,
+              title: task.title,
+              status: "BLOCKED",
+              kbHit: false,
+              reason: `Hierarchical contestation: ${contestResult.verdict} — ${contestResult.reasoning.slice(0, 200)}`,
+            })
+            continue
+          }
+          // ACCEPT → proceed normally
+        }
+      } catch {
+        // Critical thinking evaluation failed — proceed with execution (fail-open)
+      }
+    }
+
     // ═══ STRAT COGNITIV 1: META-EVALUATOR — "Mai are sens acest task?" ═══
     if (metaEvaluateTask) {
       try {

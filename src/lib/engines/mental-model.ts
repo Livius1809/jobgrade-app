@@ -49,6 +49,8 @@ export interface MentalModel {
   edges: MentalModelEdge[]
   lastRebuilt: Date
   version: number
+  scope: "ORGANIZATIONAL" | "AGENT"
+  agentRole?: string // set when scope === "AGENT"
 }
 
 export interface QueryResult {
@@ -271,7 +273,7 @@ export async function rebuildMentalModel(): Promise<MentalModel> {
   const inputData = await gatherRebuildData()
 
   if (!inputData.trim()) {
-    const empty: MentalModel = { nodes: [], edges: [], lastRebuilt: new Date(), version: 1 }
+    const empty: MentalModel = { nodes: [], edges: [], lastRebuilt: new Date(), version: 1, scope: "ORGANIZATIONAL" }
     await saveMentalModel(empty)
     return empty
   }
@@ -298,6 +300,7 @@ export async function rebuildMentalModel(): Promise<MentalModel> {
     edges: parsed.edges,
     lastRebuilt: new Date(),
     version,
+    scope: "ORGANIZATIONAL",
   }
 
   await saveMentalModel(model)
@@ -442,7 +445,7 @@ async function saveMentalModel(model: MentalModel): Promise<void> {
 }
 
 /**
- * Load current mental model from DB.
+ * Load current organizational mental model from DB.
  */
 export async function loadMentalModel(): Promise<MentalModel | null> {
   try {
@@ -450,7 +453,10 @@ export async function loadMentalModel(): Promise<MentalModel | null> {
       where: { key: "MENTAL_MODEL" },
     })
     if (!config?.value) return null
-    return JSON.parse(config.value) as MentalModel
+    const model = JSON.parse(config.value) as MentalModel
+    // Backward compat: old models may not have scope
+    if (!model.scope) model.scope = "ORGANIZATIONAL"
+    return model
   } catch {
     return null
   }
@@ -616,4 +622,386 @@ function validateRelationship(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PER-AGENT MENTAL MODEL
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Each agent maintains its OWN mental model of their domain.
+//
+// COG has a model of the organization.
+// EMA has a model of evaluation processes.
+// SOA has a model of client interactions.
+// PROFILER has a model of human psychology.
+//
+// This is how each agent UNDERSTANDS their domain —
+// not just what they know (KB), but HOW things relate.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AGENT_REBUILD_SYSTEM_PROMPT = `Esti un analist de sisteme specializat intr-un DOMENIU SPECIFIC al unui agent.
+
+Primesti cunostinte din baza de date a unui agent al organismului organizational.
+Construieste un GRAF MENTAL focusat pe DOMENIUL acestui agent.
+
+Acelasi format ca la modelul organizational — dar focusat pe un singur domeniu:
+- Ce concepte sunt centrale in acest domeniu?
+- Ce procese conduce/participă acest agent?
+- Ce metrici monitorizează?
+- Ce principii și constrângeri guvernează domeniul?
+- Cum se leagă elementele din domeniu între ele?
+
+Returneaza JSON valid (fara markdown fences):
+{
+  "nodes": [
+    {
+      "id": "slug_unic",
+      "type": "CONCEPT|AGENT|PROCESS|METRIC|PRINCIPLE|CONSTRAINT",
+      "label": "Eticheta scurta",
+      "description": "Descriere (1-2 propozitii)",
+      "strength": 0.0-1.0
+    }
+  ],
+  "edges": [
+    {
+      "from": "node_id_sursa",
+      "to": "node_id_destinatie",
+      "relationship": "CAUSES|ENABLES|BLOCKS|CORRELATES|CONTRADICTS|REQUIRES|PRODUCES",
+      "weight": 0.0-1.0,
+      "evidence": "de ce credem asta"
+    }
+  ]
+}
+
+REGULI:
+- Maxim 50 noduri si 100 relatii (domeniu focusat, nu tot organismul)
+- Include si nodurile de INTERACTIUNE cu alte domenii (vecinii acestui agent)
+- Strength/weight > 0.7 doar daca evidenta e puternica
+- Fiecare edge trebuie sa aiba evidence`
+
+/**
+ * Gather data specific to a single agent's domain for its mental model.
+ */
+async function gatherAgentRebuildData(agentRole: string): Promise<string> {
+  const sections: string[] = []
+
+  // 1. Agent's own KB entries
+  const kbEntries = await prisma.kBEntry.findMany({
+    where: {
+      status: "PERMANENT",
+      OR: [
+        { agentRole },
+        // Include shared L1/L2 knowledge
+        { agentRole: { in: ["L1", "L2", "SHARED"] } },
+      ],
+    },
+    orderBy: [{ confidence: "desc" }, { usageCount: "desc" }],
+    take: 100,
+    select: {
+      id: true,
+      agentRole: true,
+      content: true,
+      kbType: true,
+      confidence: true,
+      tags: true,
+    },
+  })
+  if (kbEntries.length > 0) {
+    const lines = kbEntries.map(
+      (e) => `[${e.agentRole}/${e.kbType}] (conf=${e.confidence.toFixed(2)}) ${e.content.slice(0, 200)}`,
+    )
+    sections.push(`=== KB ENTRIES pt ${agentRole} (${kbEntries.length}) ===\n${lines.join("\n")}`)
+  }
+
+  // 2. Agent's task results (how it performs)
+  const taskResults = await prisma.agentTask.findMany({
+    where: { assignedTo: agentRole, status: "COMPLETED" },
+    orderBy: { completedAt: "desc" },
+    take: 30,
+    select: {
+      title: true,
+      taskType: true,
+      result: true,
+      tags: true,
+      completedAt: true,
+    },
+  })
+  if (taskResults.length > 0) {
+    const lines = taskResults.map(
+      (t) => `[${t.taskType}] "${t.title}" → ${(t.result ?? "").slice(0, 150)}`,
+    )
+    sections.push(`=== TASK RESULTS pt ${agentRole} (${taskResults.length}) ===\n${lines.join("\n")}`)
+  }
+
+  // 3. Agent's metrics (via ExecutionTelemetry as performance proxy)
+  try {
+    const telemetry = await prisma.executionTelemetry.findMany({
+      where: { agentRole },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        taskType: true,
+        modelUsed: true,
+        kbHit: true,
+        durationMs: true,
+        createdAt: true,
+      },
+    })
+    if (telemetry.length > 0) {
+      const lines = telemetry.map(
+        (t) =>
+          `${t.taskType ?? "?"} model=${t.modelUsed} kb=${t.kbHit} dur=${t.durationMs}ms (${t.createdAt.toISOString().slice(0, 10)})`,
+      )
+      sections.push(`=== TELEMETRIE pt ${agentRole} (${telemetry.length}) ===\n${lines.join("\n")}`)
+    }
+  } catch {
+    // Telemetry model may not exist — skip
+  }
+
+  // 4. Agent's learning artifacts
+  const artifacts = await prisma.learningArtifact.findMany({
+    where: {
+      OR: [{ studentRole: agentRole }, { teacherRole: agentRole }],
+      validated: true,
+    },
+    orderBy: { effectivenessScore: "desc" },
+    take: 15,
+    select: {
+      rule: true,
+      problemClass: true,
+      antiPattern: true,
+      effectivenessScore: true,
+    },
+  })
+  if (artifacts.length > 0) {
+    const lines = artifacts.map(
+      (a) => `[prob=${a.problemClass}] Regula: ${a.rule.slice(0, 150)} ${a.antiPattern ? `Anti: ${a.antiPattern.slice(0, 80)}` : ""}`,
+    )
+    sections.push(`=== LEARNING ARTIFACTS pt ${agentRole} (${artifacts.length}) ===\n${lines.join("\n")}`)
+  }
+
+  // 5. Agent definition (purpose, collaborations)
+  try {
+    const agentDef = await (prisma as any).agentDefinition.findUnique({
+      where: { agentRole },
+      select: {
+        name: true,
+        purpose: true,
+        reportsTo: true,
+        collaboratesWith: true,
+        skills: true,
+      },
+    })
+    if (agentDef) {
+      sections.push(
+        `=== DEFINITIE AGENT ===\n${agentRole}: ${agentDef.name}\nScop: ${agentDef.purpose ?? "?"}\nRaporteaza la: ${agentDef.reportsTo ?? "?"}\nColaboreaza cu: ${(agentDef.collaboratesWith ?? []).join(", ")}\nSkills: ${(agentDef.skills ?? []).join(", ")}`,
+      )
+    }
+  } catch {
+    // Model may not exist
+  }
+
+  return sections.join("\n\n")
+}
+
+/**
+ * Rebuild a per-agent mental model from the agent's own knowledge sources.
+ *
+ * Uses only:
+ * - KB entries for that agent (+ shared L1/L2)
+ * - Task results for that agent
+ * - Metrics for that agent
+ * - Learning artifacts for that agent
+ *
+ * Produces a focused model of THEIR domain.
+ * Stored in SystemConfig with key `MENTAL_MODEL_${agentRole}`.
+ */
+export async function rebuildAgentMentalModel(agentRole: string): Promise<MentalModel> {
+  const inputData = await gatherAgentRebuildData(agentRole)
+
+  if (!inputData.trim()) {
+    const empty: MentalModel = {
+      nodes: [], edges: [], lastRebuilt: new Date(), version: 1,
+      scope: "AGENT", agentRole,
+    }
+    await saveAgentMentalModel(agentRole, empty)
+    return empty
+  }
+
+  const cpuResult = await cpuCall({
+    system: AGENT_REBUILD_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `Construieste modelul mental al agentului ${agentRole}.\n\n${inputData}`,
+      },
+    ],
+    max_tokens: 5000,
+    agentRole,
+    operationType: "agent-mental-model-rebuild",
+    skipObjectiveCheck: true,
+    skipKBFirst: true,
+    temperature: 0.3,
+  })
+
+  const parsed = parseModelResponse(cpuResult.text)
+
+  const existing = await loadAgentMentalModel(agentRole)
+  const version = (existing?.version ?? 0) + 1
+
+  const model: MentalModel = {
+    nodes: parsed.nodes,
+    edges: parsed.edges,
+    lastRebuilt: new Date(),
+    version,
+    scope: "AGENT",
+    agentRole,
+  }
+
+  await saveAgentMentalModel(agentRole, model)
+  return model
+}
+
+/**
+ * Query the agent's own mental model.
+ * Answers domain-specific questions: "de ce?" not just "ce?"
+ */
+export async function queryAgentMentalModel(
+  agentRole: string,
+  question: string,
+): Promise<QueryResult> {
+  const model = await loadAgentMentalModel(agentRole)
+  if (!model || model.nodes.length === 0) {
+    return {
+      answer: `Modelul mental al agentului ${agentRole} nu a fost inca construit. Ruleaza rebuildAgentMentalModel('${agentRole}') mai intai.`,
+      relevantNodes: [],
+      relevantEdges: [],
+    }
+  }
+
+  const modelCompact = buildCompactModelRepresentation(model)
+
+  const cpuResult = await cpuCall({
+    system: QUERY_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `GRAF MENTAL al agentului ${agentRole}:\n${modelCompact}\n\nINTREBARE: ${question}`,
+      },
+    ],
+    max_tokens: 2000,
+    agentRole,
+    operationType: "agent-mental-model-query",
+    skipObjectiveCheck: true,
+    skipKBFirst: true,
+    temperature: 0.2,
+  })
+
+  return parseQueryResponse(cpuResult.text, model)
+}
+
+/**
+ * Incrementally update an agent's mental model with new knowledge.
+ */
+export async function updateAgentMentalModel(
+  agentRole: string,
+  newKnowledge: { content: string; source: string },
+): Promise<UpdateResult> {
+  const currentModel = await loadAgentMentalModel(agentRole)
+  if (!currentModel || currentModel.nodes.length === 0) {
+    return { nodesAdded: 0, edgesAdded: 0, edgesUpdated: 0 }
+  }
+
+  const modelCompact = buildCompactModelRepresentation(currentModel)
+
+  const cpuResult = await cpuCall({
+    system: UPDATE_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `GRAF MENTAL CURENT al agentului ${agentRole}:\n${modelCompact}\n\nCUNOSTINTA NOUA (sursa: ${newKnowledge.source}, agent: ${agentRole}):\n${newKnowledge.content}`,
+      },
+    ],
+    max_tokens: 3000,
+    agentRole,
+    operationType: "agent-mental-model-update",
+    skipObjectiveCheck: true,
+    skipKBFirst: true,
+    temperature: 0.3,
+  })
+
+  const delta = parseUpdateResponse(cpuResult.text)
+  const now = new Date()
+
+  for (const nn of delta.newNodes) {
+    const existing = currentModel.nodes.find((n) => n.id === nn.id)
+    if (!existing) {
+      currentModel.nodes.push({ ...nn, lastUpdated: now })
+    }
+  }
+
+  for (const ne of delta.newEdges) {
+    const existing = currentModel.edges.find(
+      (e) => e.from === ne.from && e.to === ne.to && e.relationship === ne.relationship,
+    )
+    if (!existing) {
+      currentModel.edges.push(ne)
+    }
+  }
+
+  for (const ue of delta.updatedEdges) {
+    const edge = currentModel.edges.find(
+      (e) => e.from === ue.from && e.to === ue.to && e.relationship === ue.relationship,
+    )
+    if (edge) {
+      edge.weight = ue.newWeight
+      edge.evidence = `${edge.evidence} | Updated: ${ue.reason}`
+    }
+  }
+
+  currentModel.version++
+  currentModel.lastRebuilt = now
+
+  await saveAgentMentalModel(agentRole, currentModel)
+
+  return {
+    nodesAdded: delta.newNodes.length,
+    edgesAdded: delta.newEdges.length,
+    edgesUpdated: delta.updatedEdges.length,
+  }
+}
+
+// ── Per-agent persistence ─────────────────────────────────────────────────
+
+async function saveAgentMentalModel(agentRole: string, model: MentalModel): Promise<void> {
+  const key = `MENTAL_MODEL_${agentRole}`
+  const serialized = JSON.stringify(model)
+
+  await prisma.systemConfig.upsert({
+    where: { key },
+    create: {
+      key,
+      value: serialized,
+      label: `Mental Model [${agentRole}] v${model.version} (${model.nodes.length} nodes, ${model.edges.length} edges)`,
+    },
+    update: {
+      value: serialized,
+      label: `Mental Model [${agentRole}] v${model.version} (${model.nodes.length} nodes, ${model.edges.length} edges)`,
+    },
+  })
+}
+
+/**
+ * Load a per-agent mental model from DB.
+ */
+export async function loadAgentMentalModel(agentRole: string): Promise<MentalModel | null> {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: `MENTAL_MODEL_${agentRole}` },
+    })
+    if (!config?.value) return null
+    return JSON.parse(config.value) as MentalModel
+  } catch {
+    return null
+  }
 }

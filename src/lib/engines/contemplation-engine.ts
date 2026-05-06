@@ -19,43 +19,104 @@ import { cpuCall } from "@/lib/cpu/gateway"
 
 // ── Level discrimination ──────────────────────────────────────────────────
 
-/** Contemplation level: STRATEGIC for COG/COCSA, TACTICAL for N-1 managers */
-export type ContemplationLevel = "STRATEGIC" | "TACTICAL"
+/**
+ * Contemplation level:
+ *  STRATEGIC — COG, COCSA: full cross-organism contemplation
+ *  TACTICAL  — N-1 managers: department-scoped contemplation
+ *  FORENSIC  — profilers, client-facing, L2, data analysts:
+ *              extracting meaning from seemingly unrelated heterogeneous data
+ */
+export type ContemplationLevel = "STRATEGIC" | "TACTICAL" | "FORENSIC"
 
 /**
- * Agents at N and N-1 levels that contemplate (seek connections).
  * STRATEGIC: COG, COCSA — full cross-organism contemplation
- * TACTICAL: N-1 managers — contemplation scoped to their department
  */
 const STRATEGIC_AGENTS = new Set(["COG", "COCSA"])
+
+/**
+ * TACTICAL: N-1 managers — contemplation scoped to their department
+ */
 const TACTICAL_AGENTS = new Set([
-  "PMA", "EMA", "QLA", "DMA", "CFO", "CJA", "CIA",
-  "COA", "CCO", "DOA", "DOAS",
+  "PMA", "EMA", "QLA", "DMA", "CFO", "CJA", "MOA",
+  "COA", "CCO",
+])
+
+/**
+ * FORENSIC: agents that work with heterogeneous data from multiple sources
+ * and need to integrate them to extract meaning — like a forensic investigator.
+ *
+ * Includes:
+ * - Client-facing agents (integrate person + org + context data)
+ * - Profiler agents (dimensional, individual, organizational, relational, ecosystemic)
+ * - L2 domain knowledge agents
+ * - Data analysts (heterogeneous data integration)
+ * - Territory/integration agents (om-firma-mediu)
+ */
+const FORENSIC_AGENTS = new Set([
+  // Client-facing — integrate person + organization + interaction history
+  "SOA", "CSA", "CSSA", "HR_COUNSELOR", "CALAUZA", "CONSILIER", "COACH", "PROFILER",
+  // Profilers — extract meaning from multi-dimensional data
+  "DIMENSIONAL_PROFILER", "INDIVIDUAL_PROFILER", "ORGANIZATIONAL_PROFILER",
+  "RELATIONAL_PROFILER", "ECOSYSTEMIC_PROFILER",
+  // Data analysts — heterogeneous data integration
+  "CIA", "CCIA", "RDA", "ACA", "MDA",
+  // L2 domain knowledge roles
+  "DOAS", "DOA",
+  // Territory/integration
+  "DVB2B", "CMA", "MKA",
+])
+
+/**
+ * VIGILANCE: pure execution agents that do ONE specific thing repetitively.
+ * Much smaller group — only agents that don't need to integrate heterogeneous data.
+ */
+const VIGILANCE_AGENTS = new Set([
+  "STA",             // testing — executes test scripts
+  "SVHA",            // vulnerability scanning — pattern matching
+  "SA",              // security agent — policy enforcement
+  "SQA",             // security QA — checklist execution
+  "TDA",             // tech debt — cataloging
+  "BCA",             // billing/cost agent — repetitive calculations
+  "SAFETY_MONITOR",  // monitors thresholds — deviation detection
 ])
 
 /**
  * Returns true if this agent should CONTEMPLATE (seek connections/patterns).
- * True for managers at N and N-1 levels (strategic + tactical).
+ *
+ * Key principle: if the agent works with data from multiple sources
+ * that need integration to extract meaning → contemplation.
+ *
+ * True for: strategic + tactical + forensic agents.
  */
 export function shouldContemplate(agentRole: string): boolean {
-  return STRATEGIC_AGENTS.has(agentRole) || TACTICAL_AGENTS.has(agentRole)
+  return (
+    STRATEGIC_AGENTS.has(agentRole) ||
+    TACTICAL_AGENTS.has(agentRole) ||
+    FORENSIC_AGENTS.has(agentRole)
+  )
 }
 
 /**
- * Returns true if this agent should VIGILATE (detect deviations).
- * True for operational agents — those NOT at strategic/tactical level.
+ * Returns true if this agent should VIGILATE (detect deviations only).
+ *
+ * True ONLY for pure execution agents that do one thing repetitively.
+ * If it does one thing repetitively → vigilance.
  */
 export function shouldVigilate(agentRole: string): boolean {
-  return !shouldContemplate(agentRole)
+  return VIGILANCE_AGENTS.has(agentRole)
 }
 
 /**
  * Returns the contemplation level for a given agent role.
- * STRATEGIC: full cross-organism data
- * TACTICAL: department-scoped data only
+ * STRATEGIC: full cross-organism data (COG, COCSA)
+ * TACTICAL: department-scoped data (N-1 managers)
+ * FORENSIC: agent-domain data with cross-source integration
+ *           (profilers, client-facing, L2, data analysts)
  */
 export function getContemplationLevel(agentRole: string): ContemplationLevel {
-  return STRATEGIC_AGENTS.has(agentRole) ? "STRATEGIC" : "TACTICAL"
+  if (STRATEGIC_AGENTS.has(agentRole)) return "STRATEGIC"
+  if (TACTICAL_AGENTS.has(agentRole)) return "TACTICAL"
+  return "FORENSIC"
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -83,7 +144,7 @@ export interface ContemplationResult {
 
 // ── System prompt ──────────────────────────────────────────────────────────
 
-const CONTEMPLATION_SYSTEM_PROMPT = `Esti un ganditor contemplativ. Nu ai o sarcina specifica — doar observi.
+const CONTEMPLATION_SYSTEM_PROMPT_BASE = `Esti un ganditor contemplativ. Nu ai o sarcina specifica — doar observi.
 
 Ai primit date recente din viata unui organism organizational:
 - Cunostinte noi invatate (KB entries)
@@ -121,6 +182,33 @@ REGULI:
 - Fiecare insight trebuie sa fie SURPRINZATOR — daca e evident, nu e insight
 - Novelty > 0.7 doar daca e ceva cu adevarat neasteptat
 - Daca nu gasesti nimic interesant, returneaza array gol — NU inventa`
+
+/**
+ * FORENSIC contemplation prompt — for agents that extract meaning
+ * from heterogeneous data sources (profilers, client-facing, data analysts).
+ * Different focus: not organizational connections, but hidden meanings.
+ */
+const FORENSIC_CONTEMPLATION_ADDENDUM = `
+
+ATENTIE — Esti in mod FORENSIC. Nu cauti conexiuni organizationale (ca la STRATEGIC).
+Cauti SENSURI ASCUNSE in date aparent nelegate — ca un investigator forensic:
+- Ce spun datele despre persoana/organizatia/teritoriul analizat?
+- Ce contradictii exista intre surse diferite?
+- Ce pattern subtil apare cand suprapui informatii din domenii diferite?
+- Ce intrebare ar trebui sa pui pe care nimeni nu a pus-o?
+
+Exemplu forensic: "Datele de evaluare spun ca angajatul X e performant,
+dar datele de interactiune arata ca echipa il evita. Contradictia sugereaza
+ca performanta lui vine pe seama relatiilor — un cost ascuns."
+
+Concentreaza-te pe CALITATEA interpretarii, nu pe cantitate.`
+
+function getContemplationSystemPrompt(level: ContemplationLevel): string {
+  if (level === "FORENSIC") {
+    return CONTEMPLATION_SYSTEM_PROMPT_BASE + FORENSIC_CONTEMPLATION_ADDENDUM
+  }
+  return CONTEMPLATION_SYSTEM_PROMPT_BASE
+}
 
 // ── Department scoping for TACTICAL level ─────────────────────────────────
 
@@ -252,37 +340,54 @@ export async function contemplate(
 ): Promise<ContemplationResult> {
   const startMs = Date.now()
 
-  // For TACTICAL: scope data gathering to the agent's department
-  const scopeAgent = contemplationLevel === "TACTICAL" ? agentRole : undefined
+  // Scope data gathering based on level:
+  //  STRATEGIC: all data, cross-organism
+  //  TACTICAL: department-scoped
+  //  FORENSIC: agent-specific (own KB + shared L1/L2)
+  const scopeAgent = contemplationLevel !== "STRATEGIC" ? agentRole : undefined
 
-  // 1. Gather data from all sources (scoped for TACTICAL)
+  const dataLimits = {
+    STRATEGIC: { kb: 50, tasks: 20, disfunctions: 10 },
+    TACTICAL:  { kb: 25, tasks: 10, disfunctions: 5 },
+    FORENSIC:  { kb: 30, tasks: 15, disfunctions: 5 },
+  }
+  const limits = dataLimits[contemplationLevel]
+
+  // 1. Gather data from all sources (scoped for TACTICAL/FORENSIC)
   const [kbEntries, taskResults, evolutionSnapshots, disfunctions] = await Promise.all([
-    gatherKBEntries(contemplationLevel === "STRATEGIC" ? 50 : 25, scopeAgent),
-    gatherTaskResults(contemplationLevel === "STRATEGIC" ? 20 : 10, scopeAgent),
+    gatherKBEntries(limits.kb, scopeAgent),
+    gatherTaskResults(limits.tasks, scopeAgent),
     gatherEvolutionSnapshots(5),
-    gatherDisfunctions(contemplationLevel === "STRATEGIC" ? 10 : 5),
+    gatherDisfunctions(limits.disfunctions),
   ])
 
   // 2. Build user message with all gathered data
-  const levelContext =
-    contemplationLevel === "STRATEGIC"
-      ? "Contempleaza INTREGUL organism — cauta conexiuni CROSS-DEPARTAMENT."
-      : `Contempleaza DEPARTAMENTUL agentului ${agentRole} — cauta conexiuni IN INTERIORUL departamentului si cu vecinii.`
+  const levelContextMap: Record<ContemplationLevel, string> = {
+    STRATEGIC: "Contempleaza INTREGUL organism — cauta conexiuni CROSS-DEPARTAMENT.",
+    TACTICAL: `Contempleaza DEPARTAMENTUL agentului ${agentRole} — cauta conexiuni IN INTERIORUL departamentului si cu vecinii.`,
+    FORENSIC: `Contempleaza DOMENIUL agentului ${agentRole} — cauta SENSURI ASCUNSE in datele din domeniul tau, suprapunand surse diferite.`,
+  }
 
   const userMessage =
-    `[NIVEL CONTEMPLARE: ${contemplationLevel}]\n${levelContext}\n\n` +
+    `[NIVEL CONTEMPLARE: ${contemplationLevel}]\n${levelContextMap[contemplationLevel]}\n\n` +
     buildContemplationInput(kbEntries, taskResults, evolutionSnapshots, disfunctions)
 
   // 3. Call CPU for contemplation
+  const maxTokensMap: Record<ContemplationLevel, number> = {
+    STRATEGIC: 4000,
+    TACTICAL: 2000,
+    FORENSIC: 3000,
+  }
+
   const cpuResult = await cpuCall({
-    system: CONTEMPLATION_SYSTEM_PROMPT,
+    system: getContemplationSystemPrompt(contemplationLevel),
     messages: [{ role: "user", content: userMessage }],
-    max_tokens: contemplationLevel === "STRATEGIC" ? 4000 : 2000,
+    max_tokens: maxTokensMap[contemplationLevel],
     agentRole,
     operationType: "contemplation",
     skipObjectiveCheck: true, // contemplation e mereu activa
     skipKBFirst: true, // nu exista raspuns KB pentru gandire libera
-    temperature: 0.8, // creativitate mai mare
+    temperature: contemplationLevel === "FORENSIC" ? 0.7 : 0.8, // forensic: slightly more focused
   })
 
   // 4. Parse response
