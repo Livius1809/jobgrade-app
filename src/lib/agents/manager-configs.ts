@@ -83,6 +83,7 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "Setup complet per business — fiecare business are condițiile de performanță în piața țintă",
       "Monitorizare proactivă COCSA — instrumente de adaptare oferite înainte de cerere",
       "Obiective strategice agregate cu Owner — traduse în obiective per business",
+      "Raportare către Owner — poate transmite rapoarte, dar pe operațiuni preia ce i se dă, nu intervine",
       "Conformitate legală completă — GDPR, Directiva EU 2023/970, Codul Muncii",
       "Toți agenții cu KB funcțional — minim cold start completat per agent",
       "Costuri sub buget — cheltuieli cloud și API monitorizate, fără spike-uri neexplicate",
@@ -133,6 +134,8 @@ export const MANAGER_CONFIGS: ManagerConfig[] = [
       "CMA", "CWA",
     ],
     reportsTo: "CPU", // subordonat funcțional CPU-ului, escalare doar la "nu știu, nu pot"
+    // NOTĂ: Owner ține legătura direct cu COCSA pe chestiuni operaționale.
+    // COG poate transmite rapoarte dar pe operațiuni preia ce i se dă, nu intervine.
     objectives: [
       "Autonomie operațională — rezolvă intern tot ce ține de 'știe' și 'poate'",
       "Pipeline sales activ — leaduri calificate, demo-uri planificate",

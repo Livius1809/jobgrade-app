@@ -54,7 +54,10 @@ export const ESCALATION_CHAIN: Record<string, string> = {
   CSSA: "COCSA",
   // Tactic → Strategic
   COA: "COG",
-  COCSA: "CPU", // PRODUCTION raportează funcțional la CPU (creier), nu la COG
+  // COCSA are 2 căi de escalare:
+  // - Operațional → OWNER direct (Owner ține legătura cu COCSA pe operațiuni)
+  // - "Nu știu, nu pot" → CPU → COG (pentru instrumente/capabilități noi)
+  COCSA: "OWNER",
   PMA: "COA",
   // Strategic L4 → COG
   ACEA: "COG",
