@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import CookieConsent from "@/components/CookieConsent"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -48,6 +49,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         {children}
+        <CookieConsent />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             // Dezinstalează orice SW vechi care intercepta API calls
