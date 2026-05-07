@@ -75,8 +75,8 @@ export async function POST(req: NextRequest) {
     const APP_URL = getAppUrl()
     const stripeClient = getStripe() // B2C uses default mode
 
-    // ── TVA: B2C mereu cu TVA 19% inclus ──
-    const vatRate = 0.19
+    // ── TVA: B2C mereu cu TVA 21% inclus ──
+    const vatRate = 0.21
     const priceWithoutVAT = pkg.price
     const vatAmount = Math.round(priceWithoutVAT * vatRate)
     const totalWithVAT = priceWithoutVAT + vatAmount

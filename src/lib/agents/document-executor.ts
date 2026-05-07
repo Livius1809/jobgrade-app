@@ -79,7 +79,7 @@ Furnizor: Psihobusiness Consulting SRL, CIF RO15790994
 Client: ${clientData.companyName}
 Serviciu: Platformă JobGrade — plan ${clientData.plan || "Professional"}
 Preț: [conform plan selectat]
-TVA: 19% (plătitor TVA)
+TVA: 21% (plătitor TVA)
 Termen plată: 30 zile`,
   }
 

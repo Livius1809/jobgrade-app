@@ -75,13 +75,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Tenant negăsit." }, { status: 404 })
     }
 
-    // ── TVA: B2B (plătitor TVA) = fără TVA, altfel +19% ──
+    // ── TVA: B2B (plătitor TVA) = fără TVA, altfel +21% ──
     const companyProfile = await prisma.companyProfile.findFirst({
       where: { tenantId },
       select: { isVATPayer: true, regCom: true, address: true, county: true, cui: true },
     })
     const isB2B = companyProfile?.isVATPayer === true
-    const vatRate = isB2B ? 0 : 0.19
+    const vatRate = isB2B ? 0 : 0.21
 
     let customerId = tenant.stripeCustomerId
     if (!customerId) {
@@ -192,8 +192,8 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: isUpgrade ? `JobGrade — Upgrade → ${layerName}` : `JobGrade — ${layerName}`,
               description: isUpgrade
-                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.${!isB2B ? " (incl. TVA 19%)" : ""}`
-                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.${!isB2B ? " (incl. TVA 19%)" : ""}`,
+                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.${!isB2B ? " (incl. TVA 21%)" : ""}`
+                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.${!isB2B ? " (incl. TVA 21%)" : ""}`,
             },
             unit_amount: (serviceBaseRON + serviceVAT) * 100,
           },
@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
             currency: "ron",
             product_data: {
               name: `Credite ${creditPkg.label} — ${creditPkg.credits} credite`,
-              description: `Pachet credite suplimentare${!isB2B ? " (incl. TVA 19%)" : ""}`,
+              description: `Pachet credite suplimentare${!isB2B ? " (incl. TVA 21%)" : ""}`,
             },
             unit_amount: (creditPkg.price + creditVAT) * 100,
           },

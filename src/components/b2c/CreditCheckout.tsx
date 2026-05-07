@@ -84,7 +84,7 @@ export default function CreditCheckout({ userId }: { userId: string }) {
 
   const selectedPackage = B2C_PACKAGES.find((p) => p.id === selectedPkg)
   const vatAmount = selectedPackage
-    ? Math.round(selectedPackage.price * 0.19)
+    ? Math.round(selectedPackage.price * 0.21)
     : 0
   const totalWithVAT = selectedPackage
     ? selectedPackage.price + vatAmount
@@ -116,7 +116,7 @@ export default function CreditCheckout({ userId }: { userId: string }) {
               </div>
               <div className="text-right">
                 <span className="font-semibold">
-                  {(pkg.price + Math.round(pkg.price * 0.19)).toLocaleString(
+                  {(pkg.price + Math.round(pkg.price * 0.21)).toLocaleString(
                     "ro-RO",
                   )}{" "}
                   RON
@@ -220,7 +220,7 @@ export default function CreditCheckout({ userId }: { userId: string }) {
             <span>{selectedPackage.price.toLocaleString("ro-RO")} RON</span>
           </div>
           <div className="flex justify-between text-gray-500">
-            <span>TVA 19%</span>
+            <span>TVA 21%</span>
             <span>{vatAmount.toLocaleString("ro-RO")} RON</span>
           </div>
           <div className="mt-1 flex justify-between border-t pt-1 font-semibold">

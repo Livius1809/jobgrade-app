@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     // TVA: B2B intre platitori de TVA = fara TVA (reverse charge)
     const clientIsVAT = company?.isVATPayer === true
-    const vatRate = clientIsVAT ? 0 : 0.19
+    const vatRate = clientIsVAT ? 0 : 0.21
     const vatAmount = Math.round(totalServicii * vatRate)
     const totalCuTVA = totalServicii + vatAmount
 
@@ -265,7 +265,7 @@ ${describeServices(layer, data.positions, data.employees)}
       <td class="amount">${totalServicii.toLocaleString("ro-RO")} RON</td>
     </tr>
     ${vatRate > 0 ? `<tr>
-      <td>TVA 19%</td>
+      <td>TVA 21%</td>
       <td>Aplicabil conform legislatiei in vigoare</td>
       <td class="amount">${vatAmount.toLocaleString("ro-RO")} RON</td>
     </tr>` : `<tr>
