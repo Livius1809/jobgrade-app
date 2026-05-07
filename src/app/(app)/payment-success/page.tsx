@@ -70,21 +70,48 @@ export default async function PaymentSuccessPage({
           )}
         </div>
 
-        {/* Primary CTA */}
-        <Link
-          href="/portal"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-        >
-          Accesați portalul &rarr;
-        </Link>
+        {/* Primary CTA — specific per tip de achiziție */}
+        {success === "subscription" && (
+          <div>
+            <Link
+              href="/portal"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              Configurați abonamentul {tier} &rarr;
+            </Link>
+            <p className="mt-2 text-xs text-muted-foreground">Veți ajunge în portalul companiei unde puteți începe prima evaluare.</p>
+          </div>
+        )}
+        {success === "service" && layer && (
+          <div>
+            <Link
+              href="/portal"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              Începeți {layerName} &rarr;
+            </Link>
+            <p className="mt-2 text-xs text-muted-foreground">Veți fi ghidat pas cu pas prin etapele serviciului achiziționat.</p>
+          </div>
+        )}
+        {success === "credits" && (
+          <div>
+            <Link
+              href="/portal"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              Utilizați creditele achiziționate &rarr;
+            </Link>
+            <p className="mt-2 text-xs text-muted-foreground">Creditele sunt disponibile imediat pentru rapoarte, simulări și consultanță AI.</p>
+          </div>
+        )}
 
         {/* Secondary link */}
-        <div className="mt-4">
+        <div className="mt-6">
           <Link
             href="/settings/billing"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >
-            Detalii facturare &rarr;
+            Verificați factura &rarr;
           </Link>
         </div>
       </div>

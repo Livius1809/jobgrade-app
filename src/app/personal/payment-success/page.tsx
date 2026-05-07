@@ -45,8 +45,9 @@ export default async function B2CPaymentSuccessPage({
           href="/personal"
           className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
-          Continuă &rarr;
+          Explorează cu creditele tale &rarr;
         </Link>
+        <p className="mt-2 text-xs text-muted-foreground">Vei ajunge în profilul tău unde poți accesa cardurile de dezvoltare personală și carieră.</p>
       </div>
     </div>
   )
