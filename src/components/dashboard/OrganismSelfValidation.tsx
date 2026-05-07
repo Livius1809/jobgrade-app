@@ -64,27 +64,44 @@ function velocityColor(v: number): string {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export default function OrganismSelfValidation() {
+interface OrganismSelfValidationProps {
+  serverData?: any // pre-loaded from server (Owner page SSR)
+}
+
+export default function OrganismSelfValidation({ serverData }: OrganismSelfValidationProps = {}) {
   const [data, setData] = useState<OrganismSelfValidationData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(!serverData)
 
   useEffect(() => {
-    let cancelled = false
+    // If server already provided data, use it
+    if (serverData) {
+      const v = serverData.validation || serverData
+      if (v.spiralVelocity !== undefined) {
+        setData({
+          spiralVelocity: v.spiralVelocity ?? 0,
+          autonomyTrend: v.autonomyTrend90Days || v.autonomyTrend || "STEADY",
+          selfHealingRate: v.selfHealingRate ?? 0,
+          escalationsToOwner: v.escalationsToOwner ?? 0,
+          escalationsTrend: v.escalationsTrend === "DECREASING" ? -1 : v.escalationsTrend === "INCREASING" ? 1 : 0,
+          selfAssessment: v.selfAssessment || "FUNCTIONAL",
+          strategicAdjustments: (v.strategicAdjustments || []).map((s: any) =>
+            typeof s === "string" ? { area: "Organism", recommendation: s } : s
+          ),
+        })
+      }
+      setLoading(false)
+      return
+    }
 
+    // Fallback: client-side fetch
+    let cancelled = false
     async function load() {
       try {
         const res = await fetch("/api/v1/agents/self-validation?level=organism")
-        if (!res.ok) {
-          setError(true)
-          setLoading(false)
-          return
-        }
+        if (!res.ok) { setLoading(false); return }
         const json = await res.json()
-        // API returns { level, validation: {...} } — extract validation
         const v = json.validation || json
         if (!cancelled && v.spiralVelocity !== undefined) {
-          // Map API field names to component interface
           setData({
             spiralVelocity: v.spiralVelocity ?? 0,
             autonomyTrend: v.autonomyTrend90Days || v.autonomyTrend || "STEADY",
@@ -96,22 +113,14 @@ export default function OrganismSelfValidation() {
               typeof s === "string" ? { area: "Organism", recommendation: s } : s
             ),
           })
-          setError(false)
-        } else if (!cancelled) {
-          setError(true)
         }
-      } catch {
-        if (!cancelled) setError(true)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+      } catch {}
+      if (!cancelled) setLoading(false)
     }
-
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [serverData])
 
-  // Graceful: don't render if no data or error
   if (loading) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-pulse">
@@ -121,7 +130,7 @@ export default function OrganismSelfValidation() {
     )
   }
 
-  if (error || !data) return null
+  if (!data) return null
 
   const assessment = ASSESSMENT_CONFIG[data.selfAssessment] || ASSESSMENT_CONFIG.FUNCTIONAL
   const trend = TREND_ARROW[data.autonomyTrend] || TREND_ARROW.STEADY

@@ -32,6 +32,7 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
     const { computeOwnerCockpit } = await import("@/lib/owner/cockpit-aggregator")
     const { evaluateHomeostasis } = await import("@/lib/agents/homeostasis-monitor")
     const { computeObjectiveHealth } = await import("@/lib/agents/objective-health")
+    const { validateOrganism } = await import("@/lib/engines/self-validation-engine")
 
     const businessId = "biz_jobgrade"
     const now = new Date()
@@ -316,7 +317,15 @@ async function fetchCockpit(): Promise<OwnerCockpitResult | null> {
       agentRelationships: agentRelationshipsRaw,
     }
 
-    return computeOwnerCockpit(inputs)
+    const cockpit = computeOwnerCockpit(inputs)
+
+    // Self-validation: organism pulse (server-side, no auth issues)
+    let selfValidation: any = null
+    try {
+      selfValidation = await validateOrganism(30)
+    } catch {}
+
+    return { ...cockpit, selfValidation } as any
   } catch {
     return null
   }
@@ -805,7 +814,7 @@ export default async function OwnerDashboard() {
               <p className="text-xs text-slate-500">Sănătatea organismului, performanță, straturi</p>
             </div>
 
-            <OrganismSelfValidation />
+            <OrganismSelfValidation serverData={(data as any).selfValidation} />
 
             <OrganismPulse
               verdict={data.vitalSigns.verdict}
