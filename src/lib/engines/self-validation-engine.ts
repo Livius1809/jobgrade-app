@@ -802,8 +802,11 @@ export async function validateOrganism(
   } else if (spiralVelocity === 0 && !hasEnoughHistory) {
     strategicAdjustments.push("Date insuficiente pentru trend — spirala se va calcula dupa minim 60 zile de activitate")
   }
-  if (costTrend === "INCREASING") {
+  if (costTrend === "INCREASING" && prevCompleted >= 10) {
+    // Doar dacă avem suficiente date din perioada anterioara pentru comparatie reala
     strategicAdjustments.push("Costul per decizie creste — optimizeaza utilizarea KB sau reduce tokenii")
+  } else if (costTrend === "INCREASING" && prevCompleted < 10) {
+    strategicAdjustments.push("Date insuficiente pentru trend cost — comparatia devine relevanta dupa minim 2 luni de activitate")
   }
   if (escalationsTrend === "INCREASING") {
     strategicAdjustments.push("Escalatiile catre Owner cresc — organismul devine mai dependent, nu mai autonom")
