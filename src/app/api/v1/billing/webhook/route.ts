@@ -97,6 +97,53 @@ export async function POST(req: NextRequest) {
       await createRevenueEntry(tenantId, "CREDITS", session.amount_total, session.currency, `Pachet credite ${packageId}`, session.id)
     }
 
+    // B2C credit purchase
+    if (type === "b2c_credits") {
+      const userId = session.metadata?.userId
+      const credits = parseInt(session.metadata?.credits ?? "0", 10)
+      const packageId = session.metadata?.packageId ?? "unknown"
+      const documentType = session.metadata?.documentType ?? "receipt"
+
+      if (userId && credits > 0) {
+        const p = prisma as any
+
+        // Upsert B2C credit balance
+        await p.b2CCreditBalance.upsert({
+          where: { userId },
+          create: { userId, balance: credits },
+          update: { balance: { increment: credits } },
+        })
+
+        // Create B2C credit transaction
+        await p.b2CCreditTransaction.create({
+          data: {
+            userId,
+            type: "PURCHASE",
+            amount: credits,
+            description: `Pachet ${packageId} — ${credits} credite (${documentType === "invoice" ? "factură" : "bon fiscal"})`,
+            sourceId: JSON.stringify({
+              stripeSessionId: session.id,
+              documentType,
+              cui: session.metadata?.cui || null,
+              fullName: session.metadata?.fullName || null,
+            }),
+          },
+        })
+
+        console.log(`[WEBHOOK] B2C +${credits} credits → user ${userId} (${documentType})`)
+
+        // Revenue entry — B2C uses a synthetic tenantId prefix
+        await createRevenueEntry(
+          `b2c_${userId}`,
+          "CREDITS",
+          session.amount_total,
+          session.currency,
+          `B2C Credite ${packageId} (${documentType})`,
+          session.id,
+        )
+      }
+    }
+
     // Subscription activated
     if (type === "subscription") {
       // Activate tenant
