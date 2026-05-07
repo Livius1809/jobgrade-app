@@ -170,9 +170,45 @@ async function hasActiveObjective(agentRole: string): Promise<boolean> {
  * TOATE modulele trebuie să folosească această funcție.
  * NU se apelează direct `new Anthropic()` sau `anthropic.messages.create()`.
  */
+// Operații simple care pot rula pe Haiku (cost ~10x mai mic decât Sonnet)
+const HAIKU_ELIGIBLE_OPS = new Set([
+  "learning-funnel-distill",    // distilare cunoștințe — output scurt, structurat
+  "cv-enrichment-analysis",     // analiză CV pe criterii — structured JSON
+  "pdf-parse-cpi260",           // parsare scoruri din text
+  "pdf-parse-esq2",
+  "pdf-parse-ami",
+  "pdf-parse-pasat2000",
+  "alignment-check",            // verificare aliniere — da/nu
+  "task-meta-evaluation",       // auto-evaluare calitate task
+  "contemplation-forensic",     // contemplare nivel forensic — mai puțin complex
+  "market-data-extraction",     // extracție criterii din anunțuri
+  "failure-cause-inference",    // inferare cauză eșec improvizație
+])
+
+const HAIKU_MODEL = "claude-haiku-4-5-20251001"
+
+function selectModel(params: CPUCallParams): string {
+  // 1. Model explicit specificat — respectă
+  if (params.model) return params.model
+
+  // 2. Operație eligibilă Haiku — downgrade automat (cost ~10x mai mic)
+  if (params.operationType && HAIKU_ELIGIBLE_OPS.has(params.operationType)) {
+    return HAIKU_MODEL
+  }
+
+  // 3. Prompt scurt (<500 tokeni input estimat) + max_tokens mic (<500) → Haiku
+  const estimatedInputTokens = (params.system?.length ?? 0 + params.messages.map(m => m.content).join("").length) / 4
+  if (estimatedInputTokens < 500 && params.max_tokens <= 500) {
+    return HAIKU_MODEL
+  }
+
+  // 4. Default: Sonnet
+  return AI_MODEL
+}
+
 export async function cpuCall(params: CPUCallParams): Promise<CPUCallResult> {
   const startMs = Date.now()
-  const model = params.model ?? AI_MODEL
+  const model = selectModel(params)
 
   metrics.totalCalls++
   metrics.callsByAgent.set(

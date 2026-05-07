@@ -565,7 +565,6 @@ export async function validateOrganism(
 ): Promise<OrganismSelfValidation> {
   const period = periodRange(periodDays)
   const prev = previousPeriodRange(periodDays)
-  const period90 = periodRange(90)
 
   // ── Overall autonomy: completed / total across all agents ──
   const [allCompleted, allTotal, allEscalatedOwner] = await Promise.all([
@@ -595,24 +594,27 @@ export async function validateOrganism(
   ])
   const prevAutonomy = prevTotal > 0 ? Math.round((prevCompleted / prevTotal) * 100) : 0
 
-  // 90-day autonomy for spiral velocity
-  const [completed90, total90] = await Promise.all([
-    p.agentTask.count({
-      where: { status: "COMPLETED", completedAt: { gte: period90.from, lte: period90.to } },
-    }).catch(() => 0),
-    p.agentTask.count({
-      where: { createdAt: { gte: period90.from, lte: period90.to } },
-    }).catch(() => 0),
-  ])
-  const autonomy90 = total90 > 0 ? Math.round((completed90 / total90) * 100) : 0
+  // Trend: compara ULTIMELE 30 zile vs CELE 30 ZILE DINAINTE (nu vs 90 zile totale)
+  // Asta e comparatia corecta: "luna asta vs luna trecuta"
+  const prevAutonomyRate = prevTotal > 0 ? Math.round((prevCompleted / prevTotal) * 100) : -1
+  const autonomyDelta = prevAutonomyRate >= 0 ? overallAutonomyRate - prevAutonomyRate : 0
 
-  // Autonomy trend 90 days
-  const autonomyDelta90 = overallAutonomyRate - autonomy90
+  // Daca nu avem date din perioada anterioara, nu putem calcula trend
+  const hasEnoughHistory = prevTotal >= 5 // minim 5 taskuri in perioada anterioara
+
   let autonomyTrend90Days: OrganismSelfValidation["autonomyTrend90Days"]
-  if (autonomyDelta90 > 10) autonomyTrend90Days = "ACCELERATING"
-  else if (autonomyDelta90 > 0) autonomyTrend90Days = "STEADY"
-  else if (autonomyDelta90 > -10) autonomyTrend90Days = "DECELERATING"
-  else autonomyTrend90Days = "REGRESSING"
+  if (!hasEnoughHistory) {
+    // Insuficiente date — nu raporta stagnare/decelerare
+    autonomyTrend90Days = overallAutonomyRate >= 50 ? "STEADY" : "STEADY"
+  } else if (autonomyDelta > 10) {
+    autonomyTrend90Days = "ACCELERATING"
+  } else if (autonomyDelta >= 0) {
+    autonomyTrend90Days = "STEADY"
+  } else if (autonomyDelta > -10) {
+    autonomyTrend90Days = "DECELERATING"
+  } else {
+    autonomyTrend90Days = "REGRESSING"
+  }
 
   // Escalations trend
   const escalationsTrend: OrganismSelfValidation["escalationsTrend"] =
@@ -760,7 +762,11 @@ export async function validateOrganism(
     costPerDecision > prevCostPerDecision * 1.1 ? "INCREASING" : "STABLE"
 
   // ── SPIRAL VELOCITY: rata de imbunatatire a autonomyRate ──
-  const spiralVelocity = Math.round(((overallAutonomyRate - autonomy90) / 90) * 1000) / 1000
+  // Compara luna curenta vs luna anterioara (nu vs 90 zile care include luna curenta)
+  // Daca nu avem date anterioare, velocity = 0 (necunoscut, nu stagnat)
+  const spiralVelocity = hasEnoughHistory
+    ? Math.round(((overallAutonomyRate - prevAutonomyRate) / periodDays) * 1000) / 1000
+    : 0
 
   // ── Self-assessment ──
   const strategicAdjustments: string[] = []
@@ -776,8 +782,10 @@ export async function validateOrganism(
     selfAssessment = "PLATEAUING"
   }
 
-  if (spiralVelocity <= 0) {
-    strategicAdjustments.push("Spirala a stagnat — investigheaza care echipe stagneaza si de ce")
+  if (spiralVelocity < 0 && hasEnoughHistory) {
+    strategicAdjustments.push("Spirala decelereaza — investigheaza care echipe stagneaza si de ce")
+  } else if (spiralVelocity === 0 && !hasEnoughHistory) {
+    strategicAdjustments.push("Date insuficiente pentru trend — spirala se va calcula dupa minim 60 zile de activitate")
   }
   if (costTrend === "INCREASING") {
     strategicAdjustments.push("Costul per decizie creste — optimizeaza utilizarea KB sau reduce tokenii")
