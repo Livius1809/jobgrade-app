@@ -75,11 +75,8 @@ export async function POST(req: NextRequest) {
     const APP_URL = getAppUrl()
     const stripeClient = getStripe() // B2C uses default mode
 
-    // ── TVA: B2C mereu cu TVA 21% inclus ──
-    const vatRate = 0.21
-    const priceWithoutVAT = pkg.price
-    const vatAmount = Math.round(priceWithoutVAT * vatRate)
-    const totalWithVAT = priceWithoutVAT + vatAmount
+    // ── TVA: gestionat AUTOMAT de Stripe Tax ──
+    // Prețul e NET. Stripe Tax adaugă TVA automat. Oblio preia din Stripe.
 
     // ── Build Stripe customer data ──
     const isReceipt = data.documentType === "receipt"
@@ -148,12 +145,13 @@ export async function POST(req: NextRequest) {
               name: `${pkg.label} \u2014 ${pkg.credits} credite`,
               description,
             },
-            unit_amount: totalWithVAT * 100, // Stripe uses smallest currency unit (bani)
+            unit_amount: pkg.price * 100, // Preț NET — Stripe Tax adaugă TVA automat
           },
           quantity: 1,
         },
       ],
       mode: "payment",
+      automatic_tax: { enabled: true },
       success_url: `${APP_URL}/personal?success=credits&amount=${pkg.credits}`,
       cancel_url: `${APP_URL}/personal?canceled=1`,
       payment_intent_data: {

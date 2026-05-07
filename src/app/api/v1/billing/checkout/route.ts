@@ -75,13 +75,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Tenant negăsit." }, { status: 404 })
     }
 
-    // ── TVA: B2B (plătitor TVA) = fără TVA, altfel +21% ──
+    // ── TVA: gestionat AUTOMAT de Stripe Tax ──
+    // Stripe Tax calculează TVA corect per țară/client.
+    // Oblio preia direct ce vede în Stripe → factură corectă.
+    // Prețurile noastre sunt NET (fără TVA). Stripe adaugă automat.
     const companyProfile = await prisma.companyProfile.findFirst({
       where: { tenantId },
       select: { isVATPayer: true, regCom: true, address: true, county: true, cui: true },
     })
     const isB2B = companyProfile?.isVATPayer === true
-    const vatRate = isB2B ? 0 : 0.21
 
     let customerId = tenant.stripeCustomerId
     if (!customerId) {
@@ -133,6 +135,7 @@ export async function POST(req: NextRequest) {
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: isRecurring ? "subscription" : "payment",
+        automatic_tax: { enabled: true },
         success_url: `${APP_URL}/settings/billing?success=subscription&tier=${tier}`,
         cancel_url: `${APP_URL}/settings/billing?canceled=1`,
         metadata: {
@@ -177,13 +180,8 @@ export async function POST(req: NextRequest) {
       // Credite suplimentare (opțional)
       const creditPkg = data.creditPackageId ? CREDIT_PACKAGES.find(p => p.id === data.creditPackageId) : null
       const crediteRON = creditPkg ? creditPkg.price : 0
+      // Prețuri NET — Stripe Tax adaugă TVA automat
       const totalRON = serviciiDiff + abonamentRON + crediteRON
-      const vatAmount = Math.round(totalRON * vatRate)
-      const totalWithVAT = totalRON + vatAmount
-
-      // Aplica TVA pe fiecare line item proportional
-      const serviceBaseRON = serviciiDiff + abonamentRON
-      const serviceVAT = Math.round(serviceBaseRON * vatRate)
 
       const lineItems: any[] = [
         {
@@ -192,25 +190,24 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: isUpgrade ? `JobGrade — Upgrade → ${layerName}` : `JobGrade — ${layerName}`,
               description: isUpgrade
-                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.${!isB2B ? " (incl. TVA 21%)" : ""}`
-                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.${!isB2B ? " (incl. TVA 21%)" : ""}`,
+                ? `Upgrade de la ${LAYER_NAMES[existingPurchase!.layer]}. Rest de plată servicii.`
+                : `${data.positions} poziții, ${data.employees} salariați. Servicii + abonament ${data.annual ? "anual" : "lunar"}.`,
             },
-            unit_amount: (serviceBaseRON + serviceVAT) * 100,
+            unit_amount: (serviciiDiff + abonamentRON) * 100,
           },
           quantity: 1,
         },
       ]
 
       if (creditPkg) {
-        const creditVAT = Math.round(creditPkg.price * vatRate)
         lineItems.push({
           price_data: {
             currency: "ron",
             product_data: {
               name: `Credite ${creditPkg.label} — ${creditPkg.credits} credite`,
-              description: `Pachet credite suplimentare${!isB2B ? " (incl. TVA 21%)" : ""}`,
+              description: "Pachet credite suplimentare",
             },
-            unit_amount: (creditPkg.price + creditVAT) * 100,
+            unit_amount: creditPkg.price * 100,
           },
           quantity: 1,
         })
@@ -221,6 +218,7 @@ export async function POST(req: NextRequest) {
         payment_method_types: ["card"],
         line_items: lineItems,
         mode: "payment",
+        automatic_tax: { enabled: true },
         success_url: `${APP_URL}/portal?success=service&layer=${data.layer}`,
         cancel_url: `${APP_URL}/portal?canceled=1`,
         metadata: {
@@ -230,9 +228,6 @@ export async function POST(req: NextRequest) {
           positions: String(data.positions),
           employees: String(data.employees),
           priceRON: String(totalRON),
-          totalWithVAT: String(totalWithVAT),
-          tax_amount: String(vatAmount),
-          includes_vat: String(!isB2B),
           isB2B: String(isB2B),
           creditPackageId: data.creditPackageId || "",
           credits: creditPkg ? String(creditPkg.credits) : "0",
@@ -256,6 +251,7 @@ export async function POST(req: NextRequest) {
         payment_method_types: ["card"],
         line_items: [{ price: creditPriceId, quantity: 1 }],
         mode: "payment",
+        automatic_tax: { enabled: true },
         success_url: `${APP_URL}/portal?success=credits&amount=${pkg.credits}`,
         cancel_url: `${APP_URL}/portal?canceled=1`,
         metadata: { tenantId, type: "credits", packageId: pkg.id, credits: String(pkg.credits), stripeMode },
@@ -263,10 +259,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: checkoutSession.url, mode: stripeMode })
     }
 
-    // Fallback: create price on-the-fly
+    // Fallback: create price on-the-fly (preț NET, Stripe Tax adaugă TVA)
     const checkoutSession = await stripeClient.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
+      automatic_tax: { enabled: true },
       line_items: [{
         price_data: {
           currency: "ron",
