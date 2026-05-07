@@ -1,18 +1,13 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
+import { authOrKey } from "@/lib/auth-or-key"
 import {
   validateAgent,
   validateManager,
   validateOrganism,
   validateCPU,
 } from "@/lib/engines/self-validation-engine"
-
-function checkAuth(req: NextRequest): boolean {
-  const key = process.env.INTERNAL_API_KEY
-  if (!key) return false
-  return req.headers.get("x-internal-key") === key
-}
 
 /**
  * GET /api/v1/agents/self-validation
@@ -28,7 +23,8 @@ function checkAuth(req: NextRequest): boolean {
  *   periodDays=7              -> optional, defaults per level
  */
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+  const session = await authOrKey()
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

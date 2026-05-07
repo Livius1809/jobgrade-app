@@ -81,9 +81,24 @@ export default function OrganismSelfValidation() {
           return
         }
         const json = await res.json()
-        if (!cancelled) {
-          setData(json)
+        // API returns { level, validation: {...} } — extract validation
+        const v = json.validation || json
+        if (!cancelled && v.spiralVelocity !== undefined) {
+          // Map API field names to component interface
+          setData({
+            spiralVelocity: v.spiralVelocity ?? 0,
+            autonomyTrend: v.autonomyTrend90Days || v.autonomyTrend || "STEADY",
+            selfHealingRate: v.selfHealingRate ?? 0,
+            escalationsToOwner: v.escalationsToOwner ?? 0,
+            escalationsTrend: v.escalationsTrend === "DECREASING" ? -1 : v.escalationsTrend === "INCREASING" ? 1 : 0,
+            selfAssessment: v.selfAssessment || "FUNCTIONAL",
+            strategicAdjustments: (v.strategicAdjustments || []).map((s: any) =>
+              typeof s === "string" ? { area: "Organism", recommendation: s } : s
+            ),
+          })
           setError(false)
+        } else if (!cancelled) {
+          setError(true)
         }
       } catch {
         if (!cancelled) setError(true)
