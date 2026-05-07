@@ -132,6 +132,55 @@ export async function POST(req: NextRequest) {
 
         console.log(`[WEBHOOK] B2C +${credits} credits → user ${userId} (${documentType})`)
 
+        // Oblio: emite bon fiscal card sau factură
+        try {
+          const { emitBonFiscalCard, emitFacturaB2B } = await import("@/lib/oblio/client")
+          const amountRON = (session.amount_total ?? 0) / 100 // Stripe uses bani
+
+          if (documentType === "invoice" && session.metadata?.fullName) {
+            // Factură cu date reale
+            await emitFacturaB2B({
+              clientName: session.metadata.fullName,
+              clientCui: session.metadata.cui || "",
+              clientAddress: "",
+              clientCounty: "",
+              items: [{
+                name: `Credite JobGrade — ${credits} credite`,
+                quantity: 1,
+                unit: "buc",
+                price: amountRON,
+                vatPercentage: 21,
+                vatIncluded: true,
+              }],
+              stripePaymentId: session.payment_intent as string,
+            })
+            console.log(`[WEBHOOK] Oblio factură emisă → ${session.metadata.fullName}`)
+          } else {
+            // Bon fiscal card (anonim, cu alias)
+            const user = await p.b2CUser.findUnique({
+              where: { id: userId },
+              select: { alias: true },
+            })
+            await emitBonFiscalCard({
+              clientAlias: user?.alias || `Client B2C`,
+              items: [{
+                name: `Credite JobGrade — ${credits} credite`,
+                quantity: 1,
+                unit: "buc",
+                price: amountRON,
+                vatPercentage: 21,
+                vatIncluded: true,
+              }],
+              totalAmount: amountRON,
+              stripePaymentId: session.payment_intent as string,
+            })
+            console.log(`[WEBHOOK] Oblio bon fiscal card emis → ${user?.alias || userId}`)
+          }
+        } catch (oblioErr: any) {
+          // Oblio failure nu blochează plata — logăm și continuăm
+          console.error(`[WEBHOOK] Oblio error (non-blocking):`, oblioErr.message)
+        }
+
         // Revenue entry — B2C uses a synthetic tenantId prefix
         await createRevenueEntry(
           `b2c_${userId}`,
