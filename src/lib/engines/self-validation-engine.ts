@@ -644,22 +644,35 @@ export async function validateOrganism(
   const qualityTrend = trend(avgOutputQuality, prevQualityVal)
 
   // ── Self-healing rate ──
-  const [autoRemediated, totalIssues] = await Promise.all([
-    p.agentTask.count({
-      where: {
-        tags: { hasSome: ["auto-remediated", "improvised", "self-healed"] },
-        completedAt: { gte: period.from, lte: period.to },
-      },
+  // Compara PROBLEME rezolvate automat vs PROBLEME totale (nu vs TOATE task-urile)
+  // Probleme = disfunctii + taskuri FAILED/BLOCKED (nu COMPLETED — alea sunt normale)
+  const [autoRemediated, disfunctionCount, failedOrBlocked] = await Promise.all([
+    // Remediate automat: disfunctii rezolvate + taskuri improvizate
+    Promise.all([
+      p.disfunctionEvent.count({
+        where: { status: "RESOLVED", resolvedAt: { gte: period.from, lte: period.to } },
+      }).catch(() => 0),
+      p.agentTask.count({
+        where: {
+          tags: { hasSome: ["auto-remediated", "improvised", "self-healed"] },
+          completedAt: { gte: period.from, lte: period.to },
+        },
+      }).catch(() => 0),
+    ]).then(([a, b]) => a + b),
+    // Disfunctii totale in perioada
+    p.disfunctionEvent.count({
+      where: { detectedAt: { gte: period.from, lte: period.to } },
     }).catch(() => 0),
+    // Taskuri esuate/blocate (probleme reale, nu taskuri normale)
     p.agentTask.count({
       where: {
-        status: { in: ["COMPLETED", "FAILED", "BLOCKED"] },
+        status: { in: ["FAILED", "BLOCKED"] },
         createdAt: { gte: period.from, lte: period.to },
       },
     }).catch(() => 0),
   ])
-  // Daca nu au fost probleme (totalIssues=0), selfHealingRate=100 (nu 0!)
-  // Zero probleme = organism sanatos, nu "nu stie sa se vindece"
+  const totalIssues = disfunctionCount + failedOrBlocked
+  // Zero probleme = organism sanatos → 100%
   const selfHealingRate = totalIssues > 0 ? Math.round((autoRemediated / totalIssues) * 100) : 100
 
   // ── Contemplation insights ──
