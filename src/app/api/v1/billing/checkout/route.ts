@@ -78,17 +78,29 @@ export async function POST(req: NextRequest) {
     // ── TVA: B2B (plătitor TVA) = fără TVA, altfel +19% ──
     const companyProfile = await prisma.companyProfile.findFirst({
       where: { tenantId },
-      select: { isVATPayer: true },
+      select: { isVATPayer: true, regCom: true, address: true, county: true, cui: true },
     })
     const isB2B = companyProfile?.isVATPayer === true
     const vatRate = isB2B ? 0 : 0.19
 
     let customerId = tenant.stripeCustomerId
     if (!customerId) {
+      // Include date fiscale pe Stripe Customer — Oblio le preia automat pentru facturare
       const customer = await stripeClient.customers.create({
         name: tenant.name,
         email: session.user.email ?? undefined,
-        metadata: { tenantId },
+        metadata: {
+          tenantId,
+          cui: (companyProfile as any)?.cui || "",
+          regCom: (companyProfile as any)?.regCom || "",
+          isVATPayer: String(isB2B),
+        },
+        address: {
+          line1: (companyProfile as any)?.address || "",
+          state: (companyProfile as any)?.county || "",
+          country: "RO",
+        },
+        tax_exempt: isB2B ? "reverse" : "none",
       })
       customerId = customer.id
       await prisma.tenant.update({
