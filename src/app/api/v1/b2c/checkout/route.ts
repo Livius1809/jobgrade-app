@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
       ],
       mode: "payment",
       automatic_tax: { enabled: true },
-      success_url: `${APP_URL}/personal?success=credits&amount=${pkg.credits}`,
+      success_url: `${APP_URL}/personal/payment-success?success=credits&amount=${pkg.credits}`,
       cancel_url: `${APP_URL}/personal?canceled=1`,
       payment_intent_data: {
         statement_descriptor: "JOBGRADE CREDITE",

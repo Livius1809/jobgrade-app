@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
         line_items: [{ price: priceId, quantity: 1 }],
         mode: isRecurring ? "subscription" : "payment",
         automatic_tax: { enabled: true },
-        success_url: `${APP_URL}/settings/billing?success=subscription&tier=${tier}`,
+        success_url: `${APP_URL}/payment-success?success=subscription&tier=${tier}`,
         cancel_url: `${APP_URL}/settings/billing?canceled=1`,
         metadata: {
           tenantId, type: "subscription", tier, billing, renewal,
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
         line_items: lineItems,
         mode: "payment",
         automatic_tax: { enabled: true },
-        success_url: `${APP_URL}/portal?success=service&layer=${data.layer}`,
+        success_url: `${APP_URL}/payment-success?success=service&layer=${data.layer}`,
         cancel_url: `${APP_URL}/portal?canceled=1`,
         metadata: {
           tenantId,
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
         line_items: [{ price: creditPriceId, quantity: 1 }],
         mode: "payment",
         automatic_tax: { enabled: true },
-        success_url: `${APP_URL}/portal?success=credits&amount=${pkg.credits}`,
+        success_url: `${APP_URL}/payment-success?success=credits&amount=${pkg.credits}`,
         cancel_url: `${APP_URL}/portal?canceled=1`,
         metadata: { tenantId, type: "credits", packageId: pkg.id, credits: String(pkg.credits), stripeMode },
       })
@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
         quantity: 1,
       }],
       mode: "payment",
-      success_url: `${APP_URL}/portal?success=credits&amount=${pkg.credits}`,
+      success_url: `${APP_URL}/payment-success?success=credits&amount=${pkg.credits}`,
       cancel_url: `${APP_URL}/portal?canceled=1`,
       metadata: { tenantId, type: "credits", packageId: pkg.id, credits: String(pkg.credits), stripeMode },
     })
