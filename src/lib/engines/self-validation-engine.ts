@@ -658,7 +658,9 @@ export async function validateOrganism(
       },
     }).catch(() => 0),
   ])
-  const selfHealingRate = totalIssues > 0 ? Math.round((autoRemediated / totalIssues) * 100) : 0
+  // Daca nu au fost probleme (totalIssues=0), selfHealingRate=100 (nu 0!)
+  // Zero probleme = organism sanatos, nu "nu stie sa se vindece"
+  const selfHealingRate = totalIssues > 0 ? Math.round((autoRemediated / totalIssues) * 100) : 100
 
   // ── Contemplation insights ──
   const insightConfigs = await p.systemConfig.findMany({
@@ -793,9 +795,11 @@ export async function validateOrganism(
   if (escalationsTrend === "INCREASING") {
     strategicAdjustments.push("Escalatiile catre Owner cresc — organismul devine mai dependent, nu mai autonom")
   }
-  if (selfHealingRate < 10) {
-    strategicAdjustments.push("Rata de auto-vindecare scazuta — implementeaza mai multe mecanisme de auto-remediere")
+  if (selfHealingRate < 10 && totalIssues > 0) {
+    // Rata scazuta CU probleme existente = mecanismele nu functioneaza
+    strategicAdjustments.push("Rata de auto-vindecare scazuta — mecanismele de auto-remediere nu rezolva problemele detectate")
   }
+  // Daca totalIssues=0 si selfHealingRate=100 → nu recomanda nimic, e sanatos
   if (validatedKBGrowthRate < 5) {
     strategicAdjustments.push("Cunoasterea creste prea lent — activeaza curiozitatea si cross-pollination")
   }
